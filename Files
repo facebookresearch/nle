@@ -465,6 +465,10 @@ Wide310x150Logo.scale-150.png
 Wide310x150Logo.scale-200.png
 Wide310x150Logo.scale-400.png
 
+win/rl:
+helper.cc
+winrl.cc
+
 This is a list of files produced by auxiliary programs.  They can all be
 regenerated from the files in the distribution.
 
@@ -564,4 +568,3 @@ NOTE: If your binaries were compiled with the data librarian (DLB) option,
       of the files listed as being required for the playground must still
       have been built by your compiler, but the DLB code will roll them up
       into another file (or files).
-

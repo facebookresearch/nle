@@ -1,6 +1,7 @@
 /* NetHack 3.6	getline.c	$NHDT-Date: 1543830347 2018/12/03 09:45:47 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.37 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2006. */
+/* Copyright (c) Facebook, 2019. */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
@@ -209,18 +210,24 @@ getlin_hook_proc hook;
     }
 }
 
+/*
+ * Hack for RL window proc: register if we are in xwaitforspace context.
+ */
+boolean xwaitingforspace;
+
 void
 xwaitforspace(s)
 register const char *s; /* chars allowed besides return */
 {
     register int c, x = ttyDisplay ? (int) ttyDisplay->dismiss_more : '\n';
 
+    xwaitingforspace = TRUE;
     morc = 0;
     while (
 #ifdef HANGUPHANDLING
         !program_state.done_hup &&
 #endif
-        (c = tty_nhgetch()) != EOF) {
+        (c = nhgetch()) != EOF) {
         if (c == '\n' || c == '\r')
             break;
 
@@ -238,6 +245,7 @@ register const char *s; /* chars allowed besides return */
             tty_nhbell();
         }
     }
+    xwaitingforspace = FALSE;
 }
 
 /*

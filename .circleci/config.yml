@@ -1,0 +1,235 @@
+version: 2.1
+
+# -------------------------------------------------------------------------------------
+# Environments where we run our jobs
+# -------------------------------------------------------------------------------------
+
+executors:
+  cpu-linux-py37:
+    docker:
+      - image: cimg/base:stable
+
+# -------------------------------------------------------------------------------------
+# Commands
+# -------------------------------------------------------------------------------------
+
+commands:
+  fix-git:
+    # circleci normally sets master to the head of the checked branch
+    # which is not great, since we use `origin/master` for file diffs.
+    description: Moves checked master (rl) branch to origin/rl
+    steps:
+      - run:
+          name: Fix repo's master branch
+          command: |
+            ( [[ "$CIRCLE_BRANCH" != "rl" ]] && git branch -f rl origin/rl ) || true
+
+  setup-conda:
+    description: Sets up a conda environment
+    parameters:
+      python_version:
+        type: string
+        default: "3.7"
+    steps:
+      - run:
+          name: Set up nle conda env
+          working_directory: ~
+          command: |
+            wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+            bash ~/miniconda.sh -b -p $HOME/miniconda
+            eval "$($HOME/miniconda/bin/conda shell.bash hook)"
+            conda deactivate
+            conda create -n nle python=<< parameters.python_version >>
+            conda activate nle
+            conda install -y zeromq flatbuffers
+            conda install -y -c conda-forge cppzmq
+            python --version
+            echo ". /home/circleci/miniconda/etc/profile.d/conda.sh" >> $BASH_ENV
+
+  install-build-deps:
+    description: Installs nethack deps
+    steps:
+      - run:
+          name: Install build deps
+          command: |
+            sudo apt-get install software-properties-common
+            sudo apt-get update -y
+            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison
+
+  make-install-nethack:
+    description: Builds and installs nethack (by itself)
+    steps:
+      - run:
+          name: Build and install nethack
+          command: |
+            conda activate nle
+            cd sys/unix
+            sh setup.sh hints/linux
+            cd ../..
+            export PREFIX=$CONDA_PREFIX
+            export LIBRARY_PATH=$PREFIX/lib:$LIBRARY_PATH
+            export CPATH=$PREFIX/include:$CPATH
+            PREFIX=$PREFIX make -j
+            PREFIX=$PREFIX make install
+
+  pip-install-nle:
+    description: Installs NLE and its dependencies
+    steps:
+      - run:
+          name: Install NLE & deps
+          command: |
+            conda activate nle
+            pip install pybind11
+            pip install . -vv
+            pip install -e .
+
+# -------------------------------------------------------------------------------------
+# Actual jobs
+# -------------------------------------------------------------------------------------
+
+jobs:
+  black:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - run:
+          name: Minimum black dependencies
+          command: |
+            conda activate nle
+            pip install -q black
+      - run:
+          name: Run black check
+          command: |
+            conda activate nle
+            ./tests/lint_changed.sh -b
+  lint-py:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - run:
+          name: Minimum lint dependencies
+          command: |
+            conda activate nle
+            pip install -q flake8 flake8-bugbear
+      - run:
+          name: Run linter
+          command: |
+            conda activate nle
+            ./tests/lint_changed.sh -f
+
+  install-nethack:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - make-install-nethack
+
+  install-nle:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - pip-install-nle
+
+  test-nle:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - make-install-nethack
+      - pip-install-nle
+      - run:
+          name: Install test deps
+          command: |
+            conda activate nle
+            pip install ".[dev]"
+      - run:
+          name: Run NLE tests
+          command: |
+            conda activate nle
+            python -m pytest nle/tests --basetemp=$HOME/tests_data
+      - store_artifacts:
+          path: /home/circleci/tests_data
+          name: nle-tests-data
+
+  lint-cc:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - run:
+          name: Minimum lint dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install software-properties-common
+            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+            sudo add-apt-repository 'deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-8 main'
+            sudo apt-get update -y
+            sudo apt-get install -y python3 clang-format-8
+            sudo ln -s /usr/bin/clang-format-8 /usr/bin/clang-format
+      - run:
+          name: Run linter
+          command: |
+            ./tests/lint_changed.sh -c
+
+  build-docs:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - make-install-nethack
+      - pip-install-nle
+      - run:
+          name: Install build deps
+          command: |
+            conda activate nle
+            pip install ".[dev]"
+            pip install ".[agent]"
+      - run:
+          name: Buid the html docs
+          command: |
+            conda activate nle
+            cd doc/nle && make html
+
+# -------------------------------------------------------------------------------------
+# Workflows
+# -------------------------------------------------------------------------------------
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - black
+      - build-docs
+      - lint-py
+      - lint-cc
+      - install-nethack
+      - test-nle
+
+  nightly:
+    jobs:
+      - black
+      - build-docs
+      - lint-py
+      - lint-cc
+      - install-nethack
+      - test-nle
+    triggers:
+      - schedule:
+          cron: "0 6 * * *" # 6am UTC
+          filters:
+            branches:
+              only:
+                - master

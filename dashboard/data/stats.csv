@@ -1,0 +1,10 @@
+found staircase,13,502,644,14,2,1,1,data/example_nethack.0.ttyrec,1,0,1070,0,1
+aborted,12,646,1000,14,3,1,1,data/example_nethack.1.ttyrec,1,0,1728,0,0
+aborted,35,836,1000,14,6,1,1,data/example_nethack.2.ttyrec,1,0,1833,0,0
+aborted,9,602,1000,14,0,1,1,data/example_nethack.0.ttyrec,2,1075,2732,0,0
+aborted,0,483,1000,14,0,1,1,data/example_nethack.2.ttyrec,2,1838,3429,0,0
+aborted,3,579,1000,13,0,1,1,data/example_nethack.1.ttyrec,2,1734,3411,0,0
+arrow,2,589,687,3,0,1,1,data/example_nethack.0.ttyrec,3,2739,3929,0,0
+aborted,0,650,1000,14,0,1,1,data/example_nethack.2.ttyrec,3,3436,5062,0,0
+aborted,28,808,1000,14,7,1,1,data/example_nethack.1.ttyrec,3,3420,5266,0,0
+found staircase,16,607,956,14,4,1,1,data/example_nethack.0.ttyrec,4,3937,5488,0,1

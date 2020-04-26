@@ -3,6 +3,7 @@
 /*-Copyright (c) Kenneth Lorber, Kensington, Maryland, 2015. */
 /* Copyright (c) M. Stephenson, 1990, 1991.                       */
 /* Copyright (c) Dean Luick, 1990.                                */
+/* Copyright (c) Facebook, 2019. */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #define MAKEDEFS_C /* use to conditionally include file sections */
@@ -1469,7 +1470,7 @@ char *githash, *gitbranch;
             *strval++ = '\0';
             /* strip off the '\n' */
             if ((c = index(strval, '\n')) != 0)
-                *c = '\0'; 
+                *c = '\0';
             if ((c = index(opt, '\n')) != 0)
                 *c = '\0';
             /* strip leading and trailing white space */
@@ -1773,6 +1774,9 @@ static struct win_info window_opts[] = {
 #endif
 #ifdef BEOS_GRAPHICS /* unmaintained/defunct */
     { "BeOS", "BeOS InterfaceKit" },
+#endif
+#ifdef RL_GRAPHICS
+    { "rl", "Reinforcement learning 'graphics'" },
 #endif
     { 0, 0 }
 };

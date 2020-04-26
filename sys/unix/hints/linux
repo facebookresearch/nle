@@ -1,7 +1,8 @@
 #
 # NetHack 3.6  linux $NHDT-Date: 1432512814 2015/05/25 00:13:34 $  $NHDT-Branch: master $:$NHDT-Revision: 1.12 $
 # Copyright (c) Kenneth Lorber, Kensington, Maryland, 2007.
-# NetHack may be freely redistributed.  See license for details. 
+# Copyright (c) Facebook, 2019.
+# NetHack may be freely redistributed.  See license for details.
 #
 #-PRE
 # Linux hints file
@@ -9,16 +10,21 @@
 # for Ubuntu dapper.
 
 
-#PREFIX=/usr
-PREFIX=$(wildcard ~)/nh/install
-HACKDIR=$(PREFIX)/games/lib/$(GAME)dir
-SHELLDIR = $(PREFIX)/games
+# Normally defined by setup.py (or manually by the user)
+ifdef PREFIX
+HACKDIR=$(PREFIX)/lib/games/nethack
+else
+PREFIX=$(wildcard ~)
+HACKDIR=$(PREFIX)/$(GAME)dir
+endif
+
+SHELLDIR = $(PREFIX)/bin
 INSTDIR=$(HACKDIR)
 VARDIR = $(HACKDIR)
 
 
 
-POSTINSTALL=cp -n sys/unix/sysconf $(INSTDIR)/sysconf; $(CHOWN) $(GAMEUID) $(INSTDIR)/sysconf; $(CHGRP) $(GAMEGRP) $(INSTDIR)/sysconf; chmod $(VARFILEPERM) $(INSTDIR)/sysconf;
+POSTINSTALL=touch $(INSTDIR)/sysconf; $(CHOWN) $(GAMEUID) $(INSTDIR)/sysconf; $(CHGRP) $(GAMEGRP) $(INSTDIR)/sysconf; chmod $(VARFILEPERM) $(INSTDIR)/sysconf;
 
 CFLAGS=-g -O -I../include -DNOTPARMDECL
 CFLAGS+=-DDLB
@@ -26,22 +32,25 @@ CFLAGS+=-DCOMPRESS=\"/bin/gzip\" -DCOMPRESS_EXTENSION=\".gz\"
 CFLAGS+=-DSYSCF -DSYSCF_FILE=\"$(HACKDIR)/sysconf\" -DSECURE
 CFLAGS+=-DTIMED_DELAY
 CFLAGS+=-DHACKDIR=\"$(HACKDIR)\"
-CFLAGS+=-DDUMPLOG
 CFLAGS+=-DCONFIG_ERROR_SECURE=FALSE
 CFLAGS+=-DCURSES_GRAPHICS
+CFLAGS+=-fPIC
 #CFLAGS+=-DEXTRA_SANITY_CHECKS
 #CFLAGS+=-DEDIT_GETLIN
 #CFLAGS+=-DSCORE_ON_BOTL
 #CFLAGS+=-DMSGHANDLER
 #CFLAGS+=-DTTY_TILES_ESCCODES
 
+CXXFLAGS=$(CFLAGS) -I.
+
+
 LINK=$(CC)
 # Only needed for GLIBC stack trace:
 LFLAGS=-rdynamic
 
-WINSRC = $(WINTTYSRC) $(WINCURSESSRC)
-WINOBJ = $(WINTTYOBJ) $(WINCURSESOBJ)
-WINLIB = $(WINTTYLIB) $(WINCURSESLIB)
+WINSRC = $(WINTTYSRC) $(WINCURSESSRC) $(WINRLSRC)
+WINOBJ = $(WINTTYOBJ) $(WINCURSESOBJ) $(WINRLOBJ)
+WINLIB = $(WINTTYLIB) $(WINCURSESLIB) $(WINRLLIB)
 
 # if TTY_TILES_ESCCODES
 #WINSRC += tile.c
