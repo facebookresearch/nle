@@ -1,0 +1,15 @@
+include version.txt
+
+recursive-include dat *
+recursive-include DEVEL *
+recursive-include include *
+recursive-include src *
+recursive-include sys *
+recursive-include util *
+recursive-include win *
+
+exclude nle/dashboard
+exclude nle/scripts/nh-clean-install.sh
+exclude nle/scripts/run-clang-format.py
+exclude nle/scripts/line-changed.sh
+

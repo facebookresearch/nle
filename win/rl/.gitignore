@@ -1,0 +1,5 @@
+*.ttyrec
+!seed_test_game_*.ttyrec
+*_generated.h
+nle/
+__pycache__/

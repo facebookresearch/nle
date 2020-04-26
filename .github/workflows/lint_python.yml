@@ -1,0 +1,37 @@
+---
+name: Lintcheck Python
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "**.py"
+  pull_request:
+    paths:
+      - "**.py"
+  schedule:
+    - cron: "0 6,18 * * *"
+
+jobs:
+  check_python:
+    name: "Black & flake8"
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup Python 3.8 env
+      uses: actions/setup-python@v1
+      with:
+        python-version: "3.8"
+    - name: Clone NLE repo
+      uses: actions/checkout@v2
+    - name: Ensure latest pip
+      run: "python -m pip install -q --upgrade pip"
+    - name: Install python linting deps
+      run: "pip install -q black flake8 flake8-bugbear"
+    - name: Run black
+      run: "black --check ."
+    - name: Run flake8
+      run: "flake8"
+...

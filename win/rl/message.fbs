@@ -1,0 +1,167 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+namespace nle.fbs;
+
+table NDArray {
+  shape:[int64];
+  dtype:int8;
+  data:[ubyte];
+}
+
+struct Condition {
+  STONE:bool;
+  SLIME:bool;
+  STRNGL:bool;
+  FOODPOIS:bool;
+  TERMILL:bool;
+  BLIND:bool;
+  DEAF:bool;
+  STUN:bool;
+  CONF:bool;
+  HALLU:bool;
+  LEV:bool;
+  FLY:bool;
+  RIDE:bool;
+}
+
+table Status {
+  TITLE:string;
+  STR:string;
+  DX:string;
+  CO:string;
+  IN:string;
+  WI:string;
+  CH:string;  /* 1..6 */
+  ALIGN:string;
+  SCORE:string;
+  CAP:string;
+  GOLD:string;
+  ENE:string;
+  ENEMAX:string; /* 7..12 */
+  XP:string;
+  AC:string;
+  HD:string;
+  TIME:string;
+  HUNGER:string;
+  HP:string;
+  HPMAX:string;
+  LEVELDESC:string; /* 13..20 */
+  EXP:string;
+  condition:Condition;
+}
+
+table MenuItem {
+  glyph:int16;
+  selector:byte;
+  gselector:byte;
+  str:string;
+  selected:bool;
+}
+
+table Window {
+  type:int8;
+  menu_items:[MenuItem];
+  strings:[string];
+}
+
+table InventoryItem {
+  glyph:int16;
+  str:string;
+  letter:byte;
+  object_class:byte;
+  object_class_name:string;
+}
+
+table Observation {
+  glyphs:NDArray;
+  chars:NDArray;
+  colors:NDArray;
+  specials:NDArray;
+  status:Status;
+  inventory:[InventoryItem];
+}
+
+struct Blstats {
+  curs_x:int32;
+  curs_y:int32;
+  strength_percentage:int32;  /* 1..125 */
+  strength:int32;
+  dexterity:int32;
+  constitution:int32;
+  intelligence:int32;
+  wisdom:int32;
+  charisma:int32;
+
+  score:int32;
+
+  hitpoints:int32;
+  max_hitpoints:int32;
+  depth:int32;
+  gold:int32;
+
+  energy:int32;
+  max_energy:int32;
+
+  armor_class:int32;
+
+  monster_level:int32;
+
+  experience_level:int32;
+  experience_points:int32;
+
+  time:int32;
+
+  hunger_state:int32;
+
+  carrying_capacity:int32;
+}
+
+struct DLevel {
+  dnum:int8;
+  dlevel:int8;
+}
+
+struct You {  /* A small part of you.h. */
+  ux:int8;
+  uy:int8;
+
+  ux0:int8;
+  uy0:int8;
+  uz:DLevel;
+  uz0:DLevel;
+
+  uhunger:int16;
+}
+
+struct Seeds {
+  core:ulong;
+  disp:ulong;
+}
+
+table Internal {
+  deepest_lev_reached:int8;
+  call_stack:[string];
+  killer_name:string;
+  xwaitforspace:bool;
+  stairs_down:bool;
+}
+
+struct ProgramState {
+  gameover:bool;
+  panicking:bool;  /* `panic' is in progress */
+  exiting:bool;  /* an exit handler is executing */
+  in_moveloop:bool;
+  in_impossible:bool;
+}
+
+table Message {
+  observation:Observation;
+  blstats:Blstats;
+  you:You;
+  windows:[Window];
+  internal:Internal;
+  program_state:ProgramState;
+  seeds:Seeds;
+  not_running:bool;
+}
+
+root_type Message;

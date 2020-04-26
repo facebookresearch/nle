@@ -1,0 +1,23 @@
+name: Lintcheck C/C++
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "win/rl/**.{c,cc,cpp,h,hh,hpp}"
+  pull_request:
+    paths:
+      - "win/rl/**.{c,cc,cpp,h,hh,hpp}"
+  schedule:
+    - cron: "0 6,18 * * *"
+
+jobs:
+  check_cc:
+    name: "clang-format"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone NLE repo
+        uses: actions/checkout@v2
+      - name: Run clang
+        run: "./nle/scripts/run-clang-format -r win/rl"

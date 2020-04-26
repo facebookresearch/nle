@@ -2,6 +2,7 @@
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Michael Allison, 2007. */
 /* Copyright (c) Robert Patrick Rankin, 1991                      */
+/* Copyright (c) Facebook, Inc. and its affiliates.               */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h" /* for config.h+extern.h */
@@ -899,6 +900,11 @@ int FDECL((*fn), (int)) UNUSED;
    as seed for the random number generator */
 extern unsigned long NDECL(sys_random_seed);
 
+// NLE hack for seeds. Should stay in sync with rnglist in src/rnd.c.
+unsigned long nle_seeds[] = {0L, 0L};
+enum { CORE = 0, DISP = 1 };
+extern int FDECL(whichrng, (int FDECL((*fn), (int))));
+
 /*
  * Initializes the random number generator.
  * Only call once.
@@ -907,7 +913,31 @@ void
 init_random(fn)
 int FDECL((*fn), (int));
 {
-    set_random(sys_random_seed(), fn);
+    // NLE hack for seeds added.
+    unsigned long seed;
+    char* env = NULL;
+
+    int rngindx = whichrng(fn);
+
+    switch(rngindx) {
+    case CORE:
+        env = nh_getenv("NLE_SEED_CORE");
+        break;
+    case DISP:
+        env = nh_getenv("NLE_SEED_DISP");
+        break;
+    default:
+        panic("NLE doesn't know this RNG function");
+    }
+
+    if (env != NULL)
+      /* Overwrite nethack's seed with the supplied value. */
+      seed = strtoul(env, (char **) 0, 0);
+    else
+      seed = sys_random_seed();
+
+    set_random(seed, fn);
+    nle_seeds[rngindx] = seed;
 }
 
 /* Reshuffles the random number generator. */
@@ -917,8 +947,10 @@ int FDECL((*fn), (int));
 {
    /* only reseed if we are certain that the seed generation is unguessable
     * by the players. */
-    if (has_strong_rngseed)
-        init_random(fn);
+
+   /* Commented out for NLE -- we want to be able to recreate runs. */
+   /* if (has_strong_rngseed)
+          init_random(fn); */
 }
 
 time_t

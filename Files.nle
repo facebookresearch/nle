@@ -1,0 +1,77 @@
+Following Files.nh, this is a listing of all files that NLE adds to the NetHack
+distribution.
+
+.:
+(files in top directory)
+.flake8   .gitignore  .pre-commit-config.yaml  CODE_OF_CONDUCT.md  CONTRIBUTING.md
+Files.nle LICENSE     MANIFEST.in              README.md           pyproject.toml
+setup.py  version.txt
+
+.circleci:
+(files for controlling CircleCI's CI behavior)
+config.yml
+
+.github/ISSUE_TEMPLATE:
+(files for GitHub repo's issues and pull requests UX)
+bug-report.md  feature-request.md
+
+.github/workflows:
+(files for controlling GitHub's CI behavior)
+
+dat/nle:
+(files for various data used by NLE)
+example_run.gif  logo.png
+
+doc/nle:
+(files for documenting and building NLE docs)
+Makefile  README.md  make.bat
+
+doc/nle/source:
+(files containing NLE doc templates)
+conf.py         getting_started.rst  index.rst       nle.agent.rst  nle.env.rst
+nle.nethack.rst nle.rst              nle.scripts.rst
+
+nle:
+(file for declaring the nle module)
+__init__.py
+
+nle/agent:
+(files for the nle.agent module)
+__init__.py  agent.py  vtrace.py
+
+nle/dashboard:
+(files for the dashboard backend and its tooling)
+.eslintrc.json  .gitignore  README.md  config.js  lint.sh  package-lock.json
+package.json    server.js
+
+nle/dashboard/app:
+(files for the dashboard frontend)
+actions.js  dashboard.html  style.css
+
+nle/dashboard/app/third_party:
+(files for third party libs used by the dashboard frontend)
+apexcharts.js  ttyplay.js
+
+nle/env:
+(files for the nle.env module)
+__init__.py  base.py  tasks.py
+
+nle/nethack:
+(files for the nle.nethack module)
+__init__.py  actions.py  nethack.py  print_message.py  ptyprocess.py
+
+nle/scripts:
+(files for the nle.scripts module)
+__init__.py         check_nethack_speed.py  collect_env.py  lint_changed.sh
+nh-clean-install    play.py                 plot.py         run-clang-format
+test_raw_nethack.py ttyplay.py              ttyrec.py
+
+nle/tests:
+(files for the testing NLE)
+lint_changed.sh    test_envs.py  test_forking.py  test_memory.py  test_nethack.py
+test_ptyprocess.py
+
+
+win/rl:
+(files for the NLE window interface)
+.gitignore  helper.cc  message.fbs  winrl.cc

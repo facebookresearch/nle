@@ -1,0 +1,174 @@
+/* Copyright (c) Facebook, Inc. and its affiliates. */
+body {
+    font-family: arial, sans-serif;
+    background-color: rgba(10, 10, 10, 0.9);
+    color: rgb(237, 237, 237);
+}
+
+button, input, select {
+    background-color: #d7d7d7;
+    border: 0px;
+    border-radius: 0px;
+}
+
+p {
+    margin-block-start: 0px;
+    margin-block-end: 10px; 
+}
+
+.split.left p {
+    margin-left: 2%;
+}
+
+#load_recursively {
+    transform: scale(1.3);
+}
+
+#runs_title {
+    font-size: 20px;
+    margin-left: 2%;
+    margin-bottom: 10px;
+}
+
+#folder_path {
+    padding: 5px;
+    font-size: 15px;
+    margin-left: 2%;
+    width: 50%;
+    margin-bottom: 10px;
+}
+
+#runs_to_search {
+    padding: 5px;
+    font-size: 15px;
+    width: 80px;
+}
+
+#filters {
+    margin-left: 2%;
+}
+
+.filter {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.filter select {
+    font-size: 15px;
+}
+
+.filter input {
+    font-size: 15px;
+    width: 483px;
+}
+
+button {
+    font-size: 15px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    cursor: pointer;
+    background-color: rgb(91, 91, 252);
+}
+
+#playback_title {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+#speed, #target_action, #frame_delay {
+    font-size: 15px;
+    width: 50px;
+}
+
+#jump_to {
+    font-size: 15px;
+    width: 115px;
+}
+
+#terminal_div {
+    height: 480px;
+}
+
+.terminal {
+    float: left;
+    border: 2px solid #8e8e8e;
+    font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+    font-size: 16px;
+    color: #f0f0f0;
+    background: #000;
+}
+
+#last_action {
+    margin-bottom: 10px;
+}
+
+/* Split the screen in half */
+.split {
+    height: 100%;
+    width: 50%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    overflow-x: hidden;
+    padding-top: 20px;
+}
+
+/* Control the left side */
+.left {
+    left: 0;
+}
+
+/* Control the right side */
+.right {
+    right: 0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 96%;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+thead {
+    font-weight: bold;
+}
+
+thead td:hover {
+    cursor: pointer;
+    background-color: #8e8e8e !important;
+}
+
+td, th {
+    border: 2px solid #8e8e8e;
+    text-align: left;
+    padding: 8px;
+}
+
+tbody tr:hover {
+    cursor: pointer;
+    background-color: #8e8e8e !important;
+}
+
+#loading_icon {
+    vertical-align: middle;
+    display: none;
+    border: 5px solid #f3f3f3; /* Light grey */
+    border-top: 5px solid #49b4fa; /* Blue */
+    border-radius: 50%;
+    width: 17px;
+    height: 17px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#actions_distribution {
+  max-width: 50%;
+}

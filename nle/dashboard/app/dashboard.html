@@ -1,0 +1,743 @@
+<!-- Copyright (c) Facebook, Inc. and its affiliates. -->
+<html>
+<head>
+  <link rel="stylesheet" href="style.css" type="text/css">
+  <script type="text/javascript" src="actions.js"></script>
+  <script type="text/javascript" src="third_party/term.js"></script><!-- Served separately. -->
+  <script type="text/javascript" src="third_party/ttyplay.js"></script>
+  <script type="text/javascript" src="third_party/apexcharts.js"></script>
+  <script>
+    // The dashboard receives the runs info from the server, and uses
+    // them to request the related ttyrec files. Every run is represented
+    // as a dictionary, and it is expected to have the following field set
+    // (otherwise fetching of ttyrec files will likely fail).
+    const ttyrecField = 'ttyrec';
+    const dataField = 'data_file';
+    // Columns from the stats.csv file that will not be displayed in the table.
+    // Fields like __*__ are special fields set by the client during the
+    // elaboration of the data.
+    const ignoreFields =
+          ['__valid_row__', '__recordfile__', 'start', 'end', 'time', 'ttyrec'];
+
+    const clearScreen = '\033[2J'; // To clear terminal.
+    const host = window.location.host;
+    const term = new Terminal({cols: 80, rows: 24, screenKeys: true});
+    let actionsDistributionChart = null;
+
+    let runsInfoGlobal = null; // Contains the information of the fetched runs.
+    let automaticPlayback = false; // Allows to stop the asyncronus player.
+    let player = null; // Player object used by several functions.
+    let highlightedRow = null; // Keeps track of the previously highlighted row.
+
+    /** Display loading icon.
+     */
+    function displayLoadingIcon() {
+      document.getElementById('loading_icon').style.display = 'inline-block';
+    }
+
+    /** Hide loading icon.
+     */
+    function hideLoadingIcon() {
+      document.getElementById('loading_icon').style.display = 'none';
+    }
+
+    /** Displays info for the runs in a table.
+     * Note that the table uses the index of runsInfoGlobal,
+     * so every time runsInfoGlobal is changed, the table has
+     * to be updated as well.
+     */
+    function displayTable() {
+      if (runsInfoGlobal == null) {
+        console.log(
+            'ERROR: displayTable called but runsInfoGlobal is null.',
+        );
+      }
+      const table = document.getElementById('runs_info_table');
+      // Clean up previous table, if any.
+      table.innerHTML = '';
+      // No row is highlighted if there is no table.
+      highlightedRow = null;
+      // Stop automatic playback.
+      automaticPlayback = false;
+
+      // Header.
+      const header = table.createTHead();
+      const headerRow = header.insertRow(-1);
+      for (const key in runsInfoGlobal[0]) {
+        if (!runsInfoGlobal[0].hasOwnProperty(key)) {
+          // Ignore JS Objects properties we do not care about.
+          continue;
+        }
+        if (ignoreFields.includes(key)) {
+          continue;
+        }
+        const cell = headerRow.insertCell(-1);
+        cell.innerText = key;
+        cell.addEventListener('click', function() {
+          sortAndDisplayInfo(key);
+        });
+      }
+
+      // Body.
+      const body = table.createTBody();
+      for (const runInfo of runsInfoGlobal) {
+        if (typeof runInfo['__valid_row__'] !== 'undefined' &&
+            !runInfo['__valid_row__']) {
+          continue;
+        }
+        const row = body.insertRow(-1);
+        for (const key in runInfo) {
+          if (ignoreFields.includes(key)) {
+            continue;
+          }
+          const cell = row.insertCell(-1);
+          cell.innerText = runInfo[key];
+        }
+        row.addEventListener('click', function() {
+          // Need to do -1 because we have one row for the header.
+          singleRunPlayback(this.rowIndex - 1);
+        });
+      }
+    }
+
+    /** Highlights a row in the runs_info_table.
+     */
+    function highlightRow(idx) {
+      const tbody =
+        document.getElementById('runs_info_table')
+            .getElementsByTagName('tbody')[0];
+      if (typeof(tbody) === 'undefined') {
+        console.log('ERROR: runs_info_table has no tbody.');
+        return;
+      }
+      if (highlightedRow != null) {
+        // De-select previously selected row.
+        tbody.rows[highlightedRow].style.backgroundColor = 'transparent';
+      }
+      tbody.rows[idx].style.backgroundColor = 'green';
+      highlightedRow = idx;
+    }
+
+    /** Adds a filter line.
+     */
+    function addFilter() {
+      if (runsInfoGlobal == null) {
+        console.log(
+            'ERROR: addFilter called but runsInfoGlobal is null.',
+        );
+        return;
+      }
+      const filters = document.getElementById('filter_lines');
+      const filterLine = document.createElement('div');
+      const dropdown = document.createElement('select');
+      // Populate dropdown with field names.
+      for (const key in runsInfoGlobal[0]) {
+        if (!runsInfoGlobal[0].hasOwnProperty(key)) {
+          // Ignore JS Objects properties we do not care about.
+          continue;
+        }
+        const option = document.createElement('option');
+        option.appendChild(document.createTextNode(key));
+        dropdown.appendChild(option);
+      }
+      const input = document.createElement('input');
+      input.placeholder = 'JS query: e.g. "> 100".';
+      filterLine.appendChild(dropdown);
+      filterLine.appendChild(input);
+      filterLine.classList.add('filter');
+      filters.appendChild(filterLine);
+    }
+
+    /** Clears all the filters.
+     */
+    function clearFilters() {
+      if (!confirm('Are sure you want to remove all the filters?')) {
+        return;
+      }
+      const filters = document.getElementById('filter_lines');
+      while (filters.firstChild) {
+        filters.removeChild(filters.firstChild);
+      }
+    }
+
+    /** Stops playback.
+     */
+    function stop() {
+      if (player == null) {
+        return;
+      }
+      player.stop();
+    }
+
+    /** Resumes playback.
+     */
+    function play() {
+      if (player == null) {
+        return;
+      }
+      player.play();
+    }
+
+    /** Stops player execution and performs numOfSteps steps.
+     */
+    function step(numOfSteps = 1) {
+      if (player == null) {
+        return;
+      }
+      player.stop();
+      for (let i = 0; i < numOfSteps; i++) {
+        player.step();
+      }
+    }
+
+    /** Resets episode being played.
+     */
+    function reset() {
+      if (player == null) {
+        return;
+      }
+      player.reset();
+    }
+
+    /** Sets playback speed.
+     */
+    function setSpeed() {
+      if (player == null) {
+        return;
+      }
+      const speed = document.getElementById('speed').value;
+      // Add 1e-6 so when speed == 0 we avoid NaN.
+      player.setSpeed(parseFloat(speed) + 1e-6);
+    }
+
+    /** Sets fixed frame delay.
+     */
+    function setFrameDelay() {
+      if (player == null) {
+        return;
+      }
+      const frameDelay = document.getElementById('frame_delay').value;
+      player.setFrameDelay(parseInt(frameDelay));
+    }
+
+    /** Jumps to a specific frame of the episode.
+     */
+    function jumpToFrame() {
+      if (player == null) {
+        return;
+      }
+      const frame = document.getElementById('jump_to').value;
+      player.jumpTo(frame);
+    }
+
+    /** Skips frames until a particular action is encountered.
+     * The action can be either a char (e.g. H) or a charcode (e.g. 72).
+     */
+    function skipUntilAction() {
+      if (player == null) {
+        return;
+      }
+      const action = document.getElementById('target_action').value;
+      if (!(action in player.getActionsDistribution())) {
+        alert('Action to skip until is not present in the current episode.');
+        return;
+      }
+      player.seekAction(action);
+    }
+
+    /** Creates a plot of the most used actions in a particular game.
+     * actionsDistribution is a dict mapping each action (in the form of an
+     * uint8) to its count.
+     */
+    function plotActionsDistribution(actionsDistribution) {
+      if (actionsDistributionChart != null) {
+        actionsDistributionChart.destroy();
+      }
+      // Sort actions.
+      // Unfortunately JavaScript dictionaries have no straightforward
+      // way to be sorted.
+      const sortedActions =
+          Object.keys(actionsDistribution).map(function(key) {
+            return [key, actionsDistribution[key]];
+          });
+      sortedActions.sort(function(a1, a2) {
+        return a2[1] - a1[1]; // Sort by value.
+      });
+
+      const data = [];
+      const categories = [];
+      for (const action of sortedActions) {
+        categories.push(`${actionsMapping[action[0]]} (${action[0]})`);
+        data.push(action[1]);
+      }
+
+      const chartOptions = {
+        chart: {
+          // Give 30px of height for every action.
+          height: categories.length * 30,
+          width: '760px',
+          type: 'bar',
+        },
+        theme: {
+          mode: 'dark',
+        },
+        plotOptions: {
+          bar: {
+            horizontal: true,
+          },
+        },
+        series: [{
+          name: 'actions',
+          data: data,
+        }],
+        xaxis: {
+          categories: categories,
+          labels: {
+            style: {
+              fontSize: '1em',
+            },
+          },
+        },
+        yaxis: {
+          labels: {
+            style: {
+              fontSize: '1em',
+            },
+          },
+        },
+      };
+
+      actionsDistributionChart = new ApexCharts(
+          document.querySelector('#actions_distribution'),
+          chartOptions,
+      );
+
+      actionsDistributionChart.render();
+    }
+
+    /** Throws error with readable error message.
+     */
+    function handleErrors(response) {
+      if (!response.ok) {
+        hideLoadingIcon();
+        response.text().then(function(error) {
+          alert('An error has occurred, check the console for more info.');
+          throw Error(
+              `\n==== ACTUAL ERROR ====\n${response.statusText}: ${error}`,
+          );
+        });
+      } else {
+        // All good.
+        return response;
+      }
+    }
+
+    /** Fetches all the ttyrec files for the given runs.
+     * For each run in runsInfo, add the __recordfile__ field that contains
+     * an arrayBuffer with the binary data of the ttyrec file.
+     */
+    async function fetchTtyrecFiles(runsInfo) {
+      const ttyrecs = {};
+      for (const runInfo of runsInfo) {
+        if (runInfo[ttyrecField] in ttyrecs) {
+          // Already being fetched.
+          continue;
+        }
+        console.log(`Fetching data for: ${runInfo[ttyrecField]}.`);
+        // Append the promise for each ttyrec.
+        ttyrecs[runInfo[ttyrecField]] =
+          fetch(`http://${host}/ttyrec_file` +
+                `?datapath=${encodeURIComponent(runInfo[dataField])}` +
+                `&ttyrec=${encodeURIComponent(runInfo[ttyrecField])}`)
+              .catch(function() {
+                hideLoadingIcon();
+                alert('Something went wrong while connecting to the server.\n' +
+                      'Maybe the server is down?');
+              })
+              .then(handleErrors)
+              .then(function(response) {
+                return response.arrayBuffer();
+              });
+      }
+      for (const key in ttyrecs) {
+        // Check if the property/key is defined in the object itself.
+        // This is an annoying problem of iterating javascript dicts.
+        if (!ttyrecs.hasOwnProperty(key)) {
+          continue;
+        }
+        // Wait for the promise to be resolved and save the result.
+        ttyrecs[key] = await ttyrecs[key];
+      }
+      for (const runInfo of runsInfo) {
+        runInfo.__recordfile__ = ttyrecs[runInfo[ttyrecField]];
+      }
+    }
+
+    /** Fetches runs info and corresponding ttyrec files from the server.
+     */
+    async function fetchRunsInfoAndFiles(dataPath, runsToSearch, recursively) {
+      const promise =
+        fetch(`http://${host}/runs_info` +
+              `?path=${encodeURIComponent(dataPath)}` +
+              `&readLast=${runsToSearch}` +
+              `&recursively=${recursively}`)
+            .catch(function() {
+              hideLoadingIcon();
+              alert('Something went wrong while connecting to the server.\n' +
+                    'Maybe the server is down?');
+            })
+            .then(handleErrors)
+            .then(function(response) {
+            // Receive a list of dicts containing info of the runs (JSON format).
+              return response.json();
+            }).then(async function(runsInfo) {
+              console.log(`Received info for ${runsInfo.length} runs.`);
+              assertValidRunsInfo(runsInfo);
+              // Fetch the content of the ttyrec files.
+              await fetchTtyrecFiles(runsInfo);
+              return runsInfo;
+            });
+      return await promise;
+    }
+
+    /** Starts playback for a specific run.
+     */
+    async function singleRunPlayback(tableRow) {
+      automaticPlayback = false;
+
+      // If runs have been filtered from the table, the run at row X
+      // in the table does not necessarily match the run at index X in
+      // runsInfoGlobal. We need to go through runsInfoGlobal and make
+      // sure we ignore the rows that are not in the table.
+      let runsIdx = 0;
+      let tableIdx = 0;
+      for (; runsIdx < runsInfoGlobal.length; runsIdx++) {
+        const runInfo = runsInfoGlobal[runsIdx];
+        if (typeof runInfo['__valid_row__'] !== 'undefined' &&
+            !runInfo['__valid_row__']) {
+          continue;
+        }
+        if (tableIdx == tableRow) {
+          // Now we have reached the row of the table that we are looking for.
+          // runsIdx is the index of the corresponding row in runsInfoGlobal.
+          break;
+        }
+        tableIdx++;
+      }
+      const runInfo = runsInfoGlobal[runsIdx];
+      // Update playback title.
+      document.getElementById('playback_title').innerText =
+        `${runInfo[ttyrecField]} episode: ${runInfo.episode || 'n/a'}`;
+      // Highlight row.
+      highlightRow(tableIdx);
+      const ttyrecFile = runInfo.__recordfile__;
+      const start = parseInt(runInfo.start || 0);
+      const end = parseInt(runInfo.end || Number.MAX_SAFE_INTEGER);
+
+      term.write(clearScreen);
+
+      // Reinitialize the player.
+      if (player != null) {
+        player.close();
+      }
+      player = ttyPlay(
+          term,
+          {
+            data: ttyrecFile,
+            start: start,
+            end: end,
+            actionsMapping: actionsMapping,
+          },
+      );
+      setSpeed();
+      setFrameDelay();
+      plotActionsDistribution(player.getActionsDistribution());
+      player.play();
+    }
+
+    /** Starts the playback for all the runs.
+     * Once the last run is over, start again with the first one.
+     */
+    async function startPlayback() {
+      // -1 because there is the header row.
+      const numOfTableRows =
+          document.getElementById('runs_info_table').rows.length - 1;
+      // We need to keep two separate indexes: one points to the particular
+      // run inside runsInfoGlobal, the other one points to the current row
+      // of the table. The two indexes only match if no rows have been
+      // filtered out.
+      let runsIdx = 0;
+      let tableIdx = 0;
+      automaticPlayback = numOfTableRows != 0;
+      while (automaticPlayback) {
+        const runInfo = runsInfoGlobal[runsIdx];
+        if (typeof runInfo['__valid_row__'] !== 'undefined' &&
+            !runInfo['__valid_row__']) {
+          runsIdx = (runsIdx + 1) % runsInfoGlobal.length;
+          continue;
+        }
+        const ttyrecFile = runInfo.__recordfile__;
+        const start = parseInt(runInfo.start || 0);
+        const end = parseInt(runInfo.end || Number.MAX_SAFE_INTEGER);
+
+        term.write(clearScreen);
+
+        // Reinitialize the player.
+        if (player != null) {
+          player.close();
+        }
+        player = ttyPlay(
+            term,
+            {
+              data: ttyrecFile,
+              start: start,
+              end: end,
+              actionsMapping: actionsMapping,
+            },
+        );
+        setSpeed();
+        setFrameDelay();
+        // Update playback title.
+        document.getElementById('playback_title').innerText =
+          `${runInfo[ttyrecField]} episode: ${runInfo.episode}`;
+        // Highlight row.
+        highlightRow(tableIdx);
+        plotActionsDistribution(player.getActionsDistribution());
+        // Wrapping play in a promise this way allows to wait until the
+        // playback for a run is over.
+        const promise = new Promise(function(resolve, reject) {
+          player.play(resolve);
+        });
+        await promise;
+        tableIdx = (tableIdx + 1) % numOfTableRows;
+        runsIdx = (runsIdx + 1) % runsInfoGlobal.length;
+      }
+    }
+
+    /** Performs some checks to validate the fetched data.
+     */
+    function assertValidRunsInfo(runsInfo) {
+      if (runsInfo.length == 0) {
+        hideLoadingIcon();
+        alert('ERROR: the server has not found any run info.');
+        throw Error('runsInfo is empty.');
+      }
+      const requiredFields = [ttyrecField];
+      for (const requiredField of requiredFields) {
+        if (!(requiredField in runsInfo[0])) {
+          hideLoadingIcon();
+          alert(`ERROR: fetched runs info are missing a required field: ` +
+                `${requiredField}.\nReferto the readme for information ` +
+                `about how data should be formatted.`);
+          throw Error(`Missing required field: ${requiredField}.`);
+        }
+      }
+      const preferredFields = ['score', 'episode', 'start', 'end'];
+      for (const preferredField of preferredFields) {
+        if (!(preferredField in runsInfo[0])) {
+          console.log(`WARNING: missing preferred field: ${preferredField}.`);
+        }
+      }
+    }
+
+    /** Applies the given filters and reload the table.
+     * This function adds the field __valid_row__ to all the rows
+     * in runsInfoGlobal, and sets it to false for the rows which
+     * do not meet filtering criteria.
+     */
+    function applyFilters() {
+      if (runsInfoGlobal == null) {
+        console.log(
+            'ERROR: applyFilters called but runsInfoGlobal is null.',
+        );
+        return;
+      }
+
+      const filters = document.getElementById('filter_lines').children;
+      const conditions = [];
+      for (let i = 0; i < filters.length; i++) {
+        const filter = filters[i];
+        const field = filter.children[0].value;
+        const query = filter.children[1].value;
+        conditions.push(`runInfo['${field}'] ${query}`);
+      }
+
+      // conditions should contain strings with executable JS code, that
+      // returns booleans. We apply all the conditions to each run and
+      // set the __valid_row__ field accordingly.
+      for (const runInfo of runsInfoGlobal) {
+        let validRow = true;
+        for (const condition of conditions) {
+          try {
+            validRow = validRow && eval(condition);
+          } catch (error) {
+            // invalidSyntax, referenceError etc...
+            alert(`${error.name} in filter: ${condition}`);
+            throw error;
+          }
+        }
+        runInfo['__valid_row__'] = validRow;
+      }
+    }
+
+    /** Sorts runs according to some parameter, displays table and
+     * starts playback.
+     * sortBy is a string with the field that has to be used to sort.
+     */
+    function sortAndDisplayInfo(sortBy=null) {
+      if (runsInfoGlobal == null) {
+        console.log(
+            'ERROR: sortAndDisplayInfo called but runsInfoGlobal is null.',
+        );
+        return;
+      }
+      if (sortBy == null ||
+          runsInfoGlobal.empty ||
+          typeof(runsInfoGlobal[0][sortBy]) == 'undefined') {
+        console.log(`WARNING: cannot sort runsInfoGlobal by ${sortBy}.`);
+      } else {
+        runsInfoGlobal.sort(function(run1, run2) {
+          // Try to convert values to numbers.
+          const val1 = Number(run1[sortBy]);
+          const val2 = Number(run2[sortBy]);
+          if (isNaN(val1) || isNaN(val2)) {
+            // Use string comparison.
+            return run1[sortBy].localeCompare(run2[sortBy]);
+          } else {
+            // Use number comparison.
+            return val2 - val1;
+          }
+        });
+      }
+      applyFilters();
+      displayTable();
+      // Start playback of the games in order.
+      // If the user selects something from the table,
+      // this playback is stopped.
+      startPlayback();
+    }
+
+    /** Loads data from the path and displays them.
+     */
+    function loadData(dataPath, runsToSearch, recursively) {
+      displayLoadingIcon();
+      fetchRunsInfoAndFiles(dataPath, runsToSearch, recursively)
+          .then(function(runsInfo) {
+            runsInfoGlobal = runsInfo;
+            sortAndDisplayInfo('score');
+            hideLoadingIcon();
+          });
+    };
+
+    /** Loads data automatically if a path is passed in the url.
+     */
+    function maybeLoadDataFromUrlPath() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (typeof(urlParams) === 'undefined' || urlParams.get('path') == null) {
+        return;
+      }
+      document.getElementById('folder_path').value = urlParams.get('path');
+      document.getElementById('load_data').click();
+    }
+
+    window.onload = function() {
+      // Left size elements.
+      document.getElementById('load_data')
+          .addEventListener('click', function() {
+            const dataPath = document.getElementById('folder_path').value;
+            const runsToSearch =
+                document.getElementById('runs_to_search').value;
+            const recursively =
+                document.getElementById('load_recursively').checked;
+            loadData(dataPath, runsToSearch, recursively);
+          });
+      document.getElementById('apply_filters')
+          .addEventListener('click', sortAndDisplayInfo);
+      document.getElementById('add_filter')
+          .addEventListener('click', addFilter);
+      document.getElementById('clear_filters')
+          .addEventListener('click', clearFilters);
+
+      // Right side elements.
+      document.getElementById('stop').addEventListener('click', stop);
+      document.getElementById('play').addEventListener('click', play);
+      document.getElementById('step').addEventListener('click', function() {
+        step(1);
+      });
+      document.getElementById('step10').addEventListener('click', function() {
+        step(10);
+      });
+      document.getElementById('step100').addEventListener('click', function() {
+        step(100);
+      });
+      document.getElementById('step1000').addEventListener('click', function() {
+        step(1000);
+      });
+      document.getElementById('reset').addEventListener('click', reset);
+      document.getElementById('jump_to')
+          .addEventListener('change', jumpToFrame);
+      document.getElementById('speed').addEventListener('change', setSpeed);
+      document.getElementById('frame_delay')
+          .addEventListener('change', setFrameDelay);
+      document.getElementById('skip_until_action')
+          .addEventListener('click', skipUntilAction);
+      term.open(document.getElementById('terminal_div'));
+
+      maybeLoadDataFromUrlPath();
+    };
+  </script>
+</head>
+<body></body>
+  <div class="split left">
+    <div id="runs_title"><b>NetHack Dashboard</b></div>
+    <input id="folder_path" type="string"\
+    placeholder="Path to folder with the data to display."\
+    value="data"/>
+    <button id="load_data">Load</button>
+    &nbsp;
+    <div id="loading_icon"></div>
+    <p>Search last
+    <input id="runs_to_search" type="int" value="2000"/>
+    runs.</p>
+    <p>Search subfolders
+    <input type="checkbox" id="load_recursively"></p>
+    <div id="filters">
+      Filters
+      <button id="apply_filters">Apply</button>
+      <button id="add_filter">Add</button>
+      <button id="clear_filters">Clear</button>
+      <div id="filter_lines"></div>
+    </div>
+    <table id="runs_info_table"></table>
+  </div>
+  <div class="split right">
+    <div id="playback_title">-</div>
+    <button id="stop">Stop</button>
+    <button id="play">Play</button>
+    <button id="step">Step +1</button>
+    <button id="step10">Step +10</button>
+    <button id="step100">Step +100</button>
+    <button id="step1000">Step +1000</button>
+    <button id="reset">Reset</button>
+    <span id="frame">Frame: -/-</span>
+    <br>
+    <p>Jump to:
+    <input id="jump_to" type="int" placeholder="Jump to frame."/></p>
+    <p>Speed factor (e.g. 1x):
+    <input id="speed" type="float" value="1" placeholder="Speed."/></p>
+    <p>Use fixed frame delay (in ms):
+    <input id="frame_delay" type="int" value="0" placeholder="Delay."/>
+    Set to zero to use default.</p>
+    <p>Skip until action (use its charcode, e.g. 72):
+    <input id="target_action" type="int" placeholder="Action."/>
+    <button id="skip_until_action">Next</button></p>
+    <div id="terminal_div"></div>
+    <div id="last_action">== Latest agent action ==</div>
+    <br>
+    <div>
+      == Actions distribution ==
+      <div id="actions_distribution"></div>
+    </div>
+  </div>
+</body>
+</html>

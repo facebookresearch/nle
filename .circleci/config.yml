@@ -1,0 +1,213 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+version: 2.1
+
+# -------------------------------------------------------------------------------------
+# Environments where we run our jobs
+# -------------------------------------------------------------------------------------
+
+executors:
+  cpu-linux-py37:
+    docker:
+      - image: cimg/base:stable
+
+# -------------------------------------------------------------------------------------
+# Commands
+# -------------------------------------------------------------------------------------
+
+commands:
+  fix-git:
+    # circleci normally sets master to the head of the checked branch
+    # which is not great, since we use `origin/master` for file diffs.
+    description: Moves checked master branch to origin/master
+    steps:
+      - run:
+          name: Fix repo's master branch
+          command: |
+            ( [[ "$CIRCLE_BRANCH" != "master" ]] && git branch -f master origin/master ) || true
+
+  setup-conda:
+    description: Sets up a conda environment
+    parameters:
+      python_version:
+        type: string
+        default: "3.7"
+    steps:
+      - run:
+          name: Set up nle conda env
+          working_directory: ~
+          command: |
+            wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+            bash ~/miniconda.sh -b -p $HOME/miniconda
+            eval "$($HOME/miniconda/bin/conda shell.bash hook)"
+            conda deactivate
+            conda create -n nle python=<< parameters.python_version >>
+            conda activate nle
+            conda install -y zeromq flatbuffers
+            conda install -y -c conda-forge cppzmq
+            python --version
+            echo ". /home/circleci/miniconda/etc/profile.d/conda.sh" >> $BASH_ENV
+
+  install-build-deps:
+    description: Installs nethack deps
+    steps:
+      - run:
+          name: Install build deps
+          command: |
+            sudo apt-get install software-properties-common
+            sudo apt-get update -y
+            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison
+
+  make-install-nethack:
+    description: Builds and installs nethack (by itself)
+    steps:
+      - run:
+          name: Build and install nethack
+          command: |
+            conda activate nle
+            cd sys/unix
+            sh setup.sh hints/linux
+            cd ../..
+            export PREFIX=$CONDA_PREFIX
+            export LIBRARY_PATH=$PREFIX/lib:$LIBRARY_PATH
+            export CPATH=$PREFIX/include:$CPATH
+            PREFIX=$PREFIX make -j
+            PREFIX=$PREFIX make install
+
+  pip-install-nle:
+    description: Installs NLE and its dependencies
+    steps:
+      - run:
+          name: Install NLE & deps
+          command: |
+            conda activate nle
+            pip install . -vv
+            pip install -e .
+
+# -------------------------------------------------------------------------------------
+# Actual jobs
+# -------------------------------------------------------------------------------------
+
+jobs:
+  install-nethack:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - make-install-nethack
+
+  install-nle:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - pip-install-nle
+
+  test-nle:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - pip-install-nle
+      - run:
+          name: Install test deps
+          command: |
+            conda activate nle
+            pip install ".[dev]"
+      - run:
+          name: Run NLE tests
+          command: |
+            conda activate nle
+            python -m pytest nle/tests --basetemp=$HOME/tests_data
+      - store_artifacts:
+          path: /home/circleci/tests_data
+          name: nle-tests-data
+
+  build-docs:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - pip-install-nle
+      - run:
+          name: Install build deps
+          command: |
+            conda activate nle
+            pip install ".[dev]"
+            pip install ".[agent]"
+      - run:
+          name: Buid the html docs
+          command: |
+            conda activate nle
+            cd doc/nle && make html
+
+  build-and-test-sdist:
+    executor: cpu-linux-py37
+    steps:
+      - checkout
+      - fix-git
+      - setup-conda
+      - install-build-deps
+      - run:
+          name: init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = __token__" >> ~/.pypirc
+            echo -e "password = $PYPI_API_TOKEN" >> ~/.pypirc
+      - run:
+          name: Build nle sdist
+          command: |
+            conda activate nle
+            export NLE_RELEASE_BUILD=1
+            python setup.py sdist
+      - run:
+          name: Install nle sdist
+          command: |
+            conda activate nle
+            SDISTNAME=`ls dist/`
+            MODE="[all]"
+            pip install "dist/$SDISTNAME$MODE" --progress-bar off
+      - run:
+          name: Run NLE tests
+          command: |
+            conda activate nle
+            # cd back such that we are sure we are using sdist package
+            cd ..
+            python -m pytest project/nle/tests --basetemp=$HOME/tests_data_sdist
+      - store_artifacts:
+          path: /home/circleci/tests_data_sdist
+          name: nle-tests-data-sdist
+
+
+# -------------------------------------------------------------------------------------
+# Workflows
+# -------------------------------------------------------------------------------------
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - build-docs
+      - install-nethack
+      - test-nle
+      - build-and-test-sdist
+  nightly:
+    jobs:
+      - build-docs
+      - install-nethack
+      - test-nle
+      - build-and-test-sdist
+    triggers:
+      - schedule:
+          cron: "0 6 * * *" # 6am UTC
+          filters:
+            branches:
+              only:
+                - master
