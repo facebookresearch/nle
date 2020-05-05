@@ -8,7 +8,8 @@ on:
     - cron: "0 6,18 * * *"
 
 jobs:
-  test_package:
+  test_install:
+    name: Test install
     runs-on: macos-latest
     strategy:
       matrix:
