@@ -3,7 +3,7 @@ name: Test docker
 
 on:
   schedule:
-    - cron" "0 6,18 * * *"
+    - cron: "0 6,18 * * *"
   push:
     paths:
       - "docker/Dockerfile"
