@@ -22,42 +22,29 @@ wiki](https://nethackwiki.com).
 ![Example of an agent running on NLE](dat/nle/example_run.gif)
 
 
-## NetHack Gym Environment
+# Getting started
 
 Starting with NLE environments is extremely simple, provided one is familiar
-with other gym environments:
-
-```python
->>> import gym
->>> import nle
->>> env = gym.make("NetHackScore-v0")
->>> env.reset()  # each reset generates a new dungeon
->>> env.step(1)  # move agent '@' north
->>> env.render()
-```
+with other gym / RL environments.
 
 
 ## Installation
 
-NLE requires `python>=3.7`, `libzmq`, and `flatbuffers` to be installed and
-available to the system. The easiest way of getting them is to use Conda:
+NLE requires `python>=3.7`, `libzmq`, `flatbuffers`, and some NetHack
+dependencies (e.g. `libncurses`) to be installed and available both when
+building the package, and at runtime.
 
-```bash
-$ conda create -n nle python=3.7
-$ conda activate nle
-$ conda install zeromq flatbuffers
-$ pip install nle
-```
 
 On **MacOS**, one can use `Homebrew` as follows:
 
 ``` bash
-$ brew install flatbuffers zeromq
+$ brew install ncurses flatbuffers zeromq
 $ sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
      /usr/local/include
 ```
 
-On plain **Ubuntu 18.04** `flatbuffers` can be installed by doing:
+On a plain **Ubuntu 18.04** distribution, `flatbuffers` and other dependencies
+can be installed by doing:
 
 ```bash
 # zmq, python, and build deps
@@ -72,7 +59,18 @@ $ make
 $ sudo make install
 ```
 
-If you want to extend / develop NLE, please also setup the system as follows:
+Afterwards it's a matter of setting up your environment. We advise using a conda
+environment for this:
+
+```bash
+$ conda create -n nle python=3.8
+$ conda activate nle
+$ conda install cppzmq  # might not be necessary on some systems
+$ pip install nle
+```
+
+
+NOTE: If you want to extend / develop NLE, please install the package as follows:
 
 ``` bash
 $ git clone git@github.com:facebookresearch/nle
@@ -83,8 +81,19 @@ $ pre-commit install
 
 ## Trying it out
 
-NLE comes with a few scripts that allow to get some environment rollouts, and
-play with the action space:
+After installation, one can try out any of the provided tasks as follows:
+
+```python
+>>> import gym
+>>> import nle
+>>> env = gym.make("NetHackScore-v0")
+>>> env.reset()  # each reset generates a new dungeon
+>>> env.step(1)  # move agent '@' north
+>>> env.render()
+```
+
+NLE also comes with a few scripts that allow to get some environment rollouts,
+and play with the action space:
 
 ```bash
 # Play NetHackStaircase-v0 as a human
@@ -149,7 +158,7 @@ $ python -m nle.scripts.plot
 ```
 
 
-## Related Environments
+# Related Environments
 - [gym\_nethack](http://campbelljc.com/research/gym_nethack/)
 - [rogueinabox](https://github.com/rogueinabox/rogueinabox)
 - [rogue-gym](https://github.com/kngwyu/rogue-gym)
@@ -160,7 +169,10 @@ $ python -m nle.scripts.plot
 - [Obstacle Tower](https://github.com/Unity-Technologies/obstacle-tower-env)
 
 
-## Citation
+# Citation
+
+If you use NLE in any of your work, please cite:
+
 ```
 @inproceedings{kuettler2020nethack,
   title={{The NetHack Learning Environment}},
