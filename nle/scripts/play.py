@@ -38,7 +38,7 @@ def get_action(env, action_mode, is_raw_env):
         if not is_raw_env:
             action = env.action_space.sample()
         else:
-            action = random.choice(env._actions)
+            action = random.choice(nle.env.base.FULL_ACTIONS)
     elif action_mode == "human":
         while True:
             with no_echo():
@@ -59,7 +59,6 @@ def get_action(env, action_mode, is_raw_env):
 
 
 def play(env_name, play_mode, ngames, max_steps, seeds, no_clear, no_render):
-    del max_steps  # TODO
     is_raw_env = env_name == "nethack"
 
     if is_raw_env:
@@ -96,7 +95,7 @@ def play(env_name, play_mode, ngames, max_steps, seeds, no_clear, no_render):
                 )
                 env.render()
             else:
-                print("Available actions:", env._actions)
+                print("Available actions:", nle.env.base.FULL_ACTIONS)
                 print("Previous actions:", action)
                 print_message.print_message(obs)
 
@@ -111,6 +110,7 @@ def play(env_name, play_mode, ngames, max_steps, seeds, no_clear, no_render):
             obs, reward, done, info = env.step(action)
         steps += 1
 
+        done = done or steps >= max_steps
         if not done:
             continue
 
