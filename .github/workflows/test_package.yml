@@ -2,8 +2,6 @@
 name: Test nle PyPI package
 
 on:
-  # this needs to be removed when merging into master
-  pull_request:
   schedule:
     - cron: "0 6,18 * * *"
 
