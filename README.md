@@ -81,6 +81,11 @@ $ pre-commit install
 ```
 
 
+## Docker
+
+We have provided some docker images. Please see the [relevant README](docker/README.md).
+
+
 ## Trying it out
 
 NLE comes with a few scripts that allow to get some environment rollouts, and
