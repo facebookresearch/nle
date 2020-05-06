@@ -1,0 +1,26 @@
+---
+name: Test docker
+
+on:
+  schedule:
+    - cron" "0 6,18 * * *"
+  push:
+    paths:
+      - "docker/Dockerfile"
+  pull_request:
+    paths:
+      - "docker/Dockerfile"
+
+
+jobs:
+  build_image:
+    name: "Build image"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: |
+        SHORT_SHA=$(git rev-parse --short=7 ${{ github.sha }})
+        docker build -f docker/Dockerfile . -t nle:$SHORT_SHA
+...
