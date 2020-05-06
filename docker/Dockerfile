@@ -1,5 +1,6 @@
-FROM ubuntu:20.04
+FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
 
+ARG PYTHON_VERSION=3.8
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -yq git build-essential python3-pip
@@ -13,7 +14,11 @@ RUN apt-get update && apt-get install -y \
     clang \
     bison \
     flex \
+    libncurses-dev \
     libzmq3-dev
+
+
+WORKDIR /opt/flatbuffers
 
 RUN curl -fSL "https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz" -o flatbuffers.tar.gz \
     && tar xzf flatbuffers.tar.gz \
@@ -26,10 +31,22 @@ RUN curl -fSL "https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz" -o 
     && make install \
     && cp src/idl_parser.cpp src/idl_gen_text.cpp /usr/local/include/flatbuffers
 
-RUN python3 -m pip install --upgrade pip
 
-COPY . /nle
+WORKDIR /opt/conda_setup
 
-RUN cd /nle && pip3 install -e ".[all]"
+RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+     chmod +x miniconda.sh && \
+     ./miniconda.sh -b -p /opt/conda && \
+     /opt/conda/bin/conda install -y python=$PYTHON_VERSION && \
+     /opt/conda/bin/conda clean -ya
+ENV PATH /opt/conda/bin:$PATH
 
-WORKDIR '/nle'
+
+WORKDIR /opt/nle
+COPY . .
+
+RUN python -m pip install --upgrade pip
+
+RUN pip3 install ".[all]"
+
+WORKDIR '/workspace'
