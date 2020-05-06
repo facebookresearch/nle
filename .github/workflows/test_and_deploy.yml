@@ -35,18 +35,17 @@ jobs:
     - name: Install from repo in test mode
       run: "pip install -e '.[dev]'"
     - name: Run tests
-      run: "python -m pytest nle/tests --basetemp=$HOME/nle_test_data"
+      run: "python -m pytest nle/tests --basetemp=nle_test_data"
     - name: Compress test output dir
       if: ${{ always() }}
       run: |
-        echo "::set-env name=SHORT_SHA::$(git rev-parse --short \"$GITHUB_SHA\")"
-        tar -zcvf nle_test_ci_$SHORT_SHA.tar.gz $HOME/nle_test_data
+        tar -zcvf nle_test_ci_${{ github.sha }}.tar.gz nle_test_data
     - name: Save test results
       if: ${{ always() }}
       uses: actions/upload-artifact@v1
       with:
         name: nle_test_data_${{ matrix.python-version }}
-        path: ${{ env.HOME }}/nle_test_ci_${{ env.SHORT_SHA }}.tar.gz
+        path: nle_test_ci_${{ github.sha }}.tar.gz
 
   test_sdist:
     name: Test sdist on MacOS w/ Py3.8
@@ -74,22 +73,22 @@ jobs:
         SDISTNAME=$(ls dist/)
         MODE="[all]"
         pip install "dist/$SDISTNAME$MODE"
-    - name: Run tests
+    - name: Run tests outside repo dir
       run: |
         REPONAME=$(basename $PWD)
-        cd ..
-        python -m pytest $REPONAME/nle/tests --basetemp=$HOME/nle_test_data
+        pushd ..
+        python -m pytest $REPONAME/nle/tests --basetemp=$REPONAME/nle_test_data
+        popd
     - name: Compress test output dir
       if: ${{ always() }}
       run: |
-        echo "::set-env name=SHORT_SHA::$(git rev-parse --short \"$GITHUB_SHA\")"
-        tar -zcvf nle_test_ci_$SHORT_SHA.tar.gz nle_test_data
+        tar -zcvf nle_test_ci_${{ github.sha }}.tar.gz nle_test_data
     - name: Save test results
       if: ${{ always() }}
       uses: actions/upload-artifact@v1
       with:
         name: nle_test_data_sdist
-        path: ${{ env.HOME }}/nle_test_ci_${{ env.SHORT_SHA }}.tar.gz
+        path: nle_test_ci_${{ github.sha }}.tar.gz
 
 
   # deploy_sdist:
