@@ -1,0 +1,33 @@
+---
+name: Test nle PyPI package
+
+on:
+  schedule:
+    - cron: "0 6,18 * * *"
+
+jobs:
+  test_install:
+    name: Test install
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: ["3.5", "3.6", "3.7", "3.8"]
+      fail-fast: false
+    steps:
+    - name: Setup Python ${{ matrix.python-version }} env
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Ensure latest pip & wheel
+      run: "python -m pip install -q --upgrade pip wheel"
+    - name: Install dependencies
+      run: |
+        brew install zeromq flatbuffers
+        sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
+          /usr/local/include
+    - name: Clone repo
+      uses: actions/checkout@v2
+    - name: Install from repo in test mode
+      run: "pip install nle"
+    - name: Check nethack is installed
+      run: "type -p nethack"
