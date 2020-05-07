@@ -6,10 +6,10 @@ on:
     - cron: "0 6,18 * * *"
   push:
     paths:
-      - "docker/Dockerfile"
+      - "docker/Dockerfile*"
   pull_request:
     paths:
-      - "docker/Dockerfile"
+      - "docker/Dockerfile*"
 
 
 jobs:
