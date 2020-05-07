@@ -13,8 +13,8 @@ on:
 
 
 jobs:
-  build_image:
-    name: "Build standard image"
+  build_bionic:
+    name: "Build bionic image"
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +24,7 @@ jobs:
         SHORT_SHA=$(git rev-parse --short=7 ${{ github.sha }})
         docker build -f docker/Dockerfile-bionic . -t nle:bionic-$SHORT_SHA
 
-  build_image:
+  build_xenial:
     name: "Build xenial image"
     runs-on: ubuntu-latest
 
