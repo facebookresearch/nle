@@ -22,7 +22,7 @@ jobs:
     - name: Build image
       run: |
         SHORT_SHA=$(git rev-parse --short=7 ${{ github.sha }})
-        docker build -f docker/Dockerfile . -t nle:$SHORT_SHA
+        docker build -f docker/Dockerfile-bionic . -t nle:bionic-$SHORT_SHA
 
   build_image:
     name: "Build xenial image"

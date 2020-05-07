@@ -12,10 +12,18 @@ $ docker run --rm -it fairnle/nle:stable python  # or bash
 # Then you can simply use the nle package as normal
 ```
 
-The repository also contains one image per released version of `nle`, with the
-following template: `fairnle/nle:vX.Y.Z` (e.g. `fairnle/nle:v0.1.0`). The
-repository is installed inside a conda distribution, and can be found in
+The git repository is installed inside a conda distribution, and can be found in
 `/opt/nle` inside the images.
+
+The DockerHub repository also contains pre-built images per each released
+version of `nle`, with a specific template --
+`fairnle/nle:<nle-version>-<type>`. The only relevant exception is
+`fairnle/nle:stable`, which refers to the image built through
+`docker/Dockerfile-bionic` with the latest released version of `nle` (which you
+should probably be using, if you are getting started).
+
+Currently available types are `bionic`, and `xenial`, corresponding to the
+respective dockerfiles in `docker/`. Versions are in the form of `X.Y.Z`.
 
 
 # Building images locally
@@ -24,5 +32,5 @@ To build any of them (e.g. the main `Dockerfile`) do:
 
 ```bash
 # in the repository root
-$ DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile . -t nle_test
+$ docker build -f docker/Dockerfile-bionic . -t nle:test-bionic
 ```
