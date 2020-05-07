@@ -79,6 +79,11 @@ $ pre-commit install
 ```
 
 
+## Docker
+
+We have provided some docker images. Please see the [relevant README](docker/README.md).
+
+
 ## Trying it out
 
 After installation, one can try out any of the provided tasks as follows:
