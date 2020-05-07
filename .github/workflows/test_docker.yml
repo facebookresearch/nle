@@ -14,13 +14,25 @@ on:
 
 jobs:
   build_image:
-    name: "Build image"
+    name: "Build standard image"
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build docker image
+    - name: Build image
       run: |
         SHORT_SHA=$(git rev-parse --short=7 ${{ github.sha }})
         docker build -f docker/Dockerfile . -t nle:$SHORT_SHA
+
+  build_image:
+    name: "Build xenial image"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build image
+      run: |
+        SHORT_SHA=$(git rev-parse --short=7 ${{ github.sha }})
+        docker build -f docker/Dockerfile-xenial . -t nle:xenial-$SHORT_SHA
+
 ...
