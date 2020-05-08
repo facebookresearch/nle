@@ -169,6 +169,7 @@ $ python -m nle.scripts.plot
 - [rogue-gym](https://github.com/kngwyu/rogue-gym)
 - [MiniGrid](https://github.com/maximecb/gym-minigrid)
 - [CoinRun](https://github.com/openai/coinrun)
+- [MineRL](http://minerl.io/docs)
 - [Project Malmo](https://www.microsoft.com/en-us/research/project/project-malmo/)
 - [OpenAI Procgen Benchmark](https://openai.com/blog/procgen-benchmark/)
 - [Obstacle Tower](https://github.com/Unity-Technologies/obstacle-tower-env)
