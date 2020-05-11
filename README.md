@@ -10,7 +10,7 @@ tasks that function as a first step to evaluate agents on this new environment.
 NetHack is one of the oldest and arguably most impactful videogames in history,
 as well as being one of the hardest roguelikes currently being played by humans.
 It is procedurally generated, rich in entities and dynamics, and overall an
-extremely challing environment for current state-of-the-art RL agents, while
+extremely challenging environment for current state-of-the-art RL agents, while
 being much cheaper to run compared to other challenging testbeds. Through NLE,
 we wish to establish NetHack as one of the next challenges for research in
 decision making and machine learning.
