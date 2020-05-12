@@ -24,7 +24,7 @@ import timeit
 import traceback
 
 # Necessary for multithreading.
-os.environ["OMP_NUM_THREADS"] = "1"  # noqa: E402
+os.environ["OMP_NUM_THREADS"] = "1"
 
 try:
     import torch
@@ -34,13 +34,13 @@ try:
 except ImportError:
     logging.exception(
         "PyTorch not found. Please install the agent dependencies with "
-        '`pip install ".[agent]"`'
+        '`pip install "nle[agent]"`'
     )
 
-import gym
+import gym  # noqa: E402
 
-import nle  # noqa: F401
-from nle.agent import vtrace
+import nle  # noqa: F401, E402
+from nle.agent import vtrace  # noqa: E402
 
 
 # yapf: disable
