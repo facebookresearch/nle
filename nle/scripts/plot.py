@@ -40,7 +40,7 @@ python -m nle.scripts.plot path/to/multiple_runs --no_legend
 Plot all runs matching a directory prefix, zooming in on a specific prefix.
 Note that negative ranges need a little help on the command line.
 ```
-python -m nle.scripts.plot path/to/multiple_runs/2020-05 --xrange 0,1e8 --yrange='-10,80'
+python -m nle.scripts.plot path/to/multiple_runs/2020 --xrange 0,1e8 --yrange='-10,80'
 ```
 """
 
