@@ -655,7 +655,7 @@ class NLE(gym.Env):
             else:
                 call_stack = _get_call_stack(response)
                 if b"yn_function" in call_stack or b"getlin" in call_stack:
-                    if b"eat" in msg or b"attack" in msg:
+                    if b"eat" in msg or b"attack" in msg or b"direction?" in msg:
                         break
                     response, done, info = self.env.step(ASCII_ESC)
                 else:
