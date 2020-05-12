@@ -15,7 +15,7 @@
 """
 Script for plotting results from an NLE agent's logs.tsv file.
 
-Examples of using the plotting tool.
+Some examples of using the plotting tool:
 
 Plot the most recent run (symlinked at ~/torchbeast/latest by default).
 ```
