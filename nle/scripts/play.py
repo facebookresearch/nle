@@ -47,7 +47,10 @@ def get_action(env, action_mode, is_raw_env):
                 print("Received exit code {}. Aborting.".format(ch))
                 return None
             try:
-                action = env._actions.index(ch)
+                if is_raw_env:
+                    action = ch
+                else:
+                    action = env._actions.index(ch)
                 break
             except ValueError:
                 print(
@@ -63,7 +66,7 @@ def play(env_name, play_mode, ngames, max_steps, seeds, no_clear, no_render):
 
     if is_raw_env:
         # TODO save data somewhere reasonable
-        env = nethack.NetHack(archivefile="./nle_data/play_data.zip")
+        env = nethack.NetHack(archivefile="./play_data.zip")
     else:
         env = gym.make(env_name)
         if seeds is not None:
