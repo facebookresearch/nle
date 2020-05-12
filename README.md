@@ -1,4 +1,4 @@
-![NetHack Learning Environment (NLE)](dat/nle/logo.png)
+![NetHack Learning Environment (NLE)](https://github.com/facebookresearch/nle/raw/master/dat/nle/logo.png)
 
 --------------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ You can read more about NetHack in its [original README](./README.nh), at
 [nethack.org](https://nethack.org/), and on the [NetHack
 wiki](https://nethackwiki.com).
 
-![Example of an agent running on NLE](dat/nle/example_run.gif)
+![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/master/dat/nle/example_run.gif)
 
 
 # Getting started
