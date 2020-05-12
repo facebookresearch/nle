@@ -257,10 +257,9 @@ class NLE(gym.Env):
             User may redefine this class in subtasks to handle / categorize
             more terminal states.
 
-            It is highly advised that, in such cases, 0 and 1 remain defined
-            respectively as RUNNING and DEATH; redefining their semantics may
-            break some logic elsewhere in the base environment. See
-            `nle.env.tasks` for examples on how to do this right.
+            It is highly advised that, in such cases, the enums already defined
+            in this object are replicated in some way. See `nle.env.tasks` for
+            examples on how to do this right.
         """
 
         ABORTED = -1
@@ -457,7 +456,12 @@ class NLE(gym.Env):
         last_response = self.response
         self.response = response
 
-        end_status = self.StepStatus(done or self._is_episode_end(response))
+        if self._steps >= self._max_episode_steps:
+            end_status = self.StepStatus.ABORTED
+        else:
+            end_status = self._is_episode_end(response)
+        end_status = self.StepStatus(done or end_status)
+
         reward = float(self._reward_fn(last_response, response, end_status))
 
         if end_status and not done:
@@ -619,8 +623,6 @@ class NLE(gym.Env):
 
         The return value will be stored into info["end_status"].
         """
-        if self._steps >= self._max_episode_steps:
-            return self.StepStatus.ABORTED
         return self.StepStatus.RUNNING
 
     def _reward_fn(self, last_response, response, end_status):
