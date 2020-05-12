@@ -12,11 +12,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Script for plotting results from an NLE agent's logs.tsv file.
+
+Some examples of using the plotting tool:
+
+Plot the most recent run (symlinked at ~/torchbeast/latest by default).
+```
+python -m nle.scripts.plot
+```
+
+Plot a specific run using a rolling window of size 10 (if window > 1, shows error bars).
+```
+python -m nle.scripts.plot path/to/run/logs.tsv --window 10
+```
+
+Plot a specific run to a specific window size. (PATH/logs.tsv is found automatically)
+```
+python -m nle.scripts.plot path/to/run -x 100 -y 50
+```
+
+Plot all runs under a specific directory without a legend matching plots to runs.
+```
+python -m nle.scripts.plot path/to/multiple_runs --no_legend
+```
+
+Plot all runs matching a directory prefix, zooming in on a specific prefix.
+Note that negative ranges need a little help on the command line.
+```
+python -m nle.scripts.plot path/to/multiple_runs/2020 --xrange 0,1e8 --yrange='-10,80'
+```
+"""
 
 import argparse
 import gnuplotlib as gp
 import numpy as np
 import pandas as pd
+import random
 
 from pathlib import Path
 
@@ -64,12 +96,18 @@ parser.add_argument(
     default=None,
     help="float,float. range of y values to plot. overrides automatic zoom for y axis.",
 )
+parser.add_argument(
+    "--shuffle",
+    action="store_true",
+    help="shuffles the order of plotting if rendering multiple curves.",
+)
 
 
-def plot_single_ascii(target, width, height, window, xrange=None, yrange=None):
+def plot_single_ascii(target, width, height, window=-1, xrange=None, yrange=None):
     """
     Plot the target file using the specified width and height.
     If window > 0, use it to specify the window size for rolling averages.
+    xrange and yrange are used to specify the zoom level of the plot.
     """
     print("plotting %s" % str(target))
     df = pd.read_csv(target, sep="\t")
@@ -97,16 +135,12 @@ def plot_single_ascii(target, width, height, window, xrange=None, yrange=None):
     gp.plot(steps, returns, stderrs, **plot_options)
 
 
-def plot_multiple_ascii(
-    target, width, height, window, xrange=None, yrange=None, no_legend=False
-):
+def collect_logs(target):
     """
-    Plot files under the target path using the specified width and height.
-    If window > 0, use it to specify the window size for rolling averages.
-    Use xrange and yrange to override the autozoom to look at specific parts
-    of the plot.
-
-    Set no_legend to true to save the visual space for the plot.
+    Collect results from log files at the target directory.
+    Can be fully specified or a partial match, for example:
+        full: /checkpoint/me/outputs/2020-05-12/00-02-13/
+        part: /checkpoint/me/outputs/2020-05-12/00
     """
     dfs = []
     if target.is_dir():
@@ -123,7 +157,7 @@ def plot_multiple_ascii(
                 # TODO: remove rows with nan? maybe bad as will damage rolling window
                 # df[df["mean_episode_return"] == df["mean_episode_return"]].copy()
                 if len(df) > 0:
-                    name = "    " + str(child.parent) + ":"
+                    name = str(child.parent)
                     dfs.append((name, df))
             except pd.errors.EmptyDataError:
                 # nothing to plot
@@ -133,9 +167,32 @@ def plot_multiple_ascii(
         # didn't find any valid tsv logs
         raise FileNotFoundError("No logs found under %s" % target)
 
+    return dfs
+
+
+def plot_multiple_ascii(
+    target,
+    width,
+    height,
+    window=-1,
+    xrange=None,
+    yrange=None,
+    no_legend=False,
+    shuffle=False,
+):
+    """
+    Plot files under the target path using the specified width and height.
+    If window > 0, use it to specify the window size for rolling averages.
+    xrange and yrange are used to specify the zoom level of the plot.
+    Set no_legend to true to save the visual space for the plot.
+    shuffle randomizes the order of the plot (does NOT preserve auto-assigned curve
+        labels), which can help to see a curve which otherwise is overwritten.
+    """
+    dfs = collect_logs(target)
+
     if window < 0:
         max_size = max(len(df["# Step"]) for name, df in dfs)
-        window = max_size // width + 1
+        window = 2 * max_size // width + 1
 
     datasets = []
     for name, df in dfs:
@@ -152,7 +209,7 @@ def plot_multiple_ascii(
         if no_legend:
             datasets.append((steps, rewards))
         else:
-            datasets.append((steps, rewards, dict(legend=name)))
+            datasets.append((steps, rewards, dict(legend="    " + name + ":")))
 
     errs = len(dfs) - len(datasets)
     if errs > 0:
@@ -168,7 +225,7 @@ def plot_multiple_ascii(
     plot_options["tuplesize"] = 2
     plot_options["title"] = "averaged episode return"
     plot_options["xlabel"] = "steps"
-    plot_options["set"] = "key below"
+    plot_options["set"] = "key outside below"
 
     if xrange is not None:
         plot_options["xrange"] = xrange
@@ -176,6 +233,8 @@ def plot_multiple_ascii(
     if yrange is not None:
         plot_options["yrange"] = yrange
 
+    if shuffle:
+        random.shuffle(datasets)
     gp.plot(*datasets, **plot_options)
 
 
@@ -217,6 +276,7 @@ def plot(flags):
             flags.xrange,
             flags.yrange,
             flags.no_legend,
+            flags.shuffle,
         )
 
 
