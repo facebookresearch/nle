@@ -8,6 +8,7 @@ import pprint
 import random
 import os
 import termios
+import time
 import timeit
 import tty
 
@@ -61,14 +62,31 @@ def get_action(env, action_mode, is_raw_env):
     return action
 
 
-def play(env_name, play_mode, ngames, max_steps, seeds, no_clear, no_render):
+def play(
+    env_name,
+    play_mode,
+    ngames,
+    max_steps,
+    seeds,
+    savedir,
+    archivefile,
+    no_clear,
+    no_render,
+):
     is_raw_env = env_name == "nethack"
 
     if is_raw_env:
-        # TODO save data somewhere reasonable
-        env = nethack.NetHack(archivefile="./play_data.zip")
+        if archivefile is not None:
+            os.makedirs(savedir, exist_ok=True)
+            archivefile = os.path.join(savedir, archivefile)
+        env = nethack.NetHack(archivefile=archivefile)
     else:
-        env = gym.make(env_name)
+        env = gym.make(
+            env_name,
+            savedir=savedir,
+            archivefile=archivefile,
+            max_episode_steps=max_steps,
+        )
         if seeds is not None:
             env.seed(seeds)
 
@@ -113,7 +131,10 @@ def play(env_name, play_mode, ngames, max_steps, seeds, no_clear, no_render):
             obs, reward, done, info = env.step(action)
         steps += 1
 
-        done = done or steps >= max_steps
+        # NOTE: NLE by default already supports this
+        if is_raw_env:
+            done = done or steps >= max_steps
+
         if not done:
             continue
 
@@ -163,14 +184,14 @@ def main():
         type=str,
         default="human",
         choices=["human", "random"],
-        help="Control mode.",
+        help="Control mode. Defaults to 'human'.",
     )
     parser.add_argument(
         "-e",
         "--env",
         type=str,
         default="NetHackStaircase-v0",
-        help="Gym environment spec.",
+        help="Gym environment spec. Defaults to 'NetHackStaircase-v0'.",
     )
     parser.add_argument(
         "-n",
@@ -192,7 +213,22 @@ def main():
         help="Seeds to send to NetHack. Can be a dict or int. "
         "Defaults to None (no seeding).",
     )
-
+    parser.add_argument(
+        "--savedir",
+        default="nle_data/play_data",
+        help="Directory path where data will be saved. "
+        "Defaults to 'nle_data/play_data'.",
+    )
+    parser.add_argument(
+        "--archivefile",
+        default="args",
+        help=(
+            "Namefile of the archive. If provided with an empty string, "
+            "archives won't be saved. Defaults to 'args', which means "
+            "that the archivefile will be named after the arguments of "
+            "the script (including default values, whenever used)."
+        ),
+    )
     parser.add_argument("--no-clear", action="store_true", help="Disables tty clears.")
     parser.add_argument(
         "--no-render", action="store_true", help="Disables env.render()."
@@ -211,12 +247,21 @@ def main():
             # to handle both int and dicts
             flags.seeds = ast.literal_eval(flags.seeds)
 
+        if flags.archivefile == "":
+            flags.archivefile = None
+        elif flags.archivefile == "args":
+            flags.archivefile = "{}_{}_{}.zip".format(
+                time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env
+            )
+
         play(
             flags.env,
             flags.mode,
             flags.ngames,
             flags.max_steps,
             flags.seeds,
+            flags.savedir,
+            flags.archivefile,
             flags.no_clear,
             flags.no_render,
         )
