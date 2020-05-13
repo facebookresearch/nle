@@ -65,7 +65,7 @@ commands:
           command: |
             conda activate nle
             cd sys/unix
-            sh setup.sh hints/linux
+            sh setup.sh hints/linux-nle
             cd ../..
             export PREFIX=$CONDA_PREFIX
             export LIBRARY_PATH=$PREFIX/lib:$LIBRARY_PATH
