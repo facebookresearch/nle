@@ -13,7 +13,7 @@ rm -v $ENVPATH/bin/nethack
 
 pushd sys/unix
 
-sh setup.sh hints/macosx
+sh setup.sh hints/macosx-nle
 
 popd
 

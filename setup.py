@@ -30,10 +30,9 @@ import distutils.command.build
 
 def make_install_nethack():
     if sys.platform == "darwin":
-        hints = "hints/macosx"
-        setupcmd = ["sh", "setup.sh", "hints/macosx"]
+        hints = "hints/macosx-nle"
     else:
-        hints = "hints/linux"
+        hints = "hints/linux-nle"
     setupcmd = ["sh", "setup.sh", hints]
 
     if subprocess.call(setupcmd, cwd="sys/unix") != 0:
