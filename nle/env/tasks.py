@@ -101,6 +101,7 @@ class NetHackStaircase(NetHackScore):
     """
 
     class StepStatus(enum.IntEnum):
+        ABORTED = -1
         RUNNING = 0
         DEATH = 1
         TASK_SUCCESSFUL = 2
