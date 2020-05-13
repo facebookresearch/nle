@@ -1,7 +1,6 @@
 #
 # NetHack 3.6  macosx $NHDT-Date: 1566346603 2019/08/21 00:16:43 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.20 $
 # Copyright (c) Kenneth Lorber, Kensington, Maryland, 2007.
-# Copyright (c) Facebook, Inc. and its affiliates.
 # NetHack may be freely redistributed.  See license for details.
 #
 #-PRE
@@ -17,7 +16,6 @@
 WANT_WIN_TTY=1
 #WANT_WIN_X11=1
 #WANT_WIN_QT=1
-WANT_WIN_RL=1
 
 # 1a. What is the default window system?
 WANT_DEFAULT=tty
@@ -55,7 +53,6 @@ CC=gcc -Wall -Wextra -Wno-missing-field-initializers -Wimplicit -Wreturn-type -W
 
 # XXX -g vs -O should go here, -I../include goes in the makefile
 CFLAGS=-g -I../include
-CXXFLAGS=$(CFLAGS) -I.
 CFLAGS+=-DNOCLIPPING -DNOMAIL -DNOTPARMDECL -DHACKDIR=\"$(HACKDIR)\"
 CFLAGS+= -DDEFAULT_WINDOW_SYS=\"$(WANT_DEFAULT)\" -DDLB
 
@@ -76,20 +73,6 @@ LFLAGS=-L/usr/X11R6/lib
 VARDATND = x11tiles NetHack.ad pet_mark.xbm pilemark.xbm
 POSTINSTALL= bdftopcf win/X11/nh10.bdf > $(INSTDIR)/nh10.pcf; ( cd $(INSTDIR); mkfontdir -x .lev )
 CFLAGS += -DX11_GRAPHICS
-endif
-
-ifdef WANT_WIN_RL
-#CFLAGS += -URL_GRAPHICS -DRL_GRAPHICS -DNOUSER_SOUNDS
-CXXFLAGS += -std=c++14 -stdlib=libc++ -mmacosx-version-min=10.7
-LINK=g++
-WINSRC += $(WINRLSRC)
-WINLIB += $(WINRLLIB)
-WINOBJ += $(WINRLOBJ)
-ifdef WANT_WIN_TTY
-#WINOBJ += $(WINTTYOBJ)
-endif
-else
-LINK=$(CC)
 endif
 
 ifdef WANT_WIN_QT
@@ -137,16 +120,9 @@ PREINSTALL= . sys/unix/hints/macosx.sh user $(GAMEUID); . sys/unix/hints/macosx.
 POSTINSTALL= touch $(INSTDIR)/sysconf; $(CHOWN) $(GAMEUID) $(INSTDIR)/sysconf; $(CHGRP) $(GAMEGRP) $(INSTDIR)/sysconf; chmod $(VARFILEPERM) $(INSTDIR)/sysconf
 CFLAGS+=-DSYSCF -DSYSCF_FILE=\"$(HACKDIR)/sysconf\" -DSECURE
 else
-
-# Normally defined by setup.py (or manually by the user)
-ifdef PREFIX
-HACKDIR=$(PREFIX)/lib/games/nethack
-else
 PREFIX:=$(wildcard ~)
-HACKDIR=$(PREFIX)/nethackdir
-endif
-
 SHELLDIR=$(PREFIX)/bin
+HACKDIR=$(PREFIX)/nethackdir
 INSTDIR=$(HACKDIR)
 VARDIR=$(HACKDIR)
 CHOWN=true
@@ -154,7 +130,6 @@ CHGRP=true
 GAMEPERM = 0700
 VARFILEPERM = 0600
 VARDIRPERM = 0700
-POSTINSTALL= touch $(INSTDIR)/sysconf
 ifdef WANT_WIN_X11
 # XXX install nethack.rc as ~/.nethackrc if no ~/.nethackrc exists
 endif
