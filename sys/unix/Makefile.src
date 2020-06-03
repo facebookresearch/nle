@@ -1,6 +1,7 @@
 #	NetHack Makefile.
 # NetHack 3.6  Makefile.src    $NHDT-Date: 1588776919 2020/05/06 14:55:19 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.97 $
 # Copyright (c) 2018 by Pasi Kallinen
+# Copyright (c) Facebook, Inc. and its affiliates.
 # NetHack may be freely redistributed.  See license for details.
 
 # Root of source tree:
@@ -179,10 +180,10 @@ LIBS += -lm
 # The Qt and Be window systems are written in C++, while the rest of
 # NetHack is standard C.  If using Qt, uncomment the LINK line here to get
 # the C++ libraries linked in.
-CXXFLAGS = $(CFLAGS) -I. -I$(QTDIR)/include
+#CXXFLAGS = $(CFLAGS) -I. -I$(QTDIR)/include
 CXX ?= g++
 MOC ?= moc
-#LINK=g++
+LINK=g++
 #	For cross-compiling, eg. with gcc on Linux (see also CC further up):
 #CXX=arm-linux-g++
 #LINK=arm-linux-gcc
@@ -269,6 +270,11 @@ WINBEOBJ =
 #WINBESRC = ../win/BeOS/winbe.cpp ../win/BeOS/NHWindow.cpp \
 #	../win/BeOS/NHMenuWindow.cpp ../win/BeOS/NHMapWindow.cpp tile.c
 #WINBEOBJ = winbe.o NHWindow.o NHMenuWindow.o NHMapWindow.o tile.o
+
+# Files for a RL port
+WINRLSRC = ../win/rl/winrl.cc
+WINRLOBJ = winrl.o
+
 #
 #
 #WINSRC = $(WINTTYSRC)
@@ -322,6 +328,9 @@ WINGEMLIB = -le_gem -lgem
 #
 # libraries for BeOS
 WINBELIB = -lbe
+#
+# libraries for RL
+WINRLLIB = -lzmq
 #
 # libraries for curses port
 # link with ncurses
@@ -604,6 +613,10 @@ monst.o:
 objects.o:
 	$(CC) $(CFLAGS) -c objects.c
 	@rm -f $(MAKEDEFS)
+
+# flatc invocation for RL window proc
+../win/rl/rpc_generated.h: ../win/rl/message.fbs
+	flatc -o ../win/rl --cpp --python ../win/rl/message.fbs
 
 # Qt 3 windowport meta-object-compiler output
 qt3_kde0.moc: ../win/Qt3/qt3_kde0.h
@@ -1036,6 +1049,10 @@ qt3_clust.o: ../win/Qt3/qt3_clust.cpp ../win/Qt3/qt3_clust.h
 	$(CXX) $(CXXFLAGS) -c -o $@ ../win/Qt3/qt3_clust.cpp
 qt3tableview.o: ../win/Qt3/qt3tableview.cpp ../win/Qt3/qt3tableview.h
 	$(CXX) $(CXXFLAGS) -c -o $@ ../win/Qt3/qt3tableview.cpp
+
+winrl.o : ../win/rl/winrl.cc ../win/rl/rpc_generated.h $(HACK_H)
+	$(CXX) $(CXXFLAGS) -c ../win/rl/winrl.cc
+
 wc_chainin.o: ../win/chain/wc_chainin.c $(HACK_H)
 	$(CC) $(CFLAGS) -c -o $@ ../win/chain/wc_chainin.c
 wc_chainout.o: ../win/chain/wc_chainout.c $(HACK_H)

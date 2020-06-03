@@ -7,7 +7,7 @@
 #ifdef USE_ISAAC64
 #include "isaac64.h"
 
-static int FDECL(whichrng, (int FDECL((*fn), (int))));
+/*static int FDECL(whichrng, (int FDECL((*fn), (int))));*/
 
 #if 0
 static isaac64_ctx rng_state;

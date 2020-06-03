@@ -93,10 +93,10 @@ class NetHackRL
     static void rl_curs(winid wid, int x, int y);
     static void rl_putstr(winid wid, int attr, const char *text);
     static void rl_display_file(const char *filename, BOOLEAN_P must_exist);
-    static void rl_start_menu(winid wid);
+    static void rl_start_menu(winid wid, unsigned long mbehavior);
     static void rl_add_menu(winid wid, int glyph, const ANY_P *identifier,
                             CHAR_P ch, CHAR_P gch, int attr, const char *str,
-                            BOOLEAN_P presel);
+                            unsigned int itemflags);
     static void rl_end_menu(winid wid, const char *prompt);
     static int rl_select_menu(winid wid, int how, MENU_ITEM_P **menu_list);
     static void rl_update_inventory();
@@ -139,6 +139,7 @@ class NetHackRL
         std::string str;     /* description string */
         int attr;            /* string attribute */
         boolean selected;    /* TRUE if selected by user */
+        unsigned itemflags;  /* item flags */
         char selector;       /* keyboard accelerator */
         char gselector;      /* group accelerator */
     };
@@ -185,10 +186,10 @@ class NetHackRL
 
     std::vector<rl_inventory_item> inventory_;
 
-    void start_menu_method(winid wid);
+    void start_menu_method(winid wid, unsigned long mbehavior);
     void add_menu_method(winid wid, int glyph, const anything *identifier,
                          char ch, char gch, int attr, const char *str,
-                         bool preselected);
+                         unsigned int itemflags);
     void update_inventory_method();
 
     winid create_nhwindow_method(int type);
@@ -281,11 +282,11 @@ NetHackRL::observation_message()
     auto fb_seeds = nle::fbs::Seeds(nle_seeds[0], nle_seeds[1]);
 
     auto fb_program_state = nle::fbs::ProgramState(
-        program_state.gameover, program_state.panicking,
-        program_state.exiting, program_state.in_moveloop,
-        program_state.in_impossible);
+        g.program_state.gameover, g.program_state.panicking,
+        g.program_state.exiting, g.program_state.in_moveloop,
+        g.program_state.in_impossible);
 
-    if (!program_state.in_moveloop) {
+    if (!g.program_state.in_moveloop) {
         // TODO: Consider exporting some data before in_moveloop is set.
         // (e.g., stats are up before moon phase check).
         // TODO: Different handling of end-of-game states?
@@ -421,14 +422,14 @@ NetHackRL::observation_message()
         hitpoints,           /* hitpoints         */
         max_hitpoints,       /* max_hitpoints     */
         depth(&u.uz),        /* depth             */
-        money_cnt(invent),   /* gold              */
+        money_cnt(g.invent), /* gold              */
         min(u.uen, 9999),    /* energy            */
         min(u.uenmax, 9999), /* max_energy        */
         u.uac,               /* armor_class       */
         Upolyd ? (int) mons[u.umonnum].mlevel : 0, /* monster_level     */
         u.ulevel,                                  /* experience_level  */
         u.uexp,                                    /* experience_points */
-        moves,                                     /* time              */
+        g.moves,                                   /* time              */
         u.uhs,                                     /* hunger state      */
         near_capacity()                            /* carrying_capacity */
     );
@@ -443,16 +444,16 @@ NetHackRL::observation_message()
 
     flatbuffers::Offset<flatbuffers::String> fb_killer_name = 0;
 
-    if (program_state.gameover && killer.name[0] != 0)
-        fb_killer_name = builder.CreateString(killer.name);
+    if (g.program_state.gameover && g.killer.name[0] != 0)
+        fb_killer_name = builder.CreateString(g.killer.name);
 
     auto fb_call_stack = builder.CreateVectorOfStrings(
         { win_proc_calls.begin(), win_proc_calls.end() });
 
-    // From do.c. sstairs is a potential "special" staircase.
+    // From do.c. g.sstairs is a potential "special" staircase.
     boolean stairs_down =
         ((u.ux == xdnstair && u.uy == ydnstair)
-         || (u.ux == sstairs.sx && u.uy == sstairs.sy && !sstairs.up));
+         || (u.ux == g.sstairs.sx && u.uy == g.sstairs.sy && !g.sstairs.up));
 
     auto fb_internal = nle::fbs::CreateInternal(
         builder, deepest_lev_reached(false), fb_call_stack, fb_killer_name,
@@ -497,7 +498,7 @@ NetHackRL::update_inventory_method()
     struct obj *otmp;
     inventory_.clear();
 
-    for (otmp = invent; otmp; otmp = otmp->nobj) {
+    for (otmp = g.invent; otmp; otmp = otmp->nobj) {
         inventory_.emplace_back(
             rl_inventory_item{ obj_to_glyph(otmp, rn2_on_display_rng),
                                doname(otmp), otmp->invlet, otmp->oclass,
@@ -638,10 +639,11 @@ NetHackRL::destroy_nhwindow_method(winid wid)
 }
 
 void
-NetHackRL::start_menu_method(winid wid)
+NetHackRL::start_menu_method(winid wid, unsigned long mbehavior)
 {
-    DEBUG_API("rl_start_menu(wid=" << wid << ")" << std::endl);
-    tty_start_menu(wid);
+    DEBUG_API("rl_start_menu(wid=" << wid << ", mbehavior=" << mbehavior
+                                   << ")" << std::endl);
+    tty_start_menu(wid, mbehavior);
     windows_[wid]->menu_items.clear();
 }
 
@@ -654,18 +656,20 @@ NetHackRL::add_menu_method(
     char gch,                   /* group accelerator (0 = no group) */
     int attr,                   /* attribute for string (like putstr()) */
     const char *str,            /* menu string */
-    bool preselected            /* item is marked as selected */
+    unsigned int itemflags /* itemflags such as MENU_ITEMFLAGS_SELECTED */
 )
 {
     DEBUG_API("rl_add_menu" << std::endl);
-    tty_add_menu(wid, glyph, identifier, ch, gch, attr, str, preselected);
+    tty_add_menu(wid, glyph, identifier, ch, gch, attr, str, itemflags);
 
     /* We just add the menu item here. One problem with this method is that
        we won't see any updates happening during tty_select_menu. We could
        try to inspect tty's own menu items instead? */
 
-    windows_[wid]->menu_items.emplace_back(rl_menu_item{
-        glyph, *identifier, -1L, str, attr, preselected, ch, gch });
+    boolean preselected = ((itemflags & MENU_ITEMFLAGS_SELECTED) != 0);
+    windows_[wid]->menu_items.emplace_back(
+        rl_menu_item{ glyph, *identifier, -1L, str, attr, preselected,
+                      itemflags, ch, gch });
 }
 
 void
@@ -793,20 +797,20 @@ NetHackRL::rl_display_file(const char *filename, BOOLEAN_P must_exist)
 }
 
 void
-NetHackRL::rl_start_menu(winid wid)
+NetHackRL::rl_start_menu(winid wid, unsigned long mbehavior)
 {
     ScopedStack s(win_proc_calls, "start_menu");
-    instance->start_menu_method(wid);
+    instance->start_menu_method(wid, mbehavior);
 }
 
 void
 NetHackRL::rl_add_menu(winid wid, int glyph, const ANY_P *identifier,
                        CHAR_P ch, CHAR_P gch, int attr, const char *str,
-                       BOOLEAN_P presel)
+                       unsigned int itemflags)
 {
     ScopedStack s(win_proc_calls, "add_menu");
     instance->add_menu_method(wid, glyph, identifier, ch, gch, attr, str,
-                              presel);
+                              itemflags);
 }
 
 void
