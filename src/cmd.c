@@ -1,10 +1,9 @@
-/* NetHack 3.6	cmd.c	$NHDT-Date: 1575245052 2019/12/02 00:04:12 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.350 $ */
+/* NetHack 3.6	cmd.c	$NHDT-Date: 1587317999 2020/04/19 17:39:59 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.418 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2013. */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
-#include "lev.h"
 #include "func_tab.h"
 
 /* Macros for meta and ctrl modifiers:
@@ -27,13 +26,8 @@
 #define unmeta(c) (0x7f & (c))
 
 #ifdef ALTMETA
-STATIC_VAR boolean alt_esc = FALSE;
+static boolean alt_esc = FALSE;
 #endif
-
-struct cmd Cmd = { 0 }; /* flag.h */
-
-extern const char *hu_stat[];  /* hunger status from eat.c */
-extern const char *enc_stat[]; /* encumbrance status from botl.c */
 
 #ifdef UNIX
 /*
@@ -47,10 +41,6 @@ extern const char *enc_stat[]; /* encumbrance status from botl.c */
 
 #define CMD_TRAVEL (char) 0x90
 #define CMD_CLICKLOOK (char) 0x8F
-
-#ifdef DEBUG
-extern int NDECL(wiz_debug_cmd_bury);
-#endif
 
 #ifdef DUMB /* stuff commented out in extern.h, but needed here */
 extern int NDECL(doapply);            /**/
@@ -129,102 +119,96 @@ extern int NDECL(dozap);              /**/
 extern int NDECL(doorganize);         /**/
 #endif /* DUMB */
 
-static int NDECL((*timed_occ_fn));
+static int NDECL(dosuspend_core);
+static int NDECL(dosh_core);
+static int NDECL(doherecmdmenu);
+static int NDECL(dotherecmdmenu);
+static int NDECL(doprev_message);
+static int NDECL(timed_occupation);
+static int NDECL(doextcmd);
+static int NDECL(dotravel);
+static int NDECL(doterrain);
+static int NDECL(wiz_wish);
+static int NDECL(wiz_identify);
+static int NDECL(wiz_intrinsic);
+static int NDECL(wiz_map);
+static int NDECL(wiz_makemap);
+static int NDECL(wiz_genesis);
+static int NDECL(wiz_where);
+static int NDECL(wiz_detect);
+static int NDECL(wiz_panic);
+static int NDECL(wiz_polyself);
+static int NDECL(wiz_load_lua);
+static int NDECL(wiz_level_tele);
+static int NDECL(wiz_level_change);
+static int NDECL(wiz_level_flip);
+static int NDECL(wiz_show_seenv);
+static int NDECL(wiz_show_vision);
+static int NDECL(wiz_smell);
+static int NDECL(wiz_intrinsic);
+static int NDECL(wiz_show_wmodes);
+static int NDECL(wiz_show_stats);
+static int NDECL(wiz_rumor_check);
+#ifdef DEBUG_MIGRATING_MONS
+static int NDECL(wiz_migrate_mons);
+#endif
 
-STATIC_PTR int NDECL(dosuspend_core);
-STATIC_PTR int NDECL(dosh_core);
-STATIC_PTR int NDECL(doherecmdmenu);
-STATIC_PTR int NDECL(dotherecmdmenu);
-STATIC_PTR int NDECL(doprev_message);
-STATIC_PTR int NDECL(timed_occupation);
-STATIC_PTR int NDECL(doextcmd);
-STATIC_PTR int NDECL(dotravel);
-STATIC_PTR int NDECL(doterrain);
-STATIC_PTR int NDECL(wiz_wish);
-STATIC_PTR int NDECL(wiz_identify);
-STATIC_PTR int NDECL(wiz_intrinsic);
-STATIC_PTR int NDECL(wiz_map);
-STATIC_PTR int NDECL(wiz_makemap);
-STATIC_PTR int NDECL(wiz_genesis);
-STATIC_PTR int NDECL(wiz_where);
-STATIC_PTR int NDECL(wiz_detect);
-STATIC_PTR int NDECL(wiz_panic);
-STATIC_PTR int NDECL(wiz_polyself);
-STATIC_PTR int NDECL(wiz_level_tele);
-STATIC_PTR int NDECL(wiz_level_change);
-STATIC_PTR int NDECL(wiz_show_seenv);
-STATIC_PTR int NDECL(wiz_show_vision);
-STATIC_PTR int NDECL(wiz_smell);
-STATIC_PTR int NDECL(wiz_show_wmodes);
-STATIC_DCL void NDECL(wiz_map_levltyp);
-STATIC_DCL void NDECL(wiz_levltyp_legend);
+static void NDECL(wiz_map_levltyp);
+static void NDECL(wiz_levltyp_legend);
 #if defined(__BORLANDC__) && !defined(_WIN32)
 extern void FDECL(show_borlandc_stats, (winid));
 #endif
-#ifdef DEBUG_MIGRATING_MONS
-STATIC_PTR int NDECL(wiz_migrate_mons);
-#endif
-STATIC_DCL int FDECL(size_monst, (struct monst *, BOOLEAN_P));
-STATIC_DCL int FDECL(size_obj, (struct obj *));
-STATIC_DCL void FDECL(count_obj, (struct obj *, long *, long *,
+static int FDECL(size_monst, (struct monst *, BOOLEAN_P));
+static int FDECL(size_obj, (struct obj *));
+static void FDECL(count_obj, (struct obj *, long *, long *,
                                   BOOLEAN_P, BOOLEAN_P));
-STATIC_DCL void FDECL(obj_chain, (winid, const char *, struct obj *,
+static void FDECL(obj_chain, (winid, const char *, struct obj *,
                                   BOOLEAN_P, long *, long *));
-STATIC_DCL void FDECL(mon_invent_chain, (winid, const char *, struct monst *,
+static void FDECL(mon_invent_chain, (winid, const char *, struct monst *,
                                          long *, long *));
-STATIC_DCL void FDECL(mon_chain, (winid, const char *, struct monst *,
+static void FDECL(mon_chain, (winid, const char *, struct monst *,
                                   BOOLEAN_P, long *, long *));
-STATIC_DCL void FDECL(contained_stats, (winid, const char *, long *, long *));
-STATIC_DCL void FDECL(misc_stats, (winid, long *, long *));
-STATIC_PTR int NDECL(wiz_show_stats);
-STATIC_DCL boolean FDECL(accept_menu_prefix, (int NDECL((*))));
-STATIC_PTR int NDECL(wiz_rumor_check);
-STATIC_PTR int NDECL(doattributes);
+static void FDECL(contained_stats, (winid, const char *, long *, long *));
+static void FDECL(misc_stats, (winid, long *, long *));
+static boolean FDECL(accept_menu_prefix, (int NDECL((*))));
 
-STATIC_DCL void FDECL(enlght_out, (const char *));
-STATIC_DCL void FDECL(enlght_line, (const char *, const char *, const char *,
-                                    const char *));
-STATIC_DCL char *FDECL(enlght_combatinc, (const char *, int, int, char *));
-STATIC_DCL void FDECL(enlght_halfdmg, (int, int));
-STATIC_DCL boolean NDECL(walking_on_water);
-STATIC_DCL boolean FDECL(cause_known, (int));
-STATIC_DCL char *FDECL(attrval, (int, int, char *));
-STATIC_DCL void FDECL(background_enlightenment, (int, int));
-STATIC_DCL void FDECL(basics_enlightenment, (int, int));
-STATIC_DCL void FDECL(characteristics_enlightenment, (int, int));
-STATIC_DCL void FDECL(one_characteristic, (int, int, int));
-STATIC_DCL void FDECL(status_enlightenment, (int, int));
-STATIC_DCL void FDECL(attributes_enlightenment, (int, int));
-
-STATIC_DCL void FDECL(add_herecmd_menuitem, (winid, int NDECL((*)),
+static void FDECL(add_herecmd_menuitem, (winid, int NDECL((*)),
                                              const char *));
-STATIC_DCL char FDECL(here_cmd_menu, (BOOLEAN_P));
-STATIC_DCL char FDECL(there_cmd_menu, (BOOLEAN_P, int, int));
-STATIC_DCL char *NDECL(parse);
-STATIC_DCL void FDECL(show_direction_keys, (winid, CHAR_P, BOOLEAN_P));
-STATIC_DCL boolean FDECL(help_dir, (CHAR_P, int, const char *));
+static char FDECL(here_cmd_menu, (BOOLEAN_P));
+static char FDECL(there_cmd_menu, (BOOLEAN_P, int, int));
+static char *NDECL(parse);
+static void FDECL(show_direction_keys, (winid, CHAR_P, BOOLEAN_P));
+static boolean FDECL(help_dir, (CHAR_P, int, const char *));
+
+static void NDECL(commands_init);
+static int FDECL(dokeylist_putcmds, (winid, BOOLEAN_P, int, int, boolean *));
+static int FDECL(ch2spkeys, (CHAR_P, int, int));
+static boolean FDECL(prefix_cmd, (CHAR_P));
+
+static int NDECL((*timed_occ_fn));
+static char *FDECL(doc_extcmd_flagstr, (winid, const struct ext_func_tab *,
+                                        BOOLEAN_P));
 
 static const char *readchar_queue = "";
-static coord clicklook_cc;
 /* for rejecting attempts to use wizard mode commands */
 static const char unavailcmd[] = "Unavailable command '%s'.";
 /* for rejecting #if !SHELL, !SUSPEND */
 static const char cmdnotavail[] = "'%s' command not available.";
 
-STATIC_PTR int
+static int
 doprev_message(VOID_ARGS)
 {
     return nh_doprev_message();
 }
 
 /* Count down by decrementing multi */
-STATIC_PTR int
+static int
 timed_occupation(VOID_ARGS)
 {
     (*timed_occ_fn)();
-    if (multi > 0)
-        multi--;
-    return multi > 0;
+    if (g.multi > 0)
+        g.multi--;
+    return g.multi > 0;
 }
 
 /* If you have moved since initially setting some occupations, they
@@ -259,28 +243,18 @@ const char *txt;
 int xtime;
 {
     if (xtime) {
-        occupation = timed_occupation;
+        g.occupation = timed_occupation;
         timed_occ_fn = fn;
     } else
-        occupation = fn;
-    occtxt = txt;
-    occtime = 0;
+        g.occupation = fn;
+    g.occtxt = txt;
+    g.occtime = 0;
     return;
 }
 
-STATIC_DCL char NDECL(popch);
+static char NDECL(popch);
 
-/* Provide a means to redo the last command.  The flag `in_doagain' is set
- * to true while redoing the command.  This flag is tested in commands that
- * require additional input (like `throw' which requires a thing and a
- * direction), and the input prompt is not shown.  Also, while in_doagain is
- * TRUE, no keystrokes can be saved into the saveq.
- */
-#define BSIZE 20
-static char pushq[BSIZE], saveq[BSIZE];
-static NEARDATA int phead, ptail, shead, stail;
-
-STATIC_OVL char
+static char
 popch()
 {
     /* If occupied, return '\0', letting tgetch know a character should
@@ -288,12 +262,12 @@ popch()
      * ABORT character (as checked in pcmain.c), that character will be
      * pushed back on the pushq.
      */
-    if (occupation)
+    if (g.occupation)
         return '\0';
-    if (in_doagain)
-        return (char) ((shead != stail) ? saveq[stail++] : '\0');
+    if (g.in_doagain)
+        return (char) ((g.shead != g.stail) ? g.saveq[g.stail++] : '\0');
     else
-        return (char) ((phead != ptail) ? pushq[ptail++] : '\0');
+        return (char) ((g.phead != g.ptail) ? g.pushq[g.ptail++] : '\0');
 }
 
 char
@@ -314,9 +288,9 @@ pushch(ch)
 char ch;
 {
     if (!ch)
-        phead = ptail = 0;
-    if (phead < BSIZE)
-        pushq[phead++] = ch;
+        g.phead = g.ptail = 0;
+    if (g.phead < BSIZE)
+        g.pushq[g.phead++] = ch;
     return;
 }
 
@@ -327,17 +301,17 @@ void
 savech(ch)
 char ch;
 {
-    if (!in_doagain) {
+    if (!g.in_doagain) {
         if (!ch)
-            phead = ptail = shead = stail = 0;
-        else if (shead < BSIZE)
-            saveq[shead++] = ch;
+            g.phead = g.ptail = g.shead = g.stail = 0;
+        else if (g.shead < BSIZE)
+            g.saveq[g.shead++] = ch;
     }
     return;
 }
 
 /* here after # - now read a full-word command */
-STATIC_PTR int
+static int
 doextcmd(VOID_ARGS)
 {
     int idx, retval;
@@ -356,7 +330,7 @@ doextcmd(VOID_ARGS)
         }
         if (iflags.menu_requested && !accept_menu_prefix(func)) {
             pline("'%s' prefix has no effect for the %s command.",
-                  visctrl(Cmd.spkeys[NHKF_REQMENU]),
+                  visctrl(g.Cmd.spkeys[NHKF_REQMENU]),
                   extcmdlist[idx].ef_txt);
             iflags.menu_requested = FALSE;
         }
@@ -366,12 +340,43 @@ doextcmd(VOID_ARGS)
     return retval;
 }
 
+static char *
+doc_extcmd_flagstr(menuwin, efp, doc)
+winid menuwin;
+const struct ext_func_tab *efp;
+boolean doc;
+{
+    static char buf[BUFSZ];
+
+    if (doc) {
+        anything any = cg.zeroany;
+
+        add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
+                 "[A] Command autocompletes", MENU_ITEMFLAGS_NONE);
+        Sprintf(buf, "[m] Command accepts '%c' prefix",
+                g.Cmd.spkeys[NHKF_REQMENU]);
+        add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf,
+                 MENU_ITEMFLAGS_NONE);
+        return (char *) 0;
+    } else {
+        buf[0] = '\0';
+        Sprintf(&buf[1], "%s%s",
+                (efp->flags & AUTOCOMPLETE) ? "A" : "",
+                accept_menu_prefix(efp->ef_funct) ? "m" : "");
+        if (buf[1]) {
+            buf[0] = '[';
+            Strcat(buf, "]");
+        }
+        return buf;
+    }
+}
+
 /* here after #? - now list all full-word commands and provid
    some navigation capability through the long list */
 int
 doextlist(VOID_ARGS)
 {
-    register const struct ext_func_tab *efp;
+    register const struct ext_func_tab *efp = (struct ext_func_tab *) 0;
     char buf[BUFSZ], searchbuf[BUFSZ], promptbuf[QBUFSZ];
     winid menuwin;
     anything any;
@@ -387,12 +392,13 @@ doextlist(VOID_ARGS)
 
     while (redisplay) {
         redisplay = FALSE;
-        any = zeroany;
-        start_menu(menuwin);
+        any = cg.zeroany;
+        start_menu(menuwin, MENU_BEHAVE_STANDARD);
         add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                 "Extended Commands List", MENU_UNSELECTED);
+                 "Extended Commands List",
+                 MENU_ITEMFLAGS_NONE);
         add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                 "", MENU_UNSELECTED);
+                 "", MENU_ITEMFLAGS_NONE);
 
         Strcpy(buf, menumode ? "Show" : "Hide");
         Strcat(buf, " commands that don't autocomplete");
@@ -400,7 +406,7 @@ doextlist(VOID_ARGS)
             Strcat(buf, " (those not marked with [A])");
         any.a_int = 1;
         add_menu(menuwin, NO_GLYPH, &any, 'a', 0, ATR_NONE, buf,
-                 MENU_UNSELECTED);
+                 MENU_ITEMFLAGS_NONE);
 
         if (!*searchbuf) {
             any.a_int = 2;
@@ -410,7 +416,8 @@ doextlist(VOID_ARGS)
                having ':' as an explicit selector overrides the default
                menu behavior for it; we retain 's' as a group accelerator */
             add_menu(menuwin, NO_GLYPH, &any, ':', 's', ATR_NONE,
-                     "Search extended commands", MENU_UNSELECTED);
+                     "Search extended commands",
+                     MENU_ITEMFLAGS_NONE);
         } else {
             Strcpy(buf, "Show all, clear search");
             if (strlen(buf) + strlen(searchbuf) + strlen(" (\"\")") < QBUFSZ)
@@ -422,18 +429,18 @@ doextlist(VOID_ARGS)
                work for interfaces which support ':' to search; use as a
                general menu command takes precedence over group accelerator */
             add_menu(menuwin, NO_GLYPH, &any, 's', ':', ATR_NONE,
-                     buf, MENU_UNSELECTED);
+                     buf, MENU_ITEMFLAGS_NONE);
         }
         if (wizard) {
             any.a_int = 4;
             add_menu(menuwin, NO_GLYPH, &any, 'z', 0, ATR_NONE,
                      onelist ? "Show debugging commands in separate section"
-                     : "Show all alphabetically, including debugging commands",
-                     MENU_UNSELECTED);
+                    : "Show all alphabetically, including debugging commands",
+                     MENU_ITEMFLAGS_NONE);
         }
-        any = zeroany;
+        any = cg.zeroany;
         add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                 "", MENU_UNSELECTED);
+                 "", MENU_ITEMFLAGS_NONE);
         menushown[0] = menushown[1] = 0;
         n = 0;
         for (pass = 0; pass <= 1; ++pass) {
@@ -475,24 +482,27 @@ doextlist(VOID_ARGS)
                 if (!menushown[pass]) {
                     Strcpy(buf, headings[pass]);
                     add_menu(menuwin, NO_GLYPH, &any, 0, 0,
-                             iflags.menu_headings, buf, MENU_UNSELECTED);
+                             iflags.menu_headings, buf,
+                             MENU_ITEMFLAGS_NONE);
                     menushown[pass] = 1;
                 }
-                Sprintf(buf, " %-14s %-3s %s",
+                Sprintf(buf, " %-14s %-4s %s",
                         efp->ef_txt,
-                        (efp->flags & AUTOCOMPLETE) ? "[A]" : " ",
+                        doc_extcmd_flagstr(menuwin, efp, FALSE),
                         efp->ef_desc);
                 add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                         buf, MENU_UNSELECTED);
+                         buf, MENU_ITEMFLAGS_NONE);
                 ++n;
             }
             if (n)
                 add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                         "", MENU_UNSELECTED);
+                         "", MENU_ITEMFLAGS_NONE);
         }
         if (*searchbuf && !n)
             add_menu(menuwin, NO_GLYPH, &any, 0, 0, ATR_NONE,
-                     "no matches", MENU_UNSELECTED);
+                     "no matches", MENU_ITEMFLAGS_NONE);
+        else
+            (void) doc_extcmd_flagstr(menuwin, efp, TRUE);
 
         end_menu(menuwin, (char *) 0);
         n = select_menu(menuwin, PICK_ONE, &selected);
@@ -572,7 +582,7 @@ extcmd_via_menu()
     biggest = 0;
     while (!ret) {
         i = n = 0;
-        any = zeroany;
+        any = cg.zeroany;
         /* populate choices */
         for (efp = extcmdlist; efp->ef_txt; efp++) {
             if ((efp->flags & CMD_NOT_AVAILABLE)
@@ -604,7 +614,7 @@ extcmd_via_menu()
 
         /* otherwise... */
         win = create_nhwindow(NHW_MENU);
-        start_menu(win);
+        start_menu(win, MENU_BEHAVE_STANDARD);
         Sprintf(fmtstr, "%%-%ds", biggest + 15);
         prompt[0] = '\0';
         wastoolong = FALSE; /* True => had to wrap due to line width
@@ -629,7 +639,7 @@ extcmd_via_menu()
                     Sprintf(buf, fmtstr, prompt);
                     any.a_char = prevaccelerator;
                     add_menu(win, NO_GLYPH, &any, any.a_char, 0, ATR_NONE,
-                             buf, FALSE);
+                             buf, MENU_ITEMFLAGS_NONE);
                     acount = 0;
                     if (!(accelerator != prevaccelerator || one_per_line))
                         wastoolong = TRUE;
@@ -653,7 +663,7 @@ extcmd_via_menu()
             Sprintf(buf, fmtstr, prompt);
             any.a_char = prevaccelerator;
             add_menu(win, NO_GLYPH, &any, any.a_char, 0, ATR_NONE, buf,
-                     FALSE);
+                     MENU_ITEMFLAGS_NONE);
         }
         Sprintf(prompt, "Extended Command: %s", cbuf);
         end_menu(win, prompt);
@@ -688,43 +698,44 @@ extcmd_via_menu()
 int
 domonability(VOID_ARGS)
 {
-    if (can_breathe(youmonst.data))
+    if (can_breathe(g.youmonst.data))
         return dobreathe();
-    else if (attacktype(youmonst.data, AT_SPIT))
+    else if (attacktype(g.youmonst.data, AT_SPIT))
         return dospit();
-    else if (youmonst.data->mlet == S_NYMPH)
+    else if (g.youmonst.data->mlet == S_NYMPH)
         return doremove();
-    else if (attacktype(youmonst.data, AT_GAZE))
+    else if (attacktype(g.youmonst.data, AT_GAZE))
         return dogaze();
-    else if (is_were(youmonst.data))
+    else if (is_were(g.youmonst.data))
         return dosummon();
-    else if (webmaker(youmonst.data))
+    else if (webmaker(g.youmonst.data))
         return dospinweb();
-    else if (is_hider(youmonst.data))
+    else if (is_hider(g.youmonst.data))
         return dohide();
-    else if (is_mind_flayer(youmonst.data))
+    else if (is_mind_flayer(g.youmonst.data))
         return domindblast();
     else if (u.umonnum == PM_GREMLIN) {
         if (IS_FOUNTAIN(levl[u.ux][u.uy].typ)) {
-            if (split_mon(&youmonst, (struct monst *) 0))
+            if (split_mon(&g.youmonst, (struct monst *) 0))
                 dryup(u.ux, u.uy, TRUE);
         } else
             There("is no fountain here.");
-    } else if (is_unicorn(youmonst.data)) {
-        use_unicorn_horn((struct obj *) 0);
+    } else if (is_unicorn(g.youmonst.data)) {
+        use_unicorn_horn((struct obj **) 0);
         return 1;
-    } else if (youmonst.data->msound == MS_SHRIEK) {
+    } else if (g.youmonst.data->msound == MS_SHRIEK) {
         You("shriek.");
         if (u.uburied)
             pline("Unfortunately sound does not carry well through rock.");
         else
             aggravate();
-    } else if (youmonst.data->mlet == S_VAMPIRE)
+    } else if (is_vampire(g.youmonst.data) || is_vampshifter(&g.youmonst)) {
         return dopoly();
-    else if (Upolyd)
+    } else if (Upolyd) {
         pline("Any special ability you may have is purely reflexive.");
-    else
+    } else {
         You("don't have a special ability in your normal form!");
+    }
     return 0;
 }
 
@@ -761,7 +772,7 @@ enter_explore_mode(VOID_ARGS)
 }
 
 /* ^W command - wish for something */
-STATIC_PTR int
+static int
 wiz_wish(VOID_ARGS) /* Unlimited wishes for debug mode by Paul Polderman */
 {
     if (wizard) {
@@ -777,7 +788,7 @@ wiz_wish(VOID_ARGS) /* Unlimited wishes for debug mode by Paul Polderman */
 }
 
 /* ^I command - reveal and optionally identify hero's inventory */
-STATIC_PTR int
+static int
 wiz_identify(VOID_ARGS)
 {
     if (wizard) {
@@ -796,29 +807,49 @@ wiz_identify(VOID_ARGS)
     return 0;
 }
 
-/* #wizmakemap - discard current dungeon level and replace with a new one */
-STATIC_PTR int
-wiz_makemap(VOID_ARGS)
+void
+makemap_prepost(pre, wiztower)
+boolean pre, wiztower;
 {
-    if (wizard) {
-        struct monst *mtmp;
-        boolean was_in_W_tower = In_W_tower(u.ux, u.uy, &u.uz);
+    NHFILE tmpnhfp;
+    struct monst *mtmp;
+
+    if (pre) {
+        /* keep steed and other adjacent pets after releasing them
+           from traps, stopping eating, &c as if hero were ascending */
+        keepdogs(TRUE); /* (pets-only; normally we'd be using 'FALSE' here) */
 
         rm_mapseen(ledger_no(&u.uz));
         for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+            int ndx = monsndx(mtmp->data);
             if (mtmp->isgd) { /* vault is going away; get rid of guard */
                 mtmp->isgd = 0;
                 mongone(mtmp);
             }
+            if (mtmp->data->geno & G_UNIQ)
+                g.mvitals[ndx].mvflags &= ~(G_EXTINCT);
+            if (g.mvitals[ndx].born)
+                g.mvitals[ndx].born--;
             if (DEADMONSTER(mtmp))
                 continue;
             if (mtmp->isshk)
                 setpaid(mtmp);
-            /* TODO?
-             *  Reduce 'born' tally for each monster about to be discarded
-             *  by savelev(), otherwise replacing heavily populated levels
-             *  tends to make their inhabitants become extinct.
-             */
+        }
+        {
+            static const char Unachieve[] = "%s achievement revoked.";
+
+            /* achievement tracking; if replacing a level that has a
+               special prize, lose credit for previously finding it and
+               reset for the new instance of that prize */
+            if (Is_mineend_level(&u.uz)) {
+                if (remove_achievement(ACH_MINE_PRIZE))
+                    pline(Unachieve, "Mine's-end");
+                g.context.achieveo.mines_prize_oid = 0;
+            } else if (Is_sokoend_level(&u.uz)) {
+                if (remove_achievement(ACH_SOKO_PRIZE))
+                    pline(Unachieve, "Soko-prize");
+                g.context.achieveo.soko_prize_oid = 0;
+            }
         }
         if (Punished) {
             ballrelease(FALSE);
@@ -827,38 +858,35 @@ wiz_makemap(VOID_ARGS)
         /* reset lock picking unless it's for a carried container */
         maybe_reset_pick((struct obj *) 0);
         /* reset interrupted digging if it was taking place on this level */
-        if (on_level(&context.digging.level, &u.uz))
-            (void) memset((genericptr_t) &context.digging, 0,
+        if (on_level(&g.context.digging.level, &u.uz))
+            (void) memset((genericptr_t) &g.context.digging, 0,
                           sizeof (struct dig_info));
         /* reset cached targets */
         iflags.travelcc.x = iflags.travelcc.y = 0; /* travel destination */
-        context.polearm.hitmon = (struct monst *) 0; /* polearm target */
+        g.context.polearm.hitmon = (struct monst *) 0; /* polearm target */
         /* escape from trap */
         reset_utrap(FALSE);
         check_special_room(TRUE); /* room exit */
+        (void) memset((genericptr_t)&g.dndest, 0, sizeof (dest_area));
+        (void) memset((genericptr_t)&g.updest, 0, sizeof (dest_area));
         u.ustuck = (struct monst *) 0;
-        u.uswallow = 0;
-        u.uinwater = 0;
+        u.uswallow = u.uswldtim = 0;
+        set_uinwater(0); /* u.uinwater = 0 */
         u.uundetected = 0; /* not hidden, even if means are available */
         dmonsfree(); /* purge dead monsters from 'fmon' */
-        /* keep steed and other adjacent pets after releasing them
-           from traps, stopping eating, &c as if hero were ascending */
-        keepdogs(TRUE); /* (pets-only; normally we'd be using 'FALSE' here) */
 
         /* discard current level; "saving" is used to release dynamic data */
-        savelev(-1, ledger_no(&u.uz), FREE_SAVE);
-        /* create a new level; various things like bestowing a guardian
-           angel on Astral or setting off alarm on Ft.Ludios are handled
-           by goto_level(do.c) so won't occur for replacement levels */
-        mklev();
-
+        zero_nhfile(&tmpnhfp);  /* also sets fd to -1 as desired */
+        tmpnhfp.mode = FREEING;
+        savelev(&tmpnhfp, ledger_no(&u.uz));
+    } else {
         vision_reset();
-        vision_full_recalc = 1;
+        g.vision_full_recalc = 1;
         cls();
         /* was using safe_teleds() but that doesn't honor arrival region
            on levels which have such; we don't force stairs, just area */
         u_on_rndspot((u.uhave.amulet ? 1 : 0) /* 'going up' flag */
-                     | (was_in_W_tower ? 2 : 0));
+                     | (wiztower ? 2 : 0));
         losedogs();
         kill_genocided_monsters();
         /* u_on_rndspot() might pick a spot that has a monster, or losedogs()
@@ -878,6 +906,22 @@ wiz_makemap(VOID_ARGS)
 #ifdef INSURANCE
         save_currentstate();
 #endif
+    }
+}
+
+/* #wizmakemap - discard current dungeon level and replace with a new one */
+static int
+wiz_makemap(VOID_ARGS)
+{
+    if (wizard) {
+        boolean was_in_W_tower = In_W_tower(u.ux, u.uy, &u.uz);
+
+        makemap_prepost(TRUE, was_in_W_tower);
+        /* create a new level; various things like bestowing a guardian
+           angel on Astral or setting off alarm on Ft.Ludios are handled
+           by goto_level(do.c) so won't occur for replacement levels */
+        mklev();
+        makemap_prepost(FALSE, was_in_W_tower);
     } else {
         pline(unavailcmd, "#wizmakemap");
     }
@@ -885,7 +929,7 @@ wiz_makemap(VOID_ARGS)
 }
 
 /* ^F command - reveal the level map and any traps on it */
-STATIC_PTR int
+static int
 wiz_map(VOID_ARGS)
 {
     if (wizard) {
@@ -893,7 +937,7 @@ wiz_map(VOID_ARGS)
         long save_Hconf = HConfusion, save_Hhallu = HHallucination;
 
         HConfusion = HHallucination = 0L;
-        for (t = ftrap; t != 0; t = t->ntrap) {
+        for (t = g.ftrap; t != 0; t = t->ntrap) {
             t->tseen = 1;
             map_trap(t, TRUE);
         }
@@ -906,7 +950,7 @@ wiz_map(VOID_ARGS)
 }
 
 /* ^G command - generate monster(s); a count prefix will be honored */
-STATIC_PTR int
+static int
 wiz_genesis(VOID_ARGS)
 {
     if (wizard)
@@ -917,7 +961,7 @@ wiz_genesis(VOID_ARGS)
 }
 
 /* ^O command - display dungeon layout */
-STATIC_PTR int
+static int
 wiz_where(VOID_ARGS)
 {
     if (wizard)
@@ -928,7 +972,7 @@ wiz_where(VOID_ARGS)
 }
 
 /* ^E command - detect unseen (secret doors, traps, hidden monsters) */
-STATIC_PTR int
+static int
 wiz_detect(VOID_ARGS)
 {
     if (wizard)
@@ -938,8 +982,76 @@ wiz_detect(VOID_ARGS)
     return 0;
 }
 
+static int
+wiz_load_lua(VOID_ARGS)
+{
+    if (wizard && !iflags.debug_fuzzer) {
+        char buf[BUFSZ];
+
+        buf[0] = '\0';
+        getlin("Load which lua file?", buf);
+        if (buf[0] == '\033' || buf[0] == '\0')
+            return 0;
+        if (!strchr(buf, '.'))
+            strcat(buf, ".lua");
+        (void) load_lua(buf);
+    } else
+        pline("Unavailable command 'wiz_load_lua'.");
+    return 0;
+}
+
+static int
+wiz_load_splua(VOID_ARGS)
+{
+    if (wizard && !iflags.debug_fuzzer) {
+        boolean was_in_W_tower = In_W_tower(u.ux, u.uy, &u.uz);
+        char buf[BUFSZ];
+        int ridx;
+
+        buf[0] = '\0';
+        getlin("Load which des lua file?", buf);
+        if (buf[0] == '\033' || buf[0] == '\0')
+            return 0;
+        if (!strchr(buf, '.'))
+            strcat(buf, ".lua");
+        makemap_prepost(TRUE, was_in_W_tower);
+
+        /* TODO: need to split some of this out of mklev(), makelevel(),
+           makemaz() */
+        g.in_mklev = TRUE;
+        oinit(); /* assign level dependent obj probabilities */
+        clear_level_structures();
+
+        (void) load_special(buf);
+
+        bound_digging();
+        mineralize(-1, -1, -1, -1, FALSE);
+        g.in_mklev = FALSE;
+        if (g.level.flags.has_morgue)
+            g.level.flags.graveyard = 1;
+        if (!g.level.flags.is_maze_lev) {
+            struct mkroom *croom;
+            for (croom = &g.rooms[0]; croom != &g.rooms[g.nroom]; croom++)
+#ifdef SPECIALIZATION
+                topologize(croom, FALSE);
+#else
+            topologize(croom);
+#endif
+        }
+        set_wall_state();
+        /* for many room types, rooms[].rtype is zeroed once the room has been
+           entered; rooms[].orig_rtype always retains original rtype value */
+        for (ridx = 0; ridx < SIZE(g.rooms); ridx++)
+            g.rooms[ridx].orig_rtype = g.rooms[ridx].rtype;
+
+        makemap_prepost(FALSE, was_in_W_tower);
+    } else
+        pline("Unavailable command 'wiz_load_splua'.");
+    return 0;
+}
+
 /* ^V command - level teleport */
-STATIC_PTR int
+static int
 wiz_level_tele(VOID_ARGS)
 {
     if (wizard)
@@ -949,8 +1061,42 @@ wiz_level_tele(VOID_ARGS)
     return 0;
 }
 
+/* #wizlevelflip - transpose the current level */
+static int
+wiz_level_flip(VOID_ARGS)
+{
+    static const char choices[] = "0123",
+        prmpt[] = "Flip 0=randomly, 1=vertically, 2=horizonally, 3=both:";
+
+    /*
+     * Does not handle
+     *   levregions,
+     *   monster mtrack,
+     *   migrating monsters aimed at returning to specific coordinates
+     *     on this level
+     * as flipping is normally done only during level creation.
+     */
+    if (wizard) {
+        char c = yn_function(prmpt, choices, '\0');
+
+        if (c && index(choices, c)) {
+            c -= '0';
+
+            if (!c)
+                flip_level_rnd(3, TRUE);
+            else
+                flip_level((int) c, TRUE);
+
+            docrt();
+        } else {
+            pline("%s", Never_mind);
+        }
+    }
+    return 0;
+}
+
 /* #levelchange command - adjust hero's experience level */
-STATIC_PTR int
+static int
 wiz_level_change(VOID_ARGS)
 {
     char buf[BUFSZ] = DUMMY;
@@ -994,7 +1140,7 @@ wiz_level_change(VOID_ARGS)
 }
 
 /* #panic command - test program's panic handling */
-STATIC_PTR int
+static int
 wiz_panic(VOID_ARGS)
 {
     if (iflags.debug_fuzzer) {
@@ -1009,7 +1155,7 @@ wiz_panic(VOID_ARGS)
 }
 
 /* #polyself command - change hero's form */
-STATIC_PTR int
+static int
 wiz_polyself(VOID_ARGS)
 {
     polyself(1);
@@ -1017,7 +1163,7 @@ wiz_polyself(VOID_ARGS)
 }
 
 /* #seenv command */
-STATIC_PTR int
+static int
 wiz_show_seenv(VOID_ARGS)
 {
     winid win;
@@ -1061,7 +1207,7 @@ wiz_show_seenv(VOID_ARGS)
 }
 
 /* #vision command */
-STATIC_PTR int
+static int
 wiz_show_vision(VOID_ARGS)
 {
     winid win;
@@ -1078,11 +1224,11 @@ wiz_show_vision(VOID_ARGS)
             if (x == u.ux && y == u.uy)
                 row[x] = '@';
             else {
-                v = viz_array[y][x]; /* data access should be hidden */
+                v = g.viz_array[y][x]; /* data access should be hidden */
                 if (v == 0)
                     row[x] = ' ';
                 else
-                    row[x] = '0' + viz_array[y][x];
+                    row[x] = '0' + g.viz_array[y][x];
             }
         }
         /* remove trailing spaces */
@@ -1099,7 +1245,7 @@ wiz_show_vision(VOID_ARGS)
 }
 
 /* #wmode command */
-STATIC_PTR int
+static int
 wiz_show_wmodes(VOID_ARGS)
 {
     winid win;
@@ -1135,7 +1281,7 @@ wiz_show_wmodes(VOID_ARGS)
 }
 
 /* wizard mode variant of #terrain; internal levl[][].typ values in base-36 */
-STATIC_OVL void
+static void
 wiz_map_levltyp(VOID_ARGS)
 {
     winid win;
@@ -1190,48 +1336,48 @@ wiz_map_levltyp(VOID_ARGS)
             /* alignment currently omitted to save space */
         }
         /* level features */
-        if (level.flags.nfountains)
+        if (g.level.flags.nfountains)
             Sprintf(eos(dsc), " %c:%d", defsyms[S_fountain].sym,
-                    (int) level.flags.nfountains);
-        if (level.flags.nsinks)
+                    (int) g.level.flags.nfountains);
+        if (g.level.flags.nsinks)
             Sprintf(eos(dsc), " %c:%d", defsyms[S_sink].sym,
-                    (int) level.flags.nsinks);
-        if (level.flags.has_vault)
+                    (int) g.level.flags.nsinks);
+        if (g.level.flags.has_vault)
             Strcat(dsc, " vault");
-        if (level.flags.has_shop)
+        if (g.level.flags.has_shop)
             Strcat(dsc, " shop");
-        if (level.flags.has_temple)
+        if (g.level.flags.has_temple)
             Strcat(dsc, " temple");
-        if (level.flags.has_court)
+        if (g.level.flags.has_court)
             Strcat(dsc, " throne");
-        if (level.flags.has_zoo)
+        if (g.level.flags.has_zoo)
             Strcat(dsc, " zoo");
-        if (level.flags.has_morgue)
+        if (g.level.flags.has_morgue)
             Strcat(dsc, " morgue");
-        if (level.flags.has_barracks)
+        if (g.level.flags.has_barracks)
             Strcat(dsc, " barracks");
-        if (level.flags.has_beehive)
+        if (g.level.flags.has_beehive)
             Strcat(dsc, " hive");
-        if (level.flags.has_swamp)
+        if (g.level.flags.has_swamp)
             Strcat(dsc, " swamp");
         /* level flags */
-        if (level.flags.noteleport)
+        if (g.level.flags.noteleport)
             Strcat(dsc, " noTport");
-        if (level.flags.hardfloor)
+        if (g.level.flags.hardfloor)
             Strcat(dsc, " noDig");
-        if (level.flags.nommap)
+        if (g.level.flags.nommap)
             Strcat(dsc, " noMMap");
-        if (!level.flags.hero_memory)
+        if (!g.level.flags.hero_memory)
             Strcat(dsc, " noMem");
-        if (level.flags.shortsighted)
+        if (g.level.flags.shortsighted)
             Strcat(dsc, " shortsight");
-        if (level.flags.graveyard)
+        if (g.level.flags.graveyard)
             Strcat(dsc, " graveyard");
-        if (level.flags.is_maze_lev)
+        if (g.level.flags.is_maze_lev)
             Strcat(dsc, " maze");
-        if (level.flags.is_cavernous_lev)
+        if (g.level.flags.is_cavernous_lev)
             Strcat(dsc, " cave");
-        if (level.flags.arboreal)
+        if (g.level.flags.arboreal)
             Strcat(dsc, " tree");
         if (Sokoban)
             Strcat(dsc, " sokoban-rules");
@@ -1260,7 +1406,7 @@ wiz_map_levltyp(VOID_ARGS)
             Strcat(dsc, " endgame");
         else {
             /* somebody's added a dungeon branch we're not expecting */
-            const char *brname = dungeons[u.uz.dnum].dname;
+            const char *brname = g.dungeons[u.uz.dnum].dname;
 
             if (!brname || !*brname)
                 brname = "unknown";
@@ -1281,7 +1427,7 @@ wiz_map_levltyp(VOID_ARGS)
 
 /* temporary? hack, since level type codes aren't the same as screen
    symbols and only the latter have easily accessible descriptions */
-static const char *levltyp[] = {
+const char *levltyp[] = {
     "stone", "vertical wall", "horizontal wall", "top-left corner wall",
     "top-right corner wall", "bottom-left corner wall",
     "bottom-right corner wall", "cross wall", "tee-up wall", "tee-down wall",
@@ -1297,8 +1443,17 @@ static const char *levltyp[] = {
     ""
 };
 
+const char *
+levltyp_to_name(typ)
+int typ;
+{
+    if (typ >= 0 && typ < MAX_TYPE)
+        return levltyp[typ];
+    return NULL;
+}
+
 /* explanation of base-36 output from wiz_map_levltyp() */
-STATIC_OVL void
+static void
 wiz_levltyp_legend(VOID_ARGS)
 {
     winid win;
@@ -1338,7 +1493,7 @@ wiz_levltyp_legend(VOID_ARGS)
 }
 
 /* #wizsmell command - test usmellmon(). */
-STATIC_PTR int
+static int
 wiz_smell(VOID_ARGS)
 {
     int ans = 0;
@@ -1349,7 +1504,7 @@ wiz_smell(VOID_ARGS)
     cc.x = u.ux;
     cc.y = u.uy;
     mndx = 0; /* gcc -Wall lint */
-    if (!olfaction(youmonst.data)) {
+    if (!olfaction(g.youmonst.data)) {
         You("are incapable of detecting odors in your present form.");
         return 0;
     }
@@ -1378,7 +1533,7 @@ wiz_smell(VOID_ARGS)
 }
 
 /* #wizinstrinsic command to set some intrinsics for testing */
-STATIC_PTR int
+static int
 wiz_intrinsic(VOID_ARGS)
 {
     if (wizard) {
@@ -1396,9 +1551,9 @@ wiz_intrinsic(VOID_ARGS)
         const char *propname;
         menu_item *pick_list = (menu_item *) 0;
 
-        any = zeroany;
+        any = cg.zeroany;
         win = create_nhwindow(NHW_MENU);
-        start_menu(win);
+        start_menu(win, MENU_BEHAVE_STANDARD);
         for (i = 0; (propname = propertynames[i].prop_name) != 0; ++i) {
             p = propertynames[i].prop_num;
             if (p == HALLUC_RES) {
@@ -1410,7 +1565,8 @@ wiz_intrinsic(VOID_ARGS)
             }
             if (p == FIRE_RES) {
                 any.a_int = 0;
-                add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, "--", FALSE);
+                add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, "--",
+                         MENU_ITEMFLAGS_NONE);
             }
             any.a_int = i + 1; /* +1: avoid 0 */
             oldtimeout = u.uprops[p].intrinsic & TIMEOUT;
@@ -1418,7 +1574,8 @@ wiz_intrinsic(VOID_ARGS)
                 Sprintf(buf, "%-27s [%li]", propname, oldtimeout);
             else
                 Sprintf(buf, "%s", propname);
-            add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
+            add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, buf,
+                     MENU_ITEMFLAGS_NONE);
         }
         end_menu(win, "Which intrinsics?");
         n = select_menu(win, PICK_ANY, &pick_list);
@@ -1479,9 +1636,9 @@ wiz_intrinsic(VOID_ARGS)
                 break;
             case WARN_OF_MON:
                 if (!Warn_of_mon) {
-                    context.warntype.speciesidx = PM_GRID_BUG;
-                    context.warntype.species
-                                         = &mons[context.warntype.speciesidx];
+                    g.context.warntype.speciesidx = PM_GRID_BUG;
+                    g.context.warntype.species
+                                       = &mons[g.context.warntype.speciesidx];
                 }
                 goto def_feedback;
             case GLIB:
@@ -1501,7 +1658,7 @@ wiz_intrinsic(VOID_ARGS)
                     incr_itimeout(&u.uprops[p].intrinsic, amt);
                 break;
             }
-            context.botl = 1; /* probably not necessary... */
+            g.context.botl = 1; /* probably not necessary... */
         }
         if (n >= 1)
             free((genericptr_t) pick_list);
@@ -1512,7 +1669,7 @@ wiz_intrinsic(VOID_ARGS)
 }
 
 /* #wizrumorcheck command - verify each rumor access */
-STATIC_PTR int
+static int
 wiz_rumor_check(VOID_ARGS)
 {
     rumor_check();
@@ -1520,7 +1677,7 @@ wiz_rumor_check(VOID_ARGS)
 }
 
 /* #terrain command -- show known map, inspired by crawl's '|' command */
-STATIC_PTR int
+static int
 doterrain(VOID_ARGS)
 {
     winid men;
@@ -1540,34 +1697,34 @@ doterrain(VOID_ARGS)
      *  a legend for the levl[][].typ codes dump
      */
     men = create_nhwindow(NHW_MENU);
-    start_menu(men);
-    any = zeroany;
+    start_menu(men, MENU_BEHAVE_STANDARD);
+    any = cg.zeroany;
     any.a_int = 1;
     add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
              "known map without monsters, objects, and traps",
-             MENU_SELECTED);
+             MENU_ITEMFLAGS_SELECTED);
     any.a_int = 2;
     add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
              "known map without monsters and objects",
-             MENU_UNSELECTED);
+             MENU_ITEMFLAGS_NONE);
     any.a_int = 3;
     add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
              "known map without monsters",
-             MENU_UNSELECTED);
+             MENU_ITEMFLAGS_NONE);
     if (discover || wizard) {
         any.a_int = 4;
         add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
                  "full map without monsters, objects, and traps",
-                 MENU_UNSELECTED);
+                 MENU_ITEMFLAGS_NONE);
         if (wizard) {
             any.a_int = 5;
             add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
                      "internal levl[][].typ codes in base-36",
-                     MENU_UNSELECTED);
+                     MENU_ITEMFLAGS_NONE);
             any.a_int = 6;
             add_menu(men, NO_GLYPH, &any, 0, 0, ATR_NONE,
                      "legend of base-36 levl[][].typ codes",
-                     MENU_UNSELECTED);
+                     MENU_ITEMFLAGS_NONE);
         }
     }
     end_menu(men, "View which?");
@@ -1609,1746 +1766,6 @@ doterrain(VOID_ARGS)
         break;
     }
     return 0; /* no time elapses */
-}
-
-/* -enlightenment and conduct- */
-static winid en_win = WIN_ERR;
-static boolean en_via_menu = FALSE;
-static const char You_[] = "You ", are[] = "are ", were[] = "were ",
-                  have[] = "have ", had[] = "had ", can[] = "can ",
-                  could[] = "could ";
-static const char have_been[] = "have been ", have_never[] = "have never ",
-                  never[] = "never ";
-
-#define enl_msg(prefix, present, past, suffix, ps) \
-    enlght_line(prefix, final ? past : present, suffix, ps)
-#define you_are(attr, ps) enl_msg(You_, are, were, attr, ps)
-#define you_have(attr, ps) enl_msg(You_, have, had, attr, ps)
-#define you_can(attr, ps) enl_msg(You_, can, could, attr, ps)
-#define you_have_been(goodthing) enl_msg(You_, have_been, were, goodthing, "")
-#define you_have_never(badthing) \
-    enl_msg(You_, have_never, never, badthing, "")
-#define you_have_X(something) \
-    enl_msg(You_, have, (const char *) "", something, "")
-
-static void
-enlght_out(buf)
-const char *buf;
-{
-    if (en_via_menu) {
-        anything any;
-
-        any = zeroany;
-        add_menu(en_win, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    } else
-        putstr(en_win, 0, buf);
-}
-
-static void
-enlght_line(start, middle, end, ps)
-const char *start, *middle, *end, *ps;
-{
-    char buf[BUFSZ];
-
-    Sprintf(buf, " %s%s%s%s.", start, middle, end, ps);
-    enlght_out(buf);
-}
-
-/* format increased chance to hit or damage or defense (Protection) */
-static char *
-enlght_combatinc(inctyp, incamt, final, outbuf)
-const char *inctyp;
-int incamt, final;
-char *outbuf;
-{
-    const char *modif, *bonus;
-    boolean invrt;
-    int absamt;
-
-    absamt = abs(incamt);
-    /* Protection amount is typically larger than damage or to-hit;
-       reduce magnitude by a third in order to stretch modifier ranges
-       (small:1..5, moderate:6..10, large:11..19, huge:20+) */
-    if (!strcmp(inctyp, "defense"))
-        absamt = (absamt * 2) / 3;
-
-    if (absamt <= 3)
-        modif = "small";
-    else if (absamt <= 6)
-        modif = "moderate";
-    else if (absamt <= 12)
-        modif = "large";
-    else
-        modif = "huge";
-
-    modif = !incamt ? "no" : an(modif); /* ("no" case shouldn't happen) */
-    bonus = (incamt >= 0) ? "bonus" : "penalty";
-    /* "bonus <foo>" (to hit) vs "<bar> bonus" (damage, defense) */
-    invrt = strcmp(inctyp, "to hit") ? TRUE : FALSE;
-
-    Sprintf(outbuf, "%s %s %s", modif, invrt ? inctyp : bonus,
-            invrt ? bonus : inctyp);
-    if (final || wizard)
-        Sprintf(eos(outbuf), " (%s%d)", (incamt > 0) ? "+" : "", incamt);
-
-    return outbuf;
-}
-
-/* report half physical or half spell damage */
-STATIC_OVL void
-enlght_halfdmg(category, final)
-int category;
-int final;
-{
-    const char *category_name;
-    char buf[BUFSZ];
-
-    switch (category) {
-    case HALF_PHDAM:
-        category_name = "physical";
-        break;
-    case HALF_SPDAM:
-        category_name = "spell";
-        break;
-    default:
-        category_name = "unknown";
-        break;
-    }
-    Sprintf(buf, " %s %s damage", (final || wizard) ? "half" : "reduced",
-            category_name);
-    enl_msg(You_, "take", "took", buf, from_what(category));
-}
-
-/* is hero actively using water walking capability on water (or lava)? */
-STATIC_OVL boolean
-walking_on_water()
-{
-    if (u.uinwater || Levitation || Flying)
-        return FALSE;
-    return (boolean) (Wwalking
-                      && (is_pool(u.ux, u.uy) || is_lava(u.ux, u.uy)));
-}
-
-/* check whether hero is wearing something that player definitely knows
-   confers the target property; item must have been seen and its type
-   discovered but it doesn't necessarily have to be fully identified */
-STATIC_OVL boolean
-cause_known(propindx)
-int propindx; /* index of a property which can be conveyed by worn item */
-{
-    register struct obj *o;
-    long mask = W_ARMOR | W_AMUL | W_RING | W_TOOL;
-
-    /* simpler than from_what()/what_gives(); we don't attempt to
-       handle artifacts and we deliberately ignore wielded items */
-    for (o = invent; o; o = o->nobj) {
-        if (!(o->owornmask & mask))
-            continue;
-        if ((int) objects[o->otyp].oc_oprop == propindx
-            && objects[o->otyp].oc_name_known && o->dknown)
-            return TRUE;
-    }
-    return FALSE;
-}
-
-/* format a characteristic value, accommodating Strength's strangeness */
-STATIC_OVL char *
-attrval(attrindx, attrvalue, resultbuf)
-int attrindx, attrvalue;
-char resultbuf[]; /* should be at least [7] to hold "18/100\0" */
-{
-    if (attrindx != A_STR || attrvalue <= 18)
-        Sprintf(resultbuf, "%d", attrvalue);
-    else if (attrvalue > STR18(100)) /* 19 to 25 */
-        Sprintf(resultbuf, "%d", attrvalue - 100);
-    else /* simplify "18/ **" to be "18/100" */
-        Sprintf(resultbuf, "18/%02d", attrvalue - 18);
-    return resultbuf;
-}
-
-void
-enlightenment(mode, final)
-int mode;  /* BASICENLIGHTENMENT | MAGICENLIGHTENMENT (| both) */
-int final; /* ENL_GAMEINPROGRESS:0, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD */
-{
-    char buf[BUFSZ], tmpbuf[BUFSZ];
-
-    en_win = create_nhwindow(NHW_MENU);
-    en_via_menu = !final;
-    if (en_via_menu)
-        start_menu(en_win);
-
-    Strcpy(tmpbuf, plname);
-    *tmpbuf = highc(*tmpbuf); /* same adjustment as bottom line */
-    /* as in background_enlightenment, when poly'd we need to use the saved
-       gender in u.mfemale rather than the current you-as-monster gender */
-    Sprintf(buf, "%s the %s's attributes:", tmpbuf,
-            ((Upolyd ? u.mfemale : flags.female) && urole.name.f)
-                ? urole.name.f
-                : urole.name.m);
-
-    /* title */
-    enlght_out(buf); /* "Conan the Archeologist's attributes:" */
-    /* background and characteristics; ^X or end-of-game disclosure */
-    if (mode & BASICENLIGHTENMENT) {
-        /* role, race, alignment, deities, dungeon level, time, experience */
-        background_enlightenment(mode, final);
-        /* hit points, energy points, armor class, gold */
-        basics_enlightenment(mode, final);
-        /* strength, dexterity, &c */
-        characteristics_enlightenment(mode, final);
-    }
-    /* expanded status line information, including things which aren't
-       included there due to space considerations--such as obvious
-       alternative movement indicators (riding, levitation, &c), and
-       various troubles (turning to stone, trapped, confusion, &c);
-       shown for both basic and magic enlightenment */
-    status_enlightenment(mode, final);
-    /* remaining attributes; shown for potion,&c or wizard mode and
-       explore mode ^X or end of game disclosure */
-    if (mode & MAGICENLIGHTENMENT) {
-        /* intrinsics and other traditional enlightenment feedback */
-        attributes_enlightenment(mode, final);
-    }
-
-    if (!en_via_menu) {
-        display_nhwindow(en_win, TRUE);
-    } else {
-        menu_item *selected = 0;
-
-        end_menu(en_win, (char *) 0);
-        if (select_menu(en_win, PICK_NONE, &selected) > 0)
-            free((genericptr_t) selected);
-        en_via_menu = FALSE;
-    }
-    destroy_nhwindow(en_win);
-    en_win = WIN_ERR;
-}
-
-/*ARGSUSED*/
-/* display role, race, alignment and such to en_win */
-STATIC_OVL void
-background_enlightenment(unused_mode, final)
-int unused_mode UNUSED;
-int final;
-{
-    const char *role_titl, *rank_titl;
-    int innategend, difgend, difalgn;
-    char buf[BUFSZ], tmpbuf[BUFSZ];
-
-    /* note that if poly'd, we need to use u.mfemale instead of flags.female
-       to access hero's saved gender-as-human/elf/&c rather than current one */
-    innategend = (Upolyd ? u.mfemale : flags.female) ? 1 : 0;
-    role_titl = (innategend && urole.name.f) ? urole.name.f : urole.name.m;
-    rank_titl = rank_of(u.ulevel, Role_switch, innategend);
-
-    enlght_out(""); /* separator after title */
-    enlght_out("Background:");
-
-    /* if polymorphed, report current shape before underlying role;
-       will be repeated as first status: "you are transformed" and also
-       among various attributes: "you are in beast form" (after being
-       told about lycanthropy) or "you are polymorphed into <a foo>"
-       (with countdown timer appended for wizard mode); we really want
-       the player to know he's not a samurai at the moment... */
-    if (Upolyd) {
-        struct permonst *uasmon = youmonst.data;
-
-        tmpbuf[0] = '\0';
-        /* here we always use current gender, not saved role gender */
-        if (!is_male(uasmon) && !is_female(uasmon) && !is_neuter(uasmon))
-            Sprintf(tmpbuf, "%s ", genders[flags.female ? 1 : 0].adj);
-        Sprintf(buf, "%sin %s%s form", !final ? "currently " : "", tmpbuf,
-                uasmon->mname);
-        you_are(buf, "");
-    }
-
-    /* report role; omit gender if it's redundant (eg, "female priestess") */
-    tmpbuf[0] = '\0';
-    if (!urole.name.f
-        && ((urole.allow & ROLE_GENDMASK) == (ROLE_MALE | ROLE_FEMALE)
-            || innategend != flags.initgend))
-        Sprintf(tmpbuf, "%s ", genders[innategend].adj);
-    buf[0] = '\0';
-    if (Upolyd)
-        Strcpy(buf, "actually "); /* "You are actually a ..." */
-    if (!strcmpi(rank_titl, role_titl)) {
-        /* omit role when rank title matches it */
-        Sprintf(eos(buf), "%s, level %d %s%s", an(rank_titl), u.ulevel,
-                tmpbuf, urace.noun);
-    } else {
-        Sprintf(eos(buf), "%s, a level %d %s%s %s", an(rank_titl), u.ulevel,
-                tmpbuf, urace.adj, role_titl);
-    }
-    you_are(buf, "");
-
-    /* report alignment (bypass you_are() in order to omit ending period);
-       adverb is used to distinguish between temporary change (helm of opp.
-       alignment), permanent change (one-time conversion), and original */
-    Sprintf(buf, " %s%s%s, %son a mission for %s",
-            You_, !final ? are : were,
-            align_str(u.ualign.type),
-            /* helm of opposite alignment (might hide conversion) */
-            (u.ualign.type != u.ualignbase[A_CURRENT])
-               /* what's the past tense of "currently"? if we used "formerly"
-                  it would sound like a reference to the original alignment */
-               ? (!final ? "currently " : "temporarily ")
-               /* permanent conversion */
-               : (u.ualign.type != u.ualignbase[A_ORIGINAL])
-                  /* and what's the past tense of "now"? certainly not "then"
-                     in a context like this...; "belatedly" == weren't that
-                     way sooner (in other words, didn't start that way) */
-                  ? (!final ? "now " : "belatedly ")
-                  /* atheist (ignored in very early game) */
-                  : (!u.uconduct.gnostic && moves > 1000L)
-                     ? "nominally "
-                     /* lastly, normal case */
-                     : "",
-            u_gname());
-    enlght_out(buf);
-    /* show the rest of this game's pantheon (finishes previous sentence)
-       [appending "also Moloch" at the end would allow for straightforward
-       trailing "and" on all three aligned entries but looks too verbose] */
-    Sprintf(buf, " who %s opposed by", !final ? "is" : "was");
-    if (u.ualign.type != A_LAWFUL)
-        Sprintf(eos(buf), " %s (%s) and", align_gname(A_LAWFUL),
-                align_str(A_LAWFUL));
-    if (u.ualign.type != A_NEUTRAL)
-        Sprintf(eos(buf), " %s (%s)%s", align_gname(A_NEUTRAL),
-                align_str(A_NEUTRAL),
-                (u.ualign.type != A_CHAOTIC) ? " and" : "");
-    if (u.ualign.type != A_CHAOTIC)
-        Sprintf(eos(buf), " %s (%s)", align_gname(A_CHAOTIC),
-                align_str(A_CHAOTIC));
-    Strcat(buf, "."); /* terminate sentence */
-    enlght_out(buf);
-
-    /* show original alignment,gender,race,role if any have been changed;
-       giving separate message for temporary alignment change bypasses need
-       for tricky phrasing otherwise necessitated by possibility of having
-       helm of opposite alignment mask a permanent alignment conversion */
-    difgend = (innategend != flags.initgend);
-    difalgn = (((u.ualign.type != u.ualignbase[A_CURRENT]) ? 1 : 0)
-               + ((u.ualignbase[A_CURRENT] != u.ualignbase[A_ORIGINAL])
-                  ? 2 : 0));
-    if (difalgn & 1) { /* have temporary alignment so report permanent one */
-        Sprintf(buf, "actually %s", align_str(u.ualignbase[A_CURRENT]));
-        you_are(buf, "");
-        difalgn &= ~1; /* suppress helm from "started out <foo>" message */
-    }
-    if (difgend || difalgn) { /* sex change or perm align change or both */
-        Sprintf(buf, " You started out %s%s%s.",
-                difgend ? genders[flags.initgend].adj : "",
-                (difgend && difalgn) ? " and " : "",
-                difalgn ? align_str(u.ualignbase[A_ORIGINAL]) : "");
-        enlght_out(buf);
-    }
-
-    /* As of 3.6.2: dungeon level, so that ^X really has all status info as
-       claimed by the comment below; this reveals more information than
-       the basic status display, but that's one of the purposes of ^X;
-       similar information is revealed by #overview; the "You died in
-       <location>" given by really_done() is more rudimentary than this */
-    *buf = *tmpbuf = '\0';
-    if (In_endgame(&u.uz)) {
-        int egdepth = observable_depth(&u.uz);
-
-        (void) endgamelevelname(tmpbuf, egdepth);
-        Sprintf(buf, "in the endgame, on the %s%s",
-                !strncmp(tmpbuf, "Plane", 5) ? "Elemental " : "", tmpbuf);
-    } else if (Is_knox(&u.uz)) {
-        /* this gives away the fact that the knox branch is only 1 level */
-        Sprintf(buf, "on the %s level", dungeons[u.uz.dnum].dname);
-        /* TODO? maybe phrase it differently when actually inside the fort,
-           if we're able to determine that (not trivial) */
-    } else {
-        char dgnbuf[QBUFSZ];
-
-        Strcpy(dgnbuf, dungeons[u.uz.dnum].dname);
-        if (!strncmpi(dgnbuf, "The ", 4))
-            *dgnbuf = lowc(*dgnbuf);
-        Sprintf(tmpbuf, "level %d",
-                In_quest(&u.uz) ? dunlev(&u.uz) : depth(&u.uz));
-        /* TODO? maybe extend this bit to include various other automatic
-           annotations from the dungeon overview code */
-        if (Is_rogue_level(&u.uz))
-            Strcat(tmpbuf, ", a primitive area");
-        else if (Is_bigroom(&u.uz) && !Blind)
-            Strcat(tmpbuf, ", a very big room");
-        Sprintf(buf, "in %s, on %s", dgnbuf, tmpbuf);
-    }
-    you_are(buf, "");
-
-    /* this is shown even if the 'time' option is off */
-    if (moves == 1L) {
-        you_have("just started your adventure", "");
-    } else {
-        /* 'turns' grates on the nerves in this context... */
-        Sprintf(buf, "the dungeon %ld turn%s ago", moves, plur(moves));
-        /* same phrasing for current and final: "entered" is unconditional */
-        enlght_line(You_, "entered ", buf, "");
-    }
-
-    /* for gameover, these have been obtained in really_done() so that they
-       won't vary if user leaves a disclosure prompt or --More-- unanswered
-       long enough for the dynamic value to change between then and now */
-    if (final ? iflags.at_midnight : midnight()) {
-        enl_msg("It ", "is ", "was ", "the midnight hour", "");
-    } else if (final ? iflags.at_night : night()) {
-        enl_msg("It ", "is ", "was ", "nighttime", "");
-    }
-    /* other environmental factors */
-    if (flags.moonphase == FULL_MOON || flags.moonphase == NEW_MOON) {
-        /* [This had "tonight" but has been changed to "in effect".
-           There is a similar issue to Friday the 13th--it's the value
-           at the start of the current session but that session might
-           have dragged on for an arbitrary amount of time.  We want to
-           report the values that currently affect play--or affected
-           play when game ended--rather than actual outside situation.] */
-        Sprintf(buf, "a %s moon in effect%s",
-                (flags.moonphase == FULL_MOON) ? "full"
-                : (flags.moonphase == NEW_MOON) ? "new"
-                  /* showing these would probably just lead to confusion
-                     since they have no effect on game play... */
-                  : (flags.moonphase < FULL_MOON) ? "first quarter"
-                    : "last quarter",
-                /* we don't have access to 'how' here--aside from survived
-                   vs died--so settle for general platitude */
-                final ? " when your adventure ended" : "");
-        enl_msg("There ", "is ", "was ", buf, "");
-    }
-    if (flags.friday13) {
-        /* let player know that friday13 penalty is/was in effect;
-           we don't say "it is/was Friday the 13th" because that was at
-           the start of the session and it might be past midnight (or
-           days later if the game has been paused without save/restore),
-           so phrase this similar to the start up message */
-        Sprintf(buf, " Bad things %s on Friday the 13th.",
-                !final ? "can happen"
-                : (final == ENL_GAMEOVERALIVE) ? "could have happened"
-                  /* there's no may to tell whether -1 Luck made a
-                     difference but hero has died... */
-                  : "happened");
-        enlght_out(buf);
-    }
-
-    if (!Upolyd) {
-        int ulvl = (int) u.ulevel;
-        /* [flags.showexp currently does not matter; should it?] */
-
-        /* experience level is already shown above */
-        Sprintf(buf, "%-1ld experience point%s", u.uexp, plur(u.uexp));
-        /* TODO?
-         *  Remove wizard-mode restriction since patient players can
-         *  determine the numbers needed without resorting to spoilers
-         *  (even before this started being disclosed for 'final';
-         *  just enable 'showexp' and look at normal status lines
-         *  after drinking gain level potions or eating wraith corpses
-         *  or being level-drained by vampires).
-         */
-        if (ulvl < 30 && (final || wizard)) {
-            long nxtlvl = newuexp(ulvl), delta = nxtlvl - u.uexp;
-
-            Sprintf(eos(buf), ", %ld %s%sneeded %s level %d",
-                    delta, (u.uexp > 0) ? "more " : "",
-                    /* present tense=="needed", past tense=="were needed" */
-                    !final ? "" : (delta == 1L) ? "was " : "were ",
-                    /* "for": grammatically iffy but less likely to wrap */
-                    (ulvl < 18) ? "to attain" : "for", (ulvl + 1));
-        }
-        you_have(buf, "");
-    }
-#ifdef SCORE_ON_BOTL
-    if (flags.showscore) {
-        /* describes what's shown on status line, which is an approximation;
-           only show it here if player has the 'showscore' option enabled */
-        Sprintf(buf, "%ld%s", botl_score(),
-                !final ? "" : " before end-of-game adjustments");
-        enl_msg("Your score ", "is ", "was ", buf, "");
-    }
-#endif
-}
-
-/* hit points, energy points, armor class -- essential information which
-   doesn't fit very well in other categories */
-/*ARGSUSED*/
-STATIC_OVL void
-basics_enlightenment(mode, final)
-int mode UNUSED;
-int final;
-{
-    static char Power[] = "energy points (spell power)";
-    char buf[BUFSZ];
-    int pw = u.uen, hp = (Upolyd ? u.mh : u.uhp),
-        pwmax = u.uenmax, hpmax = (Upolyd ? u.mhmax : u.uhpmax);
-
-    enlght_out(""); /* separator after background */
-    enlght_out("Basics:");
-
-    if (hp < 0)
-        hp = 0;
-    /* "1 out of 1" rather than "all" if max is only 1; should never happen */
-    if (hp == hpmax && hpmax > 1)
-        Sprintf(buf, "all %d hit points", hpmax);
-    else
-        Sprintf(buf, "%d out of %d hit point%s", hp, hpmax, plur(hpmax));
-    you_have(buf, "");
-
-    /* low max energy is feasible, so handle couple of extra special cases */
-    if (pwmax == 0 || (pw == pwmax && pwmax == 2)) /* both: "all 2" is silly */
-        Sprintf(buf, "%s %s", !pwmax ? "no" : "both", Power);
-    else if (pw == pwmax && pwmax > 2)
-        Sprintf(buf, "all %d %s", pwmax, Power);
-    else
-        Sprintf(buf, "%d out of %d %s", pw, pwmax, Power);
-    you_have(buf, "");
-
-    if (Upolyd) {
-        switch (mons[u.umonnum].mlevel) {
-        case 0:
-            /* status line currently being explained shows "HD:0" */
-            Strcpy(buf, "0 hit dice (actually 1/2)");
-            break;
-        case 1:
-            Strcpy(buf, "1 hit die");
-            break;
-        default:
-            Sprintf(buf, "%d hit dice", mons[u.umonnum].mlevel);
-            break;
-        }
-        you_have(buf, "");
-    }
-
-    Sprintf(buf, "%d", u.uac);
-    enl_msg("Your armor class ", "is ", "was ", buf, "");
-
-    /* gold; similar to doprgold(#seegold) but without shop billing info;
-       same amount as shown on status line which ignores container contents */
-    {
-        static const char Your_wallet[] = "Your wallet ";
-        long umoney = money_cnt(invent);
-
-        if (!umoney) {
-            enl_msg(Your_wallet, "is ", "was ", "empty", "");
-        } else {
-            Sprintf(buf, "%ld %s", umoney, currency(umoney));
-            enl_msg(Your_wallet, "contains ", "contained ", buf, "");
-        }
-    }
-
-    if (flags.pickup) {
-        char ocl[MAXOCLASSES + 1];
-
-        Strcpy(buf, "on");
-        oc_to_str(flags.pickup_types, ocl);
-        Sprintf(eos(buf), " for %s%s%s",
-                *ocl ? "'" : "", *ocl ? ocl : "all types", *ocl ? "'" : "");
-        if (flags.pickup_thrown && *ocl) /* *ocl: don't show if 'all types' */
-            Strcat(buf, " plus thrown");
-        if (apelist)
-            Strcat(buf, ", with exceptions");
-    } else
-        Strcpy(buf, "off");
-    enl_msg("Autopickup ", "is ", "was ", buf, "");
-}
-
-/* characteristics: expanded version of bottom line strength, dexterity, &c */
-STATIC_OVL void
-characteristics_enlightenment(mode, final)
-int mode;
-int final;
-{
-    char buf[BUFSZ];
-
-    enlght_out("");
-    Sprintf(buf, "%s Characteristics:", !final ? "Current" : "Final");
-    enlght_out(buf);
-
-    /* bottom line order */
-    one_characteristic(mode, final, A_STR); /* strength */
-    one_characteristic(mode, final, A_DEX); /* dexterity */
-    one_characteristic(mode, final, A_CON); /* constitution */
-    one_characteristic(mode, final, A_INT); /* intelligence */
-    one_characteristic(mode, final, A_WIS); /* wisdom */
-    one_characteristic(mode, final, A_CHA); /* charisma */
-}
-
-/* display one attribute value for characteristics_enlightenment() */
-STATIC_OVL void
-one_characteristic(mode, final, attrindx)
-int mode, final, attrindx;
-{
-    extern const char *const attrname[]; /* attrib.c */
-    boolean hide_innate_value = FALSE, interesting_alimit;
-    int acurrent, abase, apeak, alimit;
-    const char *paren_pfx;
-    char subjbuf[BUFSZ], valubuf[BUFSZ], valstring[32];
-
-    /* being polymorphed or wearing certain cursed items prevents
-       hero from reliably tracking changes to characteristics so
-       we don't show base & peak values then; when the items aren't
-       cursed, hero could take them off to check underlying values
-       and we show those in such case so that player doesn't need
-       to actually resort to doing that */
-    if (Upolyd) {
-        hide_innate_value = TRUE;
-    } else if (Fixed_abil) {
-        if (stuck_ring(uleft, RIN_SUSTAIN_ABILITY)
-            || stuck_ring(uright, RIN_SUSTAIN_ABILITY))
-            hide_innate_value = TRUE;
-    }
-    switch (attrindx) {
-    case A_STR:
-        if (uarmg && uarmg->otyp == GAUNTLETS_OF_POWER && uarmg->cursed)
-            hide_innate_value = TRUE;
-        break;
-    case A_DEX:
-        break;
-    case A_CON:
-        if (uwep && uwep->oartifact == ART_OGRESMASHER && uwep->cursed)
-            hide_innate_value = TRUE;
-        break;
-    case A_INT:
-        if (uarmh && uarmh->otyp == DUNCE_CAP && uarmh->cursed)
-            hide_innate_value = TRUE;
-        break;
-    case A_WIS:
-        if (uarmh && uarmh->otyp == DUNCE_CAP && uarmh->cursed)
-            hide_innate_value = TRUE;
-        break;
-    case A_CHA:
-        break;
-    default:
-        return; /* impossible */
-    };
-    /* note: final disclosure includes MAGICENLIGHTENTMENT */
-    if ((mode & MAGICENLIGHTENMENT) && !Upolyd)
-        hide_innate_value = FALSE;
-
-    acurrent = ACURR(attrindx);
-    (void) attrval(attrindx, acurrent, valubuf); /* Sprintf(valubuf,"%d",) */
-    Sprintf(subjbuf, "Your %s ", attrname[attrindx]);
-
-    if (!hide_innate_value) {
-        /* show abase, amax, and/or attrmax if acurr doesn't match abase
-           (a magic bonus or penalty is in effect) or abase doesn't match
-           amax (some points have been lost to poison or exercise abuse
-           and are restorable) or attrmax is different from normal human
-           (while game is in progress; trying to reduce dependency on
-           spoilers to keep track of such stuff) or attrmax was different
-           from abase (at end of game; this attribute wasn't maxed out) */
-        abase = ABASE(attrindx);
-        apeak = AMAX(attrindx);
-        alimit = ATTRMAX(attrindx);
-        /* criterium for whether the limit is interesting varies */
-        interesting_alimit =
-            final ? TRUE /* was originally `(abase != alimit)' */
-                  : (alimit != (attrindx != A_STR ? 18 : STR18(100)));
-        paren_pfx = final ? " (" : " (current; ";
-        if (acurrent != abase) {
-            Sprintf(eos(valubuf), "%sbase:%s", paren_pfx,
-                    attrval(attrindx, abase, valstring));
-            paren_pfx = ", ";
-        }
-        if (abase != apeak) {
-            Sprintf(eos(valubuf), "%speak:%s", paren_pfx,
-                    attrval(attrindx, apeak, valstring));
-            paren_pfx = ", ";
-        }
-        if (interesting_alimit) {
-            Sprintf(eos(valubuf), "%s%slimit:%s", paren_pfx,
-                    /* more verbose if exceeding 'limit' due to magic bonus */
-                    (acurrent > alimit) ? "innate " : "",
-                    attrval(attrindx, alimit, valstring));
-            /* paren_pfx = ", "; */
-        }
-        if (acurrent != abase || abase != apeak || interesting_alimit)
-            Strcat(valubuf, ")");
-    }
-    enl_msg(subjbuf, "is ", "was ", valubuf, "");
-}
-
-/* status: selected obvious capabilities, assorted troubles */
-STATIC_OVL void
-status_enlightenment(mode, final)
-int mode;
-int final;
-{
-    boolean magic = (mode & MAGICENLIGHTENMENT) ? TRUE : FALSE;
-    int cap, wtype;
-    char buf[BUFSZ], youtoo[BUFSZ];
-    boolean Riding = (u.usteed
-                      /* if hero dies while dismounting, u.usteed will still
-                         be set; we want to ignore steed in that situation */
-                      && !(final == ENL_GAMEOVERDEAD
-                           && !strcmp(killer.name, "riding accident")));
-    const char *steedname = (!Riding ? (char *) 0
-                      : x_monnam(u.usteed,
-                                 u.usteed->mtame ? ARTICLE_YOUR : ARTICLE_THE,
-                                 (char *) 0,
-                                 (SUPPRESS_SADDLE | SUPPRESS_HALLUCINATION),
-                                 FALSE));
-
-    /*\
-     * Status (many are abbreviated on bottom line; others are or
-     *     should be discernible to the hero hence to the player)
-    \*/
-    enlght_out(""); /* separator after title or characteristics */
-    enlght_out(final ? "Final Status:" : "Current Status:");
-
-    Strcpy(youtoo, You_);
-    /* not a traditional status but inherently obvious to player; more
-       detail given below (attributes section) for magic enlightenment */
-    if (Upolyd) {
-        Strcpy(buf, "transformed");
-        if (ugenocided())
-            Sprintf(eos(buf), " and %s %s inside",
-                    final ? "felt" : "feel", udeadinside());
-        you_are(buf, "");
-    }
-    /* not a trouble, but we want to display riding status before maybe
-       reporting steed as trapped or hero stuck to cursed saddle */
-    if (Riding) {
-        Sprintf(buf, "riding %s", steedname);
-        you_are(buf, "");
-        Sprintf(eos(youtoo), "and %s ", steedname);
-    }
-    /* other movement situations that hero should always know */
-    if (Levitation) {
-        if (Lev_at_will && magic)
-            you_are("levitating, at will", "");
-        else
-            enl_msg(youtoo, are, were, "levitating", from_what(LEVITATION));
-    } else if (Flying) { /* can only fly when not levitating */
-        enl_msg(youtoo, are, were, "flying", from_what(FLYING));
-    }
-    if (Underwater) {
-        you_are("underwater", "");
-    } else if (u.uinwater) {
-        you_are(Swimming ? "swimming" : "in water", from_what(SWIMMING));
-    } else if (walking_on_water()) {
-        /* show active Wwalking here, potential Wwalking elsewhere */
-        Sprintf(buf, "walking on %s",
-                is_pool(u.ux, u.uy) ? "water"
-                : is_lava(u.ux, u.uy) ? "lava"
-                  : surface(u.ux, u.uy)); /* catchall; shouldn't happen */
-        you_are(buf, from_what(WWALKING));
-    }
-    if (Upolyd && (u.uundetected || U_AP_TYPE != M_AP_NOTHING))
-        youhiding(TRUE, final);
-
-    /* internal troubles, mostly in the order that prayer ranks them */
-    if (Stoned) {
-        if (final && (Stoned & I_SPECIAL))
-            enlght_out(" You turned into stone.");
-        else
-            you_are("turning to stone", "");
-    }
-    if (Slimed) {
-        if (final && (Slimed & I_SPECIAL))
-            enlght_out(" You turned into slime.");
-        else
-            you_are("turning into slime", "");
-    }
-    if (Strangled) {
-        if (u.uburied) {
-            you_are("buried", "");
-        } else {
-            if (final && (Strangled & I_SPECIAL)) {
-                enlght_out(" You died from strangulation.");
-            } else {
-                Strcpy(buf, "being strangled");
-                if (wizard)
-                    Sprintf(eos(buf), " (%ld)", (Strangled & TIMEOUT));
-                you_are(buf, from_what(STRANGLED));
-            }
-        }
-    }
-    if (Sick) {
-        /* the two types of sickness are lumped together; hero can be
-           afflicted by both but there is only one timeout; botl status
-           puts TermIll before FoodPois and death due to timeout reports
-           terminal illness if both are in effect, so do the same here */
-        if (final && (Sick & I_SPECIAL)) {
-            Sprintf(buf, " %sdied from %s.", You_, /* has trailing space */
-                    (u.usick_type & SICK_NONVOMITABLE)
-                    ? "terminal illness" : "food poisoning");
-            enlght_out(buf);
-        } else {
-            /* unlike death due to sickness, report the two cases separately
-               because it is possible to cure one without curing the other */
-            if (u.usick_type & SICK_NONVOMITABLE)
-                you_are("terminally sick from illness", "");
-            if (u.usick_type & SICK_VOMITABLE)
-                you_are("terminally sick from food poisoning", "");
-        }
-    }
-    if (Vomiting)
-        you_are("nauseated", "");
-    if (Stunned)
-        you_are("stunned", "");
-    if (Confusion)
-        you_are("confused", "");
-    if (Hallucination)
-        you_are("hallucinating", "");
-    if (Blind) {
-        /* from_what() (currently wizard-mode only) checks !haseyes()
-           before u.uroleplay.blind, so we should too */
-        Sprintf(buf, "%s blind",
-                !haseyes(youmonst.data) ? "innately"
-                : u.uroleplay.blind ? "permanently"
-                  /* better phrasing desperately wanted... */
-                  : Blindfolded_only ? "deliberately"
-                    : "temporarily");
-        if (wizard && (Blinded & TIMEOUT) != 0L
-            && !u.uroleplay.blind && haseyes(youmonst.data))
-            Sprintf(eos(buf), " (%ld)", (Blinded & TIMEOUT));
-        /* !haseyes: avoid "you are innately blind innately" */
-        you_are(buf, !haseyes(youmonst.data) ? "" : from_what(BLINDED));
-    }
-    if (Deaf)
-        you_are("deaf", from_what(DEAF));
-
-    /* external troubles, more or less */
-    if (Punished) {
-        if (uball) {
-            Sprintf(buf, "chained to %s", ansimpleoname(uball));
-        } else {
-            impossible("Punished without uball?");
-            Strcpy(buf, "punished");
-        }
-        you_are(buf, "");
-    }
-    if (u.utrap) {
-        char predicament[BUFSZ];
-        struct trap *t;
-        boolean anchored = (u.utraptype == TT_BURIEDBALL);
-
-        if (anchored) {
-            Strcpy(predicament, "tethered to something buried");
-        } else if (u.utraptype == TT_INFLOOR || u.utraptype == TT_LAVA) {
-            Sprintf(predicament, "stuck in %s", the(surface(u.ux, u.uy)));
-        } else {
-            Strcpy(predicament, "trapped");
-            if ((t = t_at(u.ux, u.uy)) != 0)
-                Sprintf(eos(predicament), " in %s",
-                        an(defsyms[trap_to_defsym(t->ttyp)].explanation));
-        }
-        if (u.usteed) { /* not `Riding' here */
-            Sprintf(buf, "%s%s ", anchored ? "you and " : "", steedname);
-            *buf = highc(*buf);
-            enl_msg(buf, (anchored ? "are " : "is "),
-                    (anchored ? "were " : "was "), predicament, "");
-        } else
-            you_are(predicament, "");
-    } /* (u.utrap) */
-    if (u.uswallow) {
-        Sprintf(buf, "swallowed by %s", a_monnam(u.ustuck));
-        if (wizard)
-            Sprintf(eos(buf), " (%u)", u.uswldtim);
-        you_are(buf, "");
-    } else if (u.ustuck) {
-        Sprintf(buf, "%s %s",
-                (Upolyd && sticks(youmonst.data)) ? "holding" : "held by",
-                a_monnam(u.ustuck));
-        you_are(buf, "");
-    }
-    if (Riding) {
-        struct obj *saddle = which_armor(u.usteed, W_SADDLE);
-
-        if (saddle && saddle->cursed) {
-            Sprintf(buf, "stuck to %s %s", s_suffix(steedname),
-                    simpleonames(saddle));
-            you_are(buf, "");
-        }
-    }
-    if (Wounded_legs) {
-        /* when mounted, Wounded_legs applies to steed rather than to
-           hero; we only report steed's wounded legs in wizard mode */
-        if (u.usteed) { /* not `Riding' here */
-            if (wizard && steedname) {
-                Strcpy(buf, steedname);
-                *buf = highc(*buf);
-                enl_msg(buf, " has", " had", " wounded legs", "");
-            }
-        } else {
-            Sprintf(buf, "wounded %s", makeplural(body_part(LEG)));
-            you_have(buf, "");
-        }
-    }
-    if (Glib) {
-        Sprintf(buf, "slippery %s", fingers_or_gloves(TRUE));
-        if (wizard)
-            Sprintf(eos(buf), " (%ld)", (Glib & TIMEOUT));
-        you_have(buf, "");
-    }
-    if (Fumbling) {
-        if (magic || cause_known(FUMBLING))
-            enl_msg(You_, "fumble", "fumbled", "", from_what(FUMBLING));
-    }
-    if (Sleepy) {
-        if (magic || cause_known(SLEEPY)) {
-            Strcpy(buf, from_what(SLEEPY));
-            if (wizard)
-                Sprintf(eos(buf), " (%ld)", (HSleepy & TIMEOUT));
-            enl_msg("You ", "fall", "fell", " asleep uncontrollably", buf);
-        }
-    }
-    /* hunger/nutrition */
-    if (Hunger) {
-        if (magic || cause_known(HUNGER))
-            enl_msg(You_, "hunger", "hungered", " rapidly",
-                    from_what(HUNGER));
-    }
-    Strcpy(buf, hu_stat[u.uhs]); /* hunger status; omitted if "normal" */
-    mungspaces(buf);             /* strip trailing spaces */
-    if (*buf) {
-        *buf = lowc(*buf); /* override capitalization */
-        if (!strcmp(buf, "weak"))
-            Strcat(buf, " from severe hunger");
-        else if (!strncmp(buf, "faint", 5)) /* fainting, fainted */
-            Strcat(buf, " due to starvation");
-        you_are(buf, "");
-    }
-    /* encumbrance */
-    if ((cap = near_capacity()) > UNENCUMBERED) {
-        const char *adj = "?_?"; /* (should always get overridden) */
-
-        Strcpy(buf, enc_stat[cap]);
-        *buf = lowc(*buf);
-        switch (cap) {
-        case SLT_ENCUMBER:
-            adj = "slightly";
-            break; /* burdened */
-        case MOD_ENCUMBER:
-            adj = "moderately";
-            break; /* stressed */
-        case HVY_ENCUMBER:
-            adj = "very";
-            break; /* strained */
-        case EXT_ENCUMBER:
-            adj = "extremely";
-            break; /* overtaxed */
-        case OVERLOADED:
-            adj = "not possible";
-            break;
-        }
-        Sprintf(eos(buf), "; movement %s %s%s", !final ? "is" : "was", adj,
-                (cap < OVERLOADED) ? " slowed" : "");
-        you_are(buf, "");
-    } else {
-        /* last resort entry, guarantees Status section is non-empty
-           (no longer needed for that purpose since weapon status added;
-           still useful though) */
-        you_are("unencumbered", "");
-    }
-
-    /* report being weaponless; distinguish whether gloves are worn */
-    if (!uwep) {
-        you_are(uarmg ? "empty handed" /* gloves imply hands */
-                      : humanoid(youmonst.data)
-                         /* hands but no weapon and no gloves */
-                         ? "bare handed"
-                         /* alternate phrasing for paws or lack of hands */
-                         : "not wielding anything",
-                "");
-    /* two-weaponing implies hands (can't be polymorphed) and
-       a weapon or wep-tool (not other odd stuff) in each hand */
-    } else if (u.twoweap) {
-        you_are("wielding two weapons at once", "");
-    /* report most weapons by their skill class (so a katana will be
-       described as a long sword, for instance; mattock and hook are
-       exceptions), or wielded non-weapon item by its object class */
-    } else {
-        const char *what = weapon_descr(uwep);
-
-        if (!strcmpi(what, "armor") || !strcmpi(what, "food")
-            || !strcmpi(what, "venom"))
-            Sprintf(buf, "wielding some %s", what);
-        else
-            Sprintf(buf, "wielding %s",
-                    (uwep->quan == 1L) ? an(what) : makeplural(what));
-        you_are(buf, "");
-    }
-    /*
-     * Skill with current weapon.  Might help players who've never
-     * noticed #enhance or decided that it was pointless.
-     *
-     * TODO?  Maybe merge wielding line and skill line into one sentence.
-     */
-    if ((wtype = uwep_skill_type()) != P_NONE) {
-        char sklvlbuf[20];
-        int sklvl = P_SKILL(wtype);
-        boolean hav = (sklvl != P_UNSKILLED && sklvl != P_SKILLED);
-
-        if (sklvl == P_ISRESTRICTED)
-            Strcpy(sklvlbuf, "no");
-        else
-            (void) lcase(skill_level_name(wtype, sklvlbuf));
-        /* "you have no/basic/expert/master/grand-master skill with <skill>"
-           or "you are unskilled/skilled in <skill>" */
-        Sprintf(buf, "%s %s %s", sklvlbuf,
-                hav ? "skill with" : "in", skill_name(wtype));
-        if (can_advance(wtype, FALSE))
-            Sprintf(eos(buf), " and %s that",
-                    !final ? "can enhance" : "could have enhanced");
-        if (hav)
-            you_have(buf, "");
-        else
-            you_are(buf, "");
-    }
-    /* report 'nudity' */
-    if (!uarm && !uarmu && !uarmc && !uarms && !uarmg && !uarmf && !uarmh) {
-        if (u.uroleplay.nudist)
-            enl_msg(You_, "do", "did", " not wear any armor", "");
-        else
-            you_are("not wearing any armor", "");
-    }
-}
-
-/* attributes: intrinsics and the like, other non-obvious capabilities */
-STATIC_OVL void
-attributes_enlightenment(unused_mode, final)
-int unused_mode UNUSED;
-int final;
-{
-    static NEARDATA const char if_surroundings_permitted[] =
-        " if surroundings permitted";
-    int ltmp, armpro;
-    char buf[BUFSZ];
-
-    /*\
-     *  Attributes
-    \*/
-    enlght_out("");
-    enlght_out(final ? "Final Attributes:" : "Current Attributes:");
-
-    if (u.uevent.uhand_of_elbereth) {
-        static const char *const hofe_titles[3] = { "the Hand of Elbereth",
-                                                    "the Envoy of Balance",
-                                                    "the Glory of Arioch" };
-        you_are(hofe_titles[u.uevent.uhand_of_elbereth - 1], "");
-    }
-
-    Sprintf(buf, "%s", piousness(TRUE, "aligned"));
-    if (u.ualign.record >= 0)
-        you_are(buf, "");
-    else
-        you_have(buf, "");
-
-    if (wizard) {
-        Sprintf(buf, " %d", u.ualign.record);
-        enl_msg("Your alignment ", "is", "was", buf, "");
-    }
-
-    /*** Resistances to troubles ***/
-    if (Invulnerable)
-        you_are("invulnerable", from_what(INVULNERABLE));
-    if (Antimagic)
-        you_are("magic-protected", from_what(ANTIMAGIC));
-    if (Fire_resistance)
-        you_are("fire resistant", from_what(FIRE_RES));
-    if (Cold_resistance)
-        you_are("cold resistant", from_what(COLD_RES));
-    if (Sleep_resistance)
-        you_are("sleep resistant", from_what(SLEEP_RES));
-    if (Disint_resistance)
-        you_are("disintegration-resistant", from_what(DISINT_RES));
-    if (Shock_resistance)
-        you_are("shock resistant", from_what(SHOCK_RES));
-    if (Poison_resistance)
-        you_are("poison resistant", from_what(POISON_RES));
-    if (Acid_resistance)
-        you_are("acid resistant", from_what(ACID_RES));
-    if (Drain_resistance)
-        you_are("level-drain resistant", from_what(DRAIN_RES));
-    if (Sick_resistance)
-        you_are("immune to sickness", from_what(SICK_RES));
-    if (Stone_resistance)
-        you_are("petrification resistant", from_what(STONE_RES));
-    if (Halluc_resistance)
-        enl_msg(You_, "resist", "resisted", " hallucinations",
-                from_what(HALLUC_RES));
-    if (u.uedibility)
-        you_can("recognize detrimental food", "");
-
-    /*** Vision and senses ***/
-    if (!Blind && (Blinded || !haseyes(youmonst.data)))
-        you_can("see", from_what(-BLINDED)); /* Eyes of the Overworld */
-    if (See_invisible) {
-        if (!Blind)
-            enl_msg(You_, "see", "saw", " invisible", from_what(SEE_INVIS));
-        else
-            enl_msg(You_, "will see", "would have seen",
-                    " invisible when not blind", from_what(SEE_INVIS));
-    }
-    if (Blind_telepat)
-        you_are("telepathic", from_what(TELEPAT));
-    if (Warning)
-        you_are("warned", from_what(WARNING));
-    if (Warn_of_mon && context.warntype.obj) {
-        Sprintf(buf, "aware of the presence of %s",
-                (context.warntype.obj & M2_ORC) ? "orcs"
-                : (context.warntype.obj & M2_ELF) ? "elves"
-                : (context.warntype.obj & M2_DEMON) ? "demons" : something);
-        you_are(buf, from_what(WARN_OF_MON));
-    }
-    if (Warn_of_mon && context.warntype.polyd) {
-        Sprintf(buf, "aware of the presence of %s",
-                ((context.warntype.polyd & (M2_HUMAN | M2_ELF))
-                 == (M2_HUMAN | M2_ELF))
-                    ? "humans and elves"
-                    : (context.warntype.polyd & M2_HUMAN)
-                          ? "humans"
-                          : (context.warntype.polyd & M2_ELF)
-                                ? "elves"
-                                : (context.warntype.polyd & M2_ORC)
-                                      ? "orcs"
-                                      : (context.warntype.polyd & M2_DEMON)
-                                            ? "demons"
-                                            : "certain monsters");
-        you_are(buf, "");
-    }
-    if (Warn_of_mon && context.warntype.speciesidx >= LOW_PM) {
-        Sprintf(buf, "aware of the presence of %s",
-                makeplural(mons[context.warntype.speciesidx].mname));
-        you_are(buf, from_what(WARN_OF_MON));
-    }
-    if (Undead_warning)
-        you_are("warned of undead", from_what(WARN_UNDEAD));
-    if (Searching)
-        you_have("automatic searching", from_what(SEARCHING));
-    if (Clairvoyant)
-        you_are("clairvoyant", from_what(CLAIRVOYANT));
-    else if ((HClairvoyant || EClairvoyant) && BClairvoyant) {
-        Strcpy(buf, from_what(-CLAIRVOYANT));
-        if (!strncmp(buf, " because of ", 12))
-            /* overwrite substring; strncpy doesn't add terminator */
-            (void) strncpy(buf, " if not for ", 12);
-        enl_msg(You_, "could be", "could have been", " clairvoyant", buf);
-    }
-    if (Infravision)
-        you_have("infravision", from_what(INFRAVISION));
-    if (Detect_monsters)
-        you_are("sensing the presence of monsters", "");
-    if (u.umconf)
-        you_are("going to confuse monsters", "");
-
-    /*** Appearance and behavior ***/
-    if (Adornment) {
-        int adorn = 0;
-
-        if (uleft && uleft->otyp == RIN_ADORNMENT)
-            adorn += uleft->spe;
-        if (uright && uright->otyp == RIN_ADORNMENT)
-            adorn += uright->spe;
-        /* the sum might be 0 (+0 ring or two which negate each other);
-           that yields "you are charismatic" (which isn't pointless
-           because it potentially impacts seduction attacks) */
-        Sprintf(buf, "%scharismatic",
-                (adorn > 0) ? "more " : (adorn < 0) ? "less " : "");
-        you_are(buf, from_what(ADORNED));
-    }
-    if (Invisible)
-        you_are("invisible", from_what(INVIS));
-    else if (Invis)
-        you_are("invisible to others", from_what(INVIS));
-    /* ordinarily "visible" is redundant; this is a special case for
-       the situation when invisibility would be an expected attribute */
-    else if ((HInvis || EInvis) && BInvis)
-        you_are("visible", from_what(-INVIS));
-    if (Displaced)
-        you_are("displaced", from_what(DISPLACED));
-    if (Stealth)
-        you_are("stealthy", from_what(STEALTH));
-    if (Aggravate_monster)
-        enl_msg("You aggravate", "", "d", " monsters",
-                from_what(AGGRAVATE_MONSTER));
-    if (Conflict)
-        enl_msg("You cause", "", "d", " conflict", from_what(CONFLICT));
-
-    /*** Transportation ***/
-    if (Jumping)
-        you_can("jump", from_what(JUMPING));
-    if (Teleportation)
-        you_can("teleport", from_what(TELEPORT));
-    if (Teleport_control)
-        you_have("teleport control", from_what(TELEPORT_CONTROL));
-    /* actively levitating handled earlier as a status condition */
-    if (BLevitation) { /* levitation is blocked */
-        long save_BLev = BLevitation;
-
-        BLevitation = 0L;
-        if (Levitation) {
-            /* either trapped in the floor or inside solid rock
-               (or both if chained to buried iron ball and have
-               moved one step into solid rock somehow) */
-            boolean trapped = (save_BLev & I_SPECIAL) != 0L,
-                    terrain = (save_BLev & FROMOUTSIDE) != 0L;
-
-            Sprintf(buf, "%s%s%s",
-                    trapped ? " if not trapped" : "",
-                    (trapped && terrain) ? " and" : "",
-                    terrain ? if_surroundings_permitted : "");
-            enl_msg(You_, "would levitate", "would have levitated", buf, "");
-        }
-        BLevitation = save_BLev;
-    }
-    /* actively flying handled earlier as a status condition */
-    if (BFlying) { /* flight is blocked */
-        long save_BFly = BFlying;
-
-        BFlying = 0L;
-        if (Flying) {
-            enl_msg(You_, "would fly", "would have flown",
-                    /* wording quibble: for past tense, "hadn't been"
-                       would sound better than "weren't" (and
-                       "had permitted" better than "permitted"), but
-                       "weren't" and "permitted" are adequate so the
-                       extra complexity to handle that isn't worth it */
-                    Levitation
-                       ? " if you weren't levitating"
-                       : (save_BFly == I_SPECIAL)
-                          /* this is an oversimpliction; being trapped
-                             might also be blocking levitation so flight
-                             would still be blocked after escaping trap */
-                          ? " if you weren't trapped"
-                          : (save_BFly == FROMOUTSIDE)
-                             ? if_surroundings_permitted
-                             /* two or more of levitation, surroundings,
-                                and being trapped in the floor */
-                             : " if circumstances permitted",
-                    "");
-        }
-        BFlying = save_BFly;
-    }
-    /* actively walking on water handled earlier as a status condition */
-    if (Wwalking && !walking_on_water())
-        you_can("walk on water", from_what(WWALKING));
-    /* actively swimming (in water but not under it) handled earlier */
-    if (Swimming && (Underwater || !u.uinwater))
-        you_can("swim", from_what(SWIMMING));
-    if (Breathless)
-        you_can("survive without air", from_what(MAGICAL_BREATHING));
-    else if (Amphibious)
-        you_can("breathe water", from_what(MAGICAL_BREATHING));
-    if (Passes_walls)
-        you_can("walk through walls", from_what(PASSES_WALLS));
-
-    /*** Physical attributes ***/
-    if (Regeneration)
-        enl_msg("You regenerate", "", "d", "", from_what(REGENERATION));
-    if (Slow_digestion)
-        you_have("slower digestion", from_what(SLOW_DIGESTION));
-    if (u.uhitinc)
-        you_have(enlght_combatinc("to hit", u.uhitinc, final, buf), "");
-    if (u.udaminc)
-        you_have(enlght_combatinc("damage", u.udaminc, final, buf), "");
-    if (u.uspellprot || Protection) {
-        int prot = 0;
-
-        if (uleft && uleft->otyp == RIN_PROTECTION)
-            prot += uleft->spe;
-        if (uright && uright->otyp == RIN_PROTECTION)
-            prot += uright->spe;
-        if (HProtection & INTRINSIC)
-            prot += u.ublessed;
-        prot += u.uspellprot;
-        if (prot)
-            you_have(enlght_combatinc("defense", prot, final, buf), "");
-    }
-    if ((armpro = magic_negation(&youmonst)) > 0) {
-        /* magic cancellation factor, conferred by worn armor */
-        static const char *const mc_types[] = {
-            "" /*ordinary*/, "warded", "guarded", "protected",
-        };
-        /* sanity check */
-        if (armpro >= SIZE(mc_types))
-            armpro = SIZE(mc_types) - 1;
-        you_are(mc_types[armpro], "");
-    }
-    if (Half_physical_damage)
-        enlght_halfdmg(HALF_PHDAM, final);
-    if (Half_spell_damage)
-        enlght_halfdmg(HALF_SPDAM, final);
-    /* polymorph and other shape change */
-    if (Protection_from_shape_changers)
-        you_are("protected from shape changers",
-                from_what(PROT_FROM_SHAPE_CHANGERS));
-    if (Unchanging) {
-        const char *what = 0;
-
-        if (!Upolyd) /* Upolyd handled below after current form */
-            you_can("not change from your current form",
-                    from_what(UNCHANGING));
-        /* blocked shape changes */
-        if (Polymorph)
-            what = !final ? "polymorph" : "have polymorphed";
-        else if (u.ulycn >= LOW_PM)
-            what = !final ? "change shape" : "have changed shape";
-        if (what) {
-            Sprintf(buf, "would %s periodically", what);
-            /* omit from_what(UNCHANGING); too verbose */
-            enl_msg(You_, buf, buf, " if not locked into your current form",
-                    "");
-        }
-    } else if (Polymorph) {
-        you_are("polymorphing periodically", from_what(POLYMORPH));
-    }
-    if (Polymorph_control)
-        you_have("polymorph control", from_what(POLYMORPH_CONTROL));
-    if (Upolyd && u.umonnum != u.ulycn
-        /* if we've died from turning into slime, we're polymorphed
-           right now but don't want to list it as a temporary attribute
-           [we need a more reliable way to detect this situation] */
-        && !(final == ENL_GAMEOVERDEAD
-             && u.umonnum == PM_GREEN_SLIME && !Unchanging)) {
-        /* foreign shape (except were-form which is handled below) */
-        Sprintf(buf, "polymorphed into %s", an(youmonst.data->mname));
-        if (wizard)
-            Sprintf(eos(buf), " (%d)", u.mtimedone);
-        you_are(buf, "");
-    }
-    if (lays_eggs(youmonst.data) && flags.female) /* Upolyd */
-        you_can("lay eggs", "");
-    if (u.ulycn >= LOW_PM) {
-        /* "you are a werecreature [in beast form]" */
-        Strcpy(buf, an(mons[u.ulycn].mname));
-        if (u.umonnum == u.ulycn) {
-            Strcat(buf, " in beast form");
-            if (wizard)
-                Sprintf(eos(buf), " (%d)", u.mtimedone);
-        }
-        you_are(buf, "");
-    }
-    if (Unchanging && Upolyd) /* !Upolyd handled above */
-        you_can("not change from your current form", from_what(UNCHANGING));
-    if (Hate_silver)
-        you_are("harmed by silver", "");
-    /* movement and non-armor-based protection */
-    if (Fast)
-        you_are(Very_fast ? "very fast" : "fast", from_what(FAST));
-    if (Reflecting)
-        you_have("reflection", from_what(REFLECTING));
-    if (Free_action)
-        you_have("free action", from_what(FREE_ACTION));
-    if (Fixed_abil)
-        you_have("fixed abilities", from_what(FIXED_ABIL));
-    if (Lifesaved)
-        enl_msg("Your life ", "will be", "would have been", " saved", "");
-
-    /*** Miscellany ***/
-    if (Luck) {
-        ltmp = abs((int) Luck);
-        Sprintf(buf, "%s%slucky",
-                ltmp >= 10 ? "extremely " : ltmp >= 5 ? "very " : "",
-                Luck < 0 ? "un" : "");
-        if (wizard)
-            Sprintf(eos(buf), " (%d)", Luck);
-        you_are(buf, "");
-    } else if (wizard)
-        enl_msg("Your luck ", "is", "was", " zero", "");
-    if (u.moreluck > 0)
-        you_have("extra luck", "");
-    else if (u.moreluck < 0)
-        you_have("reduced luck", "");
-    if (carrying(LUCKSTONE) || stone_luck(TRUE)) {
-        ltmp = stone_luck(FALSE);
-        if (ltmp <= 0)
-            enl_msg("Bad luck ", "does", "did", " not time out for you", "");
-        if (ltmp >= 0)
-            enl_msg("Good luck ", "does", "did", " not time out for you", "");
-    }
-
-    if (u.ugangr) {
-        Sprintf(buf, " %sangry with you",
-                u.ugangr > 6 ? "extremely " : u.ugangr > 3 ? "very " : "");
-        if (wizard)
-            Sprintf(eos(buf), " (%d)", u.ugangr);
-        enl_msg(u_gname(), " is", " was", buf, "");
-    } else {
-        /*
-         * We need to suppress this when the game is over, because death
-         * can change the value calculated by can_pray(), potentially
-         * resulting in a false claim that you could have prayed safely.
-         */
-        if (!final) {
-#if 0
-            /* "can [not] safely pray" vs "could [not] have safely prayed" */
-            Sprintf(buf, "%s%ssafely pray%s", can_pray(FALSE) ? "" : "not ",
-                    final ? "have " : "", final ? "ed" : "");
-#else
-            Sprintf(buf, "%ssafely pray", can_pray(FALSE) ? "" : "not ");
-#endif
-            if (wizard)
-                Sprintf(eos(buf), " (%d)", u.ublesscnt);
-            you_can(buf, "");
-        }
-    }
-
-#ifdef DEBUG
-    /* named fruit debugging (doesn't really belong here...); to enable,
-       include 'fruit' in DEBUGFILES list (even though it isn't a file...) */
-    if (wizard && explicitdebug("fruit")) {
-        struct fruit *f;
-
-        reorder_fruit(TRUE); /* sort by fruit index, from low to high;
-                              * this modifies the ffruit chain, so could
-                              * possibly mask or even introduce a problem,
-                              * but it does useful sanity checking */
-        for (f = ffruit; f; f = f->nextf) {
-            Sprintf(buf, "Fruit #%d ", f->fid);
-            enl_msg(buf, "is ", "was ", f->fname, "");
-        }
-        enl_msg("The current fruit ", "is ", "was ", pl_fruit, "");
-        Sprintf(buf, "%d", flags.made_fruit);
-        enl_msg("The made fruit flag ", "is ", "was ", buf, "");
-    }
-#endif
-
-    {
-        const char *p;
-
-        buf[0] = '\0';
-        if (final < 2) { /* still in progress, or quit/escaped/ascended */
-            p = "survived after being killed ";
-            switch (u.umortality) {
-            case 0:
-                p = !final ? (char *) 0 : "survived";
-                break;
-            case 1:
-                Strcpy(buf, "once");
-                break;
-            case 2:
-                Strcpy(buf, "twice");
-                break;
-            case 3:
-                Strcpy(buf, "thrice");
-                break;
-            default:
-                Sprintf(buf, "%d times", u.umortality);
-                break;
-            }
-        } else { /* game ended in character's death */
-            p = "are dead";
-            switch (u.umortality) {
-            case 0:
-                impossible("dead without dying?");
-            case 1:
-                break; /* just "are dead" */
-            default:
-                Sprintf(buf, " (%d%s time!)", u.umortality,
-                        ordin(u.umortality));
-                break;
-            }
-        }
-        if (p)
-            enl_msg(You_, "have been killed ", p, buf, "");
-    }
-}
-
-#if 0  /* no longer used */
-STATIC_DCL boolean NDECL(minimal_enlightenment);
-
-/*
- * Courtesy function for non-debug, non-explorer mode players
- * to help refresh them about who/what they are.
- * Returns FALSE if menu cancelled (dismissed with ESC), TRUE otherwise.
- */
-STATIC_OVL boolean
-minimal_enlightenment()
-{
-    winid tmpwin;
-    menu_item *selected;
-    anything any;
-    int genidx, n;
-    char buf[BUFSZ], buf2[BUFSZ];
-    static const char untabbed_fmtstr[] = "%-15s: %-12s";
-    static const char untabbed_deity_fmtstr[] = "%-17s%s";
-    static const char tabbed_fmtstr[] = "%s:\t%-12s";
-    static const char tabbed_deity_fmtstr[] = "%s\t%s";
-    static const char *fmtstr;
-    static const char *deity_fmtstr;
-
-    fmtstr = iflags.menu_tab_sep ? tabbed_fmtstr : untabbed_fmtstr;
-    deity_fmtstr = iflags.menu_tab_sep ? tabbed_deity_fmtstr
-                                       : untabbed_deity_fmtstr;
-    any = zeroany;
-    buf[0] = buf2[0] = '\0';
-    tmpwin = create_nhwindow(NHW_MENU);
-    start_menu(tmpwin);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "Starting", FALSE);
-
-    /* Starting name, race, role, gender */
-    Sprintf(buf, fmtstr, "name", plname);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    Sprintf(buf, fmtstr, "race", urace.noun);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    Sprintf(buf, fmtstr, "role",
-            (flags.initgend && urole.name.f) ? urole.name.f : urole.name.m);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    Sprintf(buf, fmtstr, "gender", genders[flags.initgend].adj);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-
-    /* Starting alignment */
-    Sprintf(buf, fmtstr, "alignment", align_str(u.ualignbase[A_ORIGINAL]));
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-
-    /* Current name, race, role, gender */
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, "", FALSE);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "Current", FALSE);
-    Sprintf(buf, fmtstr, "race", Upolyd ? youmonst.data->mname : urace.noun);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    if (Upolyd) {
-        Sprintf(buf, fmtstr, "role (base)",
-                (u.mfemale && urole.name.f) ? urole.name.f
-                                            : urole.name.m);
-        add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    } else {
-        Sprintf(buf, fmtstr, "role",
-                (flags.female && urole.name.f) ? urole.name.f
-                                               : urole.name.m);
-        add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    }
-    /* don't want poly_gender() here; it forces `2' for non-humanoids */
-    genidx = is_neuter(youmonst.data) ? 2 : flags.female;
-    Sprintf(buf, fmtstr, "gender", genders[genidx].adj);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    if (Upolyd && (int) u.mfemale != genidx) {
-        Sprintf(buf, fmtstr, "gender (base)", genders[u.mfemale].adj);
-        add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-    }
-
-    /* Current alignment */
-    Sprintf(buf, fmtstr, "alignment", align_str(u.ualign.type));
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-
-    /* Deity list */
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, "", FALSE);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, iflags.menu_headings,
-             "Deities", FALSE);
-    Sprintf(buf2, deity_fmtstr, align_gname(A_CHAOTIC),
-            (u.ualignbase[A_ORIGINAL] == u.ualign.type
-             && u.ualign.type == A_CHAOTIC)               ? " (s,c)"
-                : (u.ualignbase[A_ORIGINAL] == A_CHAOTIC) ? " (s)"
-                : (u.ualign.type   == A_CHAOTIC)          ? " (c)" : "");
-    Sprintf(buf, fmtstr, "Chaotic", buf2);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-
-    Sprintf(buf2, deity_fmtstr, align_gname(A_NEUTRAL),
-            (u.ualignbase[A_ORIGINAL] == u.ualign.type
-             && u.ualign.type == A_NEUTRAL)               ? " (s,c)"
-                : (u.ualignbase[A_ORIGINAL] == A_NEUTRAL) ? " (s)"
-                : (u.ualign.type   == A_NEUTRAL)          ? " (c)" : "");
-    Sprintf(buf, fmtstr, "Neutral", buf2);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-
-    Sprintf(buf2, deity_fmtstr, align_gname(A_LAWFUL),
-            (u.ualignbase[A_ORIGINAL] == u.ualign.type
-             && u.ualign.type == A_LAWFUL)                ? " (s,c)"
-                : (u.ualignbase[A_ORIGINAL] == A_LAWFUL)  ? " (s)"
-                : (u.ualign.type   == A_LAWFUL)           ? " (c)" : "");
-    Sprintf(buf, fmtstr, "Lawful", buf2);
-    add_menu(tmpwin, NO_GLYPH, &any, 0, 0, ATR_NONE, buf, FALSE);
-
-    end_menu(tmpwin, "Base Attributes");
-    n = select_menu(tmpwin, PICK_NONE, &selected);
-    destroy_nhwindow(tmpwin);
-    return (boolean) (n != -1);
-}
-#endif /*0*/
-
-/* ^X command */
-STATIC_PTR int
-doattributes(VOID_ARGS)
-{
-    int mode = BASICENLIGHTENMENT;
-
-    /* show more--as if final disclosure--for wizard and explore modes */
-    if (wizard || discover)
-        mode |= MAGICENLIGHTENMENT;
-
-    enlightenment(mode, ENL_GAMEINPROGRESS);
-    return 0;
-}
-
-void
-youhiding(via_enlghtmt, msgflag)
-boolean via_enlghtmt; /* englightment line vs topl message */
-int msgflag;          /* for variant message phrasing */
-{
-    char *bp, buf[BUFSZ];
-
-    Strcpy(buf, "hiding");
-    if (U_AP_TYPE != M_AP_NOTHING) {
-        /* mimic; hero is only able to mimic a strange object or gold
-           or hallucinatory alternative to gold, so we skip the details
-           for the hypothetical furniture and monster cases */
-        bp = eos(strcpy(buf, "mimicking"));
-        if (U_AP_TYPE == M_AP_OBJECT) {
-            Sprintf(bp, " %s", an(simple_typename(youmonst.mappearance)));
-        } else if (U_AP_TYPE == M_AP_FURNITURE) {
-            Strcpy(bp, " something");
-        } else if (U_AP_TYPE == M_AP_MONSTER) {
-            Strcpy(bp, " someone");
-        } else {
-            ; /* something unexpected; leave 'buf' as-is */
-        }
-    } else if (u.uundetected) {
-        bp = eos(buf); /* points past "hiding" */
-        if (youmonst.data->mlet == S_EEL) {
-            if (is_pool(u.ux, u.uy))
-                Sprintf(bp, " in the %s", waterbody_name(u.ux, u.uy));
-        } else if (hides_under(youmonst.data)) {
-            struct obj *o = level.objects[u.ux][u.uy];
-
-            if (o)
-                Sprintf(bp, " underneath %s", ansimpleoname(o));
-        } else if (is_clinger(youmonst.data) || Flying) {
-            /* Flying: 'lurker above' hides on ceiling but doesn't cling */
-            Sprintf(bp, " on the %s", ceiling(u.ux, u.uy));
-        } else {
-            /* on floor; is_hider() but otherwise not special: 'trapper' */
-            if (u.utrap && u.utraptype == TT_PIT) {
-                struct trap *t = t_at(u.ux, u.uy);
-
-                Sprintf(bp, " in a %spit",
-                        (t && t->ttyp == SPIKED_PIT) ? "spiked " : "");
-            } else
-                Sprintf(bp, " on the %s", surface(u.ux, u.uy));
-        }
-    } else {
-        ; /* shouldn't happen; will result in generic "you are hiding" */
-    }
-
-    if (via_enlghtmt) {
-        int final = msgflag; /* 'final' is used by you_are() macro */
-
-        you_are(buf, "");
-    } else {
-        /* for dohide(), when player uses '#monster' command */
-        You("are %s %s.", msgflag ? "already" : "now", buf);
-    }
-}
-
-/* KMH, #conduct
- * (shares enlightenment's tense handling)
- */
-int
-doconduct(VOID_ARGS)
-{
-    show_conduct(0);
-    return 0;
-}
-
-void
-show_conduct(final)
-int final;
-{
-    char buf[BUFSZ];
-    int ngenocided;
-
-    /* Create the conduct window */
-    en_win = create_nhwindow(NHW_MENU);
-    putstr(en_win, 0, "Voluntary challenges:");
-
-    if (u.uroleplay.blind)
-        you_have_been("blind from birth");
-    if (u.uroleplay.nudist)
-        you_have_been("faithfully nudist");
-
-    if (!u.uconduct.food)
-        enl_msg(You_, "have gone", "went", " without food", "");
-        /* but beverages are okay */
-    else if (!u.uconduct.unvegan)
-        you_have_X("followed a strict vegan diet");
-    else if (!u.uconduct.unvegetarian)
-        you_have_been("vegetarian");
-
-    if (!u.uconduct.gnostic)
-        you_have_been("an atheist");
-
-    if (!u.uconduct.weaphit) {
-        you_have_never("hit with a wielded weapon");
-    } else if (wizard) {
-        Sprintf(buf, "used a wielded weapon %ld time%s", u.uconduct.weaphit,
-                plur(u.uconduct.weaphit));
-        you_have_X(buf);
-    }
-    if (!u.uconduct.killer)
-        you_have_been("a pacifist");
-
-    if (!u.uconduct.literate) {
-        you_have_been("illiterate");
-    } else if (wizard) {
-        Sprintf(buf, "read items or engraved %ld time%s", u.uconduct.literate,
-                plur(u.uconduct.literate));
-        you_have_X(buf);
-    }
-
-    ngenocided = num_genocides();
-    if (ngenocided == 0) {
-        you_have_never("genocided any monsters");
-    } else {
-        Sprintf(buf, "genocided %d type%s of monster%s", ngenocided,
-                plur(ngenocided), plur(ngenocided));
-        you_have_X(buf);
-    }
-
-    if (!u.uconduct.polypiles) {
-        you_have_never("polymorphed an object");
-    } else if (wizard) {
-        Sprintf(buf, "polymorphed %ld item%s", u.uconduct.polypiles,
-                plur(u.uconduct.polypiles));
-        you_have_X(buf);
-    }
-
-    if (!u.uconduct.polyselfs) {
-        you_have_never("changed form");
-    } else if (wizard) {
-        Sprintf(buf, "changed form %ld time%s", u.uconduct.polyselfs,
-                plur(u.uconduct.polyselfs));
-        you_have_X(buf);
-    }
-
-    if (!u.uconduct.wishes) {
-        you_have_X("used no wishes");
-    } else {
-        Sprintf(buf, "used %ld wish%s", u.uconduct.wishes,
-                (u.uconduct.wishes > 1L) ? "es" : "");
-        if (u.uconduct.wisharti) {
-            /* if wisharti == wishes
-             *  1 wish (for an artifact)
-             *  2 wishes (both for artifacts)
-             *  N wishes (all for artifacts)
-             * else (N is at least 2 in order to get here; M < N)
-             *  N wishes (1 for an artifact)
-             *  N wishes (M for artifacts)
-             */
-            if (u.uconduct.wisharti == u.uconduct.wishes)
-                Sprintf(eos(buf), " (%s",
-                        (u.uconduct.wisharti > 2L) ? "all "
-                          : (u.uconduct.wisharti == 2L) ? "both " : "");
-            else
-                Sprintf(eos(buf), " (%ld ", u.uconduct.wisharti);
-
-            Sprintf(eos(buf), "for %s)",
-                    (u.uconduct.wisharti == 1L) ? "an artifact"
-                                                : "artifacts");
-        }
-        you_have_X(buf);
-
-        if (!u.uconduct.wisharti)
-            enl_msg(You_, "have not wished", "did not wish",
-                    " for any artifacts", "");
-    }
-
-    /* Pop up the window and wait for a key */
-    display_nhwindow(en_win, TRUE);
-    destroy_nhwindow(en_win);
-    en_win = WIN_ERR;
 }
 
 /* ordered by command name */
@@ -3515,6 +1932,8 @@ struct ext_func_tab extcmdlist[] = {
             dowhatis, IFBURIED | GENERALCMD },
     { 'w', "wield", "wield (put in use) a weapon", dowield },
     { M('w'), "wipe", "wipe off your face", dowipe, AUTOCOMPLETE },
+    { '\0', "wizborn", "show stats of monsters created",
+            doborn, IFBURIED | WIZMODECMD },
 #ifdef DEBUG
     { '\0', "wizbury", "bury objs under and around you",
             wiz_debug_cmd_bury, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
@@ -3527,8 +1946,14 @@ struct ext_func_tab extcmdlist[] = {
             wiz_identify, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
     { '\0', "wizintrinsic", "set an intrinsic",
             wiz_intrinsic, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
+    { '\0', "wizlevelflip", "flip the level",
+            wiz_level_flip, IFBURIED | WIZMODECMD },
     { C('v'), "wizlevelport", "teleport to another level",
             wiz_level_tele, IFBURIED | AUTOCOMPLETE | WIZMODECMD },
+    { '\0', "wizloaddes", "load and execute a des-file lua script",
+            wiz_load_splua, IFBURIED | WIZMODECMD },
+    { '\0', "wizloadlua", "load and execute a lua script",
+            wiz_load_lua, IFBURIED | WIZMODECMD },
     { '\0', "wizmakemap", "recreate the current level",
             wiz_makemap, IFBURIED | WIZMODECMD },
     { C('f'), "wizmap", "map the level",
@@ -3583,33 +2008,33 @@ uchar key;
         Strcpy(key2cmdbuf, "move"); /* "move or attack"? */
     else if (movecmd(k = unctrl(key)))
         Strcpy(key2cmdbuf, "rush");
-    else if (movecmd(k = (Cmd.num_pad ? unmeta(key) : lowc(key))))
+    else if (movecmd(k = (g.Cmd.num_pad ? unmeta(key) : lowc(key))))
         Strcpy(key2cmdbuf, "run");
     if (*key2cmdbuf) {
         for (mov = &movtab[0]; mov->k1; ++mov) {
-            c = !Cmd.num_pad ? (!Cmd.swap_yz ? mov->k1 : mov->k2)
-                             : (!Cmd.phone_layout ? mov->k3 : mov->k4);
+            c = !g.Cmd.num_pad ? (!g.Cmd.swap_yz ? mov->k1 : mov->k2)
+                             : (!g.Cmd.phone_layout ? mov->k3 : mov->k4);
             if (c == k) {
                 Sprintf(eos(key2cmdbuf), " %s (screen %s)",
                         mov->txt, mov->alt);
                 return key2cmdbuf;
             }
         }
-    } else if (digit(key) || (Cmd.num_pad && digit(unmeta(key)))) {
+    } else if (digit(key) || (g.Cmd.num_pad && digit(unmeta(key)))) {
         key2cmdbuf[0] = '\0';
-        if (!Cmd.num_pad)
+        if (!g.Cmd.num_pad)
             Strcpy(key2cmdbuf, "start of, or continuation of, a count");
         else if (key == '5' || key == M_5)
             Sprintf(key2cmdbuf, "%s prefix",
-                    (!!Cmd.pcHack_compat ^ (key == M_5)) ? "run" : "rush");
-        else if (key == '0' || (Cmd.pcHack_compat && key == M_0))
+                    (!!g.Cmd.pcHack_compat ^ (key == M_5)) ? "run" : "rush");
+        else if (key == '0' || (g.Cmd.pcHack_compat && key == M_0))
             Strcpy(key2cmdbuf, "synonym for 'i'");
         if (*key2cmdbuf)
             return key2cmdbuf;
     }
-    if (Cmd.commands[key]) {
-        if (Cmd.commands[key]->ef_txt)
-            return Cmd.commands[key]->ef_desc;
+    if (g.Cmd.commands[key]) {
+        if (g.Cmd.commands[key]->ef_txt)
+            return g.Cmd.commands[key]->ef_desc;
 
     }
     return (char *) 0;
@@ -3624,14 +2049,14 @@ const char *command;
 
     /* special case: "nothing" is reserved for unbinding */
     if (!strcmp(command, "nothing")) {
-        Cmd.commands[key] = (struct ext_func_tab *) 0;
+        g.Cmd.commands[key] = (struct ext_func_tab *) 0;
         return TRUE;
     }
 
     for (extcmd = extcmdlist; extcmd->ef_txt; extcmd++) {
         if (strcmp(command, extcmd->ef_txt))
             continue;
-        Cmd.commands[key] = extcmd;
+        g.Cmd.commands[key] = extcmd;
 #if 0 /* silently accept key binding for unavailable command (!SHELL,&c) */
         if ((extcmd->flags & CMD_NOT_AVAILABLE) != 0) {
             char buf[BUFSZ];
@@ -3647,14 +2072,14 @@ const char *command;
 }
 
 /* initialize all keyboard commands */
-void
+static void
 commands_init()
 {
     struct ext_func_tab *extcmd;
 
     for (extcmd = extcmdlist; extcmd->ef_txt; extcmd++)
         if (extcmd->key)
-            Cmd.commands[extcmd->key] = extcmd;
+            g.Cmd.commands[extcmd->key] = extcmd;
 
     (void) bind_key(C('l'), "redraw"); /* if number_pad is set */
     /*       'b', 'B' : go sw */
@@ -3679,7 +2104,7 @@ commands_init()
     (void) bind_key(' ',    "wait");
 }
 
-int
+static int
 dokeylist_putcmds(datawin, docount, cmdflags, exflags, keys_used)
 winid datawin;
 boolean docount;
@@ -3699,7 +2124,7 @@ boolean *keys_used; /* boolean keys_used[256] */
             continue;
         if (key == ' ' && !flags.rest_on_space)
             continue;
-        if ((extcmd = Cmd.commands[i]) != (struct ext_func_tab *) 0) {
+        if ((extcmd = g.Cmd.commands[i]) != (struct ext_func_tab *) 0) {
             if ((cmdflags && !(extcmd->flags & cmdflags))
                 || (exflags && (extcmd->flags & exflags)))
                 continue;
@@ -3761,31 +2186,31 @@ dokeylist(VOID_ARGS)
     /* directional keys */
     putstr(datawin, 0, "");
     putstr(datawin, 0, "Directional keys:");
-    show_direction_keys(datawin, '.', FALSE); /* '.'==self in direction grid */
+    show_direction_keys(datawin, '.', FALSE); /* '.'==self in direct'n grid */
 
-    keys_used[(uchar) Cmd.move_NW] = keys_used[(uchar) Cmd.move_N]
-        = keys_used[(uchar) Cmd.move_NE] = keys_used[(uchar) Cmd.move_W]
-        = keys_used[(uchar) Cmd.move_E] = keys_used[(uchar) Cmd.move_SW]
-        = keys_used[(uchar) Cmd.move_S] = keys_used[(uchar) Cmd.move_SE]
+    keys_used[(uchar) g.Cmd.move_NW] = keys_used[(uchar) g.Cmd.move_N]
+        = keys_used[(uchar) g.Cmd.move_NE] = keys_used[(uchar) g.Cmd.move_W]
+        = keys_used[(uchar) g.Cmd.move_E] = keys_used[(uchar) g.Cmd.move_SW]
+        = keys_used[(uchar) g.Cmd.move_S] = keys_used[(uchar) g.Cmd.move_SE]
         = TRUE;
 
     if (!iflags.num_pad) {
-        keys_used[(uchar) highc(Cmd.move_NW)]
-            = keys_used[(uchar) highc(Cmd.move_N)]
-            = keys_used[(uchar) highc(Cmd.move_NE)]
-            = keys_used[(uchar) highc(Cmd.move_W)]
-            = keys_used[(uchar) highc(Cmd.move_E)]
-            = keys_used[(uchar) highc(Cmd.move_SW)]
-            = keys_used[(uchar) highc(Cmd.move_S)]
-            = keys_used[(uchar) highc(Cmd.move_SE)] = TRUE;
-        keys_used[(uchar) C(Cmd.move_NW)]
-            = keys_used[(uchar) C(Cmd.move_N)]
-            = keys_used[(uchar) C(Cmd.move_NE)]
-            = keys_used[(uchar) C(Cmd.move_W)]
-            = keys_used[(uchar) C(Cmd.move_E)]
-            = keys_used[(uchar) C(Cmd.move_SW)]
-            = keys_used[(uchar) C(Cmd.move_S)]
-            = keys_used[(uchar) C(Cmd.move_SE)] = TRUE;
+        keys_used[(uchar) highc(g.Cmd.move_NW)]
+            = keys_used[(uchar) highc(g.Cmd.move_N)]
+            = keys_used[(uchar) highc(g.Cmd.move_NE)]
+            = keys_used[(uchar) highc(g.Cmd.move_W)]
+            = keys_used[(uchar) highc(g.Cmd.move_E)]
+            = keys_used[(uchar) highc(g.Cmd.move_SW)]
+            = keys_used[(uchar) highc(g.Cmd.move_S)]
+            = keys_used[(uchar) highc(g.Cmd.move_SE)] = TRUE;
+        keys_used[(uchar) C(g.Cmd.move_NW)]
+            = keys_used[(uchar) C(g.Cmd.move_N)]
+            = keys_used[(uchar) C(g.Cmd.move_NE)]
+            = keys_used[(uchar) C(g.Cmd.move_W)]
+            = keys_used[(uchar) C(g.Cmd.move_E)]
+            = keys_used[(uchar) C(g.Cmd.move_SW)]
+            = keys_used[(uchar) C(g.Cmd.move_S)]
+            = keys_used[(uchar) C(g.Cmd.move_SE)] = TRUE;
         putstr(datawin, 0, "");
         putstr(datawin, 0,
           "Shift-<direction> will move in specified direction until you hit");
@@ -3798,7 +2223,7 @@ dokeylist(VOID_ARGS)
     putstr(datawin, 0, "");
     putstr(datawin, 0, "Miscellaneous keys:");
     for (i = 0; misc_keys[i].desc; i++) {
-        key = Cmd.spkeys[misc_keys[i].nhkf];
+        key = g.Cmd.spkeys[misc_keys[i].nhkf];
         if (key && ((misc_keys[i].numpad && iflags.num_pad)
                     || !misc_keys[i].numpad)) {
             keys_used[(uchar) key] = TRUE;
@@ -3845,7 +2270,7 @@ int NDECL((*fn));
     int i;
 
     for (i = 0; i < 256; ++i)
-        if (Cmd.commands[i] && Cmd.commands[i]->ef_funct == fn)
+        if (g.Cmd.commands[i] && g.Cmd.commands[i]->ef_funct == fn)
             return (char) i;
     return '\0';
 }
@@ -3858,7 +2283,7 @@ static const char template[] = "%-27s  %4ld  %6ld";
 static const char stats_hdr[] = "                             count  bytes";
 static const char stats_sep[] = "---------------------------  ----- -------";
 
-STATIC_OVL int
+static int
 size_obj(otmp)
 struct obj *otmp;
 {
@@ -3870,17 +2295,14 @@ struct obj *otmp;
             sz += (int) strlen(ONAME(otmp)) + 1;
         if (OMONST(otmp))
             sz += size_monst(OMONST(otmp), FALSE);
-        if (OMID(otmp))
-            sz += (int) sizeof (unsigned);
-        if (OLONG(otmp))
-            sz += (int) sizeof (long);
         if (OMAILCMD(otmp))
             sz += (int) strlen(OMAILCMD(otmp)) + 1;
+        /* sz += (int) sizeof (unsigned); -- now part of oextra itself */
     }
     return sz;
 }
 
-STATIC_OVL void
+static void
 count_obj(chain, total_count, total_size, top, recurse)
 struct obj *chain;
 long *total_count;
@@ -3903,7 +2325,7 @@ boolean recurse;
     *total_size += size;
 }
 
-STATIC_OVL void
+static void
 obj_chain(win, src, chain, force, total_count, total_size)
 winid win;
 const char *src;
@@ -3925,7 +2347,7 @@ long *total_size;
     }
 }
 
-STATIC_OVL void
+static void
 mon_invent_chain(win, src, chain, total_count, total_size)
 winid win;
 const char *src;
@@ -3948,7 +2370,7 @@ long *total_size;
     }
 }
 
-STATIC_OVL void
+static void
 contained_stats(win, src, total_count, total_size)
 winid win;
 const char *src;
@@ -3959,15 +2381,15 @@ long *total_size;
     long count = 0, size = 0;
     struct monst *mon;
 
-    count_obj(invent, &count, &size, FALSE, TRUE);
+    count_obj(g.invent, &count, &size, FALSE, TRUE);
     count_obj(fobj, &count, &size, FALSE, TRUE);
-    count_obj(level.buriedobjlist, &count, &size, FALSE, TRUE);
-    count_obj(migrating_objs, &count, &size, FALSE, TRUE);
+    count_obj(g.level.buriedobjlist, &count, &size, FALSE, TRUE);
+    count_obj(g.migrating_objs, &count, &size, FALSE, TRUE);
     /* DEADMONSTER check not required in this loop since they have no
      * inventory */
     for (mon = fmon; mon; mon = mon->nmon)
         count_obj(mon->minvent, &count, &size, FALSE, TRUE);
-    for (mon = migrating_mons; mon; mon = mon->nmon)
+    for (mon = g.migrating_mons; mon; mon = mon->nmon)
         count_obj(mon->minvent, &count, &size, FALSE, TRUE);
 
     if (count || size) {
@@ -3978,7 +2400,7 @@ long *total_size;
     }
 }
 
-STATIC_OVL int
+static int
 size_monst(mtmp, incl_wsegs)
 struct monst *mtmp;
 boolean incl_wsegs;
@@ -4007,7 +2429,7 @@ boolean incl_wsegs;
     return sz;
 }
 
-STATIC_OVL void
+static void
 mon_chain(win, src, chain, force, total_count, total_size)
 winid win;
 const char *src;
@@ -4035,7 +2457,7 @@ long *total_size;
     }
 }
 
-STATIC_OVL void
+static void
 misc_stats(win, total_count, total_size)
 winid win;
 long *total_count;
@@ -4053,7 +2475,7 @@ long *total_size;
      * others only if nonzero
      */
     count = size = 0L;
-    for (tt = ftrap; tt; tt = tt->ntrap) {
+    for (tt = g.ftrap; tt; tt = tt->ntrap) {
         ++count;
         size += (long) sizeof *tt;
     }
@@ -4089,7 +2511,7 @@ long *total_size;
     }
 
     count = size = 0L;
-    for (sd = level.damagelist; sd; sd = sd->next) {
+    for (sd = g.level.damagelist; sd; sd = sd->next) {
         ++count;
         size += (long) sizeof *sd;
     }
@@ -4112,7 +2534,7 @@ long *total_size;
     }
 
     count = size = 0L;
-    for (k = killer.next; k; k = k->next) {
+    for (k = g.killer.next; k; k = k->next) {
         ++count;
         size += (long) sizeof *k;
     }
@@ -4126,7 +2548,7 @@ long *total_size;
     }
 
     count = size = 0L;
-    for (bi = level.bonesinfo; bi; bi = bi->next) {
+    for (bi = g.level.bonesinfo; bi; bi = bi->next) {
         ++count;
         size += (long) sizeof *bi;
     }
@@ -4174,16 +2596,17 @@ wiz_show_stats()
     putstr(win, 0, stats_hdr);
     Sprintf(buf, "  Objects, base size %ld", (long) sizeof (struct obj));
     putstr(win, 0, buf);
-    obj_chain(win, "invent", invent, TRUE, &total_obj_count, &total_obj_size);
+    obj_chain(win, "invent", g.invent, TRUE,
+              &total_obj_count, &total_obj_size);
     obj_chain(win, "fobj", fobj, TRUE, &total_obj_count, &total_obj_size);
-    obj_chain(win, "buried", level.buriedobjlist, FALSE,
+    obj_chain(win, "buried", g.level.buriedobjlist, FALSE,
               &total_obj_count, &total_obj_size);
-    obj_chain(win, "migrating obj", migrating_objs, FALSE,
+    obj_chain(win, "migrating obj", g.migrating_objs, FALSE,
               &total_obj_count, &total_obj_size);
-    obj_chain(win, "billobjs", billobjs, FALSE,
+    obj_chain(win, "billobjs", g.billobjs, FALSE,
               &total_obj_count, &total_obj_size);
     mon_invent_chain(win, "minvent", fmon, &total_obj_count, &total_obj_size);
-    mon_invent_chain(win, "migrating minvent", migrating_mons,
+    mon_invent_chain(win, "migrating minvent", g.migrating_mons,
                      &total_obj_count, &total_obj_size);
     contained_stats(win, "contained", &total_obj_count, &total_obj_size);
     putstr(win, 0, stats_sep);
@@ -4195,12 +2618,12 @@ wiz_show_stats()
     Sprintf(buf, "  Monsters, base size %ld", (long) sizeof (struct monst));
     putstr(win, 0, buf);
     mon_chain(win, "fmon", fmon, TRUE, &total_mon_count, &total_mon_size);
-    mon_chain(win, "migrating", migrating_mons, FALSE,
+    mon_chain(win, "migrating", g.migrating_mons, FALSE,
               &total_mon_count, &total_mon_size);
-    /* 'mydogs' is only valid during level change or end of game disclosure,
+    /* 'g.mydogs' is only valid during level change or end of game disclosure,
        but conceivably we've been called from within debugger at such time */
-    if (mydogs) /* monsters accompanying hero */
-        mon_chain(win, "mydogs", mydogs, FALSE,
+    if (g.mydogs) /* monsters accompanying hero */
+        mon_chain(win, "mydogs", g.mydogs, FALSE,
                   &total_mon_count, &total_mon_size);
     putstr(win, 0, stats_sep);
     Sprintf(buf, template, "  Mon total", total_mon_count, total_mon_size);
@@ -4340,7 +2763,7 @@ const char *command;
     for (i = 0; i < SIZE(spkeys_binds); i++) {
         if (!spkeys_binds[i].name || strcmp(command, spkeys_binds[i].name))
             continue;
-        Cmd.spkeys[spkeys_binds[i].nhkf] = key;
+        g.Cmd.spkeys[spkeys_binds[i].nhkf] = key;
         return TRUE;
     }
     return FALSE;
@@ -4488,109 +2911,109 @@ boolean initial;
         'y', 'Y', C('y'), M('y'), M('Y'), M(C('y'))
     };
     static struct ext_func_tab *back_dir_cmd[8];
+    static boolean backed_dir_cmd = FALSE;
     const struct ext_func_tab *cmdtmp;
     boolean flagtemp;
     int c, i, updated = 0;
-    static boolean backed_dir_cmd = FALSE;
 
     if (initial) {
         updated = 1;
-        Cmd.num_pad = FALSE;
-        Cmd.pcHack_compat = Cmd.phone_layout = Cmd.swap_yz = FALSE;
+        g.Cmd.num_pad = FALSE;
+        g.Cmd.pcHack_compat = g.Cmd.phone_layout = g.Cmd.swap_yz = FALSE;
         for (i = 0; i < SIZE(spkeys_binds); i++)
-            Cmd.spkeys[spkeys_binds[i].nhkf] = spkeys_binds[i].key;
+            g.Cmd.spkeys[spkeys_binds[i].nhkf] = spkeys_binds[i].key;
         commands_init();
     } else {
-
         if (backed_dir_cmd) {
             for (i = 0; i < 8; i++) {
-                Cmd.commands[(uchar) Cmd.dirchars[i]] = back_dir_cmd[i];
+                g.Cmd.commands[(uchar) g.Cmd.dirchars[i]] = back_dir_cmd[i];
             }
         }
 
         /* basic num_pad */
         flagtemp = iflags.num_pad;
-        if (flagtemp != Cmd.num_pad) {
-            Cmd.num_pad = flagtemp;
+        if (flagtemp != g.Cmd.num_pad) {
+            g.Cmd.num_pad = flagtemp;
             ++updated;
         }
         /* swap_yz mode (only applicable for !num_pad); intended for
            QWERTZ keyboard used in Central Europe, particularly Germany */
-        flagtemp = (iflags.num_pad_mode & 1) ? !Cmd.num_pad : FALSE;
-        if (flagtemp != Cmd.swap_yz) {
-            Cmd.swap_yz = flagtemp;
+        flagtemp = (iflags.num_pad_mode & 1) ? !g.Cmd.num_pad : FALSE;
+        if (flagtemp != g.Cmd.swap_yz) {
+            g.Cmd.swap_yz = flagtemp;
             ++updated;
-            /* Cmd.swap_yz has been toggled;
+            /* g.Cmd.swap_yz has been toggled;
                perform the swap (or reverse previous one) */
             for (i = 0; i < SIZE(ylist); i++) {
                 c = ylist[i] & 0xff;
-                cmdtmp = Cmd.commands[c];              /* tmp = [y] */
-                Cmd.commands[c] = Cmd.commands[c + 1]; /* [y] = [z] */
-                Cmd.commands[c + 1] = cmdtmp;          /* [z] = tmp */
+                cmdtmp = g.Cmd.commands[c];              /* tmp = [y] */
+                g.Cmd.commands[c] = g.Cmd.commands[c + 1]; /* [y] = [z] */
+                g.Cmd.commands[c + 1] = cmdtmp;          /* [z] = tmp */
             }
         }
         /* MSDOS compatibility mode (only applicable for num_pad) */
-        flagtemp = (iflags.num_pad_mode & 1) ? Cmd.num_pad : FALSE;
-        if (flagtemp != Cmd.pcHack_compat) {
-            Cmd.pcHack_compat = flagtemp;
+        flagtemp = (iflags.num_pad_mode & 1) ? g.Cmd.num_pad : FALSE;
+        if (flagtemp != g.Cmd.pcHack_compat) {
+            g.Cmd.pcHack_compat = flagtemp;
             ++updated;
             /* pcHack_compat has been toggled */
             c = M('5') & 0xff;
-            cmdtmp = Cmd.commands['5'];
-            Cmd.commands['5'] = Cmd.commands[c];
-            Cmd.commands[c] = cmdtmp;
+            cmdtmp = g.Cmd.commands['5'];
+            g.Cmd.commands['5'] = g.Cmd.commands[c];
+            g.Cmd.commands[c] = cmdtmp;
             c = M('0') & 0xff;
-            Cmd.commands[c] = Cmd.pcHack_compat ? Cmd.commands['I'] : 0;
+            g.Cmd.commands[c] = g.Cmd.pcHack_compat ? g.Cmd.commands['I'] : 0;
         }
         /* phone keypad layout (only applicable for num_pad) */
-        flagtemp = (iflags.num_pad_mode & 2) ? Cmd.num_pad : FALSE;
-        if (flagtemp != Cmd.phone_layout) {
-            Cmd.phone_layout = flagtemp;
+        flagtemp = (iflags.num_pad_mode & 2) ? g.Cmd.num_pad : FALSE;
+        if (flagtemp != g.Cmd.phone_layout) {
+            g.Cmd.phone_layout = flagtemp;
             ++updated;
             /* phone_layout has been toggled */
             for (i = 0; i < 3; i++) {
                 c = '1' + i;             /* 1,2,3 <-> 7,8,9 */
-                cmdtmp = Cmd.commands[c];              /* tmp = [1] */
-                Cmd.commands[c] = Cmd.commands[c + 6]; /* [1] = [7] */
-                Cmd.commands[c + 6] = cmdtmp;          /* [7] = tmp */
+                cmdtmp = g.Cmd.commands[c];              /* tmp = [1] */
+                g.Cmd.commands[c] = g.Cmd.commands[c + 6]; /* [1] = [7] */
+                g.Cmd.commands[c + 6] = cmdtmp;          /* [7] = tmp */
                 c = (M('1') & 0xff) + i; /* M-1,M-2,M-3 <-> M-7,M-8,M-9 */
-                cmdtmp = Cmd.commands[c];              /* tmp = [M-1] */
-                Cmd.commands[c] = Cmd.commands[c + 6]; /* [M-1] = [M-7] */
-                Cmd.commands[c + 6] = cmdtmp;          /* [M-7] = tmp */
+                cmdtmp = g.Cmd.commands[c];              /* tmp = [M-1] */
+                g.Cmd.commands[c] = g.Cmd.commands[c + 6]; /* [M-1] = [M-7] */
+                g.Cmd.commands[c + 6] = cmdtmp;          /* [M-7] = tmp */
             }
         }
     } /*?initial*/
 
     if (updated)
-        Cmd.serialno++;
-    Cmd.dirchars = !Cmd.num_pad
-                       ? (!Cmd.swap_yz ? sdir : sdir_swap_yz)
-                       : (!Cmd.phone_layout ? ndir : ndir_phone_layout);
-    Cmd.alphadirchars = !Cmd.num_pad ? Cmd.dirchars : sdir;
+        g.Cmd.serialno++;
+    g.Cmd.dirchars = !g.Cmd.num_pad
+                       ? (!g.Cmd.swap_yz ? sdir : sdir_swap_yz)
+                       : (!g.Cmd.phone_layout ? ndir : ndir_phone_layout);
+    g.Cmd.alphadirchars = !g.Cmd.num_pad ? g.Cmd.dirchars : sdir;
 
-    Cmd.move_W = Cmd.dirchars[0];
-    Cmd.move_NW = Cmd.dirchars[1];
-    Cmd.move_N = Cmd.dirchars[2];
-    Cmd.move_NE = Cmd.dirchars[3];
-    Cmd.move_E = Cmd.dirchars[4];
-    Cmd.move_SE = Cmd.dirchars[5];
-    Cmd.move_S = Cmd.dirchars[6];
-    Cmd.move_SW = Cmd.dirchars[7];
+    g.Cmd.move_W = g.Cmd.dirchars[0];
+    g.Cmd.move_NW = g.Cmd.dirchars[1];
+    g.Cmd.move_N = g.Cmd.dirchars[2];
+    g.Cmd.move_NE = g.Cmd.dirchars[3];
+    g.Cmd.move_E = g.Cmd.dirchars[4];
+    g.Cmd.move_SE = g.Cmd.dirchars[5];
+    g.Cmd.move_S = g.Cmd.dirchars[6];
+    g.Cmd.move_SW = g.Cmd.dirchars[7];
 
     if (!initial) {
         for (i = 0; i < 8; i++) {
-            back_dir_cmd[i] =
-                (struct ext_func_tab *) Cmd.commands[(uchar) Cmd.dirchars[i]];
-            Cmd.commands[(uchar) Cmd.dirchars[i]] = (struct ext_func_tab *) 0;
+            uchar di = (uchar) g.Cmd.dirchars[i];
+
+            back_dir_cmd[i] = (struct ext_func_tab *) g.Cmd.commands[di];
+            g.Cmd.commands[di] = (struct ext_func_tab *) 0;
         }
         backed_dir_cmd = TRUE;
         for (i = 0; i < 8; i++)
-            (void) bind_key(Cmd.dirchars[i], "nothing");
+            (void) bind_key(g.Cmd.dirchars[i], "nothing");
     }
 }
 
 /* non-movement commands which accept 'm' prefix to request menu operation */
-STATIC_OVL boolean
+static boolean
 accept_menu_prefix(cmd_func)
 int NDECL((*cmd_func));
 {
@@ -4604,6 +3027,8 @@ int NDECL((*cmd_func));
         || cmd_func == doloot
         /* travel: pop up a menu of interesting targets in view */
         || cmd_func == dotravel
+        /* wait and search: allow even if next to a hostile monster */
+        || cmd_func == donull || cmd_func == dosearch
         /* wizard mode ^V and ^T */
         || cmd_func == wiz_level_tele || cmd_func == dotelecmd
         /* 'm' prefix allowed for some extended commands */
@@ -4649,16 +3074,15 @@ randomkey()
     case 10:
     case 11:
     case 12:
-        c = Cmd.dirchars[rn2(8)];
+        c = g.Cmd.dirchars[rn2(8)];
         if (!rn2(7))
-            c = !Cmd.num_pad ? (!rn2(3) ? C(c) : (c + 'A' - 'a')) : M(c);
+            c = !g.Cmd.num_pad ? (!rn2(3) ? C(c) : (c + 'A' - 'a')) : M(c);
         break;
     case 13:
         c = (char) rn1('9' - '0' + 1, '0');
         break;
     case 14:
-        /* any char, but avoid '\0' because it's used for mouse click */
-        c = (char) rnd(iflags.wc_eight_bit_input ? 255 : 127);
+        c = (char) rn2(iflags.wc_eight_bit_input ? 256 : 128);
         break;
     }
 
@@ -4693,7 +3117,7 @@ rnd_extcmd_idx(VOID_ARGS)
     return rn2(extcmdlist_length + 1) - 1;
 }
 
-int
+static int
 ch2spkeys(c, start, end)
 char c;
 int start,end;
@@ -4701,7 +3125,7 @@ int start,end;
     int i;
 
     for (i = start; i <= end; i++)
-        if (Cmd.spkeys[i] == c)
+        if (g.Cmd.spkeys[i] == c)
             return i;
     return NHKF_ESC;
 }
@@ -4716,57 +3140,57 @@ register char *cmd;
 
     iflags.menu_requested = FALSE;
 #ifdef SAFERHANGUP
-    if (program_state.done_hup)
+    if (g.program_state.done_hup)
         end_of_input();
 #endif
     if (firsttime) {
-        context.nopick = 0;
+        g.context.nopick = 0;
         cmd = parse();
     }
-    if (*cmd == Cmd.spkeys[NHKF_ESC]) {
-        context.move = FALSE;
+    if (*cmd == g.Cmd.spkeys[NHKF_ESC]) {
+        g.context.move = FALSE;
         return;
     }
-    if (*cmd == DOAGAIN && !in_doagain && saveq[0]) {
-        in_doagain = TRUE;
-        stail = 0;
+    if (*cmd == DOAGAIN && !g.in_doagain && g.saveq[0]) {
+        g.in_doagain = TRUE;
+        g.stail = 0;
         rhack((char *) 0); /* read and execute command */
-        in_doagain = FALSE;
+        g.in_doagain = FALSE;
         return;
     }
     /* Special case of *cmd == ' ' handled better below */
     if (!*cmd || *cmd == (char) 0377) {
         nhbell();
-        context.move = FALSE;
+        g.context.move = FALSE;
         return; /* probably we just had an interrupt */
     }
 
     /* handle most movement commands */
     prefix_seen = FALSE;
-    context.travel = context.travel1 = 0;
+    g.context.travel = g.context.travel1 = 0;
     spkey = ch2spkeys(*cmd, NHKF_RUN, NHKF_CLICKLOOK);
 
     switch (spkey) {
     case NHKF_RUSH:
         if (movecmd(cmd[1])) {
-            context.run = 2;
-            domove_attempting |= DOMOVE_RUSH;
+            g.context.run = 2;
+            g.domove_attempting |= DOMOVE_RUSH;
         } else
             prefix_seen = TRUE;
         break;
     case NHKF_RUN2:
-        if (!Cmd.num_pad)
+        if (!g.Cmd.num_pad)
             break;
         /*FALLTHRU*/
     case NHKF_RUN:
         if (movecmd(lowc(cmd[1]))) {
-            context.run = 3;
-            domove_attempting |= DOMOVE_RUSH;
+            g.context.run = 3;
+            g.domove_attempting |= DOMOVE_RUSH;
         } else
             prefix_seen = TRUE;
         break;
     case NHKF_FIGHT2:
-        if (!Cmd.num_pad)
+        if (!g.Cmd.num_pad)
             break;
         /*FALLTHRU*/
     /* Effects of movement commands and invisible monsters:
@@ -4776,17 +3200,17 @@ register char *cmd;
      */
     case NHKF_FIGHT:
         if (movecmd(cmd[1])) {
-            context.forcefight = 1;
-            domove_attempting |= DOMOVE_WALK;
+            g.context.forcefight = 1;
+            g.domove_attempting |= DOMOVE_WALK;
         } else
             prefix_seen = TRUE;
         break;
     case NHKF_NOPICKUP:
         if (movecmd(cmd[1]) || u.dz) {
-            context.run = 0;
-            context.nopick = 1;
+            g.context.run = 0;
+            g.context.nopick = 1;
             if (!u.dz)
-                domove_attempting |= DOMOVE_WALK;
+                g.domove_attempting |= DOMOVE_WALK;
             else
                 cmd[0] = cmd[1]; /* "m<" or "m>" */
         } else
@@ -4794,54 +3218,51 @@ register char *cmd;
         break;
     case NHKF_RUN_NOPICKUP:
         if (movecmd(lowc(cmd[1]))) {
-            context.run = 1;
-            context.nopick = 1;
-            domove_attempting |= DOMOVE_RUSH;
+            g.context.run = 1;
+            g.context.nopick = 1;
+            g.domove_attempting |= DOMOVE_RUSH;
         } else
             prefix_seen = TRUE;
         break;
     case NHKF_DOINV:
-        if (!Cmd.num_pad)
+        if (!g.Cmd.num_pad)
             break;
         (void) ddoinv(); /* a convenience borrowed from the PC */
-        context.move = FALSE;
-        multi = 0;
+        g.context.move = FALSE;
+        g.multi = 0;
         return;
     case NHKF_CLICKLOOK:
         if (iflags.clicklook) {
-            context.move = FALSE;
-            do_look(2, &clicklook_cc);
+            g.context.move = FALSE;
+            do_look(2, &g.clicklook_cc);
         }
         return;
     case NHKF_TRAVEL:
-        if (flags.travelcmd) {
-            context.travel = 1;
-            context.travel1 = 1;
-            context.run = 8;
-            context.nopick = 1;
-            domove_attempting |= DOMOVE_RUSH;
-            break;
-        }
-        /*FALLTHRU*/
+        g.context.travel = 1;
+        g.context.travel1 = 1;
+        g.context.run = 8;
+        g.context.nopick = 1;
+        g.domove_attempting |= DOMOVE_RUSH;
+        break;
     default:
         if (movecmd(*cmd)) { /* ordinary movement */
-            context.run = 0; /* only matters here if it was 8 */
-            domove_attempting |= DOMOVE_WALK;
-        } else if (movecmd(Cmd.num_pad ? unmeta(*cmd) : lowc(*cmd))) {
-            context.run = 1;
-            domove_attempting |= DOMOVE_RUSH;
+            g.context.run = 0; /* only matters here if it was 8 */
+            g.domove_attempting |= DOMOVE_WALK;
+        } else if (movecmd(g.Cmd.num_pad ? unmeta(*cmd) : lowc(*cmd))) {
+            g.context.run = 1;
+            g.domove_attempting |= DOMOVE_RUSH;
         } else if (movecmd(unctrl(*cmd))) {
-            context.run = 3;
-            domove_attempting |= DOMOVE_RUSH;
+            g.context.run = 3;
+            g.domove_attempting |= DOMOVE_RUSH;
         }
         break;
     }
 
     /* some special prefix handling */
     /* overload 'm' prefix to mean "request a menu" */
-    if (prefix_seen && cmd[0] == Cmd.spkeys[NHKF_REQMENU]) {
+    if (prefix_seen && cmd[0] == g.Cmd.spkeys[NHKF_REQMENU]) {
         /* (for func_tab cast, see below) */
-        const struct ext_func_tab *ft = Cmd.commands[cmd[1] & 0xff];
+        const struct ext_func_tab *ft = g.Cmd.commands[cmd[1] & 0xff];
         int NDECL((*func)) = ft ? ((struct ext_func_tab *) ft)->ef_funct : 0;
 
         if (func && accept_menu_prefix(func)) {
@@ -4850,37 +3271,37 @@ register char *cmd;
         }
     }
 
-    if (((domove_attempting & (DOMOVE_RUSH | DOMOVE_WALK)) != 0L)
-                            && !context.travel && !dxdy_moveok()) {
+    if (((g.domove_attempting & (DOMOVE_RUSH | DOMOVE_WALK)) != 0L)
+                            && !g.context.travel && !dxdy_moveok()) {
         /* trying to move diagonally as a grid bug;
            this used to be treated by movecmd() as not being
            a movement attempt, but that didn't provide for any
            feedback and led to strangeness if the key pressed
            ('u' in particular) was overloaded for num_pad use */
         You_cant("get there from here...");
-        context.run = 0;
-        context.nopick = context.forcefight = FALSE;
-        context.move = context.mv = FALSE;
-        multi = 0;
+        g.context.run = 0;
+        g.context.nopick = g.context.forcefight = FALSE;
+        g.context.move = g.context.mv = FALSE;
+        g.multi = 0;
         return;
     }
 
-    if ((domove_attempting & DOMOVE_WALK) != 0L) {
-        if (multi)
-            context.mv = TRUE;
+    if ((g.domove_attempting & DOMOVE_WALK) != 0L) {
+        if (g.multi)
+            g.context.mv = TRUE;
         domove();
-        context.forcefight = 0;
+        g.context.forcefight = 0;
         return;
-    } else if ((domove_attempting & DOMOVE_RUSH) != 0L) {
+    } else if ((g.domove_attempting & DOMOVE_RUSH) != 0L) {
         if (firsttime) {
-            if (!multi)
-                multi = max(COLNO, ROWNO);
+            if (!g.multi)
+                g.multi = max(COLNO, ROWNO);
             u.last_str_turn = 0;
         }
-        context.mv = TRUE;
+        g.context.mv = TRUE;
         domove();
         return;
-    } else if (prefix_seen && cmd[1] == Cmd.spkeys[NHKF_ESC]) {
+    } else if (prefix_seen && cmd[1] == g.Cmd.spkeys[NHKF_ESC]) {
         /* <prefix><escape> */
         /* don't report "unknown command" for change of heart... */
         bad_command = FALSE;
@@ -4893,7 +3314,7 @@ register char *cmd;
         int res, NDECL((*func));
 
         /* current - use *cmd to directly index cmdlist array */
-        if ((tlist = Cmd.commands[*cmd & 0xff]) != 0) {
+        if ((tlist = g.Cmd.commands[*cmd & 0xff]) != 0) {
             if (!wizard && (tlist->flags & WIZMODECMD)) {
                 You_cant("do that!");
                 res = 0;
@@ -4904,13 +3325,13 @@ register char *cmd;
                 /* we discard 'const' because some compilers seem to have
                    trouble with the pointer passed to set_occupation() */
                 func = ((struct ext_func_tab *) tlist)->ef_funct;
-                if (tlist->f_text && !occupation && multi)
-                    set_occupation(func, tlist->f_text, multi);
+                if (tlist->f_text && !g.occupation && g.multi)
+                    set_occupation(func, tlist->f_text, g.multi);
                 res = (*func)(); /* perform the command */
             }
             if (!res) {
-                context.move = FALSE;
-                multi = 0;
+                g.context.move = FALSE;
+                g.multi = 0;
             }
             return;
         }
@@ -4930,8 +3351,8 @@ register char *cmd;
             Norep("Unknown command '%s'.", expcmd);
     }
     /* didn't move */
-    context.move = FALSE;
-    multi = 0;
+    g.context.move = FALSE;
+    g.multi = 0;
     return;
 }
 
@@ -4964,14 +3385,14 @@ int
 movecmd(sym)
 char sym;
 {
-    register const char *dp = index(Cmd.dirchars, sym);
+    register const char *dp = index(g.Cmd.dirchars, sym);
 
     u.dz = 0;
     if (!dp || !*dp)
         return 0;
-    u.dx = xdir[dp - Cmd.dirchars];
-    u.dy = ydir[dp - Cmd.dirchars];
-    u.dz = zdir[dp - Cmd.dirchars];
+    u.dx = xdir[dp - g.Cmd.dirchars];
+    u.dy = ydir[dp - g.Cmd.dirchars];
+    u.dz = zdir[dp - g.Cmd.dirchars];
 #if 0 /* now handled elsewhere */
     if (u.dx && u.dy && NODIAG(u.umonnum)) {
         u.dx = u.dy = 0;
@@ -4990,26 +3411,26 @@ dxdy_moveok()
     return u.dx || u.dy;
 }
 
-/* decide whether a character (user input keystroke) requests screen repaint */
+/* decide whether character (user input keystroke) requests screen repaint */
 boolean
 redraw_cmd(c)
 char c;
 {
-    return (boolean) (c == Cmd.spkeys[NHKF_REDRAW]
-                      || (Cmd.num_pad && c == Cmd.spkeys[NHKF_REDRAW2]));
+    return (boolean) (c == g.Cmd.spkeys[NHKF_REDRAW]
+                      || (g.Cmd.num_pad && c == g.Cmd.spkeys[NHKF_REDRAW2]));
 }
 
-boolean
+static boolean
 prefix_cmd(c)
 char c;
 {
-    return (c == Cmd.spkeys[NHKF_RUSH]
-            || c == Cmd.spkeys[NHKF_RUN]
-            || c == Cmd.spkeys[NHKF_NOPICKUP]
-            || c == Cmd.spkeys[NHKF_RUN_NOPICKUP]
-            || c == Cmd.spkeys[NHKF_FIGHT]
-            || (Cmd.num_pad && (c == Cmd.spkeys[NHKF_RUN2]
-                                || c == Cmd.spkeys[NHKF_FIGHT2])));
+    return (c == g.Cmd.spkeys[NHKF_RUSH]
+            || c == g.Cmd.spkeys[NHKF_RUN]
+            || c == g.Cmd.spkeys[NHKF_NOPICKUP]
+            || c == g.Cmd.spkeys[NHKF_RUN_NOPICKUP]
+            || c == g.Cmd.spkeys[NHKF_FIGHT]
+            || (g.Cmd.num_pad && (c == g.Cmd.spkeys[NHKF_RUN2]
+                                || c == g.Cmd.spkeys[NHKF_FIGHT2])));
 }
 
 /*
@@ -5054,7 +3475,7 @@ const char *s;
     int is_mov;
 
  retry:
-    if (in_doagain || *readchar_queue)
+    if (g.in_doagain || *readchar_queue)
         dirsym = readchar();
     else
         dirsym = yn_function((s && *s != '^') ? s : "In what direction?",
@@ -5068,14 +3489,14 @@ const char *s;
     }
     savech(dirsym);
 
-    if (dirsym == Cmd.spkeys[NHKF_GETDIR_SELF]
-        || dirsym == Cmd.spkeys[NHKF_GETDIR_SELF2]) {
+    if (dirsym == g.Cmd.spkeys[NHKF_GETDIR_SELF]
+        || dirsym == g.Cmd.spkeys[NHKF_GETDIR_SELF2]) {
         u.dx = u.dy = u.dz = 0;
     } else if (!(is_mov = movecmd(dirsym)) && !u.dz) {
         boolean did_help = FALSE, help_requested;
 
         if (!index(quitchars, dirsym)) {
-            help_requested = (dirsym == Cmd.spkeys[NHKF_GETDIR_HELP]);
+            help_requested = (dirsym == g.Cmd.spkeys[NHKF_GETDIR_HELP]);
             if (help_requested || iflags.cmdassist) {
                 did_help = help_dir((s && *s == '^') ? dirsym : '\0',
                                     NHKF_ESC,
@@ -5097,7 +3518,7 @@ const char *s;
     return 1;
 }
 
-STATIC_OVL void
+static void
 show_direction_keys(win, centerchar, nodiag)
 winid win; /* should specify a window which is using a fixed-width font... */
 char centerchar; /* '.' or '@' or ' ' */
@@ -5109,26 +3530,26 @@ boolean nodiag;
         centerchar = ' ';
 
     if (nodiag) {
-        Sprintf(buf, "             %c   ", Cmd.move_N);
+        Sprintf(buf, "             %c   ", g.Cmd.move_N);
         putstr(win, 0, buf);
         putstr(win, 0, "             |   ");
         Sprintf(buf, "          %c- %c -%c",
-                Cmd.move_W, centerchar, Cmd.move_E);
+                g.Cmd.move_W, centerchar, g.Cmd.move_E);
         putstr(win, 0, buf);
         putstr(win, 0, "             |   ");
-        Sprintf(buf, "             %c   ", Cmd.move_S);
+        Sprintf(buf, "             %c   ", g.Cmd.move_S);
         putstr(win, 0, buf);
     } else {
         Sprintf(buf, "          %c  %c  %c",
-                Cmd.move_NW, Cmd.move_N, Cmd.move_NE);
+                g.Cmd.move_NW, g.Cmd.move_N, g.Cmd.move_NE);
         putstr(win, 0, buf);
         putstr(win, 0, "           \\ | / ");
         Sprintf(buf, "          %c- %c -%c",
-                Cmd.move_W, centerchar, Cmd.move_E);
+                g.Cmd.move_W, centerchar, g.Cmd.move_E);
         putstr(win, 0, buf);
         putstr(win, 0, "           / | \\ ");
         Sprintf(buf, "          %c  %c  %c",
-                Cmd.move_SW, Cmd.move_S, Cmd.move_SE);
+                g.Cmd.move_SW, g.Cmd.move_S, g.Cmd.move_SE);
         putstr(win, 0, buf);
     };
 }
@@ -5136,7 +3557,7 @@ boolean nodiag;
 /* explain choices if player has asked for getdir() help or has given
    an invalid direction after a prefix key ('F', 'g', 'm', &c), which
    might be bogus but could be up, down, or self when not applicable */
-STATIC_OVL boolean
+static boolean
 help_dir(sym, spkey, msg)
 char sym;
 int spkey; /* NHKF_ code for prefix key, if one was used, or for ESC */
@@ -5167,7 +3588,7 @@ const char *msg;
         dothat = "rush";
         break;
     case NHKF_RUN2:
-        if (!Cmd.num_pad)
+        if (!g.Cmd.num_pad)
             break;
         /*FALLTHRU*/
     case NHKF_RUN:
@@ -5175,7 +3596,7 @@ const char *msg;
         dothat = "run";
         break;
     case NHKF_FIGHT2:
-        if (!Cmd.num_pad)
+        if (!g.Cmd.num_pad)
             break;
         /*FALLTHRU*/
     case NHKF_FIGHT:
@@ -5191,8 +3612,8 @@ const char *msg;
     /* for movement prefix followed by '.' or (numpad && 's') to mean 'self';
        note: '-' for hands (inventory form of 'self') is not handled here */
     if (prefixhandling
-        && (sym == Cmd.spkeys[NHKF_GETDIR_SELF]
-            || (Cmd.num_pad && sym == Cmd.spkeys[NHKF_GETDIR_SELF2]))) {
+        && (sym == g.Cmd.spkeys[NHKF_GETDIR_SELF]
+            || (g.Cmd.num_pad && sym == g.Cmd.spkeys[NHKF_GETDIR_SELF2]))) {
         Sprintf(buf, "You can't %s%s yourself.", dothat, how);
     /* for movement prefix followed by up or down */
     } else if (prefixhandling && (sym == '<' || sym == '>')) {
@@ -5208,7 +3629,7 @@ const char *msg;
         if (prefixhandling) {
             if (!*buf)
                 Sprintf(buf, "Invalid direction for '%s' prefix.",
-                        visctrl(Cmd.spkeys[spkey]));
+                        visctrl(g.Cmd.spkeys[spkey]));
             pline("%s", buf);
             return TRUE;
         }
@@ -5266,10 +3687,10 @@ const char *msg;
         putstr(win, 0, "          <  up");
         putstr(win, 0, "          >  down");
         if (!prefixhandling) {
-            int selfi = Cmd.num_pad ? NHKF_GETDIR_SELF2 : NHKF_GETDIR_SELF;
+            int selfi = g.Cmd.num_pad ? NHKF_GETDIR_SELF2 : NHKF_GETDIR_SELF;
 
             Sprintf(buf,   "       %4s  direct at yourself",
-                    visctrl(Cmd.spkeys[selfi]));
+                    visctrl(g.Cmd.spkeys[selfi]));
             putstr(win, 0, buf);
         }
     }
@@ -5318,7 +3739,7 @@ register int x, y;
 }
 
 /* #herecmdmenu command */
-STATIC_PTR int
+static int
 doherecmdmenu(VOID_ARGS)
 {
     char ch = here_cmd_menu(TRUE);
@@ -5327,7 +3748,7 @@ doherecmdmenu(VOID_ARGS)
 }
 
 /* #therecmdmenu command, a way to test there_cmd_menu without mouse */
-STATIC_PTR int
+static int
 dotherecmdmenu(VOID_ARGS)
 {
     char ch;
@@ -5343,7 +3764,7 @@ dotherecmdmenu(VOID_ARGS)
     return ch ? 1 : 0;
 }
 
-STATIC_OVL void
+static void
 add_herecmd_menuitem(win, func, text)
 winid win;
 int NDECL((*func));
@@ -5353,13 +3774,14 @@ const char *text;
     anything any;
 
     if ((ch = cmd_from_func(func)) != '\0') {
-        any = zeroany;
+        any = cg.zeroany;
         any.a_nfunc = func;
-        add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, text, MENU_UNSELECTED);
+        add_menu(win, NO_GLYPH, &any, 0, 0, ATR_NONE, text,
+                 MENU_ITEMFLAGS_NONE);
     }
 }
 
-STATIC_OVL char
+static char
 there_cmd_menu(doit, x, y)
 boolean doit;
 int x, y;
@@ -5374,7 +3796,7 @@ int x, y;
     struct monst *mtmp;
 
     win = create_nhwindow(NHW_MENU);
-    start_menu(win);
+    start_menu(win, MENU_BEHAVE_STANDARD);
 
     if (IS_DOOR(typ)) {
         boolean key_or_pick, card;
@@ -5408,7 +3830,8 @@ int x, y;
     if ((ttmp = t_at(x, y)) != 0 && ttmp->tseen) {
         add_herecmd_menuitem(win, doidtrap, "Examine trap"), ++K;
         if (ttmp->ttyp != VIBRATING_SQUARE)
-            add_herecmd_menuitem(win, dountrap, "Attempt to disarm trap"), ++K;
+            add_herecmd_menuitem(win, dountrap,
+                                 "Attempt to disarm trap"), ++K;
     }
 
     mtmp = m_at(x, y);
@@ -5462,7 +3885,7 @@ int x, y;
     return ch;
 }
 
-STATIC_OVL char
+static char
 here_cmd_menu(doit)
 boolean doit;
 {
@@ -5474,7 +3897,7 @@ boolean doit;
     menu_item *picks = (menu_item *) 0;
 
     win = create_nhwindow(NHW_MENU);
-    start_menu(win);
+    start_menu(win, MENU_BEHAVE_STANDARD);
 
     if (IS_FOUNTAIN(typ) || IS_SINK(typ)) {
         Sprintf(buf, "Drink from the %s",
@@ -5488,17 +3911,13 @@ boolean doit;
         add_herecmd_menuitem(win, dosit,
                              "Sit on the throne");
 
-    if ((u.ux == xupstair && u.uy == yupstair)
-        || (u.ux == sstairs.sx && u.uy == sstairs.sy && sstairs.up)
-        || (u.ux == xupladder && u.uy == yupladder)) {
+    if (On_stairs_up(u.ux, u.uy)) {
         Sprintf(buf, "Go up the %s",
                 (u.ux == xupladder && u.uy == yupladder)
                 ? "ladder" : "stairs");
         add_herecmd_menuitem(win, doup, buf);
     }
-    if ((u.ux == xdnstair && u.uy == ydnstair)
-        || (u.ux == sstairs.sx && u.uy == sstairs.sy && !sstairs.up)
-        || (u.ux == xdnladder && u.uy == ydnladder)) {
+    if (On_stairs_dn(u.ux, u.uy)) {
         Sprintf(buf, "Go down the %s",
                 (u.ux == xupladder && u.uy == yupladder)
                 ? "ladder" : "stairs");
@@ -5520,7 +3939,7 @@ boolean doit;
 #endif
 
     if (OBJ_AT(u.ux, u.uy)) {
-        struct obj *otmp = level.objects[u.ux][u.uy];
+        struct obj *otmp = g.level.objects[u.ux][u.uy];
 
         Sprintf(buf, "Pick up %s", otmp->nexthere ? "items" : doname(otmp));
         add_herecmd_menuitem(win, dopickup, buf);
@@ -5535,7 +3954,7 @@ boolean doit;
         }
     }
 
-    if (invent)
+    if (g.invent)
         add_herecmd_menuitem(win, dodrop, "Drop items");
 
     add_herecmd_menuitem(win, donull, "Rest one turn");
@@ -5561,9 +3980,6 @@ boolean doit;
     return ch;
 }
 
-
-static NEARDATA int last_multi;
-
 /*
  * convert a MAP window position into a movecmd
  */
@@ -5571,14 +3987,16 @@ const char *
 click_to_cmd(x, y, mod)
 int x, y, mod;
 {
-    int dir;
     static char cmd[4];
-    cmd[1] = 0;
+    struct obj *o;
+    int dir;
+
+    cmd[1] = '\0';
 
     if (iflags.clicklook && mod == CLICK_2) {
-        clicklook_cc.x = x;
-        clicklook_cc.y = y;
-        cmd[0] = Cmd.spkeys[NHKF_CLICKLOOK];
+        g.clicklook_cc.x = x;
+        g.clicklook_cc.y = y;
+        cmd[0] = g.Cmd.spkeys[NHKF_CLICKLOOK];
         return cmd;
     }
 
@@ -5591,7 +4009,7 @@ int x, y, mod;
         } else {
             u.tx = u.ux + x;
             u.ty = u.uy + y;
-            cmd[0] = Cmd.spkeys[NHKF_TRAVEL];
+            cmd[0] = g.Cmd.spkeys[NHKF_TRAVEL];
             return cmd;
         }
 
@@ -5609,21 +4027,14 @@ int x, y, mod;
             } else if (IS_THRONE(levl[u.ux][u.uy].typ)) {
                 cmd[0] = cmd_from_func(dosit);
                 return cmd;
-            } else if ((u.ux == xupstair && u.uy == yupstair)
-                       || (u.ux == sstairs.sx && u.uy == sstairs.sy
-                           && sstairs.up)
-                       || (u.ux == xupladder && u.uy == yupladder)) {
+            } else if (On_stairs_up(u.ux, u.uy)) {
                 cmd[0] = cmd_from_func(doup);
                 return cmd;
-            } else if ((u.ux == xdnstair && u.uy == ydnstair)
-                       || (u.ux == sstairs.sx && u.uy == sstairs.sy
-                           && !sstairs.up)
-                       || (u.ux == xdnladder && u.uy == ydnladder)) {
+            } else if (On_stairs_dn(u.ux, u.uy)) {
                 cmd[0] = cmd_from_func(dodown);
                 return cmd;
-            } else if (OBJ_AT(u.ux, u.uy)) {
-                cmd[0] = cmd_from_func(Is_container(level.objects[u.ux][u.uy])
-                                       ? doloot : dopickup);
+            } else if ((o = vobj_at(u.ux, u.uy)) != 0) {
+                cmd[0] = cmd_from_func(Is_container(o) ? doloot : dopickup);
                 return cmd;
             } else {
                 cmd[0] = cmd_from_func(donull); /* just rest */
@@ -5637,7 +4048,7 @@ int x, y, mod;
 
         if (!m_at(u.ux + x, u.uy + y)
             && !test_move(u.ux, u.uy, x, y, TEST_MOVE)) {
-            cmd[1] = Cmd.dirchars[dir];
+            cmd[1] = g.Cmd.dirchars[dir];
             cmd[2] = '\0';
             if (iflags.herecmd_menu) {
                 cmd[0] = there_cmd_menu(FALSE, u.ux + x, u.uy + y);
@@ -5647,8 +4058,7 @@ int x, y, mod;
             }
 
             if (IS_DOOR(levl[u.ux + x][u.uy + y].typ)) {
-                /* slight assistance to the player: choose kick/open for them
-                 */
+                /* slight assistance to player: choose kick/open for them */
                 if (levl[u.ux + x][u.uy + y].doormask & D_LOCKED) {
                     cmd[0] = cmd_from_func(dokick);
                     return cmd;
@@ -5688,23 +4098,23 @@ int x, y, mod;
     /* move, attack, etc. */
     cmd[1] = 0;
     if (mod == CLICK_1) {
-        cmd[0] = Cmd.dirchars[dir];
+        cmd[0] = g.Cmd.dirchars[dir];
     } else {
-        cmd[0] = (Cmd.num_pad
-                     ? M(Cmd.dirchars[dir])
-                     : (Cmd.dirchars[dir] - 'a' + 'A')); /* run command */
+        cmd[0] = (g.Cmd.num_pad
+                     ? M(g.Cmd.dirchars[dir])
+                     : (g.Cmd.dirchars[dir] - 'a' + 'A')); /* run command */
     }
 
     return cmd;
 }
 
 char
-get_count(allowchars, inkey, maxcount, count, historical)
+get_count(allowchars, inkey, maxcount, count, historicmsg)
 char *allowchars;
 char inkey;
 long maxcount;
 long *count;
-boolean historical; /* whether to include in message history: True => yes */
+boolean historicmsg; /* whether to include in message history: True => yes */
 {
     char qbuf[QBUFSZ];
     int key;
@@ -5730,7 +4140,7 @@ boolean historical; /* whether to include in message history: True => yes */
         } else if (cnt && (key == '\b' || key == STANDBY_erase_char)) {
             cnt = cnt / 10;
             backspaced = TRUE;
-        } else if (key == Cmd.spkeys[NHKF_ESC]) {
+        } else if (key == g.Cmd.spkeys[NHKF_ESC]) {
             break;
         } else if (!allowchars || index(allowchars, key)) {
             *count = cnt;
@@ -5750,7 +4160,7 @@ boolean historical; /* whether to include in message history: True => yes */
         }
     }
 
-    if (historical) {
+    if (historicmsg) {
         Sprintf(qbuf, "Count: %ld ", *count);
         (void) key2txt((uchar) key, eos(qbuf));
         putmsghistory(qbuf, FALSE);
@@ -5760,7 +4170,7 @@ boolean historical; /* whether to include in message history: True => yes */
 }
 
 
-STATIC_OVL char *
+static char *
 parse()
 {
 #ifdef LINT /* static char in_line[COLNO]; */
@@ -5771,61 +4181,61 @@ parse()
     register int foo;
 
     iflags.in_parse = TRUE;
-    multi = 0;
-    context.move = 1;
+    g.multi = 0;
+    g.context.move = 1;
     flush_screen(1); /* Flush screen buffer. Put the cursor on the hero. */
 
 #ifdef ALTMETA
     alt_esc = iflags.altmeta; /* readchar() hack */
 #endif
-    if (!Cmd.num_pad || (foo = readchar()) == Cmd.spkeys[NHKF_COUNT]) {
-        long tmpmulti = multi;
+    if (!g.Cmd.num_pad || (foo = readchar()) == g.Cmd.spkeys[NHKF_COUNT]) {
+        long tmpmulti = g.multi;
 
         foo = get_count((char *) 0, '\0', LARGEST_INT, &tmpmulti, FALSE);
-        last_multi = multi = tmpmulti;
+        g.last_multi = g.multi = tmpmulti;
     }
 #ifdef ALTMETA
     alt_esc = FALSE; /* readchar() reset */
 #endif
 
     if (iflags.debug_fuzzer /* if fuzzing, override '!' and ^Z */
-        && (Cmd.commands[foo & 0x0ff]
-            && (Cmd.commands[foo & 0x0ff]->ef_funct == dosuspend_core
-                || Cmd.commands[foo & 0x0ff]->ef_funct == dosh_core)))
-        foo = Cmd.spkeys[NHKF_ESC];
+        && (g.Cmd.commands[foo & 0x0ff]
+            && (g.Cmd.commands[foo & 0x0ff]->ef_funct == dosuspend_core
+                || g.Cmd.commands[foo & 0x0ff]->ef_funct == dosh_core)))
+        foo = g.Cmd.spkeys[NHKF_ESC];
 
-    if (foo == Cmd.spkeys[NHKF_ESC]) { /* esc cancels count (TH) */
+    if (foo == g.Cmd.spkeys[NHKF_ESC]) { /* esc cancels count (TH) */
         clear_nhwindow(WIN_MESSAGE);
-        multi = last_multi = 0;
-    } else if (foo == Cmd.spkeys[NHKF_DOAGAIN] || in_doagain) {
-        multi = last_multi;
+        g.multi = g.last_multi = 0;
+    } else if (foo == g.Cmd.spkeys[NHKF_DOAGAIN] || g.in_doagain) {
+        g.multi = g.last_multi;
     } else {
-        last_multi = multi;
+        g.last_multi = g.multi;
         savech(0); /* reset input queue */
         savech((char) foo);
     }
 
-    if (multi) {
-        multi--;
-        save_cm = in_line;
+    if (g.multi) {
+        g.multi--;
+        g.save_cm = in_line;
     } else {
-        save_cm = (char *) 0;
+        g.save_cm = (char *) 0;
     }
     /* in 3.4.3 this was in rhack(), where it was too late to handle M-5 */
-    if (Cmd.pcHack_compat) {
+    if (g.Cmd.pcHack_compat) {
         /* This handles very old inconsistent DOS/Windows behaviour
            in a different way: earlier, the keyboard handler mapped
            these, which caused counts to be strange when entered
            from the number pad. Now do not map them until here. */
         switch (foo) {
         case '5':
-            foo = Cmd.spkeys[NHKF_RUSH];
+            foo = g.Cmd.spkeys[NHKF_RUSH];
             break;
         case M('5'):
-            foo = Cmd.spkeys[NHKF_RUN];
+            foo = g.Cmd.spkeys[NHKF_RUN];
             break;
         case M('0'):
-            foo = Cmd.spkeys[NHKF_DOINV];
+            foo = g.Cmd.spkeys[NHKF_DOINV];
             break;
         default:
             break; /* as is */
@@ -5855,8 +4265,8 @@ void
 hangup(sig_unused) /* called as signal() handler, so sent at least one arg */
 int sig_unused UNUSED;
 {
-    if (program_state.exiting)
-        program_state.in_moveloop = 0;
+    if (g.program_state.exiting)
+        g.program_state.in_moveloop = 0;
     nhwindows_hangup();
 #ifdef SAFERHANGUP
     /* When using SAFERHANGUP, the done_hup flag it tested in rhack
@@ -5865,9 +4275,9 @@ int sig_unused UNUSED;
        protects against losing objects in the process of being thrown,
        but also potentially riskier because the disconnected program
        must continue running longer before attempting a hangup save. */
-    program_state.done_hup++;
+    g.program_state.done_hup++;
     /* defer hangup iff game appears to be in progress */
-    if (program_state.in_moveloop && program_state.something_worth_saving)
+    if (g.program_state.in_moveloop && g.program_state.something_worth_saving)
         return;
 #endif /* SAFERHANGUP */
     end_of_input();
@@ -5878,16 +4288,16 @@ end_of_input()
 {
 #ifdef NOSAVEONHANGUP
 #ifdef INSURANCE
-    if (flags.ins_chkpt && program_state.something_worth_saving)
+    if (flags.ins_chkpt && g.program_state.something_worth_saving)
         program_state.preserve_locks = 1; /* keep files for recovery */
 #endif
-    program_state.something_worth_saving = 0; /* don't save */
+    g.program_state.something_worth_saving = 0; /* don't save */
 #endif
 
 #ifndef SAFERHANGUP
-    if (!program_state.done_hup++)
+    if (!g.program_state.done_hup++)
 #endif
-        if (program_state.something_worth_saving)
+        if (g.program_state.something_worth_saving)
             (void) dosave0();
     if (iflags.window_inited)
         exit_nhwindows((char *) 0);
@@ -5909,7 +4319,7 @@ readchar()
     if (*readchar_queue)
         sym = *readchar_queue++;
     else
-        sym = in_doagain ? pgetchar() : nh_poskey(&x, &y, &mod);
+        sym = g.in_doagain ? pgetchar() : nh_poskey(&x, &y, &mod);
 
 #ifdef NR_OF_EOFS
     if (sym == EOF) {
@@ -5949,20 +4359,22 @@ readchar()
 }
 
 /* '_' command, #travel, via keyboard rather than mouse click */
-STATIC_PTR int
+static int
 dotravel(VOID_ARGS)
 {
     static char cmd[2];
     coord cc;
 
-    /* [FIXME?  Supporting the ability to disable traveling via mouse
-       click makes some sense, depending upon overall mouse usage.
-       Disabling '_' on a user by user basis makes no sense at all since
-       even if it is typed by accident, aborting when picking a target
-       destination is trivial.  Travel via mouse predates travel via '_',
-       and this use of OPTION=!travel is probably just a mistake....] */
-    if (!flags.travelcmd)
-        return 0;
+    /*
+     * Travelling used to be a no-op if user toggled 'travel' option
+     * Off.  However, travel was initially implemented as a mouse-only
+     * command and the original purpose of the option was to be able
+     * to prevent clicks on the map from initiating travel.
+     *
+     * Travel via '_' came later.  Since it requires a destination--
+     * which offers the user a chance to cancel if it was accidental--
+     * there's no reason for the option to disable travel-by-keys.
+     */
 
     cmd[1] = 0;
     cc.x = iflags.travelcc.x;
@@ -5993,7 +4405,7 @@ dotravel(VOID_ARGS)
     iflags.getloc_travelmode = FALSE;
     iflags.travelcc.x = u.tx = cc.x;
     iflags.travelcc.y = u.ty = cc.y;
-    cmd[0] = Cmd.spkeys[NHKF_TRAVEL];
+    cmd[0] = g.Cmd.spkeys[NHKF_TRAVEL];
     readchar_queue = cmd;
     return 0;
 }
@@ -6010,8 +4422,7 @@ char def;
 {
     char res, qbuf[QBUFSZ];
 #ifdef DUMPLOG
-    extern unsigned saved_pline_index; /* pline.c */
-    unsigned idx = saved_pline_index;
+    unsigned idx = g.saved_pline_index;
     /* buffer to hold query+space+formatted_single_char_response */
     char dumplog_buf[QBUFSZ + 1 + 15]; /* [QBUFSZ+1+7] should suffice */
 #endif
@@ -6028,9 +4439,9 @@ char def;
     }
     res = (*windowprocs.win_yn_function)(query, resp, def);
 #ifdef DUMPLOG
-    if (idx == saved_pline_index) {
-        /* when idx is still the same as saved_pline_index, the interface
-           didn't put the prompt into saved_plines[]; we put a simplified
+    if (idx == g.saved_pline_index) {
+        /* when idx is still the same as g.saved_pline_index, the interface
+           didn't put the prompt into g.saved_plines[]; we put a simplified
            version in there now (without response choices or default) */
         Sprintf(dumplog_buf, "%s ", query);
         (void) key2txt((uchar) res, eos(dumplog_buf));
@@ -6087,7 +4498,7 @@ const char *prompt;
 }
 
 /* ^Z command, #suspend */
-STATIC_PTR int
+static int
 dosuspend_core(VOID_ARGS)
 {
 #ifdef SUSPEND
@@ -6102,7 +4513,7 @@ dosuspend_core(VOID_ARGS)
 }
 
 /* '!' command, #shell */
-STATIC_PTR int
+static int
 dosh_core(VOID_ARGS)
 {
 #ifdef SHELL

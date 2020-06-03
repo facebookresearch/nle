@@ -1,4 +1,4 @@
-/* NetHack 3.6	tilemap.c	$NHDT-Date: 1542501042 2018/11/18 00:30:42 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.35 $ */
+/* NetHack 3.6	tilemap.c	$NHDT-Date: 1589064692 2020/05/09 22:51:32 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.46 $ */
 /*      Copyright (c) 2016 by Michael Allison                     */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -8,7 +8,13 @@
  *      then again with it defined to produce tiletxt.{o,obj}.
  */
 
-#include "hack.h"
+#include "config.h"
+#include "pm.h"
+#include "onames.h"
+#include "permonst.h"
+#include "objclass.h"
+#include "rm.h"
+#include "display.h"
 
 #define Fprintf (void) fprintf
 
@@ -54,7 +60,7 @@ struct conditionals {
 #ifndef CHARON /* not supported yet */
     { MON_GLYPH, PM_CROESUS, "Charon" },
 #endif
-#ifndef MAIL
+#ifndef MAIL_STRUCTURES
     { MON_GLYPH, PM_FAMINE, "mail daemon" },
 #endif
     /* commented out in monst.c at present */
@@ -69,7 +75,7 @@ struct conditionals {
 /* allow slime mold to look like slice of pizza, since we
  * don't know what a slime mold should look like when renamed anyway
  */
-#ifndef MAIL
+#ifndef MAIL_STRUCTURES
     { OBJ_GLYPH, SCR_STINKING_CLOUD + EXTRA_SCROLL_DESCR_COUNT,
       "stamped / mail" },
 #endif
@@ -109,11 +115,6 @@ int set, entry;
     int i, j, condnum, tilenum;
     static char buf[BUFSZ];
 
-    /* Note:  these initializers don't do anything except guarantee that
-            we're linked properly.
-    */
-    monst_init();
-    objects_init();
     (void) def_char_to_objclass(']');
 
     condnum = tilenum = 0;
@@ -211,6 +212,24 @@ int set, entry;
         }
     }
     tilenum += WARNCOUNT;
+
+    i = entry - tilenum;
+    if (i < 1) {
+        if (set == OTH_GLYPH) {
+            Sprintf(buf, "unexplored");
+            return buf;
+        }
+    }
+    tilenum += 1;
+
+    i = entry - tilenum;
+    if (i < 1) {
+        if (set == OTH_GLYPH) {
+            Sprintf(buf, "nothing");
+            return buf;
+        }
+    }
+    tilenum += 1;
 
     for (i = 0; i < SIZE(substitutes); i++) {
         j = entry - tilenum;
@@ -363,6 +382,16 @@ init_tilemap()
 
     for (i = 0; i < WARNCOUNT; i++) {
         tilemap[GLYPH_WARNING_OFF + i] = tilenum;
+        tilenum++;
+    }
+
+    for (i = 0; i < 1; i++) {
+        tilemap[GLYPH_UNEXPLORED_OFF + i] = tilenum;
+        tilenum++;
+    }
+
+    for (i = 0; i < 1; i++) {
+        tilemap[GLYPH_NOTHING + i] = tilenum;
         tilenum++;
     }
 

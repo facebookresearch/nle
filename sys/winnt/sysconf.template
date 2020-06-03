@@ -1,5 +1,5 @@
 #
-# NetHack 3.6 sysconf $NHDT-Date: 1524689357 2018/04/25 20:49:17 $ $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.22 $
+# NetHack 3.7 sysconf $NHDT-Date: 1524689357 2018/04/25 20:49:17 $ $NHDT-Branch: NetHack-3.7.0 $:$NHDT-Revision: 1.22 $
 # Copyright (c) 2015 by Michael Allison
 # NetHack may be freely redistributed.  See license for details.
 #
@@ -24,7 +24,7 @@ WIZARDS=*
 # Only available if NetHack was compiled with DUMPLOG
 # Allows following placeholders:
 #   %% literal '%'
-#   %v version (eg. "3.6.6-0")
+#   %v version (eg. "3.7.0-0")
 #   %u game UID
 #   %t game start time, UNIX timestamp format
 #   %T current time, UNIX timestamp format
@@ -73,6 +73,17 @@ WIZARDS=*
 # Maximum number of score file entries to use for random statue names
 #MAX_STATUENAME_RANK=10
 
+# 'portable_device_paths' is only supported for Windows.  Starting with
+# 3.6.3, nethack on Windows treats the folder containing nethack.exe and
+# nethackW.exe as read-only and puts data files which are generated or
+# modified during play or by the user in assorted folders derived from
+# user name.  3.6.4 added PORTABLE_DEVICE_PATHS to allow reverting to
+# the old behavior of having the run-time configuration file and other
+# data in the same directory as the executable so that the whole thing
+# can be moved from one machine to another (flash drive or perhaps cloud)
+# without updating folder paths.  Uncomment it and set to 1 to activate.
+#PORTABLE_DEVICE_PATHS=0
+
 # *** LOCATIONS ***
 # IMPORTANT: If you change any of these locations, the directories they
 # point at must exist.  NetHack will not create them for you.
@@ -85,22 +96,22 @@ WIZARDS=*
 #
 # The location that a record of game aborts and self-diagnosed game problems
 # is kept (default=HACKDIR, writeable)
-#TROUBLEDIR=%USERPROFILE%\NetHack\3.6
+#TROUBLEDIR=%USERPROFILE%\NetHack\3.7
 #
 # The location that documentation and helps files are placed
-#HACKDIR=%USERPROFILE%\NetHack\3.6
+#HACKDIR=%USERPROFILE%\NetHack\3.7
 #
 # The location that level files in progress are stored (writeable)
-#LEVELDIR=%USERPROFILE%\AppData\Local\NetHack\3.6
+#LEVELDIR=%USERPROFILE%\AppData\Local\NetHack\3.7
 #
 # The location where saved games are kept (writeable)
-#SAVEDIR=%USERPROFILE%\AppData\Local\NetHack\3.6
+#SAVEDIR=%USERPROFILE%\AppData\Local\NetHack\3.7
 #
 # The location that bones files are kept (writeable)
-#BONESDIR=c:\ProgramData\NetHack\3.6
+#BONESDIR=c:\ProgramData\NetHack\3.7
 #
 # The location that score files are kept (writeable)
-#SCOREDIR=c:\ProgramData\NetHack\3.6
+#SCOREDIR=c:\ProgramData\NetHack\3.7
 #
 # The location that file synchronization locks are stored (writeable)
-#LOCKDIR=c:\ProgramData\NetHack\3.6
+#LOCKDIR=c:\ProgramData\NetHack\3.7

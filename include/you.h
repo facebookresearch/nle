@@ -1,4 +1,4 @@
-/* NetHack 3.6	you.h	$NHDT-Date: 1547514642 2019/01/15 01:10:42 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.35 $ */
+/* NetHack 3.6	you.h	$NHDT-Date: 1586375530 2020/04/08 19:52:10 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.44 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2016. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -23,8 +23,8 @@ struct RoleName {
 struct RoleAdvance {
     /* "fix" is the fixed amount, "rnd" is the random amount */
     xchar infix, inrnd; /* at character initialization */
-    xchar lofix, lornd; /* gained per level <  urole.xlev */
-    xchar hifix, hirnd; /* gained per level >= urole.xlev */
+    xchar lofix, lornd; /* gained per level <  g.urole.xlev */
+    xchar hifix, hirnd; /* gained per level >= g.urole.xlev */
 };
 
 struct u_have {
@@ -54,19 +54,77 @@ struct u_event {
     Bitfield(ascended, 1);          /* has offered the Amulet */
 };
 
-struct u_achieve {
-    Bitfield(amulet, 1);  /* touched Amulet */
-    Bitfield(bell, 1);    /* touched Bell */
-    Bitfield(book, 1);    /* touched Book */
-    Bitfield(menorah, 1); /* touched Candelabrum */
-    Bitfield(enter_gehennom,
-             1);           /* entered Gehennom (or Valley) by any means */
-    Bitfield(ascended, 1); /* not quite the same as u.uevent.ascended */
-    Bitfield(mines_luckstone, 1); /* got a luckstone at end of mines */
-    Bitfield(finish_sokoban, 1);  /* obtained the sokoban prize */
-
-    Bitfield(killed_medusa, 1);
+/*
+ * Achievements:  milestones reached during the current game.
+ * Numerical order of these matters because they've been encoded in
+ * a bitmask in xlogfile.  Reordering would break decoding that.
+ * Aside from that, the number isn't significant--they're recorded
+ * and eventually disclosed in the order achieved.
+ *
+ * Since xlogfile could be post-processed by unknown tools, we should
+ * limit these to 31 total (it's possible that 32-bit signed longs are
+ * the best such tools can offer).  Eventually that is likely to need
+ * to change, probably by giving xlogfile an achieve2 field rather
+ * than by assuming that 64-bit longs are viable or by squeezing in a
+ * 32nd entry by switching to unsigned long.
+ */
+enum achivements {
+    ACH_BELL =  1, /* acquired Bell of Opening */
+    ACH_HELL =  2, /* entered Gehennom */
+    ACH_CNDL =  3, /* acquired Candelabrum of Invocation */
+    ACH_BOOK =  4, /* acquired Book of the Dead */
+    ACH_INVK =  5, /* performed invocation to gain access to Sanctum */
+    ACH_AMUL =  6, /* acquired The Amulet */
+    ACH_ENDG =  7, /* entered end game */
+    ACH_ASTR =  8, /* entered Astral Plane */
+    ACH_UWIN =  9, /* ascended */
+    ACH_MINE_PRIZE = 10, /* acquired Mines' End luckstone */
+    ACH_SOKO_PRIZE = 11, /* acquired Sokoban bag or amulet */
+    ACH_MEDU = 12, /* killed Medusa */
+    ACH_BLND = 13, /* hero was always blond, no, blind */
+    ACH_NUDE = 14, /* hero never wore armor */
+    /* 1 through 14 were present in 3.6.x; the rest are newer; first,
+       some easier ones so less skilled players can have achievements */
+    ACH_MINE = 15, /* entered Gnomish Mines */
+    ACH_TOWN = 16, /* reached Minetown */
+    ACH_SHOP = 17, /* entered a shop */
+    ACH_TMPL = 18, /* entered a temple */
+    ACH_ORCL = 19, /* consulted the Oracle */
+    ACH_NOVL = 20, /* read at least one passage from a Discworld novel */
+    ACH_SOKO = 21, /* entered Sokoban */
+    ACH_BGRM = 22, /* entered Bigroom (not guaranteed to be in every dgn) */
+    /* 23..30 are negated if hero is female at the time new rank is gained */
+    ACH_RNK1 = 23, ACH_RNK2 = 24, ACH_RNK3 = 25, ACH_RNK4 = 26,
+    ACH_RNK5 = 27, ACH_RNK6 = 28, ACH_RNK7 = 29, ACH_RNK8 = 30,
+    /* foo=31, 1 available potential achievement; #32 currently off-limits */
+    N_ACH = 32     /* allocate room for 31 plus a slot for 0 terminator */
 };
+    /*
+     * Other potential achievements to track (this comment briefly resided
+     * in encodeachieve(topten.c) and has been revised since moving here:
+     *  got quest summons,
+     *  entered quest branch,
+     *  chatted with leader,
+     *  entered second or lower quest level (implies leader gave the Ok),
+     *  entered last quest level,
+     *  defeated nemesis (not same as acquiring Bell or artifact),
+     *  completed quest (formally, by bringing artifact to leader),
+     *  entered rogue level,
+     *  entered Fort Ludios level/branch (not guaranteed to be achieveable),
+     *  entered Medusa level,
+     *  entered castle level,
+     *  opened castle drawbridge,
+     *  obtained castle wand (handle similarly to mines and sokoban prizes),
+     *  passed Valley level (entered-Gehennom already covers Valley itself),
+     *  [assorted demon lairs?],
+     *  entered Vlad's tower branch,
+     *  defeated Vlad (not same as acquiring Candelabrum),
+     *  entered Wizard's tower area within relevant level,
+     *  defeated Wizard,
+     *  found vibrating square,
+     *  entered sanctum level (maybe not; too close to performed-invocation),
+     *  [defeated Famine, defeated Pestilence, defeated Death]
+     */
 
 struct u_realtime {
     long   realtime;     /* accumulated playing time in seconds */
@@ -167,9 +225,8 @@ struct Role {
 };
 
 extern const struct Role roles[]; /* table of available roles */
-extern struct Role urole;
-#define Role_if(X) (urole.malenum == (X))
-#define Role_switch (urole.malenum)
+#define Role_if(X) (g.urole.malenum == (X))
+#define Role_switch (g.urole.malenum)
 
 /* used during initialization for race, gender, and alignment
    as well as for character class */
@@ -219,9 +276,8 @@ struct Race {
 };
 
 extern const struct Race races[]; /* Table of available races */
-extern struct Race urace;
-#define Race_if(X) (urace.malenum == (X))
-#define Race_switch (urace.malenum)
+#define Race_if(X) (g.urace.malenum == (X))
+#define Race_switch (g.urace.malenum)
 
 /*** Unified structure specifying gender information ***/
 struct Gender {
@@ -240,14 +296,21 @@ extern const struct Gender genders[]; /* table of available genders */
 #define uhe()      (genders[flags.female ? 1 : 0].he)
 #define uhim()     (genders[flags.female ? 1 : 0].him)
 #define uhis()     (genders[flags.female ? 1 : 0].his)
+/* pronoun_gender() flag masks */
+#define PRONOUN_NORMAL 0 /* none of the below */
+#define PRONOUN_NO_IT  1
+#define PRONOUN_HALLU  2
 /* corresponding pronouns for monsters; yields "it" when mtmp can't be seen */
-#define mhe(mtmp)  (genders[pronoun_gender(mtmp, FALSE)].he)
-#define mhim(mtmp) (genders[pronoun_gender(mtmp, FALSE)].him)
-#define mhis(mtmp) (genders[pronoun_gender(mtmp, FALSE)].his)
+#define mhe(mtmp)  (genders[pronoun_gender(mtmp, PRONOUN_HALLU)].he)
+#define mhim(mtmp) (genders[pronoun_gender(mtmp, PRONOUN_HALLU)].him)
+#define mhis(mtmp) (genders[pronoun_gender(mtmp, PRONOUN_HALLU)].his)
 /* override "it" if reason is lack of visibility rather than neuter species */
-#define noit_mhe(mtmp)  (genders[pronoun_gender(mtmp, TRUE)].he)
-#define noit_mhim(mtmp) (genders[pronoun_gender(mtmp, TRUE)].him)
-#define noit_mhis(mtmp) (genders[pronoun_gender(mtmp, TRUE)].his)
+#define noit_mhe(mtmp) \
+    (genders[pronoun_gender(mtmp, (PRONOUN_NO_IT | PRONOUN_HALLU))].he)
+#define noit_mhim(mtmp) \
+    (genders[pronoun_gender(mtmp, (PRONOUN_NO_IT | PRONOUN_HALLU))].him)
+#define noit_mhis(mtmp) \
+    (genders[pronoun_gender(mtmp, (PRONOUN_NO_IT | PRONOUN_HALLU))].his)
 
 /*** Unified structure specifying alignment information ***/
 struct Align {
@@ -342,7 +405,6 @@ struct you {
     /* 1 free bit! */
 
     unsigned udg_cnt;           /* how long you have been demigod */
-    struct u_achieve uachieve;  /* achievements */
     struct u_event uevent;      /* certain events have happened */
     struct u_have uhave;        /* you're carrying special objects */
     struct u_conduct uconduct;  /* KMH, conduct */
@@ -394,7 +456,8 @@ struct you {
     xchar skill_record[P_SKILL_LIMIT]; /* skill advancements */
     struct skills weapon_skills[P_NUM_SKILLS];
     boolean twoweap;         /* KMH -- Using two-weapon combat */
-
+    short mcham;             /* vampire mndx if shapeshifted to bat/cloud */
+    schar uachieved[N_ACH];  /* list of achievements in the order attained */
 }; /* end of `struct you' */
 
 #define Upolyd (u.umonnum != u.umonster)

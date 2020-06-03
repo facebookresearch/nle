@@ -1,4 +1,4 @@
-/* NetHack 3.6	priest.c	$NHDT-Date: 1545131519 2018/12/18 11:11:59 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.45 $ */
+/* NetHack 3.6	priest.c	$NHDT-Date: 1578895348 2020/01/13 06:02:28 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.57 $ */
 /* Copyright (c) Izchak Miller, Steve Linhart, 1989.              */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -9,8 +9,8 @@
 #define ALGN_SINNED (-4) /* worse than strayed (-1..-3) */
 #define ALGN_PIOUS 14    /* better than fervent (9..13) */
 
-STATIC_DCL boolean FDECL(histemple_at, (struct monst *, XCHAR_P, XCHAR_P));
-STATIC_DCL boolean FDECL(has_shrine, (struct monst *));
+static boolean FDECL(histemple_at, (struct monst *, XCHAR_P, XCHAR_P));
+static boolean FDECL(has_shrine, (struct monst *));
 
 void
 newepri(mtmp)
@@ -146,12 +146,12 @@ register char *array;
     register char *ptr;
 
     for (ptr = array; *ptr; ptr++)
-        if (rooms[*ptr - ROOMOFFSET].rtype == TEMPLE)
+        if (g.rooms[*ptr - ROOMOFFSET].rtype == TEMPLE)
             return *ptr;
     return '\0';
 }
 
-STATIC_OVL boolean
+static boolean
 histemple_at(priest, x, y)
 register struct monst *priest;
 register xchar x, y;
@@ -232,14 +232,24 @@ boolean sanctum; /* is it the seat of the high priest? */
     struct monst *priest;
     struct obj *otmp;
     int cnt;
+    int px = 0, py = 0, i, si = rn2(8);
+    struct permonst *prim = &mons[sanctum ? PM_HIGH_PRIEST : PM_ALIGNED_PRIEST];
 
-    if (MON_AT(sx + 1, sy))
-        (void) rloc(m_at(sx + 1, sy), FALSE); /* insurance */
+    for (i = 0; i < 8; i++) {
+        px = sx + xdir[(i+si) % 8];
+        py = sy + ydir[(i+si) % 8];
+        if (pm_good_location(px, py, prim))
+            break;
+    }
+    if (i == 8)
+        px = sx, py = sy;
 
-    priest = makemon(&mons[sanctum ? PM_HIGH_PRIEST : PM_ALIGNED_PRIEST],
-                     sx + 1, sy, MM_EPRI);
+    if (MON_AT(px, py))
+        (void) rloc(m_at(px, py), FALSE); /* insurance */
+
+    priest = makemon(prim, px, py, MM_EPRI);
     if (priest) {
-        EPRI(priest)->shroom = (schar) ((sroom - rooms) + ROOMOFFSET);
+        EPRI(priest)->shroom = (schar) ((sroom - g.rooms) + ROOMOFFSET);
         EPRI(priest)->shralign = Amask2align(levl[sx][sy].altarmask);
         EPRI(priest)->shrpos.x = sx;
         EPRI(priest)->shrpos.y = sy;
@@ -258,7 +268,7 @@ boolean sanctum; /* is it the seat of the high priest? */
         }
         /* 2 to 4 spellbooks */
         for (cnt = rn1(3, 2); cnt > 0; --cnt) {
-            (void) mpickobj(priest, mkobj(SPBOOK_CLASS, FALSE));
+            (void) mpickobj(priest, mkobj(SPBOOK_no_NOVEL, FALSE));
         }
         /* robe [via makemon()] */
         if (rn2(2) && (otmp = which_armor(priest, W_ARMC)) != 0) {
@@ -337,7 +347,7 @@ char *pname; /* caller-supplied output buffer */
     Strcat(pname, what);
     /* same as distant_monnam(), more or less... */
     if (do_hallu || !high_priest || !Is_astralevel(&u.uz)
-        || distu(mon->mx, mon->my) <= 2 || program_state.gameover) {
+        || distu(mon->mx, mon->my) <= 2 || g.program_state.gameover) {
         Strcat(pname, " of ");
         Strcat(pname, halu_gname(mon_aligntyp(mon)));
     }
@@ -351,7 +361,7 @@ struct monst *priest;
     return (boolean) (u.ualign.type == mon_aligntyp(priest));
 }
 
-STATIC_OVL boolean
+static boolean
 has_shrine(pri)
 struct monst *pri;
 {
@@ -402,13 +412,14 @@ int roomno;
 
     if ((priest = findpriest((char) roomno)) != 0) {
         /* tended */
+        record_achievement(ACH_TMPL);
 
         epri_p = EPRI(priest);
         shrined = has_shrine(priest);
         sanctum = (priest->data == &mons[PM_HIGH_PRIEST]
                    && (Is_sanctum(&u.uz) || In_endgame(&u.uz)));
         can_speak = (priest->mcanmove && !priest->msleeping);
-        if (can_speak && !Deaf && moves >= epri_p->intone_time) {
+        if (can_speak && !Deaf && g.moves >= epri_p->intone_time) {
             unsigned save_priest = priest->ispriest;
 
             /* don't reveal the altar's owner upon temple entry in
@@ -419,7 +430,7 @@ int roomno;
             pline("%s intones:",
                   canseemon(priest) ? Monnam(priest) : "A nearby voice");
             priest->ispriest = save_priest;
-            epri_p->intone_time = moves + (long) d(10, 500); /* ~2505 */
+            epri_p->intone_time = g.moves + (long) d(10, 500); /* ~2505 */
             /* make sure that we don't suppress entry message when
                we've just given its "priest intones" introduction */
             epri_p->enter_time = 0L;
@@ -437,7 +448,7 @@ int roomno;
                 /* repeat visit, or attacked priest before entering */
                 msg1 = "You desecrate this place by your presence!";
             }
-        } else if (moves >= epri_p->enter_time) {
+        } else if (g.moves >= epri_p->enter_time) {
             Sprintf(buf, "Pilgrim, you enter a %s place!",
                     !shrined ? "desecrated" : "sacred");
             msg1 = buf;
@@ -446,7 +457,7 @@ int roomno;
             verbalize1(msg1);
             if (msg2)
                 verbalize1(msg2);
-            epri_p->enter_time = moves + (long) d(10, 100); /* ~505 */
+            epri_p->enter_time = g.moves + (long) d(10, 100); /* ~505 */
         }
         if (!sanctum) {
             if (!shrined || !p_coaligned(priest)
@@ -464,9 +475,9 @@ int roomno;
             /* give message if we haven't seen it recently or
                if alignment update has caused it to switch from
                forbidding to sense-of-peace or vice versa */
-            if (moves >= *this_time || *other_time >= *this_time) {
+            if (g.moves >= *this_time || *other_time >= *this_time) {
                 You(msg1, msg2);
-                *this_time = moves + (long) d(10, 20); /* ~55 */
+                *this_time = g.moves + (long) d(10, 20); /* ~55 */
                 /* avoid being tricked by the RNG:  switch might have just
                    happened and previous random threshold could be larger */
                 if (*this_time <= *other_time)
@@ -497,7 +508,7 @@ int roomno;
         if (!rn2(5)
             && (mtmp = makemon(&mons[PM_GHOST], u.ux, u.uy, NO_MM_FLAGS))
                    != 0) {
-            int ngen = mvitals[PM_GHOST].born;
+            int ngen = g.mvitals[PM_GHOST].born;
             if (canspotmon(mtmp))
                 pline("A%s ghost appears next to you%c",
                       ngen < 5 ? "n enormous" : "",
@@ -509,8 +520,8 @@ int roomno;
             if (flags.verbose)
                 You("are frightened to death, and unable to move.");
             nomul(-3);
-            multi_reason = "being terrified of a ghost";
-            nomovemsg = "You regain your composure.";
+            g.multi_reason = "being terrified of a ghost";
+            g.nomovemsg = "You regain your composure.";
         }
     }
 }
@@ -575,13 +586,16 @@ register struct monst *priest;
         priest->mpeaceful = 0;
         return;
     }
-    if (!money_cnt(invent)) {
+    if (!money_cnt(g.invent)) {
         if (coaligned && !strayed) {
             long pmoney = money_cnt(priest->minvent);
             if (pmoney > 0L) {
+                const char *bits;
+                bits = (Hallucination) ? currency(pmoney)
+                                       : (pmoney == 1L) ? "bit" : "bits";
                 /* Note: two bits is actually 25 cents.  Hmm. */
-                pline("%s gives you %s for an ale.", Monnam(priest),
-                      (pmoney == 1L) ? "one bit" : "two bits");
+                pline("%s gives you %s%s for an ale.", Monnam(priest),
+                      (pmoney == 1L) ? "one " : "two ", bits);
                 money2u(priest, pmoney > 1L ? 2 : 1);
             } else
                 pline("%s preaches the virtues of poverty.", Monnam(priest));
@@ -599,7 +613,7 @@ register struct monst *priest;
             if (coaligned)
                 adjalign(-1);
         } else if (offer < (u.ulevel * 200)) {
-            if (money_cnt(invent) > (offer * 2L)) {
+            if (money_cnt(g.invent) > (offer * 2L)) {
                 verbalize("Cheapskate.");
             } else {
                 verbalize("I thank thee for thy contribution.");
@@ -608,7 +622,7 @@ register struct monst *priest;
             }
         } else if (offer < (u.ulevel * 400)) {
             verbalize("Thou art indeed a pious individual.");
-            if (money_cnt(invent) < (offer * 2L)) {
+            if (money_cnt(g.invent) < (offer * 2L)) {
                 if (coaligned && u.ualign.record <= ALGN_SINNED)
                     adjalign(1);
                 verbalize("I bestow upon thee a blessing.");
@@ -631,10 +645,10 @@ register struct monst *priest;
                 u.ublessed++;
         } else {
             verbalize("Thy selfless generosity is deeply appreciated.");
-            if (money_cnt(invent) < (offer * 2L) && coaligned) {
-                if (strayed && (moves - u.ucleansed) > 5000L) {
+            if (money_cnt(g.invent) < (offer * 2L) && coaligned) {
+                if (strayed && (g.moves - u.ucleansed) > 5000L) {
                     u.ualign.record = 0; /* cleanse thee */
-                    u.ucleansed = moves;
+                    u.ucleansed = g.moves;
                 } else {
                     adjalign(2);
                 }
@@ -731,7 +745,7 @@ struct monst *priest;
 
     ax = x = EPRI(priest)->shrpos.x;
     ay = y = EPRI(priest)->shrpos.y;
-    troom = &rooms[roomno - ROOMOFFSET];
+    troom = &g.rooms[roomno - ROOMOFFSET];
 
     if ((u.ux == x && u.uy == y) || !linedup(u.ux, u.uy, x, y, 1)) {
         if (IS_DOOR(levl[u.ux][u.uy].typ)) {
@@ -787,8 +801,8 @@ struct monst *priest;
         break;
     }
 
-    buzz(-10 - (AD_ELEC - 1), 6, x, y, sgn(tbx),
-         sgn(tby)); /* bolt of lightning */
+    buzz(-10 - (AD_ELEC - 1), 6, x, y, sgn(g.tbx),
+         sgn(g.tby)); /* bolt of lightning */
     exercise(A_WIS, FALSE);
 }
 
@@ -856,244 +870,6 @@ boolean ghostly;
         if (ghostly)
             assign_level(&(EPRI(mtmp)->shrlevel), &u.uz);
     }
-}
-
-/*
- * align_str(), piousness(), mstatusline() and ustatusline() used to be
- * in pline.c, presumeably because the latter two generate one line of
- * output.  The USE_OLDARGS config gets warnings from 2016ish-vintage
- * gcc (for -Wint-to-pointer-cast, activated by -Wall or -W) when they
- * follow pline() itself.  Fixing up the variadic calls like is done for
- * lev_comp would be needlessly messy there.
- *
- * They don't belong here.  If/when enlightenment ever gets split off
- * from cmd.c (which definitely doesn't belong there), they should go
- * with it.
- */
-
-const char *
-align_str(alignment)
-aligntyp alignment;
-{
-    switch ((int) alignment) {
-    case A_CHAOTIC:
-        return "chaotic";
-    case A_NEUTRAL:
-        return "neutral";
-    case A_LAWFUL:
-        return "lawful";
-    case A_NONE:
-        return "unaligned";
-    }
-    return "unknown";
-}
-
-/* used for self-probing */
-char *
-piousness(showneg, suffix)
-boolean showneg;
-const char *suffix;
-{
-    static char buf[32]; /* bigger than "insufficiently neutral" */
-    const char *pio;
-
-    /* note: piousness 20 matches MIN_QUEST_ALIGN (quest.h) */
-    if (u.ualign.record >= 20)
-        pio = "piously";
-    else if (u.ualign.record > 13)
-        pio = "devoutly";
-    else if (u.ualign.record > 8)
-        pio = "fervently";
-    else if (u.ualign.record > 3)
-        pio = "stridently";
-    else if (u.ualign.record == 3)
-        pio = "";
-    else if (u.ualign.record > 0)
-        pio = "haltingly";
-    else if (u.ualign.record == 0)
-        pio = "nominally";
-    else if (!showneg)
-        pio = "insufficiently";
-    else if (u.ualign.record >= -3)
-        pio = "strayed";
-    else if (u.ualign.record >= -8)
-        pio = "sinned";
-    else
-        pio = "transgressed";
-
-    Sprintf(buf, "%s", pio);
-    if (suffix && (!showneg || u.ualign.record >= 0)) {
-        if (u.ualign.record != 3)
-            Strcat(buf, " ");
-        Strcat(buf, suffix);
-    }
-    return buf;
-}
-
-/* stethoscope or probing applied to monster -- one-line feedback */
-void
-mstatusline(mtmp)
-struct monst *mtmp;
-{
-    aligntyp alignment = mon_aligntyp(mtmp);
-    char info[BUFSZ], monnambuf[BUFSZ];
-
-    info[0] = 0;
-    if (mtmp->mtame) {
-        Strcat(info, ", tame");
-        if (wizard) {
-            Sprintf(eos(info), " (%d", mtmp->mtame);
-            if (!mtmp->isminion)
-                Sprintf(eos(info), "; hungry %ld; apport %d",
-                        EDOG(mtmp)->hungrytime, EDOG(mtmp)->apport);
-            Strcat(info, ")");
-        }
-    } else if (mtmp->mpeaceful)
-        Strcat(info, ", peaceful");
-
-    if (mtmp->data == &mons[PM_LONG_WORM]) {
-        int segndx, nsegs = count_wsegs(mtmp);
-
-        /* the worm code internals don't consider the head of be one of
-           the worm's segments, but we count it as such when presenting
-           worm feedback to the player */
-        if (!nsegs) {
-            Strcat(info, ", single segment");
-        } else {
-            ++nsegs; /* include head in the segment count */
-            segndx = wseg_at(mtmp, bhitpos.x, bhitpos.y);
-            Sprintf(eos(info), ", %d%s of %d segments",
-                    segndx, ordin(segndx), nsegs);
-        }
-    }
-    if (mtmp->cham >= LOW_PM && mtmp->data != &mons[mtmp->cham])
-        /* don't reveal the innate form (chameleon, vampire, &c),
-           just expose the fact that this current form isn't it */
-        Strcat(info, ", shapechanger");
-    /* pets eating mimic corpses mimic while eating, so this comes first */
-    if (mtmp->meating)
-        Strcat(info, ", eating");
-    /* a stethoscope exposes mimic before getting here so this
-       won't be relevant for it, but wand of probing doesn't */
-    if (mtmp->mundetected || mtmp->m_ap_type)
-        mhidden_description(mtmp, TRUE, eos(info));
-    if (mtmp->mcan)
-        Strcat(info, ", cancelled");
-    if (mtmp->mconf)
-        Strcat(info, ", confused");
-    if (mtmp->mblinded || !mtmp->mcansee)
-        Strcat(info, ", blind");
-    if (mtmp->mstun)
-        Strcat(info, ", stunned");
-    if (mtmp->msleeping)
-        Strcat(info, ", asleep");
-#if 0 /* unfortunately mfrozen covers temporary sleep and being busy \
-         (donning armor, for instance) as well as paralysis */
-    else if (mtmp->mfrozen)
-        Strcat(info, ", paralyzed");
-#else
-    else if (mtmp->mfrozen || !mtmp->mcanmove)
-        Strcat(info, ", can't move");
-#endif
-    /* [arbitrary reason why it isn't moving] */
-    else if (mtmp->mstrategy & STRAT_WAITMASK)
-        Strcat(info, ", meditating");
-    if (mtmp->mflee)
-        Strcat(info, ", scared");
-    if (mtmp->mtrapped)
-        Strcat(info, ", trapped");
-    if (mtmp->mspeed)
-        Strcat(info, (mtmp->mspeed == MFAST) ? ", fast"
-                      : (mtmp->mspeed == MSLOW) ? ", slow"
-                         : ", [? speed]");
-    if (mtmp->minvis)
-        Strcat(info, ", invisible");
-    if (mtmp == u.ustuck)
-        Strcat(info, sticks(youmonst.data) ? ", held by you"
-                      : !u.uswallow ? ", holding you"
-                         : attacktype_fordmg(u.ustuck->data, AT_ENGL, AD_DGST)
-                            ? ", digesting you"
-                            : is_animal(u.ustuck->data) ? ", swallowing you"
-                               : ", engulfing you");
-    if (mtmp == u.usteed)
-        Strcat(info, ", carrying you");
-
-    /* avoid "Status of the invisible newt ..., invisible" */
-    /* and unlike a normal mon_nam, use "saddled" even if it has a name */
-    Strcpy(monnambuf, x_monnam(mtmp, ARTICLE_THE, (char *) 0,
-                               (SUPPRESS_IT | SUPPRESS_INVISIBLE), FALSE));
-
-    pline("Status of %s (%s):  Level %d  HP %d(%d)  AC %d%s.", monnambuf,
-          align_str(alignment), mtmp->m_lev, mtmp->mhp, mtmp->mhpmax,
-          find_mac(mtmp), info);
-}
-
-/* stethoscope or probing applied to hero -- one-line feedback */
-void
-ustatusline()
-{
-    char info[BUFSZ];
-
-    info[0] = '\0';
-    if (Sick) {
-        Strcat(info, ", dying from");
-        if (u.usick_type & SICK_VOMITABLE)
-            Strcat(info, " food poisoning");
-        if (u.usick_type & SICK_NONVOMITABLE) {
-            if (u.usick_type & SICK_VOMITABLE)
-                Strcat(info, " and");
-            Strcat(info, " illness");
-        }
-    }
-    if (Stoned)
-        Strcat(info, ", solidifying");
-    if (Slimed)
-        Strcat(info, ", becoming slimy");
-    if (Strangled)
-        Strcat(info, ", being strangled");
-    if (Vomiting)
-        Strcat(info, ", nauseated"); /* !"nauseous" */
-    if (Confusion)
-        Strcat(info, ", confused");
-    if (Blind) {
-        Strcat(info, ", blind");
-        if (u.ucreamed) {
-            if ((long) u.ucreamed < Blinded || Blindfolded
-                || !haseyes(youmonst.data))
-                Strcat(info, ", cover");
-            Strcat(info, "ed by sticky goop");
-        } /* note: "goop" == "glop"; variation is intentional */
-    }
-    if (Stunned)
-        Strcat(info, ", stunned");
-    if (!u.usteed && Wounded_legs) {
-        const char *what = body_part(LEG);
-        if ((Wounded_legs & BOTH_SIDES) == BOTH_SIDES)
-            what = makeplural(what);
-        Sprintf(eos(info), ", injured %s", what);
-    }
-    if (Glib)
-        Sprintf(eos(info), ", slippery %s", makeplural(body_part(HAND)));
-    if (u.utrap)
-        Strcat(info, ", trapped");
-    if (Fast)
-        Strcat(info, Very_fast ? ", very fast" : ", fast");
-    if (u.uundetected)
-        Strcat(info, ", concealed");
-    if (Invis)
-        Strcat(info, ", invisible");
-    if (u.ustuck) {
-        if (sticks(youmonst.data))
-            Strcat(info, ", holding ");
-        else
-            Strcat(info, ", held by ");
-        Strcat(info, mon_nam(u.ustuck));
-    }
-
-    pline("Status of %s (%s):  Level %d  HP %d(%d)  AC %d%s.", plname,
-          piousness(FALSE, align_str(u.ualign.type)),
-          Upolyd ? mons[u.umonnum].mlevel : u.ulevel, Upolyd ? u.mh : u.uhp,
-          Upolyd ? u.mhmax : u.uhpmax, u.uac, info);
 }
 
 /*priest.c*/

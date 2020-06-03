@@ -16,12 +16,12 @@
 #include "func_tab.h"
 
 char morc = 0; /* tell the outside world what char you chose */
-STATIC_VAR boolean suppress_history;
-STATIC_DCL boolean FDECL(ext_cmd_getlin_hook, (char *));
+static boolean suppress_history;
+static boolean FDECL(ext_cmd_getlin_hook, (char *));
 
 typedef boolean FDECL((*getlin_hook_proc), (char *));
 
-STATIC_DCL void FDECL(hooked_tty_getlin,
+static void FDECL(hooked_tty_getlin,
                       (const char *, char *, getlin_hook_proc));
 extern int NDECL(extcmd_via_menu); /* cmd.c */
 
@@ -42,7 +42,7 @@ register char *bufp;
     hooked_tty_getlin(query, bufp, (getlin_hook_proc) 0);
 }
 
-STATIC_OVL void
+static void
 hooked_tty_getlin(query, bufp, hook)
 const char *query;
 register char *bufp;
@@ -73,7 +73,7 @@ getlin_hook_proc hook;
 
     for (;;) {
         (void) fflush(stdout);
-        Strcat(strcat(strcpy(toplines, query), " "), obufp);
+        Strcat(strcat(strcpy(g.toplines, query), " "), obufp);
         c = pgetchar();
         if (c == '\033' || c == EOF) {
             if (c == '\033' && obufp[0] != '\0') {
@@ -201,11 +201,11 @@ getlin_hook_proc hook;
     if (suppress_history) {
         /* prevent next message from pushing current query+answer into
            tty message history */
-        *toplines = '\0';
+        *g.toplines = '\0';
 #ifdef DUMPLOG
     } else {
         /* needed because we've bypassed pline() */
-        dumplogmsg(toplines);
+        dumplogmsg(g.toplines);
 #endif
     }
 }
@@ -225,7 +225,7 @@ register const char *s; /* chars allowed besides return */
     morc = 0;
     while (
 #ifdef HANGUPHANDLING
-        !program_state.done_hup &&
+        !g.program_state.done_hup &&
 #endif
         (c = nhgetch()) != EOF) {
         if (c == '\n' || c == '\r')
@@ -260,7 +260,7 @@ register const char *s; /* chars allowed besides return */
  *	+ we don't change the characters that are already in base
  *	+ base has enough room to hold our string
  */
-STATIC_OVL boolean
+static boolean
 ext_cmd_getlin_hook(base)
 char *base;
 {
@@ -303,12 +303,12 @@ tty_get_ext_cmd()
     suppress_history = TRUE;
     /* maybe a runtime option?
      * hooked_tty_getlin("#", buf,
-     *                   (flags.cmd_comp && !in_doagain)
+     *                   (flags.cmd_comp && !g.in_doagain)
      *                      ? ext_cmd_getlin_hook
      *                      : (getlin_hook_proc) 0);
      */
     buf[0] = '\0';
-    hooked_tty_getlin("#", buf, in_doagain ? (getlin_hook_proc) 0
+    hooked_tty_getlin("#", buf, g.in_doagain ? (getlin_hook_proc) 0
                                            : ext_cmd_getlin_hook);
     (void) mungspaces(buf);
     if (buf[0] == 0 || buf[0] == '\033')
@@ -318,7 +318,7 @@ tty_get_ext_cmd()
         if (!strcmpi(buf, extcmdlist[i].ef_txt))
             break;
 
-    if (!in_doagain) {
+    if (!g.in_doagain) {
         int j;
         for (j = 0; buf[j]; j++)
             savech(buf[j]);

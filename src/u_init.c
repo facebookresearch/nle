@@ -1,4 +1,4 @@
-/* NetHack 3.6	u_init.c	$NHDT-Date: 1575245094 2019/12/02 00:04:54 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.60 $ */
+/* NetHack 3.6	u_init.c	$NHDT-Date: 1578855627 2020/01/12 19:00:27 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.67 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2017. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -13,10 +13,10 @@ struct trobj {
     Bitfield(trbless, 2);
 };
 
-STATIC_DCL void FDECL(ini_inv, (struct trobj *));
-STATIC_DCL void FDECL(knows_object, (int));
-STATIC_DCL void FDECL(knows_class, (CHAR_P));
-STATIC_DCL boolean FDECL(restricted_spell_discipline, (int));
+static void FDECL(ini_inv, (struct trobj *));
+static void FDECL(knows_object, (int));
+static void FDECL(knows_class, (CHAR_P));
+static boolean FDECL(restricted_spell_discipline, (int));
 
 #define UNDEF_TYP 0
 #define UNDEF_SPE '\177'
@@ -557,7 +557,7 @@ static const struct def_skill Skill_W[] = {
     { P_NONE, 0 }
 };
 
-STATIC_OVL void
+static void
 knows_object(obj)
 register int obj;
 {
@@ -568,7 +568,7 @@ register int obj;
 /* Know ordinary (non-magical) objects of a certain class,
  * like all gems except the loadstone and luckstone.
  */
-STATIC_OVL void
+static void
 knows_class(sym)
 register char sym;
 {
@@ -603,7 +603,7 @@ u_init()
     uarm = uarmc = uarmh = uarms = uarmg = uarmf = 0;
     uwep = uball = uchain = uleft = uright = 0;
     uswapwep = uquiver = 0;
-    u.twoweap = 0;
+    u.twoweap = FALSE; /* bypass set_twoweap() */
     u.ublessed = 0;                     /* not worthy yet */
     u.ugangr   = 0;                     /* gods not angry */
     u.ugifts   = 0;                     /* no divine gifts bestowed */
@@ -625,9 +625,9 @@ u_init()
     u.umortality = 0;
     u.ugrave_arise = NON_PM;
 
-    u.umonnum = u.umonster = (flags.female && urole.femalenum != NON_PM)
-                                 ? urole.femalenum
-                                 : urole.malenum;
+    u.umonnum = u.umonster = (flags.female && g.urole.femalenum != NON_PM)
+                                 ? g.urole.femalenum
+                                 : g.urole.malenum;
     u.ulycn = NON_PM;
     set_uasmon();
 
@@ -640,7 +640,7 @@ u_init()
 
     init_uhunger();
     for (i = 0; i <= MAXSPELL; i++)
-        spl_book[i].sp_id = NO_SPELL;
+        g.spl_book[i].sp_id = NO_SPELL;
     u.ublesscnt = 300; /* no prayers just yet */
     u.ualignbase[A_CURRENT] = u.ualignbase[A_ORIGINAL] = u.ualign.type =
         aligns[flags.initalign].value;
@@ -907,7 +907,7 @@ u_init()
 }
 
 /* skills aren't initialized, so we use the role-specific skill lists */
-STATIC_OVL boolean
+static boolean
 restricted_spell_discipline(otyp)
 int otyp;
 {
@@ -967,22 +967,19 @@ int otyp;
     return TRUE;
 }
 
-STATIC_OVL void
+static void
 ini_inv(trop)
 register struct trobj *trop;
 {
     struct obj *obj;
     int otyp, i;
 
-    while (trop->trclass) {
+	while (trop->trclass) {
         otyp = (int) trop->trotyp;
         if (otyp != UNDEF_TYP) {
             obj = mksobj(otyp, TRUE, FALSE);
         } else { /* UNDEF_TYP */
-            static NEARDATA short nocreate = STRANGE_OBJECT;
-            static NEARDATA short nocreate2 = STRANGE_OBJECT;
-            static NEARDATA short nocreate3 = STRANGE_OBJECT;
-            static NEARDATA short nocreate4 = STRANGE_OBJECT;
+            int trycnt = 0;
             /*
              * For random objects, do not create certain overly powerful
              * items: wand of wishing, ring of levitation, or the
@@ -995,9 +992,9 @@ register struct trobj *trop;
              */
             obj = mkobj(trop->trclass, FALSE);
             otyp = obj->otyp;
-            while (otyp == WAN_WISHING || otyp == nocreate
-                   || otyp == nocreate2 || otyp == nocreate3
-                   || otyp == nocreate4 || otyp == RIN_LEVITATION
+            while (otyp == WAN_WISHING || otyp == g.nocreate
+                   || otyp == g.nocreate2 || otyp == g.nocreate3
+                   || otyp == g.nocreate4 || otyp == RIN_LEVITATION
                    /* 'useless' items */
                    || otyp == POT_HALLUCINATION
                    || otyp == POT_ACID
@@ -1019,10 +1016,13 @@ register struct trobj *trop;
                       spells in restricted skill categories */
                    || (obj->oclass == SPBOOK_CLASS
                        && (objects[otyp].oc_level > 3
-                           || restricted_spell_discipline(otyp)))) {
+                           || restricted_spell_discipline(otyp)))
+                   || otyp == SPE_NOVEL) {
                 dealloc_obj(obj);
                 obj = mkobj(trop->trclass, FALSE);
                 otyp = obj->otyp;
+                if (++trycnt > 1000)
+                    break;
             }
 
             /* Don't start with +0 or negative rings */
@@ -1039,25 +1039,25 @@ register struct trobj *trop;
             case WAN_POLYMORPH:
             case RIN_POLYMORPH:
             case POT_POLYMORPH:
-                nocreate = RIN_POLYMORPH_CONTROL;
+                g.nocreate = RIN_POLYMORPH_CONTROL;
                 break;
             case RIN_POLYMORPH_CONTROL:
-                nocreate = RIN_POLYMORPH;
-                nocreate2 = SPE_POLYMORPH;
-                nocreate3 = POT_POLYMORPH;
+                g.nocreate = RIN_POLYMORPH;
+                g.nocreate2 = SPE_POLYMORPH;
+                g.nocreate3 = POT_POLYMORPH;
             }
             /* Don't have 2 of the same ring or spellbook */
             if (obj->oclass == RING_CLASS || obj->oclass == SPBOOK_CLASS)
-                nocreate4 = otyp;
+                g.nocreate4 = otyp;
         }
 
-        if (urace.malenum != PM_HUMAN) {
+        if (g.urace.malenum != PM_HUMAN) {
             /* substitute race-specific items; this used to be in
                the 'if (otyp != UNDEF_TYP) { }' block above, but then
                substitutions didn't occur for randomly generated items
                (particularly food) which have racial substitutes */
             for (i = 0; inv_subs[i].race_pm != NON_PM; ++i)
-                if (inv_subs[i].race_pm == urace.malenum
+                if (inv_subs[i].race_pm == g.urace.malenum
                     && otyp == inv_subs[i].item_otyp) {
                     debugpline3("ini_inv: substituting %s for %s%s",
                                 OBJ_NAME(objects[inv_subs[i].subs_otyp]),
@@ -1114,11 +1114,11 @@ register struct trobj *trop;
         if (obj->oclass == ARMOR_CLASS) {
             if (is_shield(obj) && !uarms && !(uwep && bimanual(uwep))) {
                 setworn(obj, W_ARMS);
-                /* Prior to 3.6.2 this used to unset uswapwep if it was set, but
-                   wearing a shield doesn't prevent having an alternate
+                /* Prior to 3.6.2 this used to unset uswapwep if it was set,
+                   but wearing a shield doesn't prevent having an alternate
                    weapon ready to swap with the primary; just make sure we
                    aren't two-weaponing (academic; no one starts that way) */
-                u.twoweap = FALSE;
+                set_twoweap(FALSE); /* u.twoweap = FALSE */
             } else if (is_helmet(obj) && !uarmh)
                 setworn(obj, W_ARMH);
             else if (is_gloves(obj) && !uarmg)
@@ -1147,16 +1147,8 @@ register struct trobj *trop;
         if (obj->oclass == SPBOOK_CLASS && obj->otyp != SPE_BLANK_PAPER)
             initialspell(obj);
 
-#if !defined(PYRAMID_BUG) && !defined(MAC)
         if (--trop->trquan)
             continue; /* make a similar object */
-#else
-        if (trop->trquan) { /* check if zero first */
-            --trop->trquan;
-            if (trop->trquan)
-                continue; /* make a similar object */
-        }
-#endif
         trop++;
     }
 }

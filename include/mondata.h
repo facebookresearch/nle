@@ -1,4 +1,4 @@
-/* NetHack 3.6	mondata.h	$NHDT-Date: 1576626512 2019/12/17 23:48:32 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.39 $ */
+/* NetHack 3.6	mondata.h	$NHDT-Date: 1586178708 2020/04/06 13:11:48 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.43 $ */
 /* Copyright (c) 1989 Mike Threepoint				  */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -26,6 +26,8 @@
     ((((mon)->data->mresists | (mon)->mextrinsics) & MR_ACID) != 0)
 #define resists_ston(mon) \
     ((((mon)->data->mresists | (mon)->mextrinsics) & MR_STONE) != 0)
+
+#define immune_poisongas(ptr) ((ptr) == &mons[PM_HEZROU])
 
 #define is_lminion(mon) \
     (is_minion((mon)->data) && mon_aligntyp(mon) == A_LAWFUL)
@@ -101,12 +103,22 @@
 #define is_shapeshifter(ptr) (((ptr)->mflags2 & M2_SHAPESHIFTER) != 0L)
 #define is_undead(ptr) (((ptr)->mflags2 & M2_UNDEAD) != 0L)
 #define is_were(ptr) (((ptr)->mflags2 & M2_WERE) != 0L)
-#define is_elf(ptr) (((ptr)->mflags2 & M2_ELF) != 0L)
-#define is_dwarf(ptr) (((ptr)->mflags2 & M2_DWARF) != 0L)
-#define is_gnome(ptr) (((ptr)->mflags2 & M2_GNOME) != 0L)
-#define is_orc(ptr) (((ptr)->mflags2 & M2_ORC) != 0L)
-#define is_human(ptr) (((ptr)->mflags2 & M2_HUMAN) != 0L)
-#define your_race(ptr) (((ptr)->mflags2 & urace.selfmask) != 0L)
+#define is_elf(ptr) ((((ptr)->mflags2 & M2_ELF) != 0L)     \
+                     || ((ptr) == g.youmonst.data &&       \
+                         !Upolyd && Race_if(PM_ELF)))
+#define is_dwarf(ptr) ((((ptr)->mflags2 & M2_DWARF) != 0L) \
+                     || ((ptr) == g.youmonst.data &&       \
+                         !Upolyd && Race_if(PM_DWARF)))
+#define is_gnome(ptr) ((((ptr)->mflags2 & M2_GNOME) != 0L) \
+                     || ((ptr) == g.youmonst.data &&       \
+                         !Upolyd && Race_if(PM_GNOME)))
+#define is_orc(ptr) ((((ptr)->mflags2 & M2_ORC) != 0L)     \
+                     || ((ptr) == g.youmonst.data &&       \
+                         !Upolyd && Race_if(PM_ORC)))
+#define is_human(ptr) ((((ptr)->mflags2 & M2_HUMAN) != 0L) \
+                     || ((ptr) == g.youmonst.data &&       \
+                         !Upolyd && Race_if(PM_HUMAN)))
+#define your_race(ptr) (((ptr)->mflags2 & g.urace.selfmask) != 0L)
 #define is_bat(ptr)                                         \
     ((ptr) == &mons[PM_BAT] || (ptr) == &mons[PM_GIANT_BAT] \
      || (ptr) == &mons[PM_VAMPIRE_BAT])
@@ -122,13 +134,21 @@
 #define is_wanderer(ptr) (((ptr)->mflags2 & M2_WANDER) != 0L)
 #define always_hostile(ptr) (((ptr)->mflags2 & M2_HOSTILE) != 0L)
 #define always_peaceful(ptr) (((ptr)->mflags2 & M2_PEACEFUL) != 0L)
-#define race_hostile(ptr) (((ptr)->mflags2 & urace.hatemask) != 0L)
-#define race_peaceful(ptr) (((ptr)->mflags2 & urace.lovemask) != 0L)
+#define race_hostile(ptr) (((ptr)->mflags2 & g.urace.hatemask) != 0L)
+#define race_peaceful(ptr) (((ptr)->mflags2 & g.urace.lovemask) != 0L)
 #define extra_nasty(ptr) (((ptr)->mflags2 & M2_NASTY) != 0L)
 #define strongmonst(ptr) (((ptr)->mflags2 & M2_STRONG) != 0L)
 #define can_breathe(ptr) attacktype(ptr, AT_BREA)
 #define cantwield(ptr) (nohands(ptr) || verysmall(ptr))
-#define could_twoweap(ptr) ((ptr)->mattk[1].aatyp == AT_WEAP)
+/* Does this type of monster have multiple weapon attacks?  If so,
+   hero poly'd into this form can use two-weapon combat.  It used
+   to just check mattk[1] and assume mattk[0], which was suitable
+   for mons[] at the time but somewhat fragile.  This is more robust
+   without going to the extreme of checking all six slots. */
+#define could_twoweap(ptr) \
+    ((  ((ptr)->mattk[0].aatyp == AT_WEAP)              \
+      + ((ptr)->mattk[1].aatyp == AT_WEAP)              \
+      + ((ptr)->mattk[2].aatyp == AT_WEAP)  ) > 1)
 #define cantweararm(ptr) (breakarm(ptr) || sliparm(ptr))
 #define throws_rocks(ptr) (((ptr)->mflags2 & M2_ROCKTHROW) != 0L)
 #define type_is_pname(ptr) (((ptr)->mflags2 & M2_PNAME) != 0L)

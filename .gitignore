@@ -1,5 +1,3 @@
-#### NetHack
-####
 # CVS default ignores begin
 tags
 TAGS
@@ -26,12 +24,12 @@ _$*
 *.Z
 *.elc
 *.ln
+core
 # CVS default ignores end
 .*.swp
 
 # We generate makefiles by shell script
 Makefile
-!/doc/nle/Makefile
 
 # Win32-specific ignores
 Debug/
@@ -57,10 +55,35 @@ Makefile.gcc-orig
 .vs
 # Win32-specific ignores end
 .DS_Store
+# ms-dos
+# resulting zip
+NH*DOS.ZIP
+# 8.3 versions
+dat/data.bas
+sys/share/posixreg.c
+include/patchlev.h
+doc/guidebk.txt
+# folders compiler, target objs, binary results
+djgpp/
+src/msdos_o/
+msdos-binary/
+dat/NHTILES.BMP
+dat/msdoshlp.txt
+src/host_o/
+util/djgpp-linux64-gcc550.tar.bz2
+util/djgpp-osx-gcc550.tar.bz2
+util/djgpp-mingw-gcc550-standalone.zip
+util/dlb_main
+util/thintile
+util/til2bin2
+util/tile2bin
+win/share/monthin.txt
+win/share/objthin.txt
+win/share/oththin.txt
+# end of ms-dos
 
 
 #### nle
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -118,25 +141,6 @@ coverage.xml
 *.mo
 *.pot
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -175,16 +179,6 @@ celerybeat.pid
 env.bak/
 venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -197,7 +191,7 @@ dmypy.json
 .pytype/
 
 
-# NLE
+# NLE core
 nle/version.py
 nle_data/
 nle/fbs/

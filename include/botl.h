@@ -1,4 +1,4 @@
-/* NetHack 3.6  botl.h  $NHDT-Date: 1554591222 2019/04/06 22:53:42 $  $NHDT-Branch: NetHack-3.6.2-beta01 $:$NHDT-Revision: 1.24 $ */
+/* NetHack 3.6  botl.h  $NHDT-Date: 1562187996 2019/07/03 21:06:36 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.27 $ */
 /* Copyright (c) Michael Allison, 2003                            */
 /* NetHack may be freely redistributed.  See license for details. */
 
@@ -48,27 +48,149 @@ enum relationships { NO_LTEQGT = -1,
                      EQ_VALUE, LT_VALUE, LE_VALUE,
                      GE_VALUE, GT_VALUE, TXT_VALUE };
 
-#define BEFORE  0
-#define NOW     1
+enum blconditions {
+    bl_bareh,
+    bl_blind,
+    bl_busy,
+    bl_conf,
+    bl_deaf,
+    bl_elf_iron,
+    bl_fly,
+    bl_foodpois,
+    bl_glowhands,
+    bl_grab,
+    bl_hallu,
+    bl_held,
+    bl_icy,
+    bl_inlava,
+    bl_lev,
+    bl_parlyz,
+    bl_ride,
+    bl_sleeping,
+    bl_slime,
+    bl_slippery,
+    bl_stone,
+    bl_strngl,
+    bl_stun,
+    bl_submerged,
+    bl_termill,
+    bl_tethered,
+    bl_trapped,
+    bl_unconsc,
+    bl_woundedl,
+    bl_holding,
+
+    CONDITION_COUNT
+};
 
 /* Boolean condition bits for the condition mask */
 
 /* clang-format off */
-#define BL_MASK_STONE           0x00000001L
-#define BL_MASK_SLIME           0x00000002L
-#define BL_MASK_STRNGL          0x00000004L
-#define BL_MASK_FOODPOIS        0x00000008L
-#define BL_MASK_TERMILL         0x00000010L
-#define BL_MASK_BLIND           0x00000020L
-#define BL_MASK_DEAF            0x00000040L
-#define BL_MASK_STUN            0x00000080L
-#define BL_MASK_CONF            0x00000100L
-#define BL_MASK_HALLU           0x00000200L
-#define BL_MASK_LEV             0x00000400L
-#define BL_MASK_FLY             0x00000800L
-#define BL_MASK_RIDE            0x00001000L
-#define BL_MASK_BITS            13 /* number of mask bits that can be set */
+#define BL_MASK_BAREH        0x00000001L
+#define BL_MASK_BLIND        0x00000002L
+#define BL_MASK_BUSY         0x00000004L
+#define BL_MASK_CONF         0x00000008L
+#define BL_MASK_DEAF         0x00000010L
+#define BL_MASK_ELF_IRON     0x00000020L
+#define BL_MASK_FLY          0x00000040L
+#define BL_MASK_FOODPOIS     0x00000080L
+#define BL_MASK_GLOWHANDS    0x00000100L
+#define BL_MASK_GRAB         0x00000200L
+#define BL_MASK_HALLU        0x00000400L
+#define BL_MASK_HELD         0x00000800L
+#define BL_MASK_ICY          0x00001000L
+#define BL_MASK_INLAVA       0x00002000L
+#define BL_MASK_LEV          0x00004000L
+#define BL_MASK_PARLYZ       0x00008000L
+#define BL_MASK_RIDE         0x00010000L
+#define BL_MASK_SLEEPING     0x00020000L
+#define BL_MASK_SLIME        0x00040000L
+#define BL_MASK_SLIPPERY     0x00080000L
+#define BL_MASK_STONE        0x00100000L
+#define BL_MASK_STRNGL       0x00200000L
+#define BL_MASK_STUN         0x00400000L
+#define BL_MASK_SUBMERGED    0x00800000L
+#define BL_MASK_TERMILL      0x01000000L
+#define BL_MASK_TETHERED     0x02000000L
+#define BL_MASK_TRAPPED      0x04000000L
+#define BL_MASK_UNCONSC      0x08000000L
+#define BL_MASK_WOUNDEDL     0x10000000L
+#define BL_MASK_HOLDING      0x20000000L
+#define BL_MASK_BITS            30 /* number of mask bits that can be set */
 /* clang-format on */
+
+struct conditions_t {
+    int ranking;
+    long mask;
+    enum blconditions c;
+    const char *text[3];
+};
+extern const struct conditions_t conditions[CONDITION_COUNT];
+
+struct condtests_t {
+    enum blconditions c;
+    const char *useroption;
+    enum optchoice opt;
+    boolean enabled;
+    boolean choice;
+    boolean test;
+};
+
+extern struct condtests_t condtests[CONDITION_COUNT];
+extern int cond_idx[CONDITION_COUNT];
+
+#define BEFORE  0
+#define NOW     1
+
+/*
+ * Possible additional conditions:
+ *  major:
+ *      grab   - grabbed by eel so about to be drowned ("wrapd"? damage type
+ *               is AD_WRAP but message is "<mon> swings itself around you")
+ *      digst  - swallowed and being digested
+ *      lava   - trapped sinking into lava
+ *  in_between: (potentially severe but don't necessarily lead to death;
+ *               explains to player why he isn't getting to take any turns)
+ *      unconc - unconscious
+ *      parlyz - (multi < 0 && (!strncmp(multi_reason, "paralyzed", 9)
+ *                              || !strncmp(multi_reason, "frozen", 6)))
+ *      asleep - (multi < 0 && !strncmp(multi_reason, "sleeping", 8))
+ *      busy   - other multi < 0
+ *  minor:
+ *      held   - grabbed by non-eel or by eel but not susceptible to drowning
+ *      englf  - engulfed or swallowed but not being digested (usually
+ *               obvious but the blank symbol set makes that uncertain)
+ *      vomit  - vomiting (causes confusion and stun late in countdown)
+ *      trap   - trapped in pit, bear trap, web, or floor (solidified lava)
+ *      teth   - tethered to buried iron ball
+ *      chain  - punished
+ *      slip   - slippery fingers
+ *      ice    - standing on ice (movement becomes uncertain)
+ *     [underwater - movement uncertain, vision truncated, equipment at risk]
+ *  other:
+ *     [hold      - poly'd into grabber and holding adjacent monster]
+ *      Stormbringer - wielded weapon poses risks
+ *      Cleaver   - wielded weapon risks unintended consequences
+ *      barehand  - not wielding any weapon nor wearing gloves
+ *      no-weapon - not wielding any weapon
+ *      bow/xbow/sling - wielding a missile launcher of specified type
+ *      pole      - wielding a polearm
+ *      pick      - wielding a pickaxe
+ *      junk      - wielding non-weapon, non-weptool
+ *      naked     - no armor
+ *      no-gloves - self-explanatory
+ *      no-cloak  - ditto
+ *     [no-{other armor slots?} - probably much too verbose]
+ *  conduct?
+ *      [maybe if third status line is added]
+ *
+ *  Can't add all of these and probably don't want to.  But maybe we
+ *  can add some of them and it's not as many as first appears:
+ *  lava/trap/teth are mutually exclusive;
+ *  digst/grab/englf/held/hold are also mutually exclusive;
+ *  Stormbringer/Cleaver/barehand/no-weapon/bow&c/pole/pick/junk too;
+ *  naked/no-{any armor slot} likewise.
+ */
 
 #define VIA_WINDOWPORT() \
     ((windowprocs.wincap2 & (WC2_HILITE_STATUS | WC2_FLUSH_STATUS)) != 0)
@@ -104,7 +226,42 @@ enum hlattribs { HL_UNDEF   = 0x00,
                  HL_ULINE   = 0x08,
                  HL_BLINK   = 0x10,
                  HL_DIM     = 0x20 };
-/* #endif STATUS_HILITES */
+
+#define MAXVALWIDTH 80 /* actually less, but was using 80 to allocate title
+                       * and leveldesc then using QBUFSZ everywhere else   */
+#ifdef STATUS_HILITES
+struct hilite_s {
+    enum statusfields fld;
+    boolean set;
+    unsigned anytype;
+    anything value;
+    int behavior;
+    char textmatch[MAXVALWIDTH];
+    enum relationships rel;
+    int coloridx;
+    struct hilite_s *next;
+};
+#endif
+
+struct istat_s {
+    const char *fldname;
+    const char *fldfmt;
+    long time;  /* moves when this field hilite times out */
+    boolean chg; /* need to recalc time? */
+    boolean percent_matters;
+    short percent_value;
+    unsigned anytype;
+    anything a;
+    char *val;
+    int valwidth;
+    enum statusfields idxmax;
+    enum statusfields fld;
+#ifdef STATUS_HILITES
+    struct hilite_s *hilite_rule; /* the entry, if any, in 'thresholds'
+                                   * list that currently applies        */
+    struct hilite_s *thresholds;
+#endif
+};
 
 extern const char *status_fieldnames[]; /* in botl.c */
 

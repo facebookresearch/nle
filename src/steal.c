@@ -1,31 +1,25 @@
-/* NetHack 3.6	steal.c	$NHDT-Date: 1570566382 2019/10/08 20:26:22 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.75 $ */
+/* NetHack 3.6	steal.c	$NHDT-Date: 1591017420 2020/06/01 13:17:00 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.82 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2012. */
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
 
-STATIC_PTR int NDECL(stealarm);
+static int NDECL(stealarm);
+static int NDECL(unstolenarm);
+static const char *FDECL(equipname, (struct obj *));
 
-STATIC_DCL const char *FDECL(equipname, (struct obj *));
-
-STATIC_OVL const char *
+static const char *
 equipname(otmp)
 register struct obj *otmp;
 {
-    return ((otmp == uarmu)
-                ? "shirt"
-                : (otmp == uarmf)
-                      ? "boots"
-                      : (otmp == uarms)
-                            ? "shield"
-                            : (otmp == uarmg)
-                                  ? "gloves"
-                                  : (otmp == uarmc)
-                                        ? cloak_simple_name(otmp)
-                                        : (otmp == uarmh)
-                                              ? helm_simple_name(otmp)
-                                              : suit_simple_name(otmp));
+    return ((otmp == uarmu) ? shirt_simple_name(otmp)
+            : (otmp == uarmf) ? boots_simple_name(otmp)
+              : (otmp == uarms) ? shield_simple_name(otmp)
+                : (otmp == uarmg) ? gloves_simple_name(otmp)
+                  : (otmp == uarmc) ? cloak_simple_name(otmp)
+                    : (otmp == uarmh) ? helm_simple_name(otmp)
+                      : suit_simple_name(otmp));
 }
 
 /* proportional subset of gold; return value actually fits in an int */
@@ -92,7 +86,7 @@ register struct monst *mtmp;
         fgold = fgold->nexthere;
 
     /* Do you have real gold? */
-    ygold = findgold(invent);
+    ygold = findgold(g.invent);
 
     if (fgold && (!ygold || fgold->quan > ygold->quan || !rn2(5))) {
         obj_extract_self(fgold);
@@ -103,7 +97,7 @@ register struct monst *mtmp;
             whose = s_suffix(y_monnam(who));
             what = makeplural(mbodypart(who, FOOT));
         } else {
-            who = &youmonst;
+            who = &g.youmonst;
             whose = "your";
             what = makeplural(body_part(FOOT));
         }
@@ -123,7 +117,7 @@ register struct monst *mtmp;
     } else if (ygold) {
         const int gold_price = objects[GOLD_PIECE].oc_cost;
 
-        tmp = (somegold(money_cnt(invent)) + gold_price - 1) / gold_price;
+        tmp = (somegold(money_cnt(g.invent)) + gold_price - 1) / gold_price;
         tmp = min(tmp, ygold->quan);
         if (tmp < ygold->quan)
             ygold = splitobj(ygold, tmp);
@@ -135,24 +129,53 @@ register struct monst *mtmp;
         if (!tele_restrict(mtmp))
             (void) rloc(mtmp, TRUE);
         monflee(mtmp, 0, FALSE, FALSE);
-        context.botl = 1;
+        g.context.botl = 1;
     }
 }
 
-/* steal armor after you finish taking it off */
-unsigned int stealoid; /* object to be stolen */
-unsigned int stealmid; /* monster doing the stealing */
+/* monster who was stealing from hero has just died */
+void
+thiefdead()
+{
+    /* hero is busy taking off an item of armor which takes multiple turns */
+    g.stealmid = 0;
+    if (g.afternmv == stealarm)
+        g.afternmv = unstolenarm;
+}
 
-STATIC_PTR int
+/* called via (*g.afternmv)() when hero finishes taking off armor that
+   was slated to be stolen but the thief died in the interim */
+static int
+unstolenarm(VOID_ARGS)
+{
+    struct obj *obj;
+
+    /* find the object before clearing stealoid; it has already become
+       not-worn and is still in hero's inventory */
+    for (obj = g.invent; obj; obj = obj->nobj)
+        if (obj->o_id == g.stealoid)
+            break;
+    g.stealoid = 0;
+    if (obj) {
+        g.nomovemsg = (char *) 0;
+        You("finish taking off your %s.", equipname(obj));
+    }
+    return 0;
+}
+
+static int
 stealarm(VOID_ARGS)
 {
     register struct monst *mtmp;
     register struct obj *otmp;
 
-    for (otmp = invent; otmp; otmp = otmp->nobj) {
-        if (otmp->o_id == stealoid) {
+    if (!g.stealoid || !g.stealmid)
+        goto botm;
+
+    for (otmp = g.invent; otmp; otmp = otmp->nobj) {
+        if (otmp->o_id == g.stealoid) {
             for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-                if (mtmp->m_id == stealmid) {
+                if (mtmp->m_id == g.stealmid) {
                     if (DEADMONSTER(mtmp))
                         impossible("stealarm(): dead monster stealing");
                     if (!dmgtype(mtmp->data, AD_SITM)) /* polymorphed */
@@ -174,7 +197,7 @@ stealarm(VOID_ARGS)
         }
     }
  botm:
-    stealoid = 0;
+    g.stealoid = g.stealmid = 0; /* in case only one has been reset so far */
     return 0;
 }
 
@@ -236,10 +259,10 @@ boolean unchain_ball; /* whether to unpunish or just unwield */
     }
 }
 
-/* Returns 1 when something was stolen (or at least, when N should flee now)
- * Returns -1 if the monster died in the attempt
- * Avoid stealing the object stealoid
- * Nymphs and monkeys won't steal coins
+/* Returns 1 when something was stolen (or at least, when N should flee now),
+ * returns -1 if the monster died in the attempt.
+ * Avoid stealing the object 'stealoid'.
+ * Nymphs and monkeys won't steal coins.
  */
 int
 steal(mtmp, objnambuf)
@@ -261,7 +284,7 @@ char *objnambuf;
     /* food being eaten might already be used up but will not have
        been removed from inventory yet; we don't want to steal that,
        so this will cause it to be removed now */
-    if (occupation)
+    if (g.occupation)
         (void) maybe_finished_meal(FALSE);
 
     icnt = inv_cnt(FALSE); /* don't include gold */
@@ -292,14 +315,14 @@ char *objnambuf;
 
  retry:
     tmp = 0;
-    for (otmp = invent; otmp; otmp = otmp->nobj)
+    for (otmp = g.invent; otmp; otmp = otmp->nobj)
         if ((!uarm || otmp != uarmc) && otmp != uskin
             && otmp->oclass != COIN_CLASS)
             tmp += (otmp->owornmask & (W_ARMOR | W_ACCESSORY)) ? 5 : 1;
     if (!tmp)
         goto nothing_to_steal;
     tmp = rn2(tmp);
-    for (otmp = invent; otmp; otmp = otmp->nobj)
+    for (otmp = g.invent; otmp; otmp = otmp->nobj)
         if ((!uarm || otmp != uarmc) && otmp != uskin
             && otmp->oclass != COIN_CLASS) {
             tmp -= (otmp->owornmask & (W_ARMOR | W_ACCESSORY)) ? 5 : 1;
@@ -326,7 +349,7 @@ char *objnambuf;
         otmp = uarm;
 
  gotobj:
-    if (otmp->o_id == stealoid)
+    if (otmp->o_id == g.stealoid)
         return 0;
 
     if (otmp->otyp == BOULDER && !throws_rocks(mtmp->data)) {
@@ -408,7 +431,7 @@ char *objnambuf;
                 /* can't charm you without first waking you */
                 if (Unaware)
                     unmul((char *) 0);
-                slowly = (armordelay >= 1 || multi < 0);
+                slowly = (armordelay >= 1 || g.multi < 0);
                 if (flags.female)
                     pline("%s charms you.  You gladly %s your %s.",
                           !seen ? "She" : Monnam(mtmp),
@@ -429,18 +452,14 @@ char *objnambuf;
                 named++;
                 /* the following is to set multi for later on */
                 nomul(-armordelay);
-                multi_reason = "taking off clothes";
-                nomovemsg = 0;
+                g.multi_reason = "taking off clothes";
+                g.nomovemsg = 0;
                 remove_worn_item(otmp, TRUE);
                 otmp->cursed = curssv;
-                if (multi < 0) {
-                    /*
-                    multi = 0;
-                    afternmv = 0;
-                    */
-                    stealoid = otmp->o_id;
-                    stealmid = mtmp->m_id;
-                    afternmv = stealarm;
+                if (g.multi < 0) {
+                    g.stealoid = otmp->o_id;
+                    g.stealmid = mtmp->m_id;
+                    g.afternmv = stealarm;
                     return 0;
                 }
             }
@@ -474,7 +493,7 @@ char *objnambuf;
         minstapetrify(mtmp, TRUE);
         return -1;
     }
-    return (multi < 0) ? 0 : 1;
+    return (g.multi < 0) ? 0 : 1;
 }
 
 /* Returns 1 if otmp is free'd, 0 otherwise. */
@@ -498,10 +517,10 @@ register struct obj *otmp;
     }
     /* if monster is acquiring a thrown or kicked object, the throwing
        or kicking code shouldn't continue to track and place it */
-    if (otmp == thrownobj)
-        thrownobj = 0;
-    else if (otmp == kickedobj)
-        kickedobj = 0;
+    if (otmp == g.thrownobj)
+        g.thrownobj = 0;
+    else if (otmp == g.kickedobj)
+        g.kickedobj = 0;
     /* don't want hidden light source inside the monster; assumes that
        engulfers won't have external inventories; whirly monsters cause
        the light to be extinguished rather than letting it shine thru */
@@ -538,12 +557,12 @@ struct monst *mtmp;
     /* target every quest artifact, not just current role's;
        if hero has more than one, choose randomly so that player
        can't use inventory ordering to influence the theft */
-    for (n = 0, obj = invent; obj; obj = obj->nobj)
+    for (n = 0, obj = g.invent; obj; obj = obj->nobj)
         if (any_quest_artifact(obj))
             ++n, otmp = obj;
     if (n > 1) {
         n = rnd(n);
-        for (otmp = invent; otmp; otmp = otmp->nobj)
+        for (otmp = g.invent; otmp; otmp = otmp->nobj)
             if (any_quest_artifact(otmp) && !--n)
                 break;
     }
@@ -564,12 +583,12 @@ struct monst *mtmp;
             return; /* you have nothing of special interest */
 
         /* If we get here, real and fake have been set up. */
-        for (n = 0, obj = invent; obj; obj = obj->nobj)
+        for (n = 0, obj = g.invent; obj; obj = obj->nobj)
             if (obj->otyp == real || (obj->otyp == fake && !mtmp->iswiz))
                 ++n, otmp = obj;
         if (n > 1) {
             n = rnd(n);
-            for (otmp = invent; otmp; otmp = otmp->nobj)
+            for (otmp = g.invent; otmp; otmp = otmp->nobj)
                 if ((otmp->otyp == real
                      || (otmp->otyp == fake && !mtmp->iswiz)) && !--n)
                     break;

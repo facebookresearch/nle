@@ -1,4 +1,4 @@
-/* NetHack 3.6	detect.c	$NHDT-Date: 1575245054 2019/12/02 00:04:14 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.100 $ */
+/* NetHack 3.6	detect.c	$NHDT-Date: 1586815085 2020/04/13 21:58:05 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.118 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2018. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -11,33 +11,32 @@
 #include "hack.h"
 #include "artifact.h"
 
-extern boolean known; /* from read.c */
-
-STATIC_DCL boolean NDECL(unconstrain_map);
-STATIC_DCL void NDECL(reconstrain_map);
-STATIC_DCL void FDECL(browse_map, (int, const char *));
-STATIC_DCL void FDECL(map_monst, (struct monst *, BOOLEAN_P));
-STATIC_DCL void FDECL(do_dknown_of, (struct obj *));
-STATIC_DCL boolean FDECL(check_map_spot, (int, int, CHAR_P, unsigned));
-STATIC_DCL boolean FDECL(clear_stale_map, (CHAR_P, unsigned));
-STATIC_DCL void FDECL(sense_trap, (struct trap *, XCHAR_P, XCHAR_P, int));
-STATIC_DCL int FDECL(detect_obj_traps, (struct obj *, BOOLEAN_P, int));
-STATIC_DCL void FDECL(show_map_spot, (int, int));
-STATIC_PTR void FDECL(findone, (int, int, genericptr_t));
-STATIC_PTR void FDECL(openone, (int, int, genericptr_t));
-STATIC_DCL int FDECL(mfind0, (struct monst *, BOOLEAN_P));
-STATIC_DCL int FDECL(reveal_terrain_getglyph, (int, int, int,
+static boolean NDECL(unconstrain_map);
+static void NDECL(reconstrain_map);
+static void FDECL(browse_map, (int, const char *));
+static void FDECL(map_monst, (struct monst *, BOOLEAN_P));
+static void FDECL(do_dknown_of, (struct obj *));
+static boolean FDECL(check_map_spot, (int, int, CHAR_P, unsigned));
+static boolean FDECL(clear_stale_map, (CHAR_P, unsigned));
+static void FDECL(sense_trap, (struct trap *, XCHAR_P, XCHAR_P, int));
+static int FDECL(detect_obj_traps, (struct obj *, BOOLEAN_P, int));
+static int NDECL(furniture_detect);
+static void FDECL(show_map_spot, (int, int));
+static void FDECL(findone, (int, int, genericptr_t));
+static void FDECL(openone, (int, int, genericptr_t));
+static int FDECL(mfind0, (struct monst *, BOOLEAN_P));
+static int FDECL(reveal_terrain_getglyph, (int, int, int,
                                                unsigned, int, int));
 
 /* bring hero out from underwater or underground or being engulfed;
    return True iff any change occurred */
-STATIC_OVL boolean
+static boolean
 unconstrain_map()
 {
     boolean res = u.uinwater || u.uburied || u.uswallow;
 
     /* bring Underwater, buried, or swallowed hero to normal map */
-    iflags.save_uinwater = u.uinwater, u.uinwater = 0;
+    iflags.save_uinwater = u.uinwater, u.uinwater = 0; /* bypass set_uinwater() */
     iflags.save_uburied  = u.uburied,  u.uburied  = 0;
     iflags.save_uswallow = u.uswallow, u.uswallow = 0;
 
@@ -45,16 +44,16 @@ unconstrain_map()
 }
 
 /* put hero back underwater or underground or engulfed */
-STATIC_OVL void
+static void
 reconstrain_map()
 {
-    u.uinwater = iflags.save_uinwater, iflags.save_uinwater = 0;
+    u.uinwater = iflags.save_uinwater, iflags.save_uinwater = 0; /* set_uinwater() */
     u.uburied  = iflags.save_uburied,  iflags.save_uburied  = 0;
     u.uswallow = iflags.save_uswallow, iflags.save_uswallow = 0;
 }
 
 /* use getpos()'s 'autodescribe' to view whatever is currently shown on map */
-STATIC_DCL void
+static void
 browse_map(ter_typ, ter_explain)
 int ter_typ;
 const char *ter_explain;
@@ -72,7 +71,7 @@ const char *ter_explain;
 }
 
 /* extracted from monster_detection() so can be shared by do_vicinity_map() */
-STATIC_DCL void
+static void
 map_monst(mtmp, showtail)
 struct monst *mtmp;
 boolean showtail;
@@ -118,7 +117,7 @@ int x, y;
         return TRUE;
     /* in inventory, we need to find one which is actually trapped */
     if (x == u.ux && y == u.uy) {
-        for (otmp = invent; otmp; otmp = otmp->nobj)
+        for (otmp = g.invent; otmp; otmp = otmp->nobj)
             if (Is_box(otmp) && otmp->otrapped)
                 return TRUE;
         if (u.usteed) { /* steed isn't on map so won't be found by m_at() */
@@ -209,7 +208,7 @@ unsigned material;
     return (struct obj *) 0;
 }
 
-STATIC_OVL void
+static void
 do_dknown_of(obj)
 struct obj *obj;
 {
@@ -223,7 +222,7 @@ struct obj *obj;
 }
 
 /* Check whether the location has an outdated object displayed on it. */
-STATIC_OVL boolean
+static boolean
 check_map_spot(x, y, oclass, material)
 int x, y;
 char oclass;
@@ -237,13 +236,13 @@ unsigned material;
     if (glyph_is_object(glyph)) {
         /* there's some object shown here */
         if (oclass == ALL_CLASSES) {
-            return (boolean) !(level.objects[x][y] /* stale if nothing here */
+            return (boolean) !(g.level.objects[x][y] /* stale if nothing here */
                                || ((mtmp = m_at(x, y)) != 0 && mtmp->minvent));
         } else {
             if (material
                 && objects[glyph_to_obj(glyph)].oc_material == material) {
                 /* object shown here is of interest because material matches */
-                for (otmp = level.objects[x][y]; otmp; otmp = otmp->nexthere)
+                for (otmp = g.level.objects[x][y]; otmp; otmp = otmp->nexthere)
                     if (o_material(otmp, GOLD))
                         return FALSE;
                 /* didn't find it; perhaps a monster is carrying it */
@@ -257,7 +256,7 @@ unsigned material;
             }
             if (oclass && objects[glyph_to_obj(glyph)].oc_class == oclass) {
                 /* obj shown here is of interest because its class matches */
-                for (otmp = level.objects[x][y]; otmp; otmp = otmp->nexthere)
+                for (otmp = g.level.objects[x][y]; otmp; otmp = otmp->nexthere)
                     if (o_in(otmp, oclass))
                         return FALSE;
                 /* didn't find it; perhaps a monster is carrying it */
@@ -280,7 +279,7 @@ unsigned material;
  * reappear after the detection has completed.  Return true if noticeable
  * change occurs.
  */
-STATIC_OVL boolean
+static boolean
 clear_stale_map(oclass, material)
 char oclass;
 unsigned material;
@@ -309,18 +308,18 @@ register struct obj *sobj;
     boolean stale, ugold = FALSE, steedgold = FALSE;
     int ter_typ = TER_DETECT | TER_OBJ;
 
-    known = stale = clear_stale_map(COIN_CLASS,
+    g.known = stale = clear_stale_map(COIN_CLASS,
                                     (unsigned) (sobj->blessed ? GOLD : 0));
 
     /* look for gold carried by monsters (might be in a container) */
     for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-        if (DEADMONSTER(mtmp))
-            continue; /* probably not needed in this case but... */
+        if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
+            continue;
         if (findgold(mtmp->minvent) || monsndx(mtmp->data) == PM_GOLD_GOLEM) {
             if (mtmp == u.usteed) {
                 steedgold = TRUE;
             } else {
-                known = TRUE;
+                g.known = TRUE;
                 goto outgoldmap; /* skip further searching */
             }
         } else {
@@ -330,7 +329,7 @@ register struct obj *sobj;
                     if (mtmp == u.usteed) {
                         steedgold = TRUE;
                     } else {
-                        known = TRUE;
+                        g.known = TRUE;
                         goto outgoldmap; /* skip further searching */
                     }
                 }
@@ -340,25 +339,25 @@ register struct obj *sobj;
     /* look for gold objects */
     for (obj = fobj; obj; obj = obj->nobj) {
         if (sobj->blessed && o_material(obj, GOLD)) {
-            known = TRUE;
+            g.known = TRUE;
             if (obj->ox != u.ux || obj->oy != u.uy)
                 goto outgoldmap;
         } else if (o_in(obj, COIN_CLASS)) {
-            known = TRUE;
+            g.known = TRUE;
             if (obj->ox != u.ux || obj->oy != u.uy)
                 goto outgoldmap;
         }
     }
 
-    if (!known) {
+    if (!g.known) {
         /* no gold found on floor or monster's inventory.
            adjust message if you have gold in your inventory */
         if (sobj) {
             char buf[BUFSZ];
 
-            if (youmonst.data == &mons[PM_GOLD_GOLEM])
+            if (g.youmonst.data == &mons[PM_GOLD_GOLEM])
                 Sprintf(buf, "You feel like a million %s!", currency(2L));
-            else if (money_cnt(invent) || hidden_gold())
+            else if (money_cnt(g.invent) || hidden_gold())
                 Strcpy(buf,
                    "You feel worried about your future financial situation.");
             else if (steedgold)
@@ -404,11 +403,11 @@ register struct obj *sobj;
             ugold = TRUE;
     }
     for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-        if (DEADMONSTER(mtmp))
-            continue; /* probably overkill here */
+        if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
+            continue;
         temp = 0;
         if (findgold(mtmp->minvent) || monsndx(mtmp->data) == PM_GOLD_GOLEM) {
-            gold = zeroobj; /* ensure oextra is cleared too */
+            gold = cg.zeroobj; /* ensure oextra is cleared too */
             gold.otyp = GOLD_PIECE;
             gold.quan = (long) rnd(10); /* usually more than 1 */
             gold.ox = mtmp->mx;
@@ -474,7 +473,8 @@ register struct obj *sobj;
                 ct++;
         }
     for (mtmp = fmon; mtmp && (!ct || !ctu); mtmp = mtmp->nmon) {
-        /* no DEADMONSTER(mtmp) check needed -- dmons never have inventory */
+        if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
+            continue;
         for (obj = mtmp->minvent; obj; obj = obj->nobj)
             if (o_in(obj, oclass)) {
                 if (mtmp->mx == u.ux && mtmp->my == u.uy)
@@ -486,7 +486,7 @@ register struct obj *sobj;
     }
 
     if (!ct && !ctu) {
-        known = stale && !confused;
+        g.known = stale && !confused;
         if (stale) {
             docrt();
             You("sense a lack of %s nearby.", what);
@@ -514,7 +514,7 @@ register struct obj *sobj;
         }
         return !stale;
     } else if (!ct) {
-        known = TRUE;
+        g.known = TRUE;
         You("%s %s nearby.", sobj ? "smell" : "sense", what);
         if (sobj && sobj->blessed) {
             if (!u.uedibility)
@@ -525,7 +525,7 @@ register struct obj *sobj;
         struct obj *temp;
         int ter_typ = TER_DETECT | TER_OBJ;
 
-        known = TRUE;
+        g.known = TRUE;
         cls();
         (void) unconstrain_map();
         for (obj = fobj; obj; obj = obj->nobj)
@@ -536,8 +536,9 @@ register struct obj *sobj;
                 }
                 map_object(temp, 1);
             }
-        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon)
-            /* no DEADMONSTER() check needed -- dmons never have inventory */
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+            if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
+                continue;
             for (obj = mtmp->minvent; obj; obj = obj->nobj)
                 if ((temp = o_in(obj, oclass)) != 0) {
                     temp->ox = mtmp->mx;
@@ -545,6 +546,7 @@ register struct obj *sobj;
                     map_object(temp, 1);
                     break; /* skip rest of this monster's inventory */
                 }
+        }
         if (!ctu) {
             newsym(u.ux, u.uy);
             ter_typ |= TER_MON; /* for autodescribe of self */
@@ -606,7 +608,7 @@ int class;            /* an object class, 0 for all */
      * We can exclude checking the buried obj chain for boulders below.
      */
     sym = class ? def_oc_syms[class].sym : 0;
-    if (sym && showsyms[SYM_BOULDER + SYM_OFF_X] && sym == showsyms[SYM_BOULDER + SYM_OFF_X])
+    if (sym && sym == g.showsyms[SYM_BOULDER + SYM_OFF_X])
         boulder = ROCK_CLASS;
 
     if (Hallucination || (Confusion && class == SCROLL_CLASS))
@@ -617,7 +619,7 @@ int class;            /* an object class, 0 for all */
         Strcat(stuff, " and/or large stones");
 
     if (do_dknown)
-        for (obj = invent; obj; obj = obj->nobj)
+        for (obj = g.invent; obj; obj = obj->nobj)
             do_dknown_of(obj);
 
     for (obj = fobj; obj; obj = obj->nobj) {
@@ -631,7 +633,7 @@ int class;            /* an object class, 0 for all */
             do_dknown_of(obj);
     }
 
-    for (obj = level.buriedobjlist; obj; obj = obj->nobj) {
+    for (obj = g.level.buriedobjlist; obj; obj = obj->nobj) {
         if (!class || o_in(obj, class)) {
             if (obj->ox == u.ux && obj->oy == u.uy)
                 ctu++;
@@ -646,7 +648,7 @@ int class;            /* an object class, 0 for all */
         u.usteed->mx = u.ux, u.usteed->my = u.uy;
 
     for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-        if (DEADMONSTER(mtmp))
+        if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
             continue;
         for (obj = mtmp->minvent; obj; obj = obj->nobj) {
             if ((!class && !boulder) || o_in(obj, class)
@@ -669,7 +671,6 @@ int class;            /* an object class, 0 for all */
                 strange_feeling(detector, "You feel a lack of something.");
             return 1;
         }
-
         You("sense %s nearby.", stuff);
         return 0;
     }
@@ -680,7 +681,7 @@ int class;            /* an object class, 0 for all */
     /*
      *  Map all buried objects first.
      */
-    for (obj = level.buriedobjlist; obj; obj = obj->nobj)
+    for (obj = g.level.buriedobjlist; obj; obj = obj->nobj)
         if (!class || (otmp = o_in(obj, class)) != 0) {
             if (class) {
                 if (otmp != obj) {
@@ -701,7 +702,7 @@ int class;            /* an object class, 0 for all */
      */
     for (x = 1; x < COLNO; x++)
         for (y = 0; y < ROWNO; y++)
-            for (obj = level.objects[x][y]; obj; obj = obj->nexthere)
+            for (obj = g.level.objects[x][y]; obj; obj = obj->nexthere)
                 if ((!class && !boulder) || (otmp = o_in(obj, class)) != 0
                     || (otmp = o_in(obj, boulder)) != 0) {
                     if (class || boulder) {
@@ -717,7 +718,7 @@ int class;            /* an object class, 0 for all */
 
     /* Objects in the monster's inventory override floor objects. */
     for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-        if (DEADMONSTER(mtmp))
+        if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
             continue;
         for (obj = mtmp->minvent; obj; obj = obj->nobj)
             if ((!class && !boulder) || (otmp = o_in(obj, class)) != 0
@@ -734,7 +735,7 @@ int class;            /* an object class, 0 for all */
             && (!class || class == objects[mtmp->mappearance].oc_class)) {
             struct obj temp;
 
-            temp = zeroobj;
+            temp = cg.zeroobj;
             temp.otyp = mtmp->mappearance; /* needed for obj_to_glyph() */
             temp.quan = 1L;
             temp.ox = mtmp->mx;
@@ -745,7 +746,7 @@ int class;            /* an object class, 0 for all */
                    && (!class || class == COIN_CLASS)) {
             struct obj gold;
 
-            gold = zeroobj; /* ensure oextra is cleared too */
+            gold = cg.zeroobj; /* ensure oextra is cleared too */
             gold.otyp = GOLD_PIECE;
             gold.quan = (long) rnd(10); /* usually more than 1 */
             gold.ox = mtmp->mx;
@@ -792,11 +793,12 @@ int mclass;                /* monster class, 0 for all */
      * presence of dmons, so we have to find at least one
      * with positive hit-points to know for sure.
      */
-    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon)
-        if (!DEADMONSTER(mtmp)) {
-            mcnt++;
-            break;
-        }
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
+            continue;
+        ++mcnt;
+        break; /* no need for full count, just 1 or more vs 0 */
+    }
 
     if (!mcnt) {
         if (otmp)
@@ -811,7 +813,7 @@ int mclass;                /* monster class, 0 for all */
         cls();
         unconstrained = unconstrain_map();
         for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-            if (DEADMONSTER(mtmp))
+            if (DEADMONSTER(mtmp) || (mtmp->isgd && !mtmp->mx))
                 continue;
             if (!mclass || mtmp->data->mlet == mclass
                 || (mtmp->data == &mons[PM_LONG_WORM]
@@ -852,7 +854,7 @@ int mclass;                /* monster class, 0 for all */
     return 0;
 }
 
-STATIC_OVL void
+static void
 sense_trap(trap, x, y, src_cursed)
 struct trap *trap;
 xchar x, y;
@@ -861,7 +863,7 @@ int src_cursed;
     if (Hallucination || src_cursed) {
         struct obj obj; /* fake object */
 
-        obj = zeroobj;
+        obj = cg.zeroobj;
         if (trap) {
             obj.ox = trap->tx;
             obj.oy = trap->ty;
@@ -895,7 +897,7 @@ int src_cursed;
 /* check a list of objects for chest traps; return 1 if found at <ux,uy>,
    2 if found at some other spot, 3 if both, 0 otherwise; optionally
    update the map to show where such traps were found */
-STATIC_OVL int
+static int
 detect_obj_traps(objlist, show_them, how)
 struct obj *objlist;
 boolean show_them;
@@ -943,7 +945,7 @@ struct obj *sobj; /* null if crystal ball, *scroll if gold detection scroll */
         u.usteed->mx = u.ux, u.usteed->my = u.uy;
 
     /* floor/ceiling traps */
-    for (ttmp = ftrap; ttmp; ttmp = ttmp->ntrap) {
+    for (ttmp = g.ftrap; ttmp; ttmp = ttmp->ntrap) {
         if (ttmp->tx != u.ux || ttmp->ty != u.uy)
             goto outtrapmap;
         else
@@ -956,14 +958,15 @@ struct obj *sobj; /* null if crystal ball, *scroll if gold detection scroll */
         else
             found = TRUE;
     }
-    if ((tr = detect_obj_traps(level.buriedobjlist, FALSE, 0)) != OTRAP_NONE) {
+    if ((tr = detect_obj_traps(g.level.buriedobjlist, FALSE, 0))
+        != OTRAP_NONE) {
         if (tr & OTRAP_THERE)
             goto outtrapmap;
         else
             found = TRUE;
     }
     for (mon = fmon; mon; mon = mon->nmon) {
-        if (DEADMONSTER(mon))
+        if (DEADMONSTER(mon) || (mon->isgd && !mon->mx))
             continue;
         if ((tr = detect_obj_traps(mon->minvent, FALSE, 0)) != OTRAP_NONE) {
             if (tr & OTRAP_THERE)
@@ -972,11 +975,11 @@ struct obj *sobj; /* null if crystal ball, *scroll if gold detection scroll */
                 found = TRUE;
         }
     }
-    if (detect_obj_traps(invent, FALSE, 0) != OTRAP_NONE)
+    if (detect_obj_traps(g.invent, FALSE, 0) != OTRAP_NONE)
         found = TRUE;
     /* door traps */
-    for (door = 0; door < doorindex; door++) {
-        cc = doors[door];
+    for (door = 0; door < g.doorindex; door++) {
+        cc = g.doors[door];
         if (levl[cc.x][cc.y].doormask & D_TRAPPED) {
             if (cc.x != u.ux || cc.y != u.uy)
                 goto outtrapmap;
@@ -1002,19 +1005,19 @@ struct obj *sobj; /* null if crystal ball, *scroll if gold detection scroll */
     /* show chest traps first, so that subsequent floor trap display
        will override if both types are present at the same location */
     (void) detect_obj_traps(fobj, TRUE, cursed_src);
-    (void) detect_obj_traps(level.buriedobjlist, TRUE, cursed_src);
+    (void) detect_obj_traps(g.level.buriedobjlist, TRUE, cursed_src);
     for (mon = fmon; mon; mon = mon->nmon) {
-        if (DEADMONSTER(mon))
+        if (DEADMONSTER(mon) || (mon->isgd && !mon->mx))
             continue;
         (void) detect_obj_traps(mon->minvent, TRUE, cursed_src);
     }
-    (void) detect_obj_traps(invent, TRUE, cursed_src);
+    (void) detect_obj_traps(g.invent, TRUE, cursed_src);
 
-    for (ttmp = ftrap; ttmp; ttmp = ttmp->ntrap)
+    for (ttmp = g.ftrap; ttmp; ttmp = ttmp->ntrap)
         sense_trap(ttmp, 0, 0, cursed_src);
 
-    for (door = 0; door < doorindex; door++) {
-        cc = doors[door];
+    for (door = 0; door < g.doorindex; door++) {
+        cc = g.doors[door];
         if (levl[cc.x][cc.y].doormask & D_TRAPPED)
             sense_trap((struct trap *) 0, cc.x, cc.y, cursed_src);
     }
@@ -1031,6 +1034,56 @@ struct obj *sobj; /* null if crystal ball, *scroll if gold detection scroll */
 
     reconstrain_map();
     docrt(); /* redraw the screen to remove unseen traps from the map */
+    if (Underwater)
+        under_water(2);
+    if (u.uburied)
+        under_ground(2);
+    return 0;
+}
+
+static int
+furniture_detect()
+{
+    struct monst *mon;
+    int x, y, glyph, sym, found = 0, revealed = 0;
+
+    (void) unconstrain_map();
+
+    for (y = 0; y < ROWNO; ++y)
+        for (x = 1; x < COLNO; ++x) {
+            glyph = glyph_at(x, y);
+            sym = glyph_to_cmap(glyph);
+            if (IS_FURNITURE(levl[x][y].typ)) {
+                ++found;
+                magic_map_background(x, y, 1);
+            } else if (is_cmap_furniture(sym)) {
+                ++found;
+                if ((mon = m_at(x, y)) != 0
+                    && M_AP_TYPE(mon) == M_AP_FURNITURE)
+                    seemimic(mon);
+                if (!mon || !canspotmon(mon))
+                    map_invisible(x, y);
+            }
+            if (glyph_at(x, y) != glyph)
+                ++revealed;
+        }
+
+    if (!found)
+        pline("There seems to be nothing of interest on this level.");
+    else if (!revealed)
+        /* [what about clipped map with points of interest outside of the
+            currently shown area?] */
+        Your("map already shows all relevant locations.");
+
+    if (!revealed)
+        display_nhwindow(WIN_MAP, TRUE);
+    else /* we need to browse all types because we haven't redrawn the map
+          * with only points of interest */
+        browse_map(TER_DETECT | TER_MAP | TER_TRP | TER_OBJ | TER_MON,
+                   "location");
+
+    reconstrain_map();
+    docrt(); /* redraw everything */
     if (Underwater)
         under_water(2);
     if (u.uburied)
@@ -1081,7 +1134,15 @@ d_level *where;
         return "near you";
 }
 
-static const struct {
+    /*
+     * This could be made a lot more useful.  Especially now that
+     * amnesia no longer causes levels to be forgotten.  Perhaps a
+     * menu, and it ought to include the entrance to Vlad's Tower,
+     * one of the few things that requires active searching/mapping
+     * to find.  And once the Wizard is in play, he is easy for the
+     * game to locate but not necessarily for the player.
+     */
+static const struct crystalballlevels {
     const char *what;
     d_level *where;
 } level_detects[] = {
@@ -1098,25 +1159,28 @@ struct obj **optr;
     char ch;
     int oops;
     struct obj *obj = *optr;
+    boolean charged = (obj->spe > 0);
 
     if (Blind) {
         pline("Too bad you can't see %s.", the(xname(obj)));
         return;
     }
-    oops = (rnd(20) > ACURR(A_INT) || obj->cursed);
-    if (oops && (obj->spe > 0)) {
-        switch (rnd(obj->oartifact ? 4 : 5)) {
+    oops = is_quest_artifact(obj) ? 8 : obj->blessed ? 16 : 20;
+    if (charged && (obj->cursed || rnd(oops) > ACURR(A_INT))) {
+        long impair = (long) rnd(100 - 3 * ACURR(A_INT));
+
+        switch (rnd((obj->oartifact || obj->blessed) ? 4 : 5)) {
         case 1:
             pline("%s too much to comprehend!", Tobjnam(obj, "are"));
             break;
         case 2:
             pline("%s you!", Tobjnam(obj, "confuse"));
-            make_confused((HConfusion & TIMEOUT) + (long) rnd(100), FALSE);
+            make_confused((HConfusion & TIMEOUT) + impair, FALSE);
             break;
         case 3:
-            if (!resists_blnd(&youmonst)) {
+            if (!resists_blnd(&g.youmonst)) {
                 pline("%s your vision!", Tobjnam(obj, "damage"));
-                make_blinded((Blinded & TIMEOUT) + (long) rnd(100), FALSE);
+                make_blinded((Blinded & TIMEOUT) + impair, FALSE);
                 if (!Blind)
                     Your1(vision_clears);
             } else {
@@ -1126,8 +1190,8 @@ struct obj **optr;
             break;
         case 4:
             pline("%s your mind!", Tobjnam(obj, "zap"));
-            (void) make_hallucinated(
-                (HHallucination & TIMEOUT) + (long) rnd(100), FALSE, 0L);
+            (void) make_hallucinated((HHallucination & TIMEOUT) + impair,
+                                     FALSE, 0L);
             break;
         case 5:
             pline("%s!", Tobjnam(obj, "explode"));
@@ -1144,8 +1208,14 @@ struct obj **optr;
     }
 
     if (Hallucination) {
-        if (!obj->spe) {
+        nomul(-rnd(charged ? 4 : 2));
+        g.multi_reason = "gazing into a Magic 8-Ball (tm)";
+        g.nomovemsg = "";
+
+        if (!charged) {
             pline("All you see is funky %s haze.", hcolor((char *) 0));
+            if (obj->spe < 0)
+                goto implode; /* destroy it when it has been cancelled */
         } else {
             switch (rnd(6)) {
             case 1:
@@ -1177,7 +1247,7 @@ struct obj **optr;
 
     /* read a single character */
     if (flags.verbose)
-        You("may look for an object or monster symbol.");
+        You("may look for an object, monster, or special map symbol.");
     ch = yn_function("What do you look for?", (char *) 0, '\0');
     /* Don't filter out ' ' here; it has a use */
     if ((ch != def_monsyms[S_GHOST].sym) && index(quitchars, ch)) {
@@ -1185,12 +1255,26 @@ struct obj **optr;
             pline1(Never_mind);
         return;
     }
+    /* Possible extension:
+     *  If ch=='?', ask whether player wants to find scrolls or is asking
+     *  for help in using the crystal ball.
+     */
+
     You("peer into %s...", the(xname(obj)));
-    nomul(-rnd(10));
-    multi_reason = "gazing into a crystal ball";
-    nomovemsg = "";
-    if (obj->spe <= 0) {
+    nomul(-rnd(charged ? 10 : 2));
+    g.multi_reason = "gazing into a crystal ball";
+    g.nomovemsg = "";
+
+    if (!charged) {
         pline_The("vision is unclear.");
+
+        if (obj->spe < 0) { /* destroy ball if used after being cancelled */
+ implode:   /* no damage to hero but 'multi' has a small negative value */
+            pline("%s!", Tobjnam(obj, "implode"));
+            useup(obj);
+            *optr = obj = (struct obj *) 0; /* it's gone */
+            return;
+        }
     } else {
         int class, i;
         int ret = 0;
@@ -1204,25 +1288,25 @@ struct obj **optr;
         if (ch == DEF_MIMIC_DEF)
             ch = DEF_MIMIC;
 
-        if ((class = def_char_to_objclass(ch)) != MAXOCLASSES)
+        /* checking furnture before objects allows '_' to find altars
+           (along with other furniture) instead of finding iron chains */
+        if (def_char_is_furniture(ch) >= 0) {
+            ret = furniture_detect();
+        } else if ((class = def_char_to_objclass(ch)) != MAXOCLASSES) {
             ret = object_detect((struct obj *) 0, class);
-        else if ((class = def_char_to_monclass(ch)) != MAXMCLASSES)
+        } else if ((class = def_char_to_monclass(ch)) != MAXMCLASSES) {
             ret = monster_detect((struct obj *) 0, class);
-        else if (showsyms[SYM_BOULDER + SYM_OFF_X]
-                 && (ch == showsyms[SYM_BOULDER + SYM_OFF_X]))
+        } else if (g.showsyms[SYM_BOULDER + SYM_OFF_X]
+                 && (ch == g.showsyms[SYM_BOULDER + SYM_OFF_X])) {
             ret = object_detect((struct obj *) 0, ROCK_CLASS);
-        else
-            switch (ch) {
-            case '^':
-                ret = trap_detect((struct obj *) 0);
-                break;
-            default:
-                i = rn2(SIZE(level_detects));
-                You_see("%s, %s.", level_detects[i].what,
-                        level_distance(level_detects[i].where));
-                ret = 0;
-                break;
-            }
+        } else if (ch == '^') {
+            ret = trap_detect((struct obj *) 0);
+        } else {
+            i = rn2(SIZE(level_detects));
+            You_see("%s, %s.", level_detects[i].what,
+                    level_distance(level_detects[i].where));
+            ret = 0;
+        }
 
         if (ret) {
             if (!rn2(100)) /* make them nervous */
@@ -1234,7 +1318,7 @@ struct obj **optr;
     return;
 }
 
-STATIC_OVL void
+static void
 show_map_spot(x, y)
 register int x, y;
 {
@@ -1262,7 +1346,7 @@ register int x, y;
      * opposite to how normal vision behaves.
      */
     oldglyph = glyph_at(x, y);
-    if (level.flags.hero_memory) {
+    if (g.level.flags.hero_memory) {
         magic_map_background(x, y, 0);
         newsym(x, y); /* show it, if not blocked */
     } else {
@@ -1273,7 +1357,7 @@ register int x, y;
             map_trap(t, 1);
         } else if (glyph_is_trap(oldglyph) || glyph_is_object(oldglyph)) {
             show_glyph(x, y, oldglyph);
-            if (level.flags.hero_memory)
+            if (g.level.flags.hero_memory)
                 lev->glyph = oldglyph;
         }
     }
@@ -1290,7 +1374,7 @@ do_mapping()
         for (zy = 0; zy < ROWNO; zy++)
             show_map_spot(zx, zy);
 
-    if (!level.flags.hero_memory || unconstrained) {
+    if (!g.level.flags.hero_memory || unconstrained) {
         flush_screen(1);                 /* flush temp screen */
         /* browse_map() instead of display_nhwindow(WIN_MAP, TRUE) */
         browse_map(TER_DETECT | TER_MAP | TER_TRP | TER_OBJ,
@@ -1316,7 +1400,8 @@ struct obj *sobj; /* scroll--actually fake spellbook--object */
             /* fake spellbook 'sobj' implies hero has cast the spell;
                when book is blessed, casting is skilled or expert level;
                if already clairvoyant, non-skilled spell acts like skilled */
-            extended = (sobj && (sobj->blessed || Clairvoyant));
+            extended = (sobj && (sobj->blessed || Clairvoyant)),
+            random_farsight = !sobj;
     int newglyph, oldglyph,
         lo_y = ((u.uy - 5 < 0) ? 0 : u.uy - 5),
         hi_y = ((u.uy + 6 >= ROWNO) ? ROWNO - 1 : u.uy + 6),
@@ -1346,9 +1431,9 @@ struct obj *sobj; /* scroll--actually fake spellbook--object */
      */
 
     /* if hero is engulfed, show engulfer at <u.ux,u.uy> */
-    save_viz_uyux = viz_array[u.uy][u.ux];
+    save_viz_uyux = g.viz_array[u.uy][u.ux];
     if (u.uswallow)
-        viz_array[u.uy][u.ux] |= IN_SIGHT; /* <x,y> are reversed to [y][x] */
+        g.viz_array[u.uy][u.ux] |= IN_SIGHT; /* <x,y> are reversed to [y][x] */
     save_EDetect_mons = EDetect_monsters;
     /* for skilled spell, getpos() scanning of the map will display all
        monsters within range; otherwise, "unseen creature" will be shown */
@@ -1363,7 +1448,7 @@ struct obj *sobj; /* scroll--actually fake spellbook--object */
             if (OBJ_AT(zx, zy)) {
                 /* not vobj_at(); this is not vision-based access;
                    unlike object detection, we don't notice buried items */
-                otmp = level.objects[zx][zy];
+                otmp = g.level.objects[zx][zy];
                 if (extended)
                     otmp->dknown = 1;
                 map_object(otmp, TRUE);
@@ -1380,7 +1465,7 @@ struct obj *sobj; /* scroll--actually fake spellbook--object */
                    the map and we're not doing extended/blessed clairvoyance
                    (hence must be swallowed or underwater), show "unseen
                    creature" unless map already displayed a monster here */
-                if ((unconstrained || !level.flags.hero_memory)
+                if ((unconstrained || !g.level.flags.hero_memory)
                     && !extended && (zx != u.ux || zy != u.uy)
                     && !glyph_is_monster(oldglyph))
                     map_invisible(zx, zy);
@@ -1393,7 +1478,18 @@ struct obj *sobj; /* scroll--actually fake spellbook--object */
             }
         }
 
-    if (!level.flags.hero_memory || unconstrained || mdetected || odetected) {
+    /* when this instance of clairvoyance is random (see allmain()) and
+       the only reason to browse the map is that previously undetected
+       monster(s) or object(s) have been revealed, player can prevent
+       the you-sense-your-surroundings message and browse operation from
+       happening by setting 'quick_farsight' option; for clairvoyance
+       spell, that option is ignored because the message and the pause
+       for map browsing isn't as intrusive in that circumstance */
+    if (random_farsight && flags.quick_farsight)
+        mdetected = odetected = FALSE;
+
+    if (!g.level.flags.hero_memory || unconstrained
+        || mdetected || odetected) {
         flush_screen(1);                 /* flush temp screen */
         /* the getpos() prompt from browse_map() is only shown when
            flags.verbose is set, but make this unconditional so that
@@ -1406,7 +1502,7 @@ struct obj *sobj; /* scroll--actually fake spellbook--object */
     }
     reconstrain_map();
     EDetect_monsters = save_EDetect_mons;
-    viz_array[u.uy][u.ux] = save_viz_uyux;
+    g.viz_array[u.uy][u.ux] = save_viz_uyux;
 
     /* replace monsters with remembered,unseen monster, then run
        see_monsters() to update visible ones and warned-of ones */
@@ -1437,21 +1533,21 @@ struct rm *lev;
 {
     int newmask = lev->doormask & ~WM_MASK;
 
-    if (Is_rogue_level(&u.uz))
+    if (Is_rogue_level(&u.uz)) {
         /* rogue didn't have doors, only doorways */
         newmask = D_NODOOR;
-    else
+    } else {
         /* newly exposed door is closed */
         if (!(newmask & D_LOCKED))
-        newmask |= D_CLOSED;
-
+            newmask |= D_CLOSED;
+    }
     lev->typ = DOOR;
     lev->doormask = newmask;
 }
 
 /* find something at one location; it should find all somethings there
    since it is used for magical detection rather than physical searching */
-STATIC_PTR void
+static void
 findone(zx, zy, num)
 int zx, zy;
 genericptr_t num;
@@ -1507,7 +1603,7 @@ genericptr_t num;
     }
 }
 
-STATIC_PTR void
+static void
 openone(zx, zy, num)
 int zx, zy;
 genericptr_t num;
@@ -1517,7 +1613,7 @@ genericptr_t num;
     int *num_p = (int *) num;
 
     if (OBJ_AT(zx, zy)) {
-        for (otmp = level.objects[zx][zy]; otmp; otmp = otmp->nexthere) {
+        for (otmp = g.level.objects[zx][zy]; otmp; otmp = otmp->nexthere) {
             if (Is_box(otmp) && otmp->olocked) {
                 otmp->olocked = 0;
                 (*num_p)++;
@@ -1558,7 +1654,7 @@ genericptr_t num;
             newsym(zx, zy);
             (*num_p)++;
         }
-        mon = (zx == u.ux && zy == u.uy) ? &youmonst : m_at(zx, zy);
+        mon = (zx == u.ux && zy == u.uy) ? &g.youmonst : m_at(zx, zy);
         if (openholdingtrap(mon, &dummy)
             || openfallingtrap(mon, TRUE, &dummy))
             (*num_p)++;
@@ -1614,7 +1710,6 @@ void
 find_trap(trap)
 struct trap *trap;
 {
-    int tt = what_trap(trap->ttyp, rn2);
     boolean cleared = FALSE;
 
     trap->tseen = 1;
@@ -1625,8 +1720,7 @@ struct trap *trap;
        behaviour might need a rework in the hallucination case
        (e.g. to not prompt if any trap glyph appears on the square). */
     if (Hallucination ||
-        levl[trap->tx][trap->ty].glyph !=
-        trap_to_glyph(trap, rn2_on_display_rng)) {
+        levl[trap->tx][trap->ty].glyph != trap_to_glyph(trap)) {
         /* There's too much clutter to see your find otherwise */
         cls();
         map_trap(trap, 1);
@@ -1634,7 +1728,7 @@ struct trap *trap;
         cleared = TRUE;
     }
 
-    You("find %s.", an(defsyms[trap_to_defsym(tt)].explanation));
+    You("find %s.", an(trapname(trap->ttyp, FALSE)));
 
     if (cleared) {
         display_nhwindow(WIN_MAP, TRUE); /* wait */
@@ -1642,7 +1736,7 @@ struct trap *trap;
     }
 }
 
-STATIC_OVL int
+static int
 mfind0(mtmp, via_warning)
 struct monst *mtmp;
 boolean via_warning;
@@ -1696,16 +1790,7 @@ int
 dosearch0(aflag)
 register int aflag; /* intrinsic autosearch vs explicit searching */
 {
-#ifdef GCC_BUG
-    /* Some old versions of gcc seriously muck up nested loops.  If you get
-     * strange crashes while searching in a version compiled with gcc, try
-     * putting #define GCC_BUG in *conf.h (or adding -DGCC_BUG to CFLAGS in
-     * the makefile).
-     */
-    volatile xchar x, y;
-#else
-    register xchar x, y;
-#endif
+    xchar x, y;
     register struct trap *trap;
     register struct monst *mtmp;
 
@@ -1783,6 +1868,17 @@ register int aflag; /* intrinsic autosearch vs explicit searching */
 int
 dosearch()
 {
+    if (!iflags.menu_requested && !g.multi && monster_nearby()) {
+        char buf[QBUFSZ];
+
+        buf[0] = '\0';
+        if (iflags.cmdassist || !g.already_found_flag++)
+            Sprintf(buf, "  Use '%s' prefix to force another search.",
+                    visctrl(g.Cmd.spkeys[NHKF_REQMENU])); /* default is "m" */
+        Norep("You already found a monster.%s", buf);
+        return 0;
+    }
+    g.already_found_flag = 0; /* start over */
     return dosearch0(0);
 }
 
@@ -1821,7 +1917,7 @@ sokoban_detect()
         }
 
     /* Map the traps */
-    for (ttmp = ftrap; ttmp; ttmp = ttmp->ntrap) {
+    for (ttmp = g.ftrap; ttmp; ttmp = ttmp->ntrap) {
         ttmp->tseen = 1;
         map_trap(ttmp, 1);
         /* set sokoban_rules when there is at least one pit or hole */
@@ -1830,7 +1926,7 @@ sokoban_detect()
     }
 }
 
-STATIC_DCL int
+static int
 reveal_terrain_getglyph(x, y, full, swallowed, default_glyph, which_subset)
 int x, y, full;
 unsigned swallowed;
@@ -1847,14 +1943,14 @@ int default_glyph, which_subset;
     /* for 'full', show the actual terrain for the entire level,
        otherwise what the hero remembers for seen locations with
        monsters, objects, and/or traps removed as caller dictates */
-    seenv = (full || level.flags.hero_memory)
+    seenv = (full || g.level.flags.hero_memory)
               ? levl[x][y].seenv : cansee(x, y) ? SVALL : 0;
     if (full) {
         levl[x][y].seenv = SVALL;
         glyph = back_to_glyph(x, y);
         levl[x][y].seenv = seenv;
     } else {
-        levl_glyph = level.flags.hero_memory
+        levl_glyph = g.level.flags.hero_memory
               ? levl[x][y].glyph
               : seenv ? back_to_glyph(x, y): default_glyph;
         /* glyph_at() returns the displayed glyph, which might
@@ -1873,14 +1969,14 @@ int default_glyph, which_subset;
              || glyph_is_invisible(glyph))
             && keep_traps && !covers_traps(x, y)) {
             if ((t = t_at(x, y)) != 0 && t->tseen)
-                glyph = trap_to_glyph(t, rn2_on_display_rng);
+                glyph = trap_to_glyph(t);
         }
         if ((glyph_is_object(glyph) && !keep_objs)
             || (glyph_is_trap(glyph) && !keep_traps)
             || glyph_is_invisible(glyph)) {
             if (!seenv) {
                 glyph = default_glyph;
-            } else if (lastseentyp[x][y] == levl[x][y].typ) {
+            } else if (g.lastseentyp[x][y] == levl[x][y].typ) {
                 glyph = back_to_glyph(x, y);
             } else {
                 /* look for a mimic here posing as furniture;
@@ -1898,7 +1994,7 @@ int default_glyph, which_subset;
                        but we've got no other choice) */
                     schar save_typ = levl[x][y].typ;
 
-                    levl[x][y].typ = lastseentyp[x][y];
+                    levl[x][y].typ = g.lastseentyp[x][y];
                     glyph = back_to_glyph(x, y);
                     levl[x][y].typ = save_typ;
                 }
@@ -1916,7 +2012,7 @@ dump_map()
 {
     int x, y, glyph, skippedrows, lastnonblank;
     int subset = TER_MAP | TER_TRP | TER_OBJ | TER_MON;
-    int default_glyph = cmap_to_glyph(level.flags.arboreal ? S_tree : S_stone);
+    int default_glyph = cmap_to_glyph(g.level.flags.arboreal ? S_tree : S_stone);
     char buf[BUFSZ];
     boolean blankrow, toprow;
 
@@ -1985,7 +2081,7 @@ int which_subset; /* when not full, whether to suppress objs and/or traps */
 
         if (unconstrain_map())
             docrt();
-        default_glyph = cmap_to_glyph(level.flags.arboreal ? S_tree : S_stone);
+        default_glyph = cmap_to_glyph(g.level.flags.arboreal ? S_tree : S_stone);
 
         for (x = 1; x < COLNO; x++)
             for (y = 0; y < ROWNO; y++) {

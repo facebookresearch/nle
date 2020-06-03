@@ -1,4 +1,4 @@
-/* NetHack 3.6	monst.h	$NHDT-Date: 1561053561 2019/06/20 17:59:21 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.33 $ */
+/* NetHack 3.6	monst.h	$NHDT-Date: 1559994623 2019/06/08 11:50:23 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.32 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2016. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -63,8 +63,8 @@ enum m_ap_types {
 
 #define M_AP_TYPMASK  0x7
 #define M_AP_F_DKNOWN 0x8
-#define U_AP_TYPE (youmonst.m_ap_type & M_AP_TYPMASK)
-#define U_AP_FLAG (youmonst.m_ap_type & ~M_AP_TYPMASK)
+#define U_AP_TYPE (g.youmonst.m_ap_type & M_AP_TYPMASK)
+#define U_AP_FLAG (g.youmonst.m_ap_type & ~M_AP_TYPMASK)
 #define M_AP_TYPE(m) ((m)->m_ap_type & M_AP_TYPMASK)
 #define M_AP_FLAG(m) ((m)->m_ap_type & ~M_AP_TYPMASK)
 
@@ -97,9 +97,6 @@ struct monst {
     Bitfield(perminvis, 1);   /* intrinsic minvis value */
     Bitfield(mcan, 1);        /* has been cancelled */
     Bitfield(mburied, 1);     /* has been buried */
-#define mtemplit mburied      /* since buried isn't implemented, use bit for
-                               * monsters shown by transient light source;
-                               * only valid during bhit() execution        */
     Bitfield(mundetected, 1); /* not seen in present hiding place;
                                * implies one of M1_CONCEAL or M1_HIDE,
                                * but not mimic (that is, snake, spider,
@@ -133,7 +130,8 @@ struct monst {
 
     Bitfield(iswiz, 1);     /* is the Wizard of Yendor */
     Bitfield(wormno, 5);    /* at most 31 worms on any level */
-    /* 2 free bits */
+    Bitfield(mtemplit, 1);  /* temporarily seen; only valid during bhit() */
+    /* 1 free bit */
 
 #define MAX_NUM_WORMS 32    /* should be 2^(wormno bitfield size) */
 
@@ -161,8 +159,9 @@ struct monst {
 
     long mtrapseen;        /* bitmap of traps we've been trapped in */
     long mlstmv;           /* for catching up with lost time */
+    long mstate;           /* debugging info on monsters stored here */
+    long migflags;         /* migrating flags */
     long mspare1;
-#define mstate mspare1      /* only for debug exam right now, not code flow */
     struct obj *minvent;   /* mon's inventory */
     struct obj *mw;        /* mon's weapon */
     long misc_worn_check;  /* mon's wornmask */
@@ -182,10 +181,19 @@ struct monst {
 #define MON_NOWEP(mon) ((mon)->mw = (struct obj *) 0)
 
 #define DEADMONSTER(mon) ((mon)->mhp < 1)
-#define is_starting_pet(mon) ((mon)->m_id == context.startingpet_mid)
+#define is_starting_pet(mon) ((mon)->m_id == g.context.startingpet_mid)
 #define is_vampshifter(mon)                                      \
     ((mon)->cham == PM_VAMPIRE || (mon)->cham == PM_VAMPIRE_LORD \
      || (mon)->cham == PM_VLAD_THE_IMPALER)
+#define vampshifted(mon) (is_vampshifter((mon)) && !is_vampire((mon)->data))
+
+/* monsters which cannot be displaced: priests, shopkeepers, vault guards,
+   Oracle, quest leader */
+#define mundisplaceable(mon) ((mon)->ispriest                    \
+                              || (mon)->isshk                    \
+                              || (mon)->isgd                     \
+                              || (mon)->data == &mons[PM_ORACLE] \
+                              || (mon)->m_id == g.quest_status.leader_m_id)
 
 /* mimic appearances that block vision/light */
 #define is_lightblocker_mappear(mon)                       \
@@ -200,5 +208,15 @@ struct monst {
                                   || (mon)->mappearance == S_vcdoor))
 #define is_obj_mappear(mon,otyp) (M_AP_TYPE(mon) == M_AP_OBJECT \
                                   && (mon)->mappearance == (otyp))
+
+/* Get the maximum difficulty monsters that can currently be generated,
+   given the current level difficulty and the hero's level. */
+#define monmax_difficulty(levdif) (((levdif) + u.ulevel) / 2)
+#define monmin_difficulty(levdif) ((levdif) / 6)
+#define monmax_difficulty_lev() (monmax_difficulty(level_difficulty()))
+
+/* Macros for whether a type of monster is too strong for a specific level. */
+#define montoostrong(monindx, lev) (mons[monindx].difficulty > lev)
+#define montooweak(monindx, lev) (mons[monindx].difficulty < lev)
 
 #endif /* MONST_H */

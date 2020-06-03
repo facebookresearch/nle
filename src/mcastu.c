@@ -1,4 +1,4 @@
-/* NetHack 3.6	mcastu.c	$NHDT-Date: 1567418129 2019/09/02 09:55:29 $  $NHDT-Branch: NetHack-3.6 $:$NHDT-Revision: 1.55 $ */
+/* NetHack 3.6	mcastu.c	$NHDT-Date: 1590904092 2020/05/31 05:48:12 $  $NHDT-Branch: NetHack-3.7 $:$NHDT-Revision: 1.67 $ */
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /*-Copyright (c) Robert Patrick Rankin, 2011. */
 /* NetHack may be freely redistributed.  See license for details. */
@@ -35,20 +35,20 @@ enum mcast_cleric_spells {
     CLC_GEYSER
 };
 
-STATIC_DCL void FDECL(cursetxt, (struct monst *, BOOLEAN_P));
-STATIC_DCL int FDECL(choose_magic_spell, (int));
-STATIC_DCL int FDECL(choose_clerical_spell, (int));
-STATIC_DCL int FDECL(m_cure_self, (struct monst *, int));
-STATIC_DCL void FDECL(cast_wizard_spell, (struct monst *, int, int));
-STATIC_DCL void FDECL(cast_cleric_spell, (struct monst *, int, int));
-STATIC_DCL boolean FDECL(is_undirected_spell, (unsigned int, int));
-STATIC_DCL boolean
+static void FDECL(cursetxt, (struct monst *, BOOLEAN_P));
+static int FDECL(choose_magic_spell, (int));
+static int FDECL(choose_clerical_spell, (int));
+static int FDECL(m_cure_self, (struct monst *, int));
+static void FDECL(cast_wizard_spell, (struct monst *, int, int));
+static void FDECL(cast_cleric_spell, (struct monst *, int, int));
+static boolean FDECL(is_undirected_spell, (unsigned int, int));
+static boolean
 FDECL(spell_would_be_useless, (struct monst *, unsigned int, int));
 
 extern const char *const flash_types[]; /* from zap.c */
 
 /* feedback when frustrated monster couldn't cast a spell */
-STATIC_OVL
+static
 void
 cursetxt(mtmp, undirected)
 struct monst *mtmp;
@@ -61,7 +61,7 @@ boolean undirected;
             point_msg = "all around, then curses";
         else if ((Invis && !perceives(mtmp->data)
                   && (mtmp->mux != u.ux || mtmp->muy != u.uy))
-                 || is_obj_mappear(&youmonst, STRANGE_OBJECT)
+                 || is_obj_mappear(&g.youmonst, STRANGE_OBJECT)
                  || u.uundetected)
             point_msg = "and curses in your general direction";
         else if (Displaced && (mtmp->mux != u.ux || mtmp->muy != u.uy))
@@ -70,7 +70,7 @@ boolean undirected;
             point_msg = "at you, then curses";
 
         pline("%s points %s.", Monnam(mtmp), point_msg);
-    } else if ((!(moves % 4) || !rn2(4))) {
+    } else if ((!(g.moves % 4) || !rn2(4))) {
         if (!Deaf)
             Norep("You hear a mumbled curse.");   /* Deaf-aware */
     }
@@ -78,12 +78,11 @@ boolean undirected;
 
 /* convert a level based random selection into a specific mage spell;
    inappropriate choices will be screened out by spell_would_be_useless() */
-STATIC_OVL int
+static int
 choose_magic_spell(spellval)
 int spellval;
 {
-    /* for 3.4.3 and earlier, val greater than 22 selected the default spell
-     */
+    /* for 3.4.3 and earlier, val greater than 22 selected default spell */
     while (spellval > 24 && rn2(25))
         spellval = rn2(spellval);
 
@@ -133,7 +132,7 @@ int spellval;
 }
 
 /* convert a level based random selection into a specific cleric spell */
-STATIC_OVL int
+static int
 choose_clerical_spell(spellnum)
 int spellnum;
 {
@@ -232,7 +231,7 @@ boolean foundyou;
     /* monster unable to cast spells? */
     if (mtmp->mcan || mtmp->mspec_used || !ml) {
         cursetxt(mtmp, is_undirected_spell(mattk->adtyp, spellnum));
-        return (0);
+        return 0;
     }
 
     if (mattk->adtyp == AD_SPEL || mattk->adtyp == AD_CLRC) {
@@ -250,14 +249,14 @@ boolean foundyou;
               canseemon(mtmp) ? Monnam(mtmp) : "Something",
               levl[mtmp->mux][mtmp->muy].typ == WATER ? "empty water"
                                                       : "thin air");
-        return (0);
+        return 0;
     }
 
     nomul(0);
     if (rn2(ml * 10) < (mtmp->mconf ? 100 : 20)) { /* fumbled attack */
         if (canseemon(mtmp) && !Deaf)
             pline_The("air crackles around %s.", mon_nam(mtmp));
-        return (0);
+        return 0;
     }
     if (canspotmon(mtmp) || !is_undirected_spell(mattk->adtyp, spellnum)) {
         pline("%s casts a spell%s!",
@@ -283,7 +282,7 @@ boolean foundyou;
             impossible(
               "%s casting non-hand-to-hand version of hand-to-hand spell %d?",
                        Monnam(mtmp), mattk->adtyp);
-            return (0);
+            return 0;
         }
     } else if (mattk->damd)
         dmg = d((int) ((ml / 2) + mattk->damn), (int) mattk->damd);
@@ -293,7 +292,6 @@ boolean foundyou;
         dmg = (dmg + 1) / 2;
 
     ret = 1;
-
     switch (mattk->adtyp) {
     case AD_FIRE:
         pline("You're enveloped in flames.");
@@ -334,10 +332,10 @@ boolean foundyou;
     }
     if (dmg)
         mdamageu(mtmp, dmg);
-    return (ret);
+    return ret;
 }
 
-STATIC_OVL int
+static int
 m_cure_self(mtmp, dmg)
 struct monst *mtmp;
 int dmg;
@@ -362,7 +360,7 @@ int dmg;
    If you modify either of these, be sure to change is_undirected_spell()
    and spell_would_be_useless().
  */
-STATIC_OVL
+static
 void
 cast_wizard_spell(mtmp, dmg, spellnum)
 struct monst *mtmp;
@@ -377,14 +375,14 @@ int spellnum;
     switch (spellnum) {
     case MGC_DEATH_TOUCH:
         pline("Oh no, %s's using the touch of death!", mhe(mtmp));
-        if (nonliving(youmonst.data) || is_demon(youmonst.data)) {
+        if (nonliving(g.youmonst.data) || is_demon(g.youmonst.data)) {
             You("seem no deader than before.");
         } else if (!Antimagic && rn2(mtmp->m_lev) > 12) {
             if (Hallucination) {
                 You("have an out of body experience.");
             } else {
-                killer.format = KILLED_BY_AN;
-                Strcpy(killer.name, "touch of death");
+                g.killer.format = KILLED_BY_AN;
+                Strcpy(g.killer.name, "touch of death");
                 done(DIED);
             }
         } else {
@@ -395,7 +393,7 @@ int spellnum;
         dmg = 0;
         break;
     case MGC_CLONE_WIZ:
-        if (mtmp->iswiz && context.no_of_wizards == 1) {
+        if (mtmp->iswiz && g.context.no_of_wizards == 1) {
             pline("Double Trouble...");
             clonewiz();
             dmg = 0;
@@ -439,7 +437,7 @@ int spellnum;
         if (Antimagic) {
             shieldeff(u.ux, u.uy);
             pline("A field of force surrounds you!");
-        } else if (!destroy_arm(some_armor(&youmonst))) {
+        } else if (!destroy_arm(some_armor(&g.youmonst))) {
             Your("skin itches.");
         }
         dmg = 0;
@@ -519,7 +517,7 @@ int spellnum;
         mdamageu(mtmp, dmg);
 }
 
-STATIC_OVL
+static
 void
 cast_cleric_spell(mtmp, dmg, spellnum)
 struct monst *mtmp;
@@ -551,7 +549,7 @@ int spellnum;
         if (Half_spell_damage)
             dmg = (dmg + 1) / 2;
         burn_away_slime();
-        (void) burnarmor(&youmonst);
+        (void) burnarmor(&g.youmonst);
         destroy_item(SCROLL_CLASS, AD_FIRE);
         destroy_item(POTION_CLASS, AD_FIRE);
         destroy_item(SPBOOK_CLASS, AD_FIRE);
@@ -586,11 +584,11 @@ int spellnum;
            left, go for (sticks to) snakes.  -3. */
         struct permonst *pm = mkclass(S_ANT, 0);
         struct monst *mtmp2 = (struct monst *) 0;
-        char let = (pm ? S_ANT : S_SNAKE);
+        char whatbuf[QBUFSZ], let = (pm ? S_ANT : S_SNAKE);
         boolean success = FALSE, seecaster;
         int i, quan, oldseen, newseen;
         coord bypos;
-        const char *fmt;
+        const char *fmt, *what;
 
         oldseen = monster_census(TRUE);
         quan = (mtmp->m_lev < 2) ? 1 : rnd((int) mtmp->m_lev / 2);
@@ -608,22 +606,26 @@ int spellnum;
         }
         newseen = monster_census(TRUE);
 
-        /* not canspotmon(), which includes unseen things sensed via warning
-         */
+        /* not canspotmon() which includes unseen things sensed via warning */
         seecaster = canseemon(mtmp) || tp_sensemon(mtmp) || Detect_monsters;
+        what = (let == S_SNAKE) ? "snakes" : "insects";
+        if (Hallucination)
+            what = makeplural(bogusmon(whatbuf, (char *) 0));
 
         fmt = 0;
         if (!seecaster) {
-            char *arg; /* [not const: upstart(N==1 ? an() : makeplural())] */
-            const char *what = (let == S_SNAKE) ? "snake" : "insect";
-
             if (newseen <= oldseen || Unaware) {
                 /* unseen caster fails or summons unseen critters,
                    or unconscious hero ("You dream that you hear...") */
-                You_hear("someone summoning %s.", makeplural(what));
+                You_hear("someone summoning %s.", what);
             } else {
+                char *arg;
+
+                if (what != whatbuf)
+                    what = strcpy(whatbuf, what);
                 /* unseen caster summoned seen critter(s) */
-                arg = (newseen == oldseen + 1) ? an(what) : makeplural(what);
+                arg = (newseen == oldseen + 1) ? an(makesingular(what))
+                                               : whatbuf;
                 if (!Deaf)
                     You_hear("someone summoning something, and %s %s.", arg,
                              vtense(arg, "appear"));
@@ -636,19 +638,21 @@ int spellnum;
            observe complete accuracy of that caster's results (in other
            words, no need to fuss with visibility or singularization;
            player is told what's happening even if hero is unconscious) */
-        } else if (!success)
-            fmt = "%s casts at a clump of sticks, but nothing happens.";
-        else if (let == S_SNAKE)
-            fmt = "%s transforms a clump of sticks into snakes!";
-        else if (Invis && !perceives(mtmp->data)
-                 && (mtmp->mux != u.ux || mtmp->muy != u.uy))
-            fmt = "%s summons insects around a spot near you!";
-        else if (Displaced && (mtmp->mux != u.ux || mtmp->muy != u.uy))
-            fmt = "%s summons insects around your displaced image!";
-        else
-            fmt = "%s summons insects!";
+        } else if (!success) {
+            fmt = "%s casts at a clump of sticks, but nothing happens.%s";
+            what = "";
+        } else if (let == S_SNAKE) {
+            fmt = "%s transforms a clump of sticks into %s!";
+        } else if (Invis && !perceives(mtmp->data)
+                   && (mtmp->mux != u.ux || mtmp->muy != u.uy)) {
+            fmt = "%s summons %s around a spot near you!";
+        } else if (Displaced && (mtmp->mux != u.ux || mtmp->muy != u.uy)) {
+            fmt = "%s summons %s around your displaced image!";
+        } else {
+            fmt = "%s summons %s!";
+        }
         if (fmt)
-            pline(fmt, Monnam(mtmp));
+            pline(fmt, Monnam(mtmp), what);
 
         dmg = 0;
         break;
@@ -656,7 +660,7 @@ int spellnum;
     case CLC_BLIND_YOU:
         /* note: resists_blnd() doesn't apply here */
         if (!Blinded) {
-            int num_eyes = eyecount(youmonst.data);
+            int num_eyes = eyecount(g.youmonst.data);
             pline("Scales cover your %s!", (num_eyes == 1)
                                                ? body_part(EYE)
                                                : makeplural(body_part(EYE)));
@@ -670,20 +674,20 @@ int spellnum;
     case CLC_PARALYZE:
         if (Antimagic || Free_action) {
             shieldeff(u.ux, u.uy);
-            if (multi >= 0)
+            if (g.multi >= 0)
                 You("stiffen briefly.");
             nomul(-1);
-            multi_reason = "paralyzed by a monster";
+            g.multi_reason = "paralyzed by a monster";
         } else {
-            if (multi >= 0)
+            if (g.multi >= 0)
                 You("are frozen in place!");
             dmg = 4 + (int) mtmp->m_lev;
             if (Half_spell_damage)
                 dmg = (dmg + 1) / 2;
             nomul(-dmg);
-            multi_reason = "paralyzed by a monster";
+            g.multi_reason = "paralyzed by a monster";
         }
-        nomovemsg = 0;
+        g.nomovemsg = 0;
         dmg = 0;
         break;
     case CLC_CONFUSE_YOU:
@@ -731,7 +735,7 @@ int spellnum;
         mdamageu(mtmp, dmg);
 }
 
-STATIC_DCL
+static
 boolean
 is_undirected_spell(adtyp, spellnum)
 unsigned int adtyp;
@@ -762,7 +766,7 @@ int spellnum;
 }
 
 /* Some spells are useless under some circumstances. */
-STATIC_DCL
+static
 boolean
 spell_would_be_useless(mtmp, adtyp, spellnum)
 struct monst *mtmp;
@@ -803,7 +807,7 @@ int spellnum;
         if (!mcouldseeu && (spellnum == MGC_SUMMON_MONS
                             || (!mtmp->iswiz && spellnum == MGC_CLONE_WIZ)))
             return TRUE;
-        if ((!mtmp->iswiz || context.no_of_wizards > 1)
+        if ((!mtmp->iswiz || g.context.no_of_wizards > 1)
             && spellnum == MGC_CLONE_WIZ)
             return TRUE;
         /* aggravation (global wakeup) when everyone is already active */
@@ -845,11 +849,11 @@ register struct attack *mattk;
     /* don't print constant stream of curse messages for 'normal'
        spellcasting monsters at range */
     if (mattk->adtyp > AD_SPC2)
-        return (0);
+        return 0;
 
     if (mtmp->mcan) {
         cursetxt(mtmp, FALSE);
-        return (0);
+        return 0;
     }
     if (lined_up(mtmp) && rn2(3)) {
         nomul(0);
@@ -858,11 +862,11 @@ register struct attack *mattk;
                 pline("%s zaps you with a %s!", Monnam(mtmp),
                       flash_types[ad_to_typ(mattk->adtyp)]);
             buzz(-ad_to_typ(mattk->adtyp), (int) mattk->damn, mtmp->mx,
-                 mtmp->my, sgn(tbx), sgn(tby));
+                 mtmp->my, sgn(g.tbx), sgn(g.tby));
         } else
             impossible("Monster spell %d cast", mattk->adtyp - 1);
     }
-    return (1);
+    return 1;
 }
 
 /*mcastu.c*/

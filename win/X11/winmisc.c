@@ -91,6 +91,21 @@ static const char popup_entry_translations[] = "#override\n\
      <Btn4Down>: scroll(8)\n\
      <Btn5Down>: scroll(2)";
 
+static void NDECL(plsel_dialog_acceptvalues);
+static void FDECL(plsel_set_play_button, (BOOLEAN_P));
+static void FDECL(plsel_set_sensitivities, (BOOLEAN_P));
+static void NDECL(X11_player_selection_randomize);
+static void NDECL(X11_player_selection_setupOthers);
+static void FDECL(racetoggleCallback, (Widget, XtPointer, XtPointer));
+static void FDECL(roletoggleCallback, (Widget, XtPointer, XtPointer));
+static void FDECL(gendertoggleCallback, (Widget, XtPointer, XtPointer));
+static void FDECL(aligntoggleCallback, (Widget, XtPointer, XtPointer));
+static void FDECL(plsel_random_btn_callback, (Widget, XtPointer, XtPointer));
+static void FDECL(plsel_play_btn_callback, (Widget, XtPointer, XtPointer));
+static void FDECL(plsel_quit_btn_callback, (Widget, XtPointer, XtPointer));
+static Widget FDECL(X11_create_player_selection_name, (Widget));
+static void NDECL(X11_player_selection_dialog);
+static void NDECL(X11_player_selection_prompts);
 static void FDECL(ps_quit, (Widget, XtPointer, XtPointer));
 static void FDECL(ps_random, (Widget, XtPointer, XtPointer));
 static void FDECL(ps_select, (Widget, XtPointer, XtPointer));
@@ -105,9 +120,6 @@ static Widget FDECL(make_menu, (const char *, const char *, const char *,
                                 const char *, XtCallbackProc, const char *,
                                 XtCallbackProc, int, const char **,
                                 Widget **, XtCallbackProc, Widget *));
-
-void NDECL(X11_player_selection_setupOthers);
-void NDECL(X11_player_selection_randomize);
 
 /* Bad Hack alert. Using integers instead of XtPointers */
 XtPointer
@@ -348,7 +360,7 @@ Widget plsel_name_input;
 
 Widget plsel_btn_play;
 
-void
+static void
 plsel_dialog_acceptvalues()
 {
     Arg args[2];
@@ -362,11 +374,11 @@ plsel_dialog_acceptvalues()
     XtSetArg(args[0], nhStr(XtNstring), &s);
     XtGetValues(plsel_name_input, args, ONE);
 
-    (void) strncpy(plname, (char *) s, sizeof plname - 1);
-    plname[sizeof plname - 1] = '\0';
-    (void) mungspaces(plname);
-    if (strlen(plname) < 1)
-        (void) strcpy(plname, "Mumbles");
+    (void) strncpy(g.plname, (char *) s, sizeof g.plname - 1);
+    g.plname[sizeof g.plname - 1] = '\0';
+    (void) mungspaces(g.plname);
+    if (strlen(g.plname) < 1)
+        (void) strcpy(g.plname, "Mumbles");
     iflags.renameinprogress = FALSE;
 }
 
@@ -431,7 +443,7 @@ Cardinal *num_params;
 }
 
 /* enable or disable the Play button */
-void
+static void
 plsel_set_play_button(state)
 boolean state;
 {
@@ -441,7 +453,7 @@ boolean state;
     XtSetValues(plsel_btn_play, args, ONE);
 }
 
-void
+static void
 plsel_set_sensitivities(setcurr)
 boolean setcurr;
 {
@@ -495,12 +507,12 @@ boolean setcurr;
     X11_player_selection_setupOthers();
 }
 
-void
+static void
 X11_player_selection_randomize()
 {
     int nrole = plsel_n_roles;
     int nrace = plsel_n_races;
-    int ro, ra, a, g;
+    int ro, ra, al, ge;
     boolean fully_specified_role, choose_race_first;
     boolean picksomething = (flags.initrole == ROLE_NONE
                              || flags.initrace == ROLE_NONE
@@ -543,7 +555,7 @@ X11_player_selection_randomize()
         choose_race_first = TRUE;
     }
 
-    while (!validrace(ro,ra)) {
+    while (!validrace(ro, ra)) {
         if (choose_race_first) {
             ro = rn2(nrole);
             if (flags.initrole != ROLE_RANDOM) {
@@ -557,32 +569,32 @@ X11_player_selection_randomize()
         }
     }
 
-    g = flags.initgend;
-    if (g == ROLE_NONE) {
-        g = rn2(ROLE_GENDERS);
+    ge = flags.initgend;
+    if (ge == ROLE_NONE) {
+        ge = rn2(ROLE_GENDERS);
         fully_specified_role = FALSE;
     }
-    while (!validgend(ro,ra,g)) {
-        g = rn2(ROLE_GENDERS);
+    while (!validgend(ro, ra, ge)) {
+        ge = rn2(ROLE_GENDERS);
     }
 
-    a = flags.initalign;
-    if (a == ROLE_NONE) {
-        a = rn2(ROLE_ALIGNS);
+    al = flags.initalign;
+    if (al == ROLE_NONE) {
+        al = rn2(ROLE_ALIGNS);
         fully_specified_role = FALSE;
     }
-    while (!validalign(ro,ra,a)) {
-        a = rn2(ROLE_ALIGNS);
+    while (!validalign(ro, ra, al)) {
+        al = rn2(ROLE_ALIGNS);
     }
 
-    XawToggleSetCurrent(plsel_gend_radios[0], i2xtp(g + 1));
-    XawToggleSetCurrent(plsel_align_radios[0], i2xtp(a + 1));
+    XawToggleSetCurrent(plsel_gend_radios[0], i2xtp(ge + 1));
+    XawToggleSetCurrent(plsel_align_radios[0], i2xtp(al + 1));
     XawToggleSetCurrent(plsel_race_radios[0], i2xtp(ra + 1));
     XawToggleSetCurrent(plsel_role_radios[0], i2xtp(ro + 1));
     plsel_set_sensitivities(FALSE);
 }
 
-void
+static void
 X11_player_selection_setupOthers()
 {
     Arg args[2];
@@ -789,7 +801,7 @@ XtPointer call;
     exit_x_event = TRUE; /* leave event loop */
 }
 
-Widget
+static Widget
 X11_create_player_selection_name(form)
 Widget form;
 {
@@ -833,8 +845,8 @@ Widget form;
     XtSetArg(args[num_args], nhStr(XtNeditType),
              !plsel_ask_name ? XawtextRead : XawtextEdit); num_args++;
     XtSetArg(args[num_args], nhStr(XtNresize), XawtextResizeWidth); num_args++;
-    XtSetArg(args[num_args], nhStr(XtNstring), plname); num_args++;
-    XtSetArg(args[num_args], XtNinsertPosition, strlen(plname)); num_args++;
+    XtSetArg(args[num_args], nhStr(XtNstring), g.plname); num_args++;
+    XtSetArg(args[num_args], XtNinsertPosition, strlen(g.plname)); num_args++;
     XtSetArg(args[num_args], nhStr(XtNaccelerators),
              XtParseAcceleratorTable(plsel_input_accelerators)); num_args++;
     plsel_name_input = XtCreateManagedWidget("name_input",
@@ -852,7 +864,7 @@ Widget form;
     return name_vp;
 }
 
-void
+static void
 X11_player_selection_dialog()
 {
     Widget popup, popup_vp;
@@ -1270,15 +1282,14 @@ X11_player_selection_dialog()
     if (plsel_align_radios)
         free(plsel_align_radios);
 
-    if (ps_selected == PS_QUIT || program_state.done_hup) {
+    if (ps_selected == PS_QUIT || g.program_state.done_hup) {
         clearlocks();
         X11_exit_nhwindows((char *) 0);
         nh_terminate(0);
     }
 }
 
-/* Global functions ======================================================== */
-void
+static void
 X11_player_selection_prompts()
 {
     int num_roles, num_races, num_gends, num_algns, i, availcount, availindex;
@@ -1345,7 +1356,7 @@ X11_player_selection_prompts()
         XtDestroyWidget(popup);
         free((genericptr_t) choices), choices = 0;
 
-        if (ps_selected == PS_QUIT || program_state.done_hup) {
+        if (ps_selected == PS_QUIT || g.program_state.done_hup) {
             clearlocks();
             X11_exit_nhwindows((char *) 0);
             nh_terminate(0);
@@ -1414,7 +1425,7 @@ X11_player_selection_prompts()
             XtDestroyWidget(popup);
             free((genericptr_t) choices), choices = 0;
 
-            if (ps_selected == PS_QUIT || program_state.done_hup) {
+            if (ps_selected == PS_QUIT || g.program_state.done_hup) {
                 clearlocks();
                 X11_exit_nhwindows((char *) 0);
                 nh_terminate(0);
@@ -1482,7 +1493,7 @@ X11_player_selection_prompts()
             XtDestroyWidget(popup);
             free((genericptr_t) choices), choices = 0;
 
-            if (ps_selected == PS_QUIT || program_state.done_hup) {
+            if (ps_selected == PS_QUIT || g.program_state.done_hup) {
                 clearlocks();
                 X11_exit_nhwindows((char *) 0);
                 nh_terminate(0);
@@ -1548,7 +1559,7 @@ X11_player_selection_prompts()
             XtDestroyWidget(popup);
             free((genericptr_t) choices), choices = 0;
 
-            if (ps_selected == PS_QUIT || program_state.done_hup) {
+            if (ps_selected == PS_QUIT || g.program_state.done_hup) {
                 clearlocks();
                 X11_exit_nhwindows((char *) 0);
                 nh_terminate(0);
@@ -1564,19 +1575,21 @@ X11_player_selection_prompts()
     }
 }
 
+/* Global functions ======================================================== */
+
 void
 X11_player_selection()
 {
     if (iflags.wc_player_selection == VIA_DIALOG) {
-        if (!*plname) {
+        if (!*g.plname) {
 #ifdef UNIX
             char *defplname = get_login_name();
 #else
             char *defplname = (char *)0;
 #endif
-            (void) strncpy(plname, defplname ? defplname : "Mumbles",
-                           sizeof plname - 1);
-            plname[sizeof plname - 1] = '\0';
+            (void) strncpy(g.plname, defplname ? defplname : "Mumbles",
+                           sizeof g.plname - 1);
+            g.plname[sizeof g.plname - 1] = '\0';
             iflags.renameinprogress = TRUE;
         }
         X11_player_selection_dialog();
