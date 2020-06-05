@@ -71,6 +71,9 @@ nle/tests:
 lint_changed.sh    test_envs.py  test_forking.py  test_memory.py  test_nethack.py
 test_ptyprocess.py
 
+sys/unix/hints:
+(files for configuring NLE versions)
+linux-nle       macosx-nle
 
 win/rl:
 (files for the NLE window interface)
