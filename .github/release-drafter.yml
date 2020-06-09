@@ -18,11 +18,9 @@ change-template: '- $TITLE (#$NUMBER, @$AUTHOR)'
 template: |
   # installing NLE
 
-  Install with pip: `pip install nle==v$NEXT_PATCH_VERSION`
+  Install with pip: `pip install nle==$NEXT_PATCH_VERSION`
 
-  Or see
-  [README.md](https://github.com/facebookresearch/nle/blob/v$NEXT_PATCH_VERSION/README.md)
-  for further instructions.
+  Or see [README.md](https://github.com/facebookresearch/nle/blob/v$NEXT_PATCH_VERSION/README.md) for further instructions.
 
   # New in NLE v$NEXT_PATCH_VERSION
 
