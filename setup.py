@@ -194,6 +194,7 @@ extras_deps = {
     "dev": [
         "pre-commit>=2.0.1",
         "black>=19.10b0",
+        "cmake_format>=0.6.10",
         "flake8>=3.7",
         "flake8-bugbear>=20.1",
         "pytest>=5.3",
