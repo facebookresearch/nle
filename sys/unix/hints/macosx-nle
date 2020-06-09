@@ -81,7 +81,7 @@ endif
 ifdef WANT_WIN_RL
 #CFLAGS += -URL_GRAPHICS -DRL_GRAPHICS -DNOUSER_SOUNDS
 CXXFLAGS += -std=c++14 -stdlib=libc++ -mmacosx-version-min=10.7
-LINK=clang
+LINK=clang++
 WINSRC += $(WINRLSRC)
 WINLIB += $(WINRLLIB)
 WINOBJ += $(WINRLOBJ)
