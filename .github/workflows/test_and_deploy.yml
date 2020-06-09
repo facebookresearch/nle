@@ -1,5 +1,5 @@
 ---
-name: Test & deploy on MacOS
+name: Test & deploy (MacOS)
 
 on:
   push:
@@ -50,7 +50,7 @@ jobs:
 
   test_sdist:
     name: Test sdist on MacOS w/ Py3.8
-    # needs: test_repo
+    needs: test_repo
     runs-on: macos-latest
     steps:
     - name: Setup Python 3.8 env
@@ -129,6 +129,4 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_TOKEN }}
-        # TODO: remove this before merging PR into fr/nle:master
-        repository_url: https://test.pypi.org/legacy/
 ...

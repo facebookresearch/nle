@@ -1,5 +1,5 @@
 ---
-name: Build & deploy Docker
+name: Test & deploy (Docker)
 
 on:
   schedule:
@@ -28,7 +28,7 @@ jobs:
       with:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: edran/nle
+        repository: fairnle/nle
         dockerfile: docker/Dockerfile
         tags: dev
         tag_with_sha: true
@@ -45,7 +45,7 @@ jobs:
       with:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: edran/nle
+        repository: fairnle/nle
         dockerfile: docker/Dockerfile
         tags: ${{ github.event.release.tag_name }},stable
         add_git_labels: true
@@ -60,7 +60,7 @@ jobs:
       with:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: edran/nle-xenial
+        repository: fairnle/nle-xenial
         dockerfile: docker/Dockerfile
         tags: dev
         tag_with_sha: true
@@ -77,7 +77,7 @@ jobs:
       with:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: edran/nle-xenial
+        repository: fairnle/nle-xenial
         dockerfile: docker/Dockerfile-xenial
         tags: ${{ github.event.release.tag_name }}
         add_git_labels: true
