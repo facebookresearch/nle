@@ -23,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Check token
+      run: |
+        [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]
     - name: Build and push image
       uses: docker/build-push-action@v1
       with:
@@ -55,6 +58,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Check token
+      run: |
+        [ -n "${{ secrets.DECKERHUB_TOKEN }}" ]
     - name: Build and push image
       uses: docker/build-push-action@v1
       with:
