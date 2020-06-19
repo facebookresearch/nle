@@ -1,5 +1,5 @@
 ---
-name: Test & deploy (Docker)
+name: Build & deploy Docker images
 
 on:
   schedule:
@@ -11,9 +11,8 @@ on:
       # We ignore all tags, since paths filters don't work for tags events, and
       # we use releases instead.
       - "*"
-  pull_request:
-    paths:
-      - "docker/Dockerfile*"
+    branches:
+      - master
   release:
     types: [released]
 
@@ -23,6 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Check token
+      run: |
+        [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]
     - name: Build and push image
       uses: docker/build-push-action@v1
       with:
@@ -55,6 +57,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Check token
+      run: |
+        [ -n "${{ secrets.DECKERHUB_TOKEN }}" ]
     - name: Build and push image
       uses: docker/build-push-action@v1
       with:
