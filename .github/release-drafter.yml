@@ -16,13 +16,14 @@ exclude-labels:
   - 'skip changelog'
 change-template: '- $TITLE (#$NUMBER, @$AUTHOR)'
 template: |
-  # installing NLE
+  # Installing NLE
 
-  Install with pip: `pip install nle==v$NEXT_PATCH_VERSION`
+  Install with pip: `pip install nle==$NEXT_PATCH_VERSION`.
 
-  Or see
-  [README.md](https://github.com/facebookresearch/nle/blob/v$NEXT_PATCH_VERSION/README.md)
-  for further instructions.
+  Or pull the docker image: `docker pull fairnle/nle:$NEXT_PATCH_VERSION`.
+
+  See [README.md](https://github.com/facebookresearch/nle/blob/v$NEXT_PATCH_VERSION/README.md) and/or [docker/README.md](https://github.com/facebookresearch/nle/blob/v$NEXT_PATCH_VERSION/docker/README.md) for further instructions.
+
 
   # New in NLE v$NEXT_PATCH_VERSION
 

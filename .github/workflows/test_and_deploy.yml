@@ -1,5 +1,5 @@
 ---
-name: Test & Deploy
+name: Test & deploy (MacOS)
 
 on:
   push:
@@ -8,7 +8,8 @@ on:
   pull_request:
   schedule:
     - cron: "0 6,18 * * *"
-
+  release:
+    types: [released]
 
 
 jobs:
@@ -31,8 +32,7 @@ jobs:
         brew install zeromq flatbuffers
         sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
           /usr/local/include
-    - name: Clone repo
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
     - name: Install from repo in test mode
       run: "pip install -e '.[dev]'"
     - name: Run tests
@@ -64,8 +64,7 @@ jobs:
         brew install zeromq flatbuffers
         sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
           /usr/local/include
-    - name: Clone repo
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
     - name: Generate sdist
       run: |
        NLE_RELEASE_BUILD=1 python setup.py sdist
@@ -90,9 +89,44 @@ jobs:
       with:
         name: nle_test_data_sdist
         path: nle_test_ci_${{ github.sha }}.tar.gz
+    - name: Save sdist
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v1
+      with:
+        name: nle_dist
+        path: dist/
 
-
-  # deploy_sdist:
-  #   if: startsWith( github.ref, "v" )
-  #   needs: build_sdist
+  # TODO move this to separate workflow whenever github decides to provide basic
+  #      functionalities like workflow dependencies :|
+  deploy_sdist:
+    name: Deploy sdist to pypi
+    needs: test_sdist
+    if: github.event_name == 'release' && github.event.action == 'released'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Check version matches release tag
+      run: |
+        echo "v$(cat version.txt)"
+        echo "${{ github.event.release.tag_name }}"
+        [[ "${{ github.event.release.tag_name }}" == "v$(cat version.txt)" ]]
+    - name: Get dist artifacts from test_sdist
+      uses: actions/download-artifact@v2
+      with:
+        name: nle_dist
+        path: dist
+    - name: Install from sdist
+      run: |
+        pwd
+        ls -R
+        ls -al .
+        ls -R dist/
+        ls -al dist/
+    # NOTE: we assume that dist/ contains a built sdist (and only that).
+    #       Yes, we could be more defensively, but What Could Go Wrong?™
+    - name: Publish package to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_TOKEN }}
 ...

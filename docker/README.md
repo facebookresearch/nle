@@ -16,15 +16,19 @@ The git repository is installed inside a conda distribution, and can be found in
 `/opt/nle` inside the images.
 
 The DockerHub repository also contains pre-built images per each released
-version of `nle`, with a specific template --
-`fairnle/nle:<nle-version>-<type>`. The only relevant exception is
-`fairnle/nle:stable`, which refers to the image built through
-`docker/Dockerfile-bionic` with the latest released version of `nle` (which you
-should probably be using, if you are getting started).
+version of `nle`, following a specific templates:
 
-Currently available types are `bionic`, and `xenial`, corresponding to the
-respective dockerfiles in `docker/`. Versions are in the form of `X.Y.Z`.
+``` bash
+1. fairnle/nle:stable
+2. fairnle/nle:<nle-version>         # corresponds to (1)
+3. fairnle/nle-xenial:<nle-version>  # Based on Ubuntu 16.04
+4. fairnle/nle:<sha>                 # xenial image built on dockerfile changes
+5. fairnle/nle-xenial:<sha>          # bionic image built on dockerfile changes
+6. fairnle/nle:dev                   # points to latest built sha
+7. fairnle/nle-xenial:dev            # points to latest built sha
+```
 
+`<nle-version>` is the latest pip version released, and follows semantic versioning (so something like `X.Y.Z`).
 
 # Building images locally
 
@@ -32,5 +36,5 @@ To build any of them (e.g. the main `Dockerfile`) do:
 
 ```bash
 # in the repository root
-$ docker build -f docker/Dockerfile-bionic . -t nle:test-bionic
+$ docker build -f docker/Dockerfile . -t nle:latest
 ```
