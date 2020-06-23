@@ -36,17 +36,17 @@ add_executable(dlb ${DLB_SRC})
 # create the headers named in MAKEDEFS_HEADERS
 add_custom_command(
   OUTPUT ${NLE_INC_GEN}/date.h
-  COMMAND $<TARGET_FILE:makedefs>} ARGS -v ${NLE_INC_GEN}/date.h
+  COMMAND $<TARGET_FILE:makedefs> ARGS -v ${NLE_INC_GEN}/date.h
   DEPENDS makedefs)
 
 add_custom_command(
   OUTPUT ${NLE_INC_GEN}/onames.h
-  COMMAND $<TARGET_FILE:makedefs>} ARGS -o ${NLE_INC_GEN}/onames.h
+  COMMAND $<TARGET_FILE:makedefs> ARGS -o ${NLE_INC_GEN}/onames.h
   DEPENDS makedefs)
 
 add_custom_command(
   OUTPUT ${NLE_INC_GEN}/pm.h
-  COMMAND $<TARGET_FILE:makedefs>} ARGS -p ${NLE_INC_GEN}/pm.h
+  COMMAND $<TARGET_FILE:makedefs> ARGS -p ${NLE_INC_GEN}/pm.h
   DEPENDS makedefs)
 
 # generate parser & scanner for dgn_comp

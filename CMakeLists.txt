@@ -43,6 +43,7 @@ add_subdirectory(dat)
 # add_subdirectory(src)
 
 add_executable(nlehack ${nle_SRC})
+add_dependencies(nlehack makedefs_headers)
 
 set_target_properties(nlehack PROPERTIES CXX_STANDARD 14)
 
