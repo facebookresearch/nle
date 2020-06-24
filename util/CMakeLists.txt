@@ -23,14 +23,12 @@ file(MAKE_DIRECTORY ${NLE_DAT_GEN})
 
 include_directories(${nle_SOURCE_DIR}/include ${NLE_INC_GEN} ${NLE_UTIL_GEN})
 
-# targets
 add_executable(makedefs ${MAKEDEFS_SRC})
 add_executable(dgn_comp ${DGN_COMP_SRC})
 add_executable(lev_comp ${LEV_COMP_SRC})
 add_executable(dlb ${DLB_SRC})
 
-# create the headers named in MAKEDEFS_HEADERS TODO modify makedefs to output to
-# specified path
+# TODO modify makedefs to output to specified path
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/date.h
@@ -55,7 +53,6 @@ add_custom_command(
   COMMAND cp ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h # HACK
   WORKING_DIRECTORY ../)
 
-# generate parser & scanner for dgn_comp
 add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/dgn_parser.c ${NLE_UTIL_GEN}/dgn_comp.h
   COMMAND bison -y --defines=${NLE_UTIL_GEN}/dgn_comp.h -o
@@ -67,7 +64,6 @@ add_custom_command(
   COMMAND flex -o${NLE_UTIL_GEN}/dgn_scanner.c ${NLE_UTIL}/dgn_comp.l
   DEPENDS ${NLE_UTIL}/dgn_comp.l)
 
-# generate parser & scanner for lev_comp
 add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/lev_parser.c ${NLE_UTIL_GEN}/lev_comp.h
   COMMAND bison -y --defines=${NLE_UTIL_GEN}/lev_comp.h -o
