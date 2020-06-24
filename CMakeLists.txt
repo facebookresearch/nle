@@ -45,11 +45,12 @@ set(NLE_UTIL_GEN ${nle_BINARY_DIR}/util)
 
 add_subdirectory(util)
 add_subdirectory(dat)
+add_subdirectory(win/rl)
 
 # add_subdirectory(src)
 
 add_executable(nlehack ${nle_SRC})
-add_dependencies(nlehack makedefs_headers)
+add_dependencies(nlehack makedefs_headers nle_generated)
 
 set_target_properties(nlehack PROPERTIES CXX_STANDARD 14)
 
