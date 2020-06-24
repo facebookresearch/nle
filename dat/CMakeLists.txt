@@ -72,6 +72,7 @@ add_custom_command(
   OUTPUT options
   COMMAND $<TARGET_FILE:makedefs> -v
   COMMAND mv ${NLE_DAT}/options ${NLE_DAT_GEN}/
+  COMMAND rm ${NLE_INC}/date.h # We don't need this here
   WORKING_DIRECTORY ../)
 
 add_custom_command(
