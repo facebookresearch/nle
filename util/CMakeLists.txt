@@ -1,26 +1,27 @@
 set(MAKEDEFS_SRC makedefs.c ${NLE_SRC}/monst.c ${NLE_SRC}/objects.c)
 
-set(DGN_COMP_SRC dgn_main.c panic.c ${NLE_UTIL_GEN}/dgn_parser.c
-                 ${NLE_UTIL_GEN}/dgn_scanner.c)
+set(DGN_COMP_SRC dgn_main.c panic.c ${NLE_SRC}/alloc.c
+                 ${NLE_UTIL_GEN}/dgn_parser.c ${NLE_UTIL_GEN}/dgn_scanner.c)
 
 set(LEV_COMP_SRC
     lev_main.c
     panic.c
-    # ${NLE_SRC}/symclass.c
     ${NLE_SRC}/decl.c
     ${NLE_SRC}/monst.c
     ${NLE_SRC}/objects.c
+    ${NLE_SRC}/alloc.c
+    ${NLE_SRC}/drawing.c
     ${NLE_UTIL_GEN}/lev_parser.c
     ${NLE_UTIL_GEN}/lev_scanner.c)
+
 set(MAKEDEFS_HEADERS ${NLE_INC_GEN}/date.h ${NLE_INC_GEN}/onames.h
                      ${NLE_INC_GEN}/pm.h)
-set(DLB_SRC dlb_main.c ${NLE_SRC}/dlb.c)
 
+set(DLB_SRC dlb_main.c ${NLE_SRC}/dlb.c panic.c ${NLE_SRC}/alloc.c)
 file(MAKE_DIRECTORY ${NLE_INC_GEN})
 file(MAKE_DIRECTORY ${NLE_DAT_GEN})
 
-include_directories(${nle_SOURCE_DIR}/include ${nle_SOURCE_DIR}/nle/include
-                    ${NLE_INC_GEN} ${NLE_UTIL_GEN})
+include_directories(${nle_SOURCE_DIR}/include ${NLE_INC_GEN} ${NLE_UTIL_GEN})
 
 # targets
 add_executable(makedefs ${MAKEDEFS_SRC})
@@ -28,29 +29,31 @@ add_executable(dgn_comp ${DGN_COMP_SRC})
 add_executable(lev_comp ${LEV_COMP_SRC})
 add_executable(dlb ${DLB_SRC})
 
-# get_property( MAKEDEFS_BIN TARGET makedefs PROPERTY LOCATION)
-
-# create the headers named in MAKEDEFS_HEADERS
+# create the headers named in MAKEDEFS_HEADERS TODO modify makedefs to output to
+# specified path
 add_custom_command(
+  DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/date.h
-  COMMAND $<TARGET_FILE:makedefs> -v # ${NLE_INC_GEN}/date.h
-  COMMAND mv ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
-  WORKING_DIRECTORY ../
-  DEPENDS makedefs)
+  COMMAND $<TARGET_FILE:makedefs> -v
+  # HACK
+  COMMAND cp ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
+  WORKING_DIRECTORY ../)
 
 add_custom_command(
+  DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/onames.h
-  COMMAND $<TARGET_FILE:makedefs> -o # ${NLE_INC_GEN}/onames.h
-  COMMAND mv ${NLE_INC}/onames.h ${NLE_INC_GEN}/onames.h
-  WORKING_DIRECTORY ../
-  DEPENDS makedefs)
+  COMMAND $<TARGET_FILE:makedefs> -o
+  # HACK
+  COMMAND cp ${NLE_INC}/onames.h ${NLE_INC_GEN}/onames.h
+  WORKING_DIRECTORY ../)
 
 add_custom_command(
+  DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/pm.h
-  COMMAND $<TARGET_FILE:makedefs> -p # ${NLE_INC_GEN}/pm.h
-  COMMAND mv ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h
-  WORKING_DIRECTORY ../
-  DEPENDS makedefs)
+  COMMAND $<TARGET_FILE:makedefs> -p
+  # HACK
+  COMMAND cp ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h # HACK
+  WORKING_DIRECTORY ../)
 
 # generate parser & scanner for dgn_comp
 add_custom_command(
@@ -77,5 +80,5 @@ add_custom_command(
   DEPENDS ${NLE_UTIL}/lev_comp.l)
 
 add_custom_target(makedefs_headers DEPENDS ${MAKEDEFS_HEADERS})
-add_dependencies(dgn_comp makedefs_headers)
 add_dependencies(lev_comp makedefs_headers)
+add_dependencies(dgn_comp makedefs_headers)
