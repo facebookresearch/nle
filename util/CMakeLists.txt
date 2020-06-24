@@ -28,13 +28,13 @@ add_executable(dgn_comp ${DGN_COMP_SRC})
 add_executable(lev_comp ${LEV_COMP_SRC})
 add_executable(dlb ${DLB_SRC})
 
-# TODO modify makedefs to output to specified path
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/date.h
   COMMAND $<TARGET_FILE:makedefs> -v
   # HACK
   COMMAND mv ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
+  COMMAND rm ${NLE_DAT}/options # We don't need this here
   WORKING_DIRECTORY ../)
 
 add_custom_command(

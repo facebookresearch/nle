@@ -66,7 +66,6 @@ add_custom_command(
   COMMAND mv ${NLE_DAT}/oracles ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ../)
 
-# NOTE: Should already have been made when include/date.h was created
 add_custom_command(
   DEPENDS makedefs
   OUTPUT options
