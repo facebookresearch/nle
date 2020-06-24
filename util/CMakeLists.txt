@@ -34,7 +34,7 @@ add_custom_command(
   OUTPUT ${NLE_INC_GEN}/date.h
   COMMAND $<TARGET_FILE:makedefs> -v
   # HACK
-  COMMAND cp ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
+  COMMAND mv ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
   WORKING_DIRECTORY ../)
 
 add_custom_command(
@@ -42,7 +42,7 @@ add_custom_command(
   OUTPUT ${NLE_INC_GEN}/onames.h
   COMMAND $<TARGET_FILE:makedefs> -o
   # HACK
-  COMMAND cp ${NLE_INC}/onames.h ${NLE_INC_GEN}/onames.h
+  COMMAND mv ${NLE_INC}/onames.h ${NLE_INC_GEN}/onames.h
   WORKING_DIRECTORY ../)
 
 add_custom_command(
@@ -50,7 +50,7 @@ add_custom_command(
   OUTPUT ${NLE_INC_GEN}/pm.h
   COMMAND $<TARGET_FILE:makedefs> -p
   # HACK
-  COMMAND cp ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h # HACK
+  COMMAND mv ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h # HACK
   WORKING_DIRECTORY ../)
 
 add_custom_command(

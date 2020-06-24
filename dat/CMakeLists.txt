@@ -26,7 +26,6 @@ set(QUEST_LEVELS
     Tourist.des
     Valkyrie.des
     Wizard.des)
-
 list(TRANSFORM QUEST_LEVELS PREPEND ${NLE_DAT}/)
 
 add_custom_command(
@@ -34,30 +33,37 @@ add_custom_command(
           ${NLE_DAT}/epitaph.txt
   OUTPUT bogusmon epitaph engrave
   COMMAND $<TARGET_FILE:makedefs> ARGS -s
+  COMMAND mv ${NLE_DAT}/bogusmon ${NLE_DAT}/engrave ${NLE_DAT}/epitaph
+          ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ../)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/data.base
   OUTPUT data
   COMMAND $<TARGET_FILE:makedefs> -d
-  WORKING_DIRECTORY ../) # HACK see ../util/CMakeLists.txt
+  # HACK see ../util/CMakeLists.txt
+  COMMAND mv ${NLE_DAT}/data ${NLE_DAT_GEN}/
+  WORKING_DIRECTORY ../)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/rumors.tru ${NLE_DAT}/rumors.fal
   OUTPUT rumors
   COMMAND $<TARGET_FILE:makedefs> -r
+  COMMAND mv ${NLE_DAT}/rumors ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ../)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/quest.txt
   OUTPUT quest.dat
   COMMAND $<TARGET_FILE:makedefs> -q
+  COMMAND mv ${NLE_DAT}/quest.dat ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ../)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/oracles.txt
   OUTPUT oracles
   COMMAND $<TARGET_FILE:makedefs> -h
+  COMMAND mv ${NLE_DAT}/oracles ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ../)
 
 # NOTE: Should already have been made when include/date.h was created
@@ -65,26 +71,28 @@ add_custom_command(
   DEPENDS makedefs
   OUTPUT options
   COMMAND $<TARGET_FILE:makedefs> -v
+  COMMAND mv ${NLE_DAT}/options ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ../)
 
 add_custom_command(
   DEPENDS makedefs dgn_comp ${NLE_DAT}/dungeon.def
-  OUTPUT dungeon.pdf
+  OUTPUT dungeon.pdf dungeon
   COMMAND $<TARGET_FILE:makedefs> -e
   COMMAND $<TARGET_FILE:dgn_comp> ${NLE_DAT}/dungeon.pdf
+  COMMAND mv ${NLE_DAT}/dungeon.pdf ${NLE_DAT}/dungeon ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ../)
 
 add_custom_command(
   DEPENDS lev_comp
   OUTPUT spec_levs
   COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch spec_levs)
+  COMMAND ${CMAKE_COMMAND} -E touch ${NLE_DAT_GEN}/spec_levs)
 
 add_custom_command(
   DEPENDS lev_comp
   OUTPUT quest_levs
   COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch quest_levs)
+  COMMAND ${CMAKE_COMMAND} -E touch ${NLE_DAT_GEN}/quest_levs)
 
 add_custom_target(
   nle_data_files ALL
