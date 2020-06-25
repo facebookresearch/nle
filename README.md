@@ -181,9 +181,9 @@ $ python -m nle.scripts.plot
 If you use NLE in any of your work, please cite:
 
 ```
-@misc{kttler2020nethack,
+@misc{kuttler2020nethack,
     title={The NetHack Learning Environment},
-    author={Heinrich Küttler and Nantas Nardelli and Alexander H. Miller and Roberta Raileanu and Marco Selvatici and Edward Grefenstette and Tim Rocktäschel},
+    author={Heinrich K{\"u}ttler and Nantas Nardelli and Alexander H. Miller and Roberta Raileanu and Marco Selvatici and Edward Grefenstette and Tim Rockt{\"a}schel},
     year={2020},
     eprint={2006.13760},
     archivePrefix={arXiv},
