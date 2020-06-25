@@ -5,12 +5,16 @@ message(STATUS "Building nle backend version: ${NLE_VERSION}")
 
 set(INSTALL_BASE "$ENV{HOME}")
 
+set(HACKDIR ${INSTALL_BASE}/nledir)
+set(VARDIR ${HACKDIR})
+set(INSTDIR ${HACKDIR})
+
 add_compile_definitions(
   GCC_WARN
   NOCLIPPING
   NOMAIL
   NOTPARMDECL
-  HACKDIR="${INSTALL_BASE}/nledir"
+  HACKDIR="${HACKDIR}"
   DEFAULT_WINDOW_SYS="tty"
   DLB)
 
@@ -57,3 +61,10 @@ target_include_directories(
 target_link_directories(nlehack PUBLIC /usr/local/lib)
 target_link_libraries(nlehack PUBLIC ncurses m zmq lua)
 target_link_libraries(nlehack PRIVATE flatbuffers)
+
+install(TARGETS nlehack DESTINATION ${BINDIR})
+
+# TODO check that files are first removed
+install(DIRECTORY DESTINATION ${VARDIR})
+install(DIRECTORY DESTINATION ${VARDIR}/save)
+install(DIRECTORY DESTINATION ${INSTDIR})

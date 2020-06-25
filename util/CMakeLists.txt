@@ -78,3 +78,5 @@ add_custom_command(
 add_custom_target(makedefs_headers DEPENDS ${MAKEDEFS_HEADERS})
 add_dependencies(lev_comp makedefs_headers)
 add_dependencies(dgn_comp makedefs_headers)
+
+install(FILES recover DESTINATION ${INSTDIR})
