@@ -15,9 +15,10 @@ being much cheaper to run compared to other challenging testbeds. Through NLE,
 we wish to establish NetHack as one of the next challenges for research in
 decision making and machine learning.
 
-You can read more about NetHack in its [original README](./README.nh), at
-[nethack.org](https://nethack.org/), and on the [NetHack
-wiki](https://nethackwiki.com).
+You can read more about NLE in the [arXiv
+preprint](https://arxiv.org/abs/2006.13760), and about NetHack in its [original
+README](./README.nh), at [nethack.org](https://nethack.org/), and on the
+[NetHack wiki](https://nethackwiki.com).
 
 ![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/master/dat/nle/example_run.gif)
 
@@ -180,11 +181,12 @@ $ python -m nle.scripts.plot
 If you use NLE in any of your work, please cite:
 
 ```
-@inproceedings{kuettler2020nethack,
-  title={{The NetHack Learning Environment}},
-  author={Heinrich K\"{u}ttler and Nantas Nardelli and Roberta Raileanu and Marco Selvatici and Edward Grefenstette and Tim Rockt\"{a}schel},
-  year={2020},
-  booktitle={Workshop on Beyond Tabula Rasa in Reinforcement Learning (BeTR-RL)},
-  url={https://github.com/facebookresearch/nle},
+@misc{kttler2020nethack,
+    title={The NetHack Learning Environment},
+    author={Heinrich Küttler and Nantas Nardelli and Alexander H. Miller and Roberta Raileanu and Marco Selvatici and Edward Grefenstette and Tim Rocktäschel},
+    year={2020},
+    eprint={2006.13760},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG}
 }
 ```
