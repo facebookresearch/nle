@@ -49,14 +49,13 @@ add_subdirectory(win/rl)
 
 add_executable(nlehack ${nle_SRC})
 add_dependencies(nlehack makedefs_headers winrl)
-target_link_libraries(nlehack PRIVATE winrl)
 
 target_include_directories(nlehack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN})
 
 find_library(ZMQ zmq)
 find_library(CURSES ncurses)
-target_link_libraries(nlehack PRIVATE ${ZMQ} ${CURSES})
+target_link_libraries(nlehack PRIVATE ${ZMQ} ${CURSES} winrl)
 
 install(TARGETS nlehack DESTINATION ${BINDIR})
 install(DIRECTORY DESTINATION ${VARDIR})
