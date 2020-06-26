@@ -48,7 +48,7 @@ add_subdirectory(dat)
 add_subdirectory(win/rl)
 
 add_executable(nlehack ${NLEHACK_SRC})
-add_dependencies(nlehack makedefs_headers winrl)
+add_dependencies(nlehack nleutil winrl nledat)
 
 target_include_directories(nlehack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN})

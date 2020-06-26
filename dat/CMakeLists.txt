@@ -269,8 +269,7 @@ set(ALL_DAT_GEN_LEV
     wizard3.lev)
 list(TRANSFORM ALL_DAT_GEN_LEV PREPEND ${NLE_DAT_GEN}/)
 
-add_custom_target(nle_data_files ALL DEPENDS ${ALL_DAT_OUTPUT}
-                                             ${ALL_DAT_NOTGEN})
+add_custom_target(nledat ALL DEPENDS ${ALL_DAT_OUTPUT} ${ALL_DAT_NOTGEN})
 
 install(FILES ${ALL_DAT_GEN_OUTPUT} ${ALL_DAT_GEN_LEV} DESTINATION ${INSTDIR})
 
