@@ -23,7 +23,7 @@ add_compile_definitions(
 set(DATADIR "${INSTALL_BASE}/nledir")
 file(
   GLOB
-  nle_SRC
+  NLEHACK_SRC
   "src/*.c"
   "sys/share/posixregex.c"
   "sys/share/ioctl.c"
@@ -47,7 +47,7 @@ add_subdirectory(util)
 add_subdirectory(dat)
 add_subdirectory(win/rl)
 
-add_executable(nlehack ${nle_SRC})
+add_executable(nlehack ${NLEHACK_SRC})
 add_dependencies(nlehack makedefs_headers winrl)
 
 target_include_directories(nlehack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include

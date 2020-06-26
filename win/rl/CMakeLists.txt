@@ -1,3 +1,4 @@
+# TODO(NN): we should rename this to winnle
 add_library(winrl winrl.cc)
 
 add_custom_target(

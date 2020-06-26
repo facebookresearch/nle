@@ -18,32 +18,39 @@ set(MAKEDEFS_HEADERS ${NLE_INC_GEN}/date.h ${NLE_INC_GEN}/onames.h
                      ${NLE_INC_GEN}/pm.h)
 
 set(DLB_SRC dlb_main.c ${NLE_SRC}/dlb.c panic.c ${NLE_SRC}/alloc.c)
+
 file(MAKE_DIRECTORY ${NLE_INC_GEN})
 file(MAKE_DIRECTORY ${NLE_DAT_GEN})
 
-# TODO(NN): this should be target_include_directories
-include_directories(${nle_SOURCE_DIR}/include ${NLE_INC_GEN} ${NLE_UTIL_GEN})
-
 add_executable(makedefs ${MAKEDEFS_SRC})
+target_include_directories(makedefs PRIVATE ${NLE_INC} ${NLE_INC_GEN}
+                                            ${NLE_UTIL_GEN})
 add_executable(dgn_comp ${DGN_COMP_SRC})
+target_include_directories(dgn_comp PRIVATE ${NLE_INC} ${NLE_INC_GEN}
+                                            ${NLE_UTIL_GEN})
 add_executable(lev_comp ${LEV_COMP_SRC})
+target_include_directories(lev_comp PRIVATE ${NLE_INC} ${NLE_INC_GEN}
+                                            ${NLE_UTIL_GEN})
 add_executable(dlb ${DLB_SRC})
+target_include_directories(dlb PRIVATE ${NLE_INC} ${NLE_INC_GEN}
+                                       ${NLE_UTIL_GEN})
 add_executable(recover recover.c)
+target_include_directories(recover PRIVATE ${NLE_INC} ${NLE_INC_GEN}
+                                           ${NLE_UTIL_GEN})
 
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/date.h
   COMMAND $<TARGET_FILE:makedefs> -v
-  # HACK
+  # HACK: due to makedefs being stubborn about in-source build
   COMMAND mv ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
-  COMMAND rm ${NLE_DAT}/options # We don't need this here
+  COMMAND rm ${NLE_DAT}/options # Since we don't need this here yet
   WORKING_DIRECTORY ../)
 
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/onames.h
   COMMAND $<TARGET_FILE:makedefs> -o
-  # HACK
   COMMAND mv ${NLE_INC}/onames.h ${NLE_INC_GEN}/onames.h
   WORKING_DIRECTORY ../)
 
@@ -51,8 +58,7 @@ add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/pm.h
   COMMAND $<TARGET_FILE:makedefs> -p
-  # HACK
-  COMMAND mv ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h # HACK
+  COMMAND mv ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h
   WORKING_DIRECTORY ../)
 
 add_custom_command(
