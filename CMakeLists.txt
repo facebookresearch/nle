@@ -5,6 +5,7 @@ message(STATUS "Building nle backend version: ${NLE_VERSION}")
 
 set(INSTALL_BASE "$ENV{HOME}")
 
+# TODO(NN): we should be at least XDG compliant
 set(HACKDIR ${INSTALL_BASE}/nledir)
 
 # Playground vars
@@ -20,19 +21,6 @@ add_compile_definitions(
   DEFAULT_WINDOW_SYS="tty"
   DLB)
 
-set(DATADIR "${INSTALL_BASE}/nledir")
-file(
-  GLOB
-  NLEHACK_SRC
-  "src/*.c"
-  "sys/share/posixregex.c"
-  "sys/share/ioctl.c"
-  "sys/unix/unixunix.c"
-  "sys/share/unixtty.c"
-  "sys/unix/unixres.c"
-  "sys/unix/unixmain.c"
-  "win/tty/*.c")
-
 set(NLE_SRC ${nle_SOURCE_DIR}/src)
 set(NLE_INC ${nle_SOURCE_DIR}/include)
 set(NLE_DAT ${nle_SOURCE_DIR}/dat)
@@ -46,6 +34,18 @@ set(NLE_UTIL_GEN ${nle_BINARY_DIR}/util)
 add_subdirectory(util)
 add_subdirectory(dat)
 add_subdirectory(win/rl)
+
+file(
+  GLOB
+  NLEHACK_SRC
+  "src/*.c"
+  "sys/share/posixregex.c"
+  "sys/share/ioctl.c"
+  "sys/unix/unixunix.c"
+  "sys/share/unixtty.c"
+  "sys/unix/unixres.c"
+  "sys/unix/unixmain.c"
+  "win/tty/*.c")
 
 add_executable(nlehack ${NLEHACK_SRC})
 add_dependencies(nlehack nleutil winrl nledat)
