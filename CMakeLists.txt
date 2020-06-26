@@ -6,6 +6,8 @@ message(STATUS "Building nle backend version: ${NLE_VERSION}")
 set(INSTALL_BASE "$ENV{HOME}")
 
 set(HACKDIR ${INSTALL_BASE}/nledir)
+
+# Playground vars
 set(VARDIR ${HACKDIR})
 set(INSTDIR ${HACKDIR})
 
@@ -29,8 +31,7 @@ file(
   "sys/share/unixtty.c"
   "sys/unix/unixres.c"
   "sys/unix/unixmain.c"
-  "win/tty/*.c"
-  "win/rl/winrl.cc")
+  "win/tty/*.c")
 
 set(NLE_SRC ${nle_SOURCE_DIR}/src)
 set(NLE_INC ${nle_SOURCE_DIR}/include)
@@ -45,26 +46,19 @@ set(NLE_UTIL_GEN ${nle_BINARY_DIR}/util)
 add_subdirectory(util)
 add_subdirectory(dat)
 add_subdirectory(win/rl)
-# add_subdirectory(src)
 
 add_executable(nlehack ${nle_SRC})
-add_dependencies(nlehack makedefs_headers nle_generated)
+add_dependencies(nlehack makedefs_headers winrl)
+target_link_libraries(nlehack PRIVATE winrl)
 
-set_target_properties(nlehack PROPERTIES CXX_STANDARD 14)
+target_include_directories(nlehack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+                                          ${NLE_INC_GEN})
 
-target_include_directories(
-  nlehack
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${NLE_INC_GEN}
-         # ${NLE_UTIL_GEN}
-         /usr/local/include)
-
-target_link_directories(nlehack PUBLIC /usr/local/lib)
-target_link_libraries(nlehack PUBLIC ncurses m zmq lua)
-target_link_libraries(nlehack PRIVATE flatbuffers)
+find_library(ZMQ zmq)
+find_library(CURSES ncurses)
+target_link_libraries(nlehack PRIVATE ${ZMQ} ${CURSES})
 
 install(TARGETS nlehack DESTINATION ${BINDIR})
-
-# TODO check that files are first removed
 install(DIRECTORY DESTINATION ${VARDIR})
 install(DIRECTORY DESTINATION ${VARDIR}/save)
 install(DIRECTORY DESTINATION ${INSTDIR})
