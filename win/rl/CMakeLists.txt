@@ -19,28 +19,40 @@ add_dependencies(winrl message_generated nledat)
 # NOTE: Below here should all be optional (but required for the python
 # interface)
 
-add_library(helper EXCLUDE_FROM_ALL helper.cc)
+add_subdirectory(${nle_SOURCE_DIR}/third_party/pybind11 pybind11)
+# find_package(pybind11)
+
+# pybind11_add_module(helper EXCLUDE_FROM_ALL helper.cc ${NLE_SRC}/monst.c
+# ${NLE_SRC}/decl.c ${NLE_SRC}/drawing.c)
+pybind11_add_module(helper EXCLUDE_FROM_ALL helper.cc)
 set_target_properties(helper PROPERTIES CXX_STANDARD 14)
 
-# TODO(NN): We should probably be more defensive here (and check
-# Python_Interpreter_FOUND)
-find_package(Python COMPONENTS Interpreter Development)
+target_include_directories(helper PRIVATE ${NLE_INC} ${NLE_INC_GEN})
+# This is a little overkill. We technically only need monst, decl, and drawing
+# target_link_libraries(helper PRIVATE $<TARGET_OBJECTS:nlehack>)
 
-execute_process(
-  COMMAND ${Python_EXECUTABLE} -c
-          "import pybind11; print(pybind11.get_include(), end='')"
-  OUTPUT_VARIABLE PYBIND11_INCLUDE_DIRS)
-message(STATUS "Pybind include dirs: ${PYBIND11_INCLUDE_DIRS}")
+add_library(monst OBJECT ${NLE_SRC}/monst.c)
+target_include_directories(monst PRIVATE ${NLE_INC} ${NLE_INC_GEN})
+add_library(decl OBJECT ${NLE_SRC}/decl.c)
+target_include_directories(decl PRIVATE ${NLE_INC} ${NLE_INC_GEN})
+add_library(drawing OBJECT ${NLE_SRC}/drawing.c)
+target_include_directories(drawing PRIVATE ${NLE_INC} ${NLE_INC_GEN})
 
-target_include_directories(
-  helper PRIVATE ${NLE_INC} ${NLE_INC_GEN} ${PYBIND11_INCLUDE_DIRS}
-                 ${Python_INCLUDE_DIRS})
+target_link_libraries(helper PUBLIC monst decl drawing)
 
-# NOTE: This makes this build not quite out-of-source :(
+# NOTE: This makes this build not quite out-of-source.
 add_custom_target(
   message_generated_py
-  DEPENDS helper
-  COMMAND flatc -o ${nle_SOURCE_DIR}/nle/fbs --python
-          ${nle_SOURCE_DIR}/win/rl/message.fbs)
+  COMMAND flatc -o ${nle_SOURCE_DIR}/win/rl --python
+          ${nle_SOURCE_DIR}/win/rl/message.fbs
+  COMMAND cp -rf ${nle_SOURCE_DIR}/win/rl/nle/fbs ${nle_SOURCE_DIR}/nle/fbs)
 
-add_custom_target(fbs DEPENDS helper)
+add_custom_target(fbs DEPENDS helper message_generated_py)
+set_target_properties(fbs PROPERTIES EXCLUDE_FROM_ALL True)
+
+# NOTE: Also dirtying source here.
+install(
+  TARGETS helper
+  RUNTIME DESTINATION ${nle_SOURCE_DIR}/nle/nethack
+  ARCHIVE DESTINATION ${nle_SOURCE_DIR}/nle/nethack
+  LIBRARY DESTINATION ${nle_SOURCE_DIR}/nle/nethack)
