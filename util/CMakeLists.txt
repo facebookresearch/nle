@@ -21,12 +21,14 @@ set(DLB_SRC dlb_main.c ${NLE_SRC}/dlb.c panic.c ${NLE_SRC}/alloc.c)
 file(MAKE_DIRECTORY ${NLE_INC_GEN})
 file(MAKE_DIRECTORY ${NLE_DAT_GEN})
 
+# TODO(NN): this should be target_include_directories
 include_directories(${nle_SOURCE_DIR}/include ${NLE_INC_GEN} ${NLE_UTIL_GEN})
 
 add_executable(makedefs ${MAKEDEFS_SRC})
 add_executable(dgn_comp ${DGN_COMP_SRC})
 add_executable(lev_comp ${LEV_COMP_SRC})
 add_executable(dlb ${DLB_SRC})
+add_executable(recover recover.c)
 
 add_custom_command(
   DEPENDS makedefs
@@ -79,6 +81,4 @@ add_custom_target(makedefs_headers DEPENDS ${MAKEDEFS_HEADERS})
 add_dependencies(lev_comp makedefs_headers)
 add_dependencies(dgn_comp makedefs_headers)
 
-# TODO(NN): implement target for recover
-#
-# install(FILES recover DESTINATION ${INSTDIR})
+install(FILES ${NLE_UTIL_GEN}/recover DESTINATION ${INSTDIR})
