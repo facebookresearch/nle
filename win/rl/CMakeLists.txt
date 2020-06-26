@@ -36,7 +36,7 @@ target_include_directories(
   helper PRIVATE ${NLE_INC} ${NLE_INC_GEN} ${PYBIND11_INCLUDE_DIRS}
                  ${Python_INCLUDE_DIRS})
 
-# NOTE: THis makes this build not quite out-of-source :(
+# NOTE: This makes this build not quite out-of-source :(
 add_custom_target(
   message_generated_py
   DEPENDS helper

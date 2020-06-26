@@ -49,7 +49,7 @@ HACKDIR = os.getenv("HACKDIR")
 
 if HACKDIR is None:
     # Somewhat HACKy way of getting HACKDIR from installed nethack.
-    script = shutil.which("nethack")
+    script = shutil.which("nlehack")
     if script is None:
         raise FileNotFoundError("Didn't find nethack in path. Is it installed?")
     with open(script, "r") as f:
@@ -135,7 +135,7 @@ class NetHack:
         self._finalizers = []
 
         if not os.path.exists(HACKDIR) or not os.path.exists(
-            os.path.join(HACKDIR, "nethack")
+            os.path.join(HACKDIR, "nlehack")
         ):
             raise FileNotFoundError("Couldn't find NetHack installation.")
 

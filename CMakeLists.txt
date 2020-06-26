@@ -59,7 +59,7 @@ find_library(ZMQ zmq)
 find_library(CURSES ncurses)
 target_link_libraries(nlehack PRIVATE ${ZMQ} ${CURSES} winrl)
 
-install(TARGETS nlehack DESTINATION ${BINDIR})
+install(TARGETS nlehack)
 install(DIRECTORY DESTINATION ${VARDIR})
 install(DIRECTORY DESTINATION ${VARDIR}/save)
 install(DIRECTORY DESTINATION ${INSTDIR})

@@ -43,6 +43,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
             "cmake",
             src_path,
             "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY={}".format(out_path),
+            "-DCMAKE_INSTALL_PREFIX={}".format(sys.base_prefix),
         ]
         subprocess.check_call(cmake_cmd, cwd=self.build_temp)
         subprocess.check_call(["make", "-j"], cwd=self.build_temp)
@@ -68,28 +69,6 @@ def copy_fbs():
         shutil.rmtree(target_path)
     print("Copying {} to {}".format(source_path, target_path))
     shutil.copytree(source_path, target_path)
-
-
-class get_pybind_include(object):
-    """Helper class to determine the pybind11 include path
-
-    The purpose of this class is to postpone importing pybind11
-    until it is actually installed, so that the ``get_include()``
-    method can be invoked. """
-
-    def __init__(self, user=False):
-        self.user = user
-
-    def __str__(self):
-        import pybind11
-
-        return pybind11.get_include(self.user)
-
-
-ext_modules = [
-    setuptools.Extension("nlehack", sources=[]),
-    setuptools.Extension("nle.nethack.helper", sources=[]),
-]
 
 
 class Develop(setuptools.command.develop.develop):
