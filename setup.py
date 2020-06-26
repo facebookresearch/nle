@@ -37,18 +37,17 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         os.makedirs(self.build_temp, exist_ok=True)
 
         src_path = pathlib.Path(__file__).parent.resolve()
-        build_path = pathlib.Path(self.get_ext_fullpath(ext.name)).parent.resolve()
+        out_path = pathlib.Path(self.get_ext_fullpath(ext.name)).parent.resolve()
 
         cmake_cmd = [
             "cmake",
             src_path,
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(sys.executable),
+            "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY={}".format(out_path),
         ]
-        print("SRC_PATH:", src_path)
-        print("BUILD_PATH:", build_path)
         subprocess.check_call(cmake_cmd, cwd=self.build_temp)
-        subprocess.check_call(["make"], cwd=self.build_temp)
+        subprocess.check_call(["make", "-j"], cwd=self.build_temp)
         subprocess.check_call(["make", "fbs"], cwd=self.build_temp)
+        subprocess.check_call(["make", "install"], cwd=self.build_temp)
 
 
 def build_fbs():

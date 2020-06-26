@@ -45,21 +45,21 @@ add_custom_command(
   # HACK: due to makedefs being stubborn about in-source build
   COMMAND mv ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
   COMMAND rm ${NLE_DAT}/options # Since we don't need this here yet
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/src)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/util)
 
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/onames.h
   COMMAND $<TARGET_FILE:makedefs> -o
   COMMAND mv ${NLE_INC}/onames.h ${NLE_INC_GEN}/onames.h
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/src)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/util)
 
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/pm.h
   COMMAND $<TARGET_FILE:makedefs> -p
   COMMAND mv ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/src)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/util)
 
 add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/dgn_parser.c ${NLE_UTIL_GEN}/dgn_comp.h
@@ -83,10 +83,10 @@ add_custom_command(
   COMMAND flex -o${NLE_UTIL_GEN}/lev_scanner.c ${NLE_UTIL}/lev_comp.l
   DEPENDS ${NLE_UTIL}/lev_comp.l)
 
-add_custom_target(nleutil DEPENDS ${MAKEDEFS_HEADERS})
+add_custom_target(nleutil DEPENDS ${MAKEDEFS_HEADERS} recover)
 
 # NOTE: nleutil is dependent on these two
 add_dependencies(lev_comp nleutil)
 add_dependencies(dgn_comp nleutil)
 
-install(FILES ${NLE_UTIL_GEN}/recover DESTINATION ${INSTDIR})
+install(TARGETS recover DESTINATION ${INSTDIR})

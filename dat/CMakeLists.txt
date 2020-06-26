@@ -33,6 +33,7 @@ add_custom_command(
           ${NLE_DAT}/epitaph.txt
   OUTPUT bogusmon epitaph engrave
   COMMAND $<TARGET_FILE:makedefs> ARGS -s
+  # HACK see ../util/CMakeLists.txt
   COMMAND mv bogusmon engrave epitaph ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
@@ -40,7 +41,6 @@ add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/data.base
   OUTPUT data
   COMMAND $<TARGET_FILE:makedefs> -d
-  # HACK see ../util/CMakeLists.txt
   COMMAND mv data ${NLE_DAT_GEN}/
   WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
