@@ -35,7 +35,7 @@ add_custom_command(
   COMMAND $<TARGET_FILE:makedefs> ARGS -s
   COMMAND mv ${NLE_DAT}/bogusmon ${NLE_DAT}/engrave ${NLE_DAT}/epitaph
           ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ../)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/data.base
@@ -43,28 +43,28 @@ add_custom_command(
   COMMAND $<TARGET_FILE:makedefs> -d
   # HACK see ../util/CMakeLists.txt
   COMMAND mv ${NLE_DAT}/data ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ../)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/rumors.tru ${NLE_DAT}/rumors.fal
   OUTPUT rumors
   COMMAND $<TARGET_FILE:makedefs> -r
   COMMAND mv ${NLE_DAT}/rumors ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ../)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/quest.txt
   OUTPUT quest.dat
   COMMAND $<TARGET_FILE:makedefs> -q
   COMMAND mv ${NLE_DAT}/quest.dat ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ../)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
 add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/oracles.txt
   OUTPUT oracles
   COMMAND $<TARGET_FILE:makedefs> -h
   COMMAND mv ${NLE_DAT}/oracles ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ../)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
 add_custom_command(
   DEPENDS makedefs
@@ -72,15 +72,15 @@ add_custom_command(
   COMMAND $<TARGET_FILE:makedefs> -v
   COMMAND mv ${NLE_DAT}/options ${NLE_DAT_GEN}/
   COMMAND rm ${NLE_INC}/date.h # We don't need this here
-  WORKING_DIRECTORY ../)
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
 add_custom_command(
   DEPENDS makedefs dgn_comp ${NLE_DAT}/dungeon.def
-  OUTPUT dungeon.pdf dungeon
+  OUTPUT dungeon dungeon.pdf
   COMMAND $<TARGET_FILE:makedefs> -e
-  COMMAND $<TARGET_FILE:dgn_comp> ${NLE_DAT}/dungeon.pdf
-  COMMAND mv ${NLE_DAT}/dungeon.pdf ${NLE_DAT}/dungeon ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ../)
+  COMMAND $<TARGET_FILE:dgn_comp> dungeon.pdf
+  COMMAND mv dungeon dungeon.pdf ${NLE_DAT_GEN}/
+  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
 
 add_custom_command(
   DEPENDS lev_comp

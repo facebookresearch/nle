@@ -14,7 +14,7 @@ target_include_directories(
 
 find_library(FLATBUFFERS flatbuffers)
 target_link_libraries(winrl PRIVATE ${FLATBUFFERS})
-add_dependencies(winrl message_generated)
+add_dependencies(winrl message_generated nledat)
 
 # NOTE: Below here should all be optional (but required for the python
 # interface)
