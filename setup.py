@@ -16,53 +16,39 @@
 #          Do™) because `make install` is not robust against it on all systems,
 #          and this is an easier patch towards enabling less annoying
 #          development cycles.
-import sysconfig
 import shutil
 import os
+import pathlib
 import sys
 import subprocess
+
 import setuptools
 import setuptools.command.build_ext
 import setuptools.command.develop
 import setuptools.command.install
-import distutils.command.build
 
 
-def make_install_nethack():
-    if sys.platform == "darwin":
-        hints = "hints/macosx-nle"
-    else:
-        hints = "hints/linux-nle"
-    setupcmd = ["sh", "setup.sh", hints]
+class CMakeBuild(setuptools.command.build_ext.build_ext):
+    def run(self):
+        for ext in self.extensions:
+            self.build_extension(ext)
 
-    if subprocess.call(setupcmd, cwd="sys/unix") != 0:
-        print("Failed to generate NetHack makefiles with {}".format(hints))
-        sys.exit(-1)
+    def build_extension(self, ext):
+        os.makedirs(self.build_temp, exist_ok=True)
 
-    print("Generated NetHack makefiles with {}.".format(hints))
+        src_path = pathlib.Path(__file__).parent.resolve()
+        build_path = pathlib.Path(self.get_ext_fullpath(ext.name)).parent.resolve()
 
-    build_env = os.environ.copy()
-
-    if "PREFIX" not in build_env:
-        build_env["PREFIX"] = sysconfig.get_config_var("base")
-
-    cpath = build_env.get("CPATH", "").split(":")
-    cpath.append(os.path.join(build_env["PREFIX"], "include"))
-    build_env["CPATH"] = ":".join(cpath)
-
-    makecmd = ["make"]
-    if os.getenv("NLE_BUILD_FASTER") is not None:
-        makecmd += ["-j"]
-
-    if subprocess.call(makecmd, env=build_env) != 0:
-        print("Failed to build NetHack")
-        sys.exit(-1)
-    print("Successfully built NetHack")
-
-    if subprocess.call(["make", "install"], env=build_env) != 0:
-        print("Failed to install NetHack")
-        sys.exit(-1)
-    print("Successfully installed NetHack")
+        cmake_cmd = [
+            "cmake",
+            src_path,
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(sys.executable),
+        ]
+        print("SRC_PATH:", src_path)
+        print("BUILD_PATH:", build_path)
+        subprocess.check_call(cmake_cmd, cwd=self.build_temp)
+        subprocess.check_call(["make"], cwd=self.build_temp)
+        subprocess.check_call(["make", "fbs"], cwd=self.build_temp)
 
 
 def build_fbs():
@@ -102,72 +88,17 @@ class get_pybind_include(object):
 
 
 ext_modules = [
-    setuptools.Extension(
-        "nle.nethack.helper",
-        ["win/rl/helper.cc"],
-        include_dirs=[
-            # Path to pybind11 headers
-            get_pybind_include(),
-            get_pybind_include(user=True),
-            "include",
-        ],
-        language="c++",
-        # Warning: This should stay in sync with the Makefiles, otherwise
-        # off-by-one errors might happen. E.g. there's a MAIL deamon only
-        # if the MAIL macro is set.
-        extra_compile_args=["-DNOCLIPPING", "-DNOMAIL", "-DNOTPARMDECL"],
-        # This requires `make`ing NetHack before.
-        extra_link_args=["src/monst.o", "src/decl.o", "src/drawing.o"],
-    )
+    setuptools.Extension("nlehack", sources=[]),
+    setuptools.Extension("nle.nethack.helper", sources=[]),
 ]
-
-
-class BuildExt(setuptools.command.build_ext.build_ext):
-    """A custom build extension for adding compiler-specific options."""
-
-    c_opts = {"msvc": ["/EHsc"], "unix": []}
-
-    if sys.platform == "darwin":
-        c_opts["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.14"]
-
-    def build_extensions(self):
-        ct = self.compiler.compiler_type
-        opts = self.c_opts.get(ct, [])
-        if ct == "unix":
-            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
-            opts.append("-std=c++14")
-            opts.append("-fvisibility=hidden")
-        elif ct == "msvc":
-            opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
-        for ext in self.extensions:
-            ext.extra_compile_args += opts
-            if sys.platform == "darwin":
-                ext.extra_link_args += ["-stdlib=libc++"]
-
-        super().build_extensions()
-
-
-class Build(distutils.command.build.build):
-    """Customized distutils build command."""
-
-    def run(self):
-        self.execute(make_install_nethack, [], msg="Building and installing NetHack...")
-        super().run()
-
-
-class Install(setuptools.command.install.install):
-    """Customized setuptools develop command."""
-
-    def run(self):
-        self.execute(make_install_nethack, [], msg="Building and installing NetHack...")
-        super().run()
 
 
 class Develop(setuptools.command.develop.develop):
     """Customized setuptools develop command."""
 
     def run(self):
-        self.execute(make_install_nethack, [], msg="Building and installing NetHack...")
+        self.execute(build_fbs, args=[])
+        self.execute(copy_fbs, args=[])
         super().run()
 
 
@@ -257,13 +188,8 @@ if __name__ == "__main__":
         license="NetHack General Public License",
         entry_points=entry_points,
         packages=packages,
-        ext_modules=ext_modules,
-        cmdclass={
-            "build": Build,
-            "build_ext": BuildExt,
-            "install": Install,
-            "develop": Develop,
-        },
+        ext_modules=[setuptools.Extension("nlehack", sources=[])],
+        cmdclass={"build_ext": CMakeBuild, "develop": Develop},
         setup_requires=["pybind11>=2.2"],
         install_requires=[
             "pybind11>=2.2",
