@@ -1,0 +1,83 @@
+---
+name: Build & deploy Docker images
+
+on:
+  schedule:
+    - cron: "0 6,18 * * *"
+  push:
+    paths:
+      - "docker/Dockerfile*"
+    tags-ignore:
+      # We ignore all tags, since paths filters don't work for tags events, and
+      # we use releases instead.
+      - "*"
+    branches:
+      - master
+  release:
+    types: [released]
+
+jobs:
+  bionic:
+    name: Build and publish bionic image
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build and push image
+      uses: docker/build-push-action@v1
+      with:
+        username: edran
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: fairnle/nle
+        dockerfile: docker/Dockerfile
+        tags: dev
+        tag_with_sha: true
+        add_git_labels: true
+    - name: Check version matches release tag
+      if: github.event_name == 'release' && github.event.action == 'released'
+      run: |
+        echo "v$(cat version.txt)"
+        echo "${{ github.event.release.tag_name }}"
+        [[ "${{ github.event.release.tag_name }}" == "v$(cat version.txt)" ]]
+    - name: Push version tag
+      if: github.event_name == 'release' && github.event.action == 'released'
+      uses: docker/build-push-action@v1
+      with:
+        username: edran
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: fairnle/nle
+        dockerfile: docker/Dockerfile
+        tags: ${{ github.event.release.tag_name }},stable
+        add_git_labels: true
+
+  xenial:
+    name: Build and publish xenial image
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build and push image
+      uses: docker/build-push-action@v1
+      with:
+        username: edran
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: fairnle/nle-xenial
+        dockerfile: docker/Dockerfile
+        tags: dev
+        tag_with_sha: true
+        add_git_labels: true
+    - name: Check version matches release tag
+      if: github.event_name == 'release' && github.event.action == 'released'
+      run: |
+        echo "v$(cat version.txt)"
+        echo "${{ github.event.release.tag_name }}"
+        [[ "${{ github.event.release.tag_name }}" == "v$(cat version.txt)" ]]
+    - name: Build version and stable tag
+      if: github.event_name == 'release' && github.event.action == 'released'
+      uses: docker/build-push-action@v1
+      with:
+        username: edran
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: fairnle/nle-xenial
+        dockerfile: docker/Dockerfile-xenial
+        tags: ${{ github.event.release.tag_name }}
+        add_git_labels: true
+...
