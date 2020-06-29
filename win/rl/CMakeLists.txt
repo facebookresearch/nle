@@ -49,14 +49,10 @@ add_custom_target(
   message_generated_py
   COMMAND flatc -o ${nle_SOURCE_DIR}/win/rl --python
           ${nle_SOURCE_DIR}/win/rl/message.fbs
-  COMMAND cp -rf ${nle_SOURCE_DIR}/win/rl/nle/fbs ${nle_SOURCE_DIR}/nle/fbs)
+  COMMAND cp -rf ${nle_SOURCE_DIR}/win/rl/nle/fbs ${PYTHON_SRC_PARENT}/nle)
 
 add_custom_target(fbs DEPENDS helper message_generated_py)
 set_target_properties(fbs PROPERTIES EXCLUDE_FROM_ALL True)
-
-set(PYTHON_SRC_PARENT
-    ${nle_SOURCE_DIR}
-    CACHE STRING "Directory containing the nle package files")
 
 # NOTE: Also dirtying source here.
 install(

@@ -10,13 +10,6 @@
 #  NLE_BUILD_RELEASE
 #    If set, builds wheel (s)dist such as to prepare it for upload to PyPI.
 #
-#  NLE_BUILD_FASTER
-#    If set, runs `make -j` instead of `make`, when building NetHack.
-#    NOTE: we don't make use of MAKEFLAGS (which would be The Right Thing To
-#          Do™) because `make install` is not robust against it on all systems,
-#          and this is an easier patch towards enabling less annoying
-#          development cycles.
-import shutil
 import os
 import pathlib
 import sys
@@ -24,8 +17,6 @@ import subprocess
 
 import setuptools
 import setuptools.command.build_ext
-import setuptools.command.develop
-import setuptools.command.install
 
 
 class CMakeBuild(setuptools.command.build_ext.build_ext):
@@ -37,6 +28,8 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         os.makedirs(self.build_temp, exist_ok=True)
 
         src_path = pathlib.Path(__file__).parent.resolve()
+        # self.build_lib is also a good option, but it doesn't play nicely with
+        # develop mode.
         out_path = pathlib.Path(self.get_ext_fullpath(ext.name)).parent.resolve()
 
         cmake_cmd = [
@@ -51,43 +44,14 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         subprocess.check_call(["make", "install"], cwd=self.build_temp)
 
 
-def build_fbs():
-    source_path = "win/rl"
-    cmd = ["flatc", "-o", "win/rl", "--python", "win/rl/message.fbs"]
-    err = subprocess.call(cmd)
-    if err != 0:
-        print("Error while building fbs python interface: {}".format(err))
-        sys.exit(-1)
-    print("Successfully built fbs files from {}".format(source_path))
-
-
-def copy_fbs():
-    source_path = "win/rl/nle/fbs"
-    target_path = "nle/fbs"
-    if os.path.exists(target_path):
-        print("Found existing {} -- Removing old package".format(target_path))
-        shutil.rmtree(target_path)
-    print("Copying {} to {}".format(source_path, target_path))
-    shutil.copytree(source_path, target_path)
-
-
-class Develop(setuptools.command.develop.develop):
-    """Customized setuptools develop command."""
-
-    def run(self):
-        self.execute(build_fbs, args=[])
-        self.execute(copy_fbs, args=[])
-        super().run()
-
-
 packages = [
     "nle",
     "nle.env",
     "nle.nethack",
-    "nle.fbs",
     "nle.agent",
     "nle.scripts",
     "nle.tests",
+    # NOTE: nle.fbs will be created at build time
 ]
 
 entry_points = {
@@ -140,15 +104,6 @@ if __name__ == "__main__":
         f.write("__version__ = '{}'\n".format(version))
         f.write("git_version = {}\n".format(repr(sha)))
 
-    # nle.fbs is declared as package, and it is hard to make sure that we
-    # override all behaviour of pip [build_py|install|develop|...], without
-    # hitting corner cases. So we _always_ build the python fbs files and copy
-    # them into nle/fbs. This does mean that effectively setup.py now depends
-    # on`flatc`, however this is not a terrible constraint, as 95% of operations
-    # already needed it.
-    build_fbs()
-    copy_fbs()
-
     with open("README.md") as f:
         long_description = f.read()
 
@@ -167,7 +122,7 @@ if __name__ == "__main__":
         entry_points=entry_points,
         packages=packages,
         ext_modules=[setuptools.Extension("nlehack", sources=[])],
-        cmdclass={"build_ext": CMakeBuild, "develop": Develop},
+        cmdclass={"build_ext": CMakeBuild},
         setup_requires=["pybind11>=2.2"],
         install_requires=[
             "pybind11>=2.2",

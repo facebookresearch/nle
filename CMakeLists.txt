@@ -3,11 +3,16 @@ file(STRINGS "version.txt" NLE_VERSION)
 project(nle VERSION ${NLE_VERSION})
 message(STATUS "Building nle backend version: ${NLE_VERSION}")
 
-set(INSTALL_BASE "$ENV{HOME}")
+# This is set to build_lib in build_ext, since we use it to export the python
+# interfaces into the right package.
+set(PYTHON_SRC_PARENT
+    ${nle_SOURCE_DIR}
+    CACHE STRING "Directory containing the nle package files")
 
 # TODO(NN): we should be at least XDG compliant
-# TODO(NN): make it a separate dir from standard nethack's (e.g. nledir)
-set(HACKDIR ${INSTALL_BASE}/nethackdir)
+set(HACKDIR
+    "$ENV{HOME}/nethackdir"
+    CACHE STRING "Configuration files for nethack")
 
 # Playground vars
 set(VARDIR ${HACKDIR})
