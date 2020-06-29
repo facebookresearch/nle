@@ -13,7 +13,8 @@ target_include_directories(
           /usr/local/include) # flatbuffers.h
 
 find_library(FLATBUFFERS flatbuffers)
-target_link_libraries(winrl PRIVATE ${FLATBUFFERS})
+find_library(ZMQ zmq)
+target_link_libraries(winrl PRIVATE ${FLATBUFFERS} ${ZMQ})
 add_dependencies(winrl message_generated nledat)
 
 # NOTE: Below here should all be optional (but required for the python
@@ -59,4 +60,4 @@ install(
   TARGETS helper
   RUNTIME DESTINATION ${PYTHON_SRC_PARENT}/nle/nethack
   ARCHIVE DESTINATION ${PYTHON_SRC_PARENT}/nle/nethack
-  LIBRARY DESTINATION ${PYTHON_SRC_PARENT}/nle/nethack)
+  LIBRARY DESTINATION ${PYTHON_SRC_PARENT}/nle/nethack OPTIONAL)

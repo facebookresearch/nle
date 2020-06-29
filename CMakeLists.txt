@@ -61,9 +61,8 @@ add_dependencies(nethack nleutil winrl nledat)
 target_include_directories(nethack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN})
 
-find_library(ZMQ zmq)
 find_library(CURSES ncurses)
-target_link_libraries(nethack PRIVATE ${ZMQ} ${CURSES} winrl)
+target_link_libraries(nethack PRIVATE ${CURSES} winrl)
 
 install(TARGETS nethack)
 install(TARGETS nethack DESTINATION ${INSTDIR})
