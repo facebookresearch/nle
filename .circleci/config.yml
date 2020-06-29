@@ -55,7 +55,7 @@ commands:
           command: |
             sudo apt-get install software-properties-common
             sudo apt-get update -y
-            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison
+            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison cmake
 
   make-install-nethack:
     description: Builds and installs nethack (by itself)
