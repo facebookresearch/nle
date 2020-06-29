@@ -1,12 +1,15 @@
 include version.txt
 
+include CmakeLists.txt
 recursive-include dat *
 recursive-include DEVEL *
 recursive-include include *
 recursive-include src *
 recursive-include sys *
 recursive-include util *
-recursive-include win *
+recursive-include win/rl *
+recursive-include win/tty *
+recursive-include third_party *
 
 recursive-exclude build *
 exclude nle/dashboard
