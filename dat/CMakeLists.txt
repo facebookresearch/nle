@@ -1,3 +1,24 @@
+set(VARDATND) # NOTE: this is empty for us
+set(VARDATD
+    bogusmon
+    data
+    engrave
+    epitaph
+    oracles
+    options
+    quest.dat
+    rumors)
+set(VARDAT ${VARDATD} ${VARDATND})
+
+set(DATHELP
+    help
+    hh
+    cmdhelp
+    keyhelp
+    history
+    opthelp
+    wizhelp)
+
 set(SPECIAL_LEVELS
     bigroom.des
     castle.des
@@ -10,7 +31,6 @@ set(SPECIAL_LEVELS
     sokoban.des
     tower.des
     yendor.des)
-list(TRANSFORM SPECIAL_LEVELS PREPEND ${NLE_DAT}/)
 
 set(QUEST_LEVELS
     Arch.des
@@ -26,115 +46,8 @@ set(QUEST_LEVELS
     Tourist.des
     Valkyrie.des
     Wizard.des)
-list(TRANSFORM QUEST_LEVELS PREPEND ${NLE_DAT}/)
 
-add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/bogusmon.txt ${NLE_DAT}/engrave.txt
-          ${NLE_DAT}/epitaph.txt
-  OUTPUT bogusmon epitaph engrave
-  COMMAND $<TARGET_FILE:makedefs> ARGS -s
-  # HACK see ../util/CMakeLists.txt
-  COMMAND mv bogusmon engrave epitaph ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
-
-add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/data.base
-  OUTPUT data
-  COMMAND $<TARGET_FILE:makedefs> -d
-  COMMAND mv data ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
-
-add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/rumors.tru ${NLE_DAT}/rumors.fal
-  OUTPUT rumors
-  COMMAND $<TARGET_FILE:makedefs> -r
-  COMMAND mv rumors ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
-
-add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/quest.txt
-  OUTPUT quest.dat
-  COMMAND $<TARGET_FILE:makedefs> -q
-  COMMAND mv quest.dat ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
-
-add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/oracles.txt
-  OUTPUT oracles
-  COMMAND $<TARGET_FILE:makedefs> -h
-  COMMAND mv oracles ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
-
-add_custom_command(
-  DEPENDS makedefs
-  OUTPUT options
-  COMMAND $<TARGET_FILE:makedefs> -v
-  COMMAND mv options ${NLE_DAT_GEN}/
-  COMMAND rm ${NLE_INC}/date.h # We don't need this here
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
-
-add_custom_command(
-  DEPENDS makedefs dgn_comp ${NLE_DAT}/dungeon.def
-  OUTPUT dungeon dungeon.pdf
-  COMMAND $<TARGET_FILE:makedefs> -e
-  COMMAND $<TARGET_FILE:dgn_comp> dungeon.pdf
-  COMMAND mv dungeon dungeon.pdf ${NLE_DAT_GEN}/
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/dat)
-
-add_custom_command(
-  DEPENDS lev_comp
-  OUTPUT spec_levs
-  COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch spec_levs)
-
-add_custom_command(
-  DEPENDS lev_comp
-  OUTPUT quest_levs
-  COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch quest_levs)
-
-add_custom_command(
-  OUTPUT perm record logfile xlogfile sysconf
-  COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile sysconf)
-
-# NOTE: NetHack normally also generates a shell script at ~bin/nethack, however
-# we likely do not need this, as most users currently have straightforward
-# systems settings. It would be awesome though if someone were to run NLE on
-# some old systems with weird pagers and stuff, at some point, eventually...
-# after we solve AI :)
-
-# NOTE: This is missing *.lev, which gets added later in the install decl
-set(ALL_DAT_OUTPUT
-    bogusmon
-    epitaph
-    engrave
-    data
-    rumors
-    quest.dat
-    oracles
-    options
-    dungeon
-    dungeon.pdf
-    spec_levs
-    quest_levs
-    perm
-    record
-    logfile
-    xlogfile
-    sysconf)
-
-set(ALL_DAT_GEN_OUTPUT ${ALL_DAT_OUTPUT})
-list(TRANSFORM ALL_DAT_GEN_OUTPUT PREPEND ${NLE_DAT_GEN}/)
-
-set(ALL_DAT_NOTGEN
-    license
-    symbols
-    help
-    hh
-    cmdhelp
-    history
-    opthelp
-    wizhelp)
+set(DATNODLB ${VARDATND} license symbols)
 
 # TODO(NN): try to glob .lev automatically
 #
@@ -144,8 +57,8 @@ set(ALL_DAT_NOTGEN
 # "*.lev")
 #
 # results in `$HACKDIR/dat/*.lev` due to CWD. I've tried to get it to work, but
-# given up after a couple of hours :(
-set(ALL_DAT_GEN_LEV
+# given up after a couple of hours.
+set(LEVS_GEN
     Arc-fila.lev
     Arc-filb.lev
     Arc-goal.lev
@@ -266,10 +179,142 @@ set(ALL_DAT_GEN_LEV
     wizard1.lev
     wizard2.lev
     wizard3.lev)
-list(TRANSFORM ALL_DAT_GEN_LEV PREPEND ${NLE_DAT_GEN}/)
 
-add_custom_target(nledat ALL DEPENDS ${ALL_DAT_OUTPUT} ${ALL_DAT_NOTGEN})
+# NOTE: *.lev files will be added later
+set(DATDLB ${DATHELP} dungeon tribute ${VARDATD})
 
-install(FILES ${ALL_DAT_GEN_OUTPUT} ${ALL_DAT_GEN_LEV} DESTINATION ${INSTDIR})
+set(DAT ${DATNODLB} ${DATDLB})
 
+# NOTE: This is missing *.lev, which gets added later in the install decl
+set(NLE_DAT_OUTPUT
+    bogusmon
+    epitaph
+    engrave
+    data
+    rumors
+    quest.dat
+    oracles
+    options
+    dungeon
+    dungeon.pdf
+    nhdat)
+
+set(ALL_DAT_NOTGEN
+    license
+    symbols
+    help
+    hh
+    cmdhelp
+    history
+    opthelp
+    wizhelp)
+
+# We transform these as we use them later
+list(TRANSFORM QUEST_LEVELS PREPEND ${NLE_DAT}/)
+list(TRANSFORM SPECIAL_LEVELS PREPEND ${NLE_DAT}/)
+list(TRANSFORM DAT PREPEND ${NLE_DAT}/)
+list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT_GEN}/)
+
+set(NLE_DAT_GEN_OUTPUT
+    ${NLE_DAT_OUTPUT}
+    spec_levs
+    quest_levs
+    perm
+    record
+    logfile
+    xlogfile
+    sysconf)
+list(TRANSFORM NLE_DAT_GEN_OUTPUT PREPEND ${NLE_DAT_GEN}/)
+
+add_custom_command(
+  DEPENDS makedefs ${NLE_DAT}/bogusmon.txt ${NLE_DAT}/engrave.txt
+          ${NLE_DAT}/epitaph.txt
+  OUTPUT ${NLE_DAT}/bogusmon ${NLE_DAT}/epitaph ${NLE_DAT}/engrave
+  COMMAND $<TARGET_FILE:makedefs> ARGS -s
+  # HACK see ../util/CMakeLists.txt
+  WORKING_DIRECTORY ${NLE_DAT})
+
+add_custom_command(
+  DEPENDS makedefs ${NLE_DAT}/data.base
+  OUTPUT ${NLE_DAT}/data
+  COMMAND $<TARGET_FILE:makedefs> -d
+  WORKING_DIRECTORY ${NLE_DAT})
+
+add_custom_command(
+  DEPENDS makedefs ${NLE_DAT}/rumors.tru ${NLE_DAT}/rumors.fal
+  OUTPUT ${NLE_DAT}/rumors
+  COMMAND $<TARGET_FILE:makedefs> -r
+  WORKING_DIRECTORY ${NLE_DAT})
+
+add_custom_command(
+  DEPENDS makedefs ${NLE_DAT}/quest.txt
+  OUTPUT ${NLE_DAT}/quest.dat
+  COMMAND $<TARGET_FILE:makedefs> -q
+  WORKING_DIRECTORY ${NLE_DAT})
+
+add_custom_command(
+  DEPENDS makedefs ${NLE_DAT}/oracles.txt
+  OUTPUT ${NLE_DAT}/oracles
+  COMMAND $<TARGET_FILE:makedefs> -h
+  WORKING_DIRECTORY ${NLE_DAT})
+
+# HACK: depends on date.h to avoid race wrt. the rm command
+add_custom_command(
+  DEPENDS makedefs ${NLE_INC_GEN}/date.h
+  OUTPUT ${NLE_DAT}/options
+  COMMAND $<TARGET_FILE:makedefs> -v
+  COMMAND rm ${NLE_INC}/date.h
+  WORKING_DIRECTORY ${NLE_DAT})
+
+add_custom_command(
+  DEPENDS makedefs dgn_comp ${NLE_DAT}/dungeon.def
+  OUTPUT ${NLE_DAT}/dungeon ${NLE_DAT}/dungeon.pdf
+  COMMAND $<TARGET_FILE:makedefs> -e
+  COMMAND $<TARGET_FILE:dgn_comp> dungeon.pdf
+  WORKING_DIRECTORY ${NLE_DAT})
+
+add_custom_command(
+  DEPENDS lev_comp
+  OUTPUT spec_levs
+  COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
+  COMMAND ${CMAKE_COMMAND} -E touch spec_levs)
+
+add_custom_command(
+  DEPENDS lev_comp
+  OUTPUT quest_levs
+  COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS}
+  COMMAND ${CMAKE_COMMAND} -E touch quest_levs)
+
+add_custom_command(
+  OUTPUT perm record logfile xlogfile sysconf
+  COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile sysconf)
+
+# NOTE: originally this only depended on options, however that's not quite
+# right, as dlb needs to tar generated levels.
+#
+# We also assume that dat/options contains librarian (since we build with -DDLB)
+add_custom_command(
+  # originally this (technically) only depended on options
+  DEPENDS dlb options ${DATDLB}
+  OUTPUT ${NLE_DAT}/nhdat
+  COMMAND LC_ALL=C $<TARGET_FILE:dlb> cf nhdat ${DATDLB}
+  WORKING_DIRECTORY ${NLE_DAT})
+
+set(NLE_DAT_OUTPUT_MOVED ${NLE_DAT_OUTPUT})
+list(TRANSFORM NLE_DAT_OUTPUT_MOVED PREPEND ${NLE_DAT_GEN}/)
+add_custom_command(
+  DEPENDS ${NLE_DAT}/nhdat
+  OUTPUT ${NLE_DAT_OUTPUT_MOVED}
+  COMMAND mv ${NLE_DAT_OUTPUT} ${NLE_DAT_GEN}
+  WORKING_DIRECTORY ${NLE_DAT})
+
+add_custom_target(nledat ALL DEPENDS ${NLE_DAT_GEN_OUTPUT} ${ALL_DAT_NOTGEN})
+
+install(FILES ${NLE_DAT_GEN_OUTPUT} ${LEVS_GEN} DESTINATION ${INSTDIR})
 install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR})
+
+# NOTE: NetHack normally also generates a shell script at ~bin/nethack, however
+# we likely do not need this, as most users currently have straightforward
+# systems settings. It would be awesome though if someone were to run NLE on
+# some old systems with weird pagers and stuff, at some point, eventually...
+# after we solve AI :)

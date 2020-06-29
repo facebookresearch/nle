@@ -61,6 +61,8 @@ find_library(CURSES ncurses)
 target_link_libraries(nethack PRIVATE ${ZMQ} ${CURSES} winrl)
 
 install(TARGETS nethack)
+install(TARGETS nethack DESTINATION ${INSTDIR})
+
 install(DIRECTORY DESTINATION ${VARDIR})
 install(DIRECTORY DESTINATION ${VARDIR}/save)
 install(DIRECTORY DESTINATION ${INSTDIR})
