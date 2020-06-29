@@ -45,24 +45,9 @@ NETHACKOPTIONS = [
     "pickup_burden:unencumbered",
 ]
 
-HACKDIR = os.getenv("HACKDIR")
-
-if HACKDIR is None:
-    # Somewhat HACKy way of getting HACKDIR from installed nethack.
-    script = shutil.which("nlehack")
-    if script is None:
-        raise FileNotFoundError("Didn't find nethack in path. Is it installed?")
-    with open(script, "r") as f:
-        while True:
-            line = f.readline()
-            if not line:
-                raise ValueError("Could not determine HACKDIR from installed nethack")
-            if line.startswith("HACKDIR="):
-                HACKDIR = line[8:-1]  # Exclude newline.
-                break
-
-
+HACKDIR = os.getenv("HACKDIR", os.path.expanduser("~/nethackdir"))
 EXECUTABLE = os.path.join(HACKDIR, "nethack")
+
 if not os.path.exists(EXECUTABLE):
     raise FileNotFoundError(
         "Couldn't run nethack in %s as file doesn't exist" % EXECUTABLE
@@ -135,7 +120,7 @@ class NetHack:
         self._finalizers = []
 
         if not os.path.exists(HACKDIR) or not os.path.exists(
-            os.path.join(HACKDIR, "nlehack")
+            os.path.join(HACKDIR, "nethack")
         ):
             raise FileNotFoundError("Couldn't find NetHack installation.")
 
