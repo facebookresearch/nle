@@ -28,7 +28,7 @@ jobs:
       run: "python -m pip install -q --upgrade pip wheel"
     - name: Install dependencies
       run: |
-        brew install zeromq flatbuffers
+        brew install zeromq flatbuffers cmake
         sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
           /usr/local/include
     - name: Clone repo
@@ -63,7 +63,7 @@ jobs:
       run: "python -m pip install -q --upgrade pip wheel"
     - name: Install deps
       run: |
-        brew install zeromq flatbuffers
+        brew install zeromq flatbuffers cmake
         sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
           /usr/local/include
     - name: Clone repo

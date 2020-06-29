@@ -30,21 +30,21 @@ with other gym / RL environments.
 
 ## Installation
 
-NLE requires `python>=3.7`, `libzmq`, `flatbuffers`, and some NetHack
-dependencies (e.g. `libncurses`) to be installed and available both when
+NLE requires `python>=3.7`, `cmake>=3.12`, `libzmq`, `flatbuffers`, and some
+NetHack dependencies (e.g. `libncurses`) to be installed and available both when
 building the package, and at runtime.
 
 
 On **MacOS**, one can use `Homebrew` as follows:
 
 ``` bash
-$ brew install ncurses flatbuffers zeromq
+$ brew install ncurses flatbuffers zeromq cmake
 $ sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
      /usr/local/include
 ```
 
-On a plain **Ubuntu 18.04** distribution, `flatbuffers` and other dependencies
-can be installed by doing:
+On a plain **Ubuntu 18.04** distribution, `cmake`, `flatbuffers` and other
+dependencies can be installed by doing:
 
 ```bash
 # zmq, python, and build deps
