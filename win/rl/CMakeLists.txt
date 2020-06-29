@@ -54,9 +54,13 @@ add_custom_target(
 add_custom_target(fbs DEPENDS helper message_generated_py)
 set_target_properties(fbs PROPERTIES EXCLUDE_FROM_ALL True)
 
+set(PYTHON_SRC_PARENT
+    ${nle_SOURCE_DIR}
+    CACHE STRING "Directory containing the nle package files")
+
 # NOTE: Also dirtying source here.
 install(
   TARGETS helper
-  RUNTIME DESTINATION ${nle_SOURCE_DIR}/nle/nethack
-  ARCHIVE DESTINATION ${nle_SOURCE_DIR}/nle/nethack
-  LIBRARY DESTINATION ${nle_SOURCE_DIR}/nle/nethack)
+  RUNTIME DESTINATION ${PYTHON_SRC_PARENT}/nle/nethack
+  ARCHIVE DESTINATION ${PYTHON_SRC_PARENT}/nle/nethack
+  LIBRARY DESTINATION ${PYTHON_SRC_PARENT}/nle/nethack)

@@ -42,11 +42,11 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         cmake_cmd = [
             "cmake",
             src_path,
-            "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY={}".format(out_path),
+            "-DPYTHON_SRC_PARENT={}".format(out_path),
             "-DCMAKE_INSTALL_PREFIX={}".format(sys.base_prefix),
         ]
         subprocess.check_call(cmake_cmd, cwd=self.build_temp)
-        subprocess.check_call(["make", "-j"], cwd=self.build_temp)
+        subprocess.check_call(["make"], cwd=self.build_temp)
         subprocess.check_call(["make", "fbs"], cwd=self.build_temp)
         subprocess.check_call(["make", "install"], cwd=self.build_temp)
 
