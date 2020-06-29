@@ -92,6 +92,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
@@ -101,6 +103,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
@@ -110,6 +114,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
@@ -132,6 +138,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
@@ -152,6 +160,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
