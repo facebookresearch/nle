@@ -6,7 +6,8 @@ message(STATUS "Building nle backend version: ${NLE_VERSION}")
 set(INSTALL_BASE "$ENV{HOME}")
 
 # TODO(NN): we should be at least XDG compliant
-set(HACKDIR ${INSTALL_BASE}/nledir)
+# TODO(NN): make it a separate dir from standard nethack's (e.g. nledir)
+set(HACKDIR ${INSTALL_BASE}/nethackdir)
 
 # Playground vars
 set(VARDIR ${HACKDIR})
@@ -49,17 +50,17 @@ file(
   "sys/unix/unixmain.c"
   "win/tty/*.c")
 
-add_executable(nlehack ${NLEHACK_SRC})
-add_dependencies(nlehack nleutil winrl nledat)
+add_executable(nethack ${NLEHACK_SRC})
+add_dependencies(nethack nleutil winrl nledat)
 
-target_include_directories(nlehack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(nethack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN})
 
 find_library(ZMQ zmq)
 find_library(CURSES ncurses)
-target_link_libraries(nlehack PRIVATE ${ZMQ} ${CURSES} winrl)
+target_link_libraries(nethack PRIVATE ${ZMQ} ${CURSES} winrl)
 
-install(TARGETS nlehack)
+install(TARGETS nethack)
 install(DIRECTORY DESTINATION ${VARDIR})
 install(DIRECTORY DESTINATION ${VARDIR}/save)
 install(DIRECTORY DESTINATION ${INSTDIR})
