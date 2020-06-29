@@ -36,6 +36,9 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
             "cmake",
             src_path,
             "-DPYTHON_SRC_PARENT={}".format(out_path),
+            # NOTE: This makes sure that cmake knows which python it is
+            # compiling against.
+            "-DPYTHON_EXECUTABLE={}".format(sys.executable),
             "-DCMAKE_INSTALL_PREFIX={}".format(sys.base_prefix),
         ]
         subprocess.check_call(cmake_cmd, cwd=self.build_temp)
