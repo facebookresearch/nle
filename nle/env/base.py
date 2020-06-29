@@ -680,9 +680,9 @@ class NLE(gym.Env):
             return
 
         # Quit the game.
-        actions = "#quit\ny"
+        actions = [0x80 | ord("q"), ord("y")]  # M-q y
         for a in actions:
-            response, done, info = self.env.step(ord(a))
+            response, done, info = self.env.step(a)
 
         # Answer final questions.
         response, done, info = self._perform_known_steps(
