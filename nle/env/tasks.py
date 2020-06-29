@@ -28,8 +28,8 @@ class NetHackScore(base.NLE):
 
     Args:
         penalty_mode (str): name of the mode for calculating the time step
-            penalty. Can be ``constant``, ``exp``, ``square``, ``linear``.
-            Defaults to ``constant``.
+            penalty. Can be ``constant``, ``exp``, ``square``, ``linear``, or
+            ``always``. Defaults to ``constant``.
         penalty_step (float): constant applied to amount of frozen steps.
             Defaults to -0.01.
         penalty_time (float): constant applied to amount of frozen steps.
@@ -79,8 +79,10 @@ class NetHackScore(base.NLE):
                 penalty += self._frozen_steps ** 2 * self.penalty_step
             elif self.penalty_mode == "linear":
                 penalty += self._frozen_steps * self.penalty_step
-            else:  # default
+            elif self.penalty_mode == "always":
                 penalty += self.penalty_step
+            else:  # default
+                raise ValueError("Unknown penalty_mode '%s'" % self.penalty_mode)
             penalty += (new_time - old_time) * self.penalty_time
             return penalty
 
@@ -197,9 +199,7 @@ class NetHackGold(NetHackScore):
     The agent will pickup gold automatically by walking on top of it.
     """
 
-    def __init__(
-        self, *args, **kwargs,
-    ):
+    def __init__(self, *args, **kwargs):
         options = kwargs.pop(
             "options",
             (
