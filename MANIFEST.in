@@ -1,6 +1,6 @@
 include version.txt
 
-include CmakeLists.txt
+include CMakeLists.txt
 recursive-include dat *
 recursive-include DEVEL *
 recursive-include include *
