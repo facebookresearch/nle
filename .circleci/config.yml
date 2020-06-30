@@ -74,7 +74,6 @@ commands:
           command: |
             conda activate nle
             pip install . -vv
-            pip install -e .
 
 # -------------------------------------------------------------------------------------
 # Actual jobs
@@ -121,7 +120,8 @@ jobs:
           name: Run NLE tests
           command: |
             conda activate nle
-            python -m pytest nle/tests --basetemp=$HOME/tests_data
+            cd ..
+            python -m pytest project/nle/tests --basetemp=$HOME/tests_data
       - store_artifacts:
           path: /home/circleci/tests_data
           name: nle-tests-data
