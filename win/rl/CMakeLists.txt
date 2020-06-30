@@ -1,21 +1,28 @@
 # TODO(NN): we should rename this to winnle
 add_library(winrl winrl.cc)
 set_target_properties(winrl PROPERTIES CXX_STANDARD 14)
+add_dependencies(winrl message_generated nledat)
 
 add_custom_target(
   message_generated COMMAND flatc -o ${NLE_INC_GEN} --cpp
                             ${nle_SOURCE_DIR}/win/rl/message.fbs)
 
+find_package(ZeroMQ REQUIRED)
+message(STATUS "ZeroMQ include: ${ZeroMQ_INCLUDE_DIR}")
+message(STATUS "ZeroMQ libs: ${ZeroMQ_LIBRARY}")
+
+find_path(FLATBUFFERS_INCLUDE_DIR NAMES flatbuffers/flatbuffers.h)
+find_library(FLATBUFFERS_LIBRARIES NAMES flatbuffers)
+message(STATUS "Flatbuffers include: ${FLATBUFFERS_INCLUDE_DIR}")
+message(STATUS "Flatbuffers libs: ${FLATBUFFERS_LIBRARIES}")
+
 target_include_directories(
   winrl
   PRIVATE ${NLE_INC_GEN} # message_generated.h
           ${NLE_INC} # hack.h
-          /usr/local/include) # flatbuffers.h
+          ${ZeroMQ_INCLUDE_DIR} ${FLATBUFFERS_INCLUDE_DIR})
 
-find_library(FLATBUFFERS flatbuffers)
-find_library(ZMQ zmq)
-target_link_libraries(winrl PRIVATE ${FLATBUFFERS} ${ZMQ})
-add_dependencies(winrl message_generated nledat)
+target_link_libraries(winrl PRIVATE ${FLATBUFFERS_LIBRARIES} ${ZeroMQ_LIBRARY})
 
 # NOTE: Below here should all be optional (but required for the python
 # interface)
