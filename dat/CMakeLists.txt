@@ -310,7 +310,7 @@ add_custom_command(
 
 add_custom_target(nledat ALL DEPENDS ${NLE_DAT_GEN_OUTPUT} ${ALL_DAT_NOTGEN})
 
-install(FILES ${NLE_DAT_GEN_OUTPUT} ${LEVS_GEN} DESTINATION ${INSTDIR})
+install(FILES ${NLE_DAT_GEN_OUTPUT} DESTINATION ${INSTDIR})
 install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR})
 
 # NOTE: NetHack normally also generates a shell script at ~bin/nethack, however
