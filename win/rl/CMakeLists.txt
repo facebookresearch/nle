@@ -7,9 +7,10 @@ add_custom_target(
   message_generated COMMAND flatc -o ${NLE_INC_GEN} --cpp
                             ${nle_SOURCE_DIR}/win/rl/message.fbs)
 
-find_package(ZeroMQ REQUIRED)
-message(STATUS "ZeroMQ include: ${ZeroMQ_INCLUDE_DIR}")
-message(STATUS "ZeroMQ libs: ${ZeroMQ_LIBRARY}")
+find_path(ZMQ_INCLUDE_DIR NAMES zmq.hpp)
+find_library(ZMQ_LIBRARIES NAMES zmq)
+message(STATUS "ZMQ include: ${ZMQ_INCLUDE_DIR}")
+message(STATUS "ZMQ libs: ${ZMQ_LIBRARIES}")
 
 find_path(FLATBUFFERS_INCLUDE_DIR NAMES flatbuffers/flatbuffers.h)
 find_library(FLATBUFFERS_LIBRARIES NAMES flatbuffers)
@@ -20,9 +21,9 @@ target_include_directories(
   winrl
   PRIVATE ${NLE_INC_GEN} # message_generated.h
           ${NLE_INC} # hack.h
-          ${ZeroMQ_INCLUDE_DIR} ${FLATBUFFERS_INCLUDE_DIR})
+          ${ZMQ_INCLUDE_DIR} ${FLATBUFFERS_INCLUDE_DIR})
 
-target_link_libraries(winrl PRIVATE ${FLATBUFFERS_LIBRARIES} ${ZeroMQ_LIBRARY})
+target_link_libraries(winrl PRIVATE ${FLATBUFFERS_LIBRARIES} ${ZMQ_LIBRARIES})
 
 # NOTE: Below here should all be optional (but required for the python
 # interface)
