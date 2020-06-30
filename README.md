@@ -48,10 +48,18 @@ On a plain **Ubuntu 18.04** distribution, `cmake`, `flatbuffers` and other
 dependencies can be installed by doing:
 
 ```bash
-# zmq, python, and build deps
+# zmq, python, and most build deps
 $ sudo apt-get install -y build-essential autoconf libtool pkg-config \
-    python3-dev python3-pip python3-numpy git cmake libncurses5-dev \
+    python3-dev python3-pip python3-numpy git libncurses5-dev \
     libzmq3-dev flex bison
+
+# recent cmake version
+$ wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
+$ sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+$ sudo apt-get update && apt-get --allow-unauthenticated install -y \
+    cmake \
+    kitware-archive-keyring
+
 # building flatbuffers
 $ git clone https://github.com/google/flatbuffers.git
 $ cd flatbuffers
