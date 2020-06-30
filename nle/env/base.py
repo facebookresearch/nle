@@ -632,7 +632,7 @@ class NLE(gym.Env):
         del end_status  # Unused for "score" reward.
         return score - old_score
 
-    def _perform_known_steps(self, response, done, info):
+    def _perform_known_steps(self, response, done, info, exceptions=True):
         while not done:
             if _wait_for_space(response):
                 response, done, info = self.env.step(ASCII_SPACE)
@@ -657,7 +657,11 @@ class NLE(gym.Env):
             else:
                 call_stack = _get_call_stack(response)
                 if b"yn_function" in call_stack or b"getlin" in call_stack:
-                    if b"eat" in msg or b"attack" in msg or b"direction?" in msg:
+                    if exceptions and (
+                        b"eat" in msg or b"attack" in msg or b"direction?" in msg
+                    ):
+                        # Allow agent to select stuff to eat, attack, and to
+                        # select directions.
                         break
                     response, done, info = self.env.step(ASCII_ESC)
                 else:
@@ -668,18 +672,22 @@ class NLE(gym.Env):
     def _quit_game(self, response, done, info):
         """Smoothly quit a game."""
         # Get out of menus and windows.
-        response, done, info = self._perform_known_steps(response, done, info)
+        response, done, info = self._perform_known_steps(
+            response, done, info, exceptions=False
+        )
 
         if done:
             return
 
         # Quit the game.
-        actions = "#quit\ny"
+        actions = [0x80 | ord("q"), ord("y")]  # M-q y
         for a in actions:
-            response, done, info = self.env.step(ord(a))
+            response, done, info = self.env.step(a)
 
         # Answer final questions.
-        response, done, info = self._perform_known_steps(response, done, info)
+        response, done, info = self._perform_known_steps(
+            response, done, info, exceptions=False
+        )
 
         if not done:
             # Somehow, the above logic failed us. We'll SIGTERM the game to close it.
