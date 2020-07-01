@@ -42,7 +42,7 @@ commands:
             conda deactivate
             conda create -n nle python=<< parameters.python_version >>
             conda activate nle
-            conda install -y zeromq flatbuffers
+            conda install -y zeromq flatbuffers cmake
             conda install -y -c conda-forge cppzmq
             python --version
             echo ". /home/circleci/miniconda/etc/profile.d/conda.sh" >> $BASH_ENV
@@ -55,23 +55,16 @@ commands:
           command: |
             sudo apt-get install software-properties-common
             sudo apt-get update -y
-            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison
-
-  make-install-nethack:
-    description: Builds and installs nethack (by itself)
-    steps:
-      - run:
-          name: Build and install nethack
-          command: |
-            conda activate nle
-            cd sys/unix
-            sh setup.sh hints/linux-nle
-            cd ../..
-            export PREFIX=$CONDA_PREFIX
-            export LIBRARY_PATH=$PREFIX/lib:$LIBRARY_PATH
-            export CPATH=$PREFIX/include:$CPATH
-            PREFIX=$PREFIX make -j
-            PREFIX=$PREFIX make install
+            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison cmake
+            curl -fSL "https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz" -o flatbuffers.tar.gz \
+              && tar xzf flatbuffers.tar.gz \
+              && cd flatbuffers-* \
+              && cmake \
+                -G "Unix Makefiles" \
+                -DCMAKE_BUILD_TYPE=Release \
+              && make \
+              && sudo make install \
+              && sudo cp src/idl_parser.cpp src/idl_gen_text.cpp /usr/local/include/flatbuffers
 
   pip-install-nle:
     description: Installs NLE and its dependencies
@@ -81,7 +74,6 @@ commands:
           command: |
             conda activate nle
             pip install . -vv
-            pip install -e .
 
 # -------------------------------------------------------------------------------------
 # Actual jobs
@@ -92,15 +84,18 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
-      - make-install-nethack
 
   install-nle:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
@@ -110,6 +105,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
@@ -123,7 +120,8 @@ jobs:
           name: Run NLE tests
           command: |
             conda activate nle
-            python -m pytest nle/tests --basetemp=$HOME/tests_data
+            cd ..
+            python -m pytest project/nle/tests --basetemp=$HOME/tests_data
       - store_artifacts:
           path: /home/circleci/tests_data
           name: nle-tests-data
@@ -132,6 +130,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps
@@ -152,6 +152,8 @@ jobs:
     executor: cpu-linux-py37
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - fix-git
       - setup-conda
       - install-build-deps

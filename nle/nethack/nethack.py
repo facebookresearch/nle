@@ -3,6 +3,7 @@ import functools
 import logging
 import os
 import shutil
+import sys
 import tempfile
 import time
 import warnings
@@ -45,24 +46,9 @@ NETHACKOPTIONS = [
     "pickup_burden:unencumbered",
 ]
 
-HACKDIR = os.getenv("HACKDIR")
-
-if HACKDIR is None:
-    # Somewhat HACKy way of getting HACKDIR from installed nethack.
-    script = shutil.which("nethack")
-    if script is None:
-        raise FileNotFoundError("Didn't find nethack in path. Is it installed?")
-    with open(script, "r") as f:
-        while True:
-            line = f.readline()
-            if not line:
-                raise ValueError("Could not determine HACKDIR from installed nethack")
-            if line.startswith("HACKDIR="):
-                HACKDIR = line[8:-1]  # Exclude newline.
-                break
-
-
+HACKDIR = os.getenv("HACKDIR", os.path.join(sys.base_prefix, "nethackdir"))
 EXECUTABLE = os.path.join(HACKDIR, "nethack")
+
 if not os.path.exists(EXECUTABLE):
     raise FileNotFoundError(
         "Couldn't run nethack in %s as file doesn't exist" % EXECUTABLE

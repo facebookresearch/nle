@@ -12,3 +12,7 @@ repos:
       exclude: scripts/plotting/*
       additional_dependencies: [flake8-bugbear]
       args: ["--max-line-length=127","--show-source"]
+-   repo: https://github.com/cheshirekow/cmake-format-precommit
+    rev: 'v0.6.10'
+    hooks:
+    - id: cmake-format

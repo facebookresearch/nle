@@ -31,27 +31,35 @@ with other gym / RL environments.
 
 ## Installation
 
-NLE requires `python>=3.7`, `libzmq`, `flatbuffers`, and some NetHack
-dependencies (e.g. `libncurses`) to be installed and available both when
+NLE requires `python>=3.7`, `cmake>=3.12`, `libzmq`, `flatbuffers`, and some
+NetHack dependencies (e.g. `libncurses`) to be installed and available both when
 building the package, and at runtime.
 
 
 On **MacOS**, one can use `Homebrew` as follows:
 
 ``` bash
-$ brew install ncurses flatbuffers zeromq
+$ brew install ncurses flatbuffers zeromq cmake
 $ sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
      /usr/local/include
 ```
 
-On a plain **Ubuntu 18.04** distribution, `flatbuffers` and other dependencies
-can be installed by doing:
+On a plain **Ubuntu 18.04** distribution, `cmake`, `flatbuffers` and other
+dependencies can be installed by doing:
 
 ```bash
-# zmq, python, and build deps
+# zmq, python, and most build deps
 $ sudo apt-get install -y build-essential autoconf libtool pkg-config \
-    python3-dev python3-pip python3-numpy git cmake libncurses5-dev \
+    python3-dev python3-pip python3-numpy git libncurses5-dev \
     libzmq3-dev flex bison
+
+# recent cmake version
+$ wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
+$ sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+$ sudo apt-get update && apt-get --allow-unauthenticated install -y \
+    cmake \
+    kitware-archive-keyring
+
 # building flatbuffers
 $ git clone https://github.com/google/flatbuffers.git
 $ cd flatbuffers

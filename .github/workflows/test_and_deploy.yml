@@ -29,10 +29,12 @@ jobs:
       run: "python -m pip install -q --upgrade pip wheel"
     - name: Install dependencies
       run: |
-        brew install zeromq flatbuffers
+        brew install zeromq flatbuffers cmake
         sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
           /usr/local/include
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Install from repo in test mode
       run: "pip install -e '.[dev]'"
     - name: Run tests
@@ -61,10 +63,12 @@ jobs:
       run: "python -m pip install -q --upgrade pip wheel"
     - name: Install deps
       run: |
-        brew install zeromq flatbuffers
+        brew install zeromq flatbuffers cmake
         sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
           /usr/local/include
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Generate sdist
       run: |
        NLE_RELEASE_BUILD=1 python setup.py sdist
