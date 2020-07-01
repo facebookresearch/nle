@@ -31,6 +31,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         # self.build_lib is also a good option, but it doesn't play nicely with
         # develop mode.
         out_path = pathlib.Path(self.get_ext_fullpath(ext.name)).parent.resolve()
+        hackdir_path = os.getenv("HACKDIR", os.path.join(sys.base_prefix, "nethackdir"))
 
         cmake_cmd = [
             "cmake",
@@ -40,6 +41,7 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
             # compiling against.
             "-DPYTHON_EXECUTABLE={}".format(sys.executable),
             "-DCMAKE_INSTALL_PREFIX={}".format(sys.base_prefix),
+            "-DHACKDIR={}".format(hackdir_path),
         ]
         subprocess.check_call(cmake_cmd, cwd=self.build_temp)
         subprocess.check_call(["make"], cwd=self.build_temp)

@@ -14,6 +14,8 @@ set(HACKDIR
     "$ENV{HOME}/nethackdir"
     CACHE STRING "Configuration files for nethack")
 
+message(STATUS "HACKDIR set to: ${HACKDIR}")
+
 # Playground vars
 set(VARDIR ${HACKDIR})
 set(INSTDIR ${HACKDIR})
@@ -36,8 +38,6 @@ set(NLE_SRC_GEN ${nle_BINARY_DIR}/src)
 set(NLE_INC_GEN ${nle_BINARY_DIR}/include)
 set(NLE_DAT_GEN ${nle_BINARY_DIR}/dat)
 set(NLE_UTIL_GEN ${nle_BINARY_DIR}/util)
-message(STATUS ${nle_BINARY_DIR})
-message(STATUS ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(util)
 add_subdirectory(dat)

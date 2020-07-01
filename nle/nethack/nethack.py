@@ -3,6 +3,7 @@ import functools
 import logging
 import os
 import shutil
+import sys
 import tempfile
 import time
 import warnings
@@ -45,7 +46,7 @@ NETHACKOPTIONS = [
     "pickup_burden:unencumbered",
 ]
 
-HACKDIR = os.getenv("HACKDIR", os.path.expanduser("~/nethackdir"))
+HACKDIR = os.getenv("HACKDIR", os.path.join(sys.base_prefix, "nethackdir"))
 EXECUTABLE = os.path.join(HACKDIR, "nethack")
 
 if not os.path.exists(EXECUTABLE):
