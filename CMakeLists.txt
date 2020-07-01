@@ -56,7 +56,7 @@ file(
   "win/tty/*.c")
 
 add_executable(nethack ${NLEHACK_SRC})
-add_dependencies(nethack nleutil winrl nledat)
+add_dependencies(nethack util winrl dat)
 
 target_include_directories(nethack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN})

@@ -83,10 +83,10 @@ add_custom_command(
   COMMAND flex -o${NLE_UTIL_GEN}/lev_scanner.c ${NLE_UTIL}/lev_comp.l
   DEPENDS ${NLE_UTIL}/lev_comp.l)
 
-add_custom_target(nleutil DEPENDS ${MAKEDEFS_HEADERS} recover)
+add_custom_target(util DEPENDS ${MAKEDEFS_HEADERS} recover)
 
-# NOTE: nleutil is dependent on these two
-add_dependencies(lev_comp nleutil)
-add_dependencies(dgn_comp nleutil)
+# NOTE: util is dependent on these two
+add_dependencies(lev_comp util)
+add_dependencies(dgn_comp util)
 
 install(TARGETS recover DESTINATION ${INSTDIR})

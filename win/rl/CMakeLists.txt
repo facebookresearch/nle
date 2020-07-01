@@ -1,7 +1,7 @@
 # TODO(NN): we should rename this to winnle
 add_library(winrl winrl.cc)
 set_target_properties(winrl PROPERTIES CXX_STANDARD 14)
-add_dependencies(winrl message_generated nledat)
+add_dependencies(winrl message_generated dat)
 
 add_custom_target(
   message_generated COMMAND flatc -o ${NLE_INC_GEN} --cpp
@@ -39,9 +39,9 @@ add_library(monst STATIC ${NLE_SRC}/monst.c)
 add_library(decl STATIC ${NLE_SRC}/decl.c)
 add_library(drawing STATIC ${NLE_SRC}/drawing.c)
 
-add_dependencies(monst nleutil)
-add_dependencies(decl nleutil)
-add_dependencies(drawing nleutil)
+add_dependencies(monst util)
+add_dependencies(decl util)
+add_dependencies(drawing util)
 
 target_include_directories(monst PRIVATE ${NLE_INC} ${NLE_INC_GEN})
 target_include_directories(decl PRIVATE ${NLE_INC} ${NLE_INC_GEN})
