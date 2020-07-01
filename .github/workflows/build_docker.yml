@@ -30,8 +30,6 @@ jobs:
     - name: Build image
       uses: docker/build-push-action@v1
       with:
-        username: edran
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: fairnle/nle
         dockerfile: docker/Dockerfile
         tags: dev
@@ -78,8 +76,6 @@ jobs:
     - name: Build image
       uses: docker/build-push-action@v1
       with:
-        username: edran
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: fairnle/nle-xenial
         dockerfile: docker/Dockerfile
         tags: dev
