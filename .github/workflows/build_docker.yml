@@ -13,6 +13,9 @@ on:
       - "*"
     branches:
       - master
+  pull_request:
+    paths:
+      - "docker/Dockerfile*"
   release:
     types: [released]
 
@@ -22,7 +25,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build and push image
+      with:
+        submodules: true
+    - name: Build image
+      uses: docker/build-push-action@v1
+      with:
+        repository: fairnle/nle
+        dockerfile: docker/Dockerfile
+        tags: dev
+        tag_with_sha: true
+        add_git_labels: true
+        push: false
+    - name: Push image
+      if: github.ref == 'master' || (github.event_name == 'release' && github.even.action == 'released')
       uses: docker/build-push-action@v1
       with:
         username: edran
@@ -32,6 +47,7 @@ jobs:
         tags: dev
         tag_with_sha: true
         add_git_labels: true
+        push: true
     - name: Check version matches release tag
       if: github.event_name == 'release' && github.event.action == 'released'
       run: |
@@ -48,13 +64,26 @@ jobs:
         dockerfile: docker/Dockerfile
         tags: ${{ github.event.release.tag_name }},stable
         add_git_labels: true
+        push: true
 
   xenial:
     name: Build and publish xenial image
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build and push image
+      with:
+        submodules: true
+    - name: Build image
+      uses: docker/build-push-action@v1
+      with:
+        repository: fairnle/nle-xenial
+        dockerfile: docker/Dockerfile
+        tags: dev
+        tag_with_sha: true
+        add_git_labels: true
+        push: false
+    - name: Push image
+      if: github.ref == 'master' || (github.event_name == 'release' && github.even.action == 'released')
       uses: docker/build-push-action@v1
       with:
         username: edran
@@ -64,6 +93,7 @@ jobs:
         tags: dev
         tag_with_sha: true
         add_git_labels: true
+        push: true
     - name: Check version matches release tag
       if: github.event_name == 'release' && github.event.action == 'released'
       run: |
@@ -80,4 +110,5 @@ jobs:
         dockerfile: docker/Dockerfile-xenial
         tags: ${{ github.event.release.tag_name }}
         add_git_labels: true
+        push: true
 ...
