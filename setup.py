@@ -12,41 +12,47 @@
 #
 import os
 import pathlib
-import sys
 import subprocess
+import sys
 
 import setuptools
 import setuptools.command.build_ext
+import setuptools.command.build_py
+import setuptools.command.install
+
+
+class BuildPy(setuptools.command.build_py.build_py):
+    def run(self):
+        self.run_command("build_ext")
+        # We append the package, as now the files have been created.
+        self.packages.append("nle.fbs")
+        return super().run()
 
 
 class CMakeBuild(setuptools.command.build_ext.build_ext):
     def run(self):
-        for ext in self.extensions:
-            self.build_extension(ext)
+        build_lib_path = pathlib.Path(self.build_lib).resolve()
 
-    def build_extension(self, ext):
-        os.makedirs(self.build_temp, exist_ok=True)
+        src_orig_path = pathlib.Path(__file__).parent.resolve().resolve()
+        build_path = build_lib_path.parent.joinpath("nlehack")
 
-        src_path = pathlib.Path(__file__).parent.resolve()
-        # self.build_lib is also a good option, but it doesn't play nicely with
-        # develop mode.
-        out_path = pathlib.Path(self.get_ext_fullpath(ext.name)).parent.resolve()
-        hackdir_path = os.getenv("HACKDIR", os.path.join(sys.base_prefix, "nethackdir"))
+        os.makedirs(build_path, exist_ok=True)
+        hackdir_path = os.getenv("HACKDIR", src_orig_path.joinpath("nle", "nethackdir"))
 
         cmake_cmd = [
             "cmake",
-            src_path,
-            "-DPYTHON_SRC_PARENT={}".format(out_path),
+            str(src_orig_path),
+            "-DPYTHON_SRC_PARENT={}".format(src_orig_path),
             # NOTE: This makes sure that cmake knows which python it is
             # compiling against.
             "-DPYTHON_EXECUTABLE={}".format(sys.executable),
             "-DCMAKE_INSTALL_PREFIX={}".format(sys.base_prefix),
             "-DHACKDIR={}".format(hackdir_path),
         ]
-        subprocess.check_call(cmake_cmd, cwd=self.build_temp)
-        subprocess.check_call(["make"], cwd=self.build_temp)
-        subprocess.check_call(["make", "fbs"], cwd=self.build_temp)
-        subprocess.check_call(["make", "install"], cwd=self.build_temp)
+        subprocess.check_call(cmake_cmd, cwd=build_path)
+        subprocess.check_call(["make"], cwd=build_path)
+        subprocess.check_call(["make", "fbs"], cwd=build_path)
+        subprocess.check_call(["make", "install"], cwd=build_path)
 
 
 packages = [
@@ -127,7 +133,8 @@ if __name__ == "__main__":
         entry_points=entry_points,
         packages=packages,
         ext_modules=[setuptools.Extension("nlehack", sources=[])],
-        cmdclass={"build_ext": CMakeBuild},
+        cmdclass={"build_ext": CMakeBuild, "build_py": BuildPy},
+        # cmdclass={"build_py": BuildPy, "install_data": InstallData, "install": Install},
         setup_requires=["pybind11>=2.2"],
         install_requires=[
             "pybind11>=2.2",
@@ -153,4 +160,10 @@ if __name__ == "__main__":
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
             "Topic :: Games/Entertainment",
         ],
+        package_data={
+            "nle.nethack": ["helper*.so"],
+            "nle.fbs": ["*"],
+            "nle": ["nethackdir/**"],
+        },
+        include_package_data=True,
     )

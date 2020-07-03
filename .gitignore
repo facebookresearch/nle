@@ -201,3 +201,4 @@ dmypy.json
 nle/version.py
 nle_data/
 nle/fbs/
+nle/nethackdir
