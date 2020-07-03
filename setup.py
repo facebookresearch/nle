@@ -18,7 +18,6 @@ import sys
 import setuptools
 import setuptools.command.build_ext
 import setuptools.command.build_py
-import setuptools.command.install
 
 
 class BuildPy(setuptools.command.build_py.build_py):
@@ -32,12 +31,11 @@ class BuildPy(setuptools.command.build_py.build_py):
 class CMakeBuild(setuptools.command.build_ext.build_ext):
     def run(self):
         build_lib_path = pathlib.Path(self.build_lib).resolve()
-
         src_orig_path = pathlib.Path(__file__).parent.resolve().resolve()
         build_path = build_lib_path.parent.joinpath("nlehack")
+        hackdir_path = os.getenv("HACKDIR", src_orig_path.joinpath("nle", "nethackdir"))
 
         os.makedirs(build_path, exist_ok=True)
-        hackdir_path = os.getenv("HACKDIR", src_orig_path.joinpath("nle", "nethackdir"))
 
         cmake_cmd = [
             "cmake",
@@ -134,7 +132,6 @@ if __name__ == "__main__":
         packages=packages,
         ext_modules=[setuptools.Extension("nlehack", sources=[])],
         cmdclass={"build_ext": CMakeBuild, "build_py": BuildPy},
-        # cmdclass={"build_py": BuildPy, "install_data": InstallData, "install": Install},
         setup_requires=["pybind11>=2.2"],
         install_requires=[
             "pybind11>=2.2",
