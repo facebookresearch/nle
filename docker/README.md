@@ -35,6 +35,7 @@ version of `nle`, following a specific templates:
 To build any of them (e.g. the main `Dockerfile`) do:
 
 ```bash
-# in the repository root
+$ git clone https://github.com/facebookresearch/nle --recursive
+$ cd nle
 $ docker build -f docker/Dockerfile . -t nle:latest
 ```

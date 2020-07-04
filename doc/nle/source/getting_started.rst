@@ -48,7 +48,7 @@ Optionally, one can clone the repository and install the package manually.
 
 .. code-block:: bash
 
-   $ git clone https://github.com/facebookresearch/nle
+   $ git clone https://github.com/facebookresearch/nle --recursive
    $ conda activate nledev
    $ pip install .
 
