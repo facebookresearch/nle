@@ -3,13 +3,13 @@ file(STRINGS "version.txt" NLE_VERSION)
 project(nle VERSION ${NLE_VERSION})
 message(STATUS "Building nle backend version: ${NLE_VERSION}")
 
-# This is set to build_lib in build_ext, since we use it to export the python
-# interfaces into the right package.
+# We use this to decide where the root of the nle/ package is. Normally it
+# shouldn't be needed, but sometimes (e.g. when using setuptools) we are
+# generating some of the files outside of the original package path.
 set(PYTHON_SRC_PARENT
     ${nle_SOURCE_DIR}
     CACHE STRING "Directory containing the nle package files")
 
-# TODO(NN): we should be at least XDG compliant
 set(HACKDIR
     "$ENV{HOME}/nethackdir"
     CACHE STRING "Configuration files for nethack")

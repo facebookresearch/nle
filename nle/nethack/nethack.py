@@ -2,8 +2,8 @@
 import functools
 import logging
 import os
+import pkg_resources
 import shutil
-import sys
 import tempfile
 import time
 import warnings
@@ -46,13 +46,8 @@ NETHACKOPTIONS = [
     "pickup_burden:unencumbered",
 ]
 
-HACKDIR = os.getenv("HACKDIR", os.path.join(sys.base_prefix, "nethackdir"))
+HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
 EXECUTABLE = os.path.join(HACKDIR, "nethack")
-
-if not os.path.exists(EXECUTABLE):
-    raise FileNotFoundError(
-        "Couldn't run nethack in %s as file doesn't exist" % EXECUTABLE
-    )
 
 
 def _exec_nethack(playername, hackdir, seeds=None, options=NETHACKOPTIONS):
