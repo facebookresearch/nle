@@ -41,6 +41,7 @@ import gym  # noqa: E402
 
 import nle  # noqa: F401, E402
 from nle.agent import vtrace  # noqa: E402
+from nle import nethack  # noqa: E402
 
 
 # yapf: disable
@@ -743,7 +744,7 @@ class NetHackNet(nn.Module):
 
         self.crop = Crop(self.H, self.W, self.crop_dim, self.crop_dim)
 
-        self.embed = nn.Embedding(5991, self.k_dim)
+        self.embed = nn.Embedding(nethack.MAX_GLYPH, self.k_dim)
 
         K = embedding_dim  # number of input filters
         F = 3  # filter dimensions
