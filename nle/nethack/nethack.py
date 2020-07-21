@@ -155,7 +155,12 @@ class NetHack:
 
         self._context = context or zmq.Context.instance()
 
-        self._finalizers.append(weakref.finalize(self, shutil.rmtree, self._vardir))
+        # We use vardir for our temporary tty records. Like archive, this
+        # needs to stay alive longer than self. Binding it to lifetime of
+        # _recordclosefn as well.
+        self._finalizers.append(
+            weakref.finalize(self._recordclosefn, shutil.rmtree, self._vardir)
+        )
 
         self._exec_nethack = None
         self.seed(None)  # Sets self._exec_nethack.
@@ -175,7 +180,11 @@ class NetHack:
         if self._archive is None:
             self.recordname = None
         else:
-            self.recordname = "nethack.run.%i.%%(time)s.%%(pid)i.ttyrec" % self._episode
+            # Create record files in (temporal) vardir.
+            self.recordname = "%s/nethack.run.%i.%%(time)s.%%(pid)i.ttyrec" % (
+                self._vardir,
+                self._episode,
+            )
         self._process = ptyprocess.PtyProcess(
             target=self._exec_nethack,
             recordclosefn=self._recordclosefn,
