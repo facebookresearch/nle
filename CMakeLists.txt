@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.14)
 file(STRINGS "version.txt" NLE_VERSION)
 project(nle VERSION ${NLE_VERSION})
 message(STATUS "Building nle backend version: ${NLE_VERSION}")
