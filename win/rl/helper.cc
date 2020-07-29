@@ -33,6 +33,7 @@ PYBIND11_MODULE(helper, m)
     m.attr("MAXWIN") = py::int_(MAXWIN);
 
     m.attr("NUMMONS") = py::int_(NUMMONS);
+    m.attr("NUM_OBJECTS") = py::int_(NUM_OBJECTS);
 
     // Glyph array offsets. This is what the glyph_is_* functions
     // are based on, see display.h.
@@ -54,7 +55,11 @@ PYBIND11_MODULE(helper, m)
     m.attr("NO_GLYPH") = py::int_(NO_GLYPH);
     m.attr("GLYPH_INVISIBLE") = py::int_(GLYPH_INVISIBLE);
 
+    m.attr("CORPSE") = py::int_(CORPSE);
+    m.attr("STATUE") = py::int_(STATUE);
+
     m.attr("MAXPCHARS") = py::int_(static_cast<int>(MAXPCHARS));
+    m.attr("MAXEXPCHARS") = py::int_(static_cast<int>(MAXEXPCHARS));
     m.attr("EXPL_MAX") = py::int_(static_cast<int>(EXPL_MAX));
     m.attr("NUM_ZAP") = py::int_(static_cast<int>(NUM_ZAP));
     m.attr("WARNCOUNT") = py::int_(static_cast<int>(WARNCOUNT));
@@ -119,7 +124,9 @@ PYBIND11_MODULE(helper, m)
     m.def("glyph_is_warning",
           [](int glyph) { return glyph_is_warning(glyph); });
 
-    py::class_<permonst>(m, "permonst")
+    py::class_<permonst, std::unique_ptr<permonst, py::nodelete> >(m,
+                                                                   "permonst")
+        .def(py::init([](int index) -> permonst * { return &mons[index]; }))
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
         .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
@@ -129,8 +136,7 @@ PYBIND11_MODULE(helper, m)
         // .def_readonly("maligntyp", &permonst::maligntyp) /* basic
         // monster alignment */
         .def_readonly("geno", &permonst::geno) /* creation/geno mask value */
-        // .def_readonly("mattk", &permonst::mattk) /* attacks matrix
-        // */
+        // .def_readonly("mattk", &permonst::mattk) /* attacks matrix */
         .def_readonly("cwt", &permonst::cwt) /* weight of corpse */
         .def_readonly("cnutrit",
                       &permonst::cnutrit) /* its nutritional value */
@@ -151,6 +157,10 @@ PYBIND11_MODULE(helper, m)
         ;
 
     py::class_<class_sym>(m, "class_sym")
+        .def_static(
+            "from_mlet",
+            [](char let) -> const class_sym * { return &def_monsyms[let]; },
+            py::return_value_policy::reference)
         .def_readonly("sym", &class_sym::sym)
         .def_readonly("name", &class_sym::name)
         .def_readonly("explain", &class_sym::explain)
@@ -159,16 +169,12 @@ PYBIND11_MODULE(helper, m)
                    + "' explain='" + std::string(cs.explain) + "'>";
         });
 
-    // m.def("mon", [](const int i) { return mons[i]; });
-    m.def(
-        "glyph_to_mon",
-        [](int glyph) -> const permonst * {
-            return &mons[glyph_to_mon(glyph)];
-        },
-        py::return_value_policy::reference);
-
-    m.def(
-        "mlet_to_class_sym",
-        [](char let) -> const class_sym * { return &def_monsyms[let]; },
-        py::return_value_policy::reference);
+    m.def("glyph_to_mon", [](int glyph) { return glyph_to_mon(glyph); });
+    m.def("glyph_to_obj", [](int glyph) { return glyph_to_obj(glyph); });
+    m.def("glyph_to_trap", [](int glyph) { return glyph_to_trap(glyph); });
+    m.def("glyph_to_cmap", [](int glyph) { return glyph_to_cmap(glyph); });
+    m.def("glyph_to_swallow",
+          [](int glyph) { return glyph_to_swallow(glyph); });
+    m.def("glyph_to_warning",
+          [](int glyph) { return glyph_to_warning(glyph); });
 }

@@ -49,11 +49,11 @@ class NetHackTest(unittest.TestCase):
             self.assertEqual(np.count_nonzero(chars == ord("@")), 1)
             self.assertEqual(chars[y, x], ord("@"))
 
-            mon = nethack.glyph_to_mon(glyphs[y][x])
+            mon = nethack.permonst(nethack.glyph_to_mon(glyphs[y][x]))
             self.assertEqual(mon.mname, "monk")
             self.assertEqual(mon.mlevel, 10)
 
-            class_sym = nethack.mlet_to_class_sym(mon.mlet)
+            class_sym = nethack.class_sym.from_mlet(mon.mlet)
             self.assertEqual(class_sym.sym, "@")
             self.assertEqual(class_sym.explain, "human or elf")
 
@@ -69,17 +69,25 @@ class HelperTest(unittest.TestCase):
     def test_simple(self):
         glyph = 155  # Lichen.
 
-        mon = nethack.glyph_to_mon(glyph)
+        mon = nethack.permonst(nethack.glyph_to_mon(glyph))
 
         self.assertEqual(mon.mname, "lichen")
 
-        cs = nethack.mlet_to_class_sym(mon.mlet)
+        cs = nethack.class_sym.from_mlet(mon.mlet)
 
         self.assertEqual(cs.sym, "F")
         self.assertEqual(cs.explain, "fungus or mold")
 
         self.assertEqual(nethack.NHW_MESSAGE, 1)
         self.assertTrue(hasattr(nethack, "MAXWIN"))
+
+    def test_permonst(self):
+        mon = nethack.permonst(0)
+        self.assertEqual(mon.mname, "giant ant")
+        del mon
+
+        mon = nethack.permonst(1)
+        self.assertEqual(mon.mname, "killer bee")
 
 
 if __name__ == "__main__":
