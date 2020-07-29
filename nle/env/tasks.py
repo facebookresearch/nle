@@ -163,7 +163,7 @@ class NetHackOracle(NetHackStaircase):
         super().__init__(*args, **kwargs)
         self.oracle_glyph = None
         for glyph in range(nethack.GLYPH_MON_OFF, nethack.GLYPH_PET_OFF):
-            if nethack.glyph_to_mon(glyph).mname == "Oracle":
+            if nethack.permonst(nethack.glyph_to_mon(glyph)).mname == "Oracle":
                 self.oracle_glyph = glyph
                 break
         assert self.oracle_glyph is not None
