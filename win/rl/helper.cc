@@ -33,6 +33,7 @@ PYBIND11_MODULE(helper, m)
     m.attr("MAXWIN") = py::int_(MAXWIN);
 
     m.attr("NUMMONS") = py::int_(NUMMONS);
+    m.attr("NUM_OBJECTS") = py::int_(NUM_OBJECTS);
 
     // Glyph array offsets. This is what the glyph_is_* functions
     // are based on, see display.h.
@@ -54,7 +55,11 @@ PYBIND11_MODULE(helper, m)
     m.attr("NO_GLYPH") = py::int_(NO_GLYPH);
     m.attr("GLYPH_INVISIBLE") = py::int_(GLYPH_INVISIBLE);
 
+    m.attr("CORPSE") = py::int_(CORPSE);
+    m.attr("STATUE") = py::int_(STATUE);
+
     m.attr("MAXPCHARS") = py::int_(static_cast<int>(MAXPCHARS));
+    m.attr("MAXEXPCHARS") = py::int_(static_cast<int>(MAXEXPCHARS));
     m.attr("EXPL_MAX") = py::int_(static_cast<int>(EXPL_MAX));
     m.attr("NUM_ZAP") = py::int_(static_cast<int>(NUM_ZAP));
     m.attr("WARNCOUNT") = py::int_(static_cast<int>(WARNCOUNT));
@@ -124,43 +129,34 @@ PYBIND11_MODULE(helper, m)
         .def(py::init([](int index) -> permonst * { return &mons[index]; }))
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
-        .def_readonly("mlevel", &permonst::mlevel) /* base monster level
-                                                    */
+        .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
         .def_readonly("mmove", &permonst::mmove)   /* move speed */
         .def_readonly("ac", &permonst::ac)         /* (base) armor class */
-        .def_readonly("mr", &permonst::mr)         /* (base) magic
-                                                      resistance */
-        // .def_readonly("maligntyp",
-        // &permonst::maligntyp) /* basic monster
-        // alignment */
-        .def_readonly("geno", &permonst::geno) /* creation/geno
-                                                  mask value */
-        // .def_readonly("mattk", &permonst::mattk)
-        // /* attacks matrix
-        // */
-        .def_readonly("cwt", &permonst::cwt)           /* weight of corpse */
-        .def_readonly("cnutrit", &permonst::cnutrit)   /* its nutritional
-                                                          value */
-        .def_readonly("msound", &permonst::msound)     /* noise it makes (6
-                                                          bits) */
-        .def_readonly("msize", &permonst::msize)       /* physical size (3
-                                                          bits) */
+        .def_readonly("mr", &permonst::mr) /* (base) magic resistance */
+        // .def_readonly("maligntyp", &permonst::maligntyp) /* basic
+        // monster alignment */
+        .def_readonly("geno", &permonst::geno) /* creation/geno mask value */
+        // .def_readonly("mattk", &permonst::mattk) /* attacks matrix */
+        .def_readonly("cwt", &permonst::cwt) /* weight of corpse */
+        .def_readonly("cnutrit",
+                      &permonst::cnutrit) /* its nutritional value */
+        .def_readonly("msound",
+                      &permonst::msound)         /* noise it makes (6 bits) */
+        .def_readonly("msize", &permonst::msize) /* physical size (3 bits) */
         .def_readonly("mresists", &permonst::mresists) /* resistances */
-        .def_readonly("mconveys", &permonst::mconveys) /* conveyed by
-                                                          eating */
-        .def_readonly("mflags1", &permonst::mflags1)   /* boolean bitflags
-                                                        */
-        .def_readonly("mflags2", &permonst::mflags2)   /* more boolean
-                                                          bitflags */
-        .def_readonly("mflags3", &permonst::mflags3)   /* yet more boolean
-                                                          bitflags */
+        .def_readonly("mconveys",
+                      &permonst::mconveys)           /* conveyed by eating */
+        .def_readonly("mflags1", &permonst::mflags1) /* boolean bitflags */
+        .def_readonly("mflags2",
+                      &permonst::mflags2) /* more boolean bitflags */
+        .def_readonly("mflags3",
+                      &permonst::mflags3) /* yet more boolean bitflags */
 #ifdef TEXTCOLOR
         .def_readonly("mcolor", &permonst::mcolor) /* color to use */
 #endif
         ;
 
-    py::class_<class_sym, std::unique_ptr<class_sym, py::nodelete> >(
-        m, "class_sym")
+    py::class_<class_sym>(m, "class_sym")
         .def_static(
             "from_mlet",
             [](char let) -> const class_sym * { return &def_monsyms[let]; },
@@ -174,4 +170,11 @@ PYBIND11_MODULE(helper, m)
         });
 
     m.def("glyph_to_mon", [](int glyph) { return glyph_to_mon(glyph); });
+    m.def("glyph_to_obj", [](int glyph) { return glyph_to_obj(glyph); });
+    m.def("glyph_to_trap", [](int glyph) { return glyph_to_trap(glyph); });
+    m.def("glyph_to_cmap", [](int glyph) { return glyph_to_cmap(glyph); });
+    m.def("glyph_to_swallow",
+          [](int glyph) { return glyph_to_swallow(glyph); });
+    m.def("glyph_to_warning",
+          [](int glyph) { return glyph_to_warning(glyph); });
 }
