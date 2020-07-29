@@ -119,38 +119,52 @@ PYBIND11_MODULE(helper, m)
     m.def("glyph_is_warning",
           [](int glyph) { return glyph_is_warning(glyph); });
 
-    py::class_<permonst>(m, "permonst")
+    py::class_<permonst, std::unique_ptr<permonst, py::nodelete> >(m,
+                                                                   "permonst")
+        .def(py::init([](int index) -> permonst * { return &mons[index]; }))
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
-        .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
+        .def_readonly("mlevel", &permonst::mlevel) /* base monster level
+                                                    */
         .def_readonly("mmove", &permonst::mmove)   /* move speed */
         .def_readonly("ac", &permonst::ac)         /* (base) armor class */
-        .def_readonly("mr", &permonst::mr) /* (base) magic resistance */
-        // .def_readonly("maligntyp", &permonst::maligntyp) /* basic
-        // monster alignment */
-        .def_readonly("geno", &permonst::geno) /* creation/geno mask value */
-        // .def_readonly("mattk", &permonst::mattk) /* attacks matrix
+        .def_readonly("mr", &permonst::mr)         /* (base) magic
+                                                      resistance */
+        // .def_readonly("maligntyp",
+        // &permonst::maligntyp) /* basic monster
+        // alignment */
+        .def_readonly("geno", &permonst::geno) /* creation/geno
+                                                  mask value */
+        // .def_readonly("mattk", &permonst::mattk)
+        // /* attacks matrix
         // */
-        .def_readonly("cwt", &permonst::cwt) /* weight of corpse */
-        .def_readonly("cnutrit",
-                      &permonst::cnutrit) /* its nutritional value */
-        .def_readonly("msound",
-                      &permonst::msound)         /* noise it makes (6 bits) */
-        .def_readonly("msize", &permonst::msize) /* physical size (3 bits) */
+        .def_readonly("cwt", &permonst::cwt)           /* weight of corpse */
+        .def_readonly("cnutrit", &permonst::cnutrit)   /* its nutritional
+                                                          value */
+        .def_readonly("msound", &permonst::msound)     /* noise it makes (6
+                                                          bits) */
+        .def_readonly("msize", &permonst::msize)       /* physical size (3
+                                                          bits) */
         .def_readonly("mresists", &permonst::mresists) /* resistances */
-        .def_readonly("mconveys",
-                      &permonst::mconveys)           /* conveyed by eating */
-        .def_readonly("mflags1", &permonst::mflags1) /* boolean bitflags */
-        .def_readonly("mflags2",
-                      &permonst::mflags2) /* more boolean bitflags */
-        .def_readonly("mflags3",
-                      &permonst::mflags3) /* yet more boolean bitflags */
+        .def_readonly("mconveys", &permonst::mconveys) /* conveyed by
+                                                          eating */
+        .def_readonly("mflags1", &permonst::mflags1)   /* boolean bitflags
+                                                        */
+        .def_readonly("mflags2", &permonst::mflags2)   /* more boolean
+                                                          bitflags */
+        .def_readonly("mflags3", &permonst::mflags3)   /* yet more boolean
+                                                          bitflags */
 #ifdef TEXTCOLOR
         .def_readonly("mcolor", &permonst::mcolor) /* color to use */
 #endif
         ;
 
-    py::class_<class_sym>(m, "class_sym")
+    py::class_<class_sym, std::unique_ptr<class_sym, py::nodelete> >(
+        m, "class_sym")
+        .def_static(
+            "from_mlet",
+            [](char let) -> const class_sym * { return &def_monsyms[let]; },
+            py::return_value_policy::reference)
         .def_readonly("sym", &class_sym::sym)
         .def_readonly("name", &class_sym::name)
         .def_readonly("explain", &class_sym::explain)
@@ -159,16 +173,5 @@ PYBIND11_MODULE(helper, m)
                    + "' explain='" + std::string(cs.explain) + "'>";
         });
 
-    // m.def("mon", [](const int i) { return mons[i]; });
-    m.def(
-        "glyph_to_mon",
-        [](int glyph) -> const permonst * {
-            return &mons[glyph_to_mon(glyph)];
-        },
-        py::return_value_policy::reference);
-
-    m.def(
-        "mlet_to_class_sym",
-        [](char let) -> const class_sym * { return &def_monsyms[let]; },
-        py::return_value_policy::reference);
+    m.def("glyph_to_mon", [](int glyph) { return glyph_to_mon(glyph); });
 }
