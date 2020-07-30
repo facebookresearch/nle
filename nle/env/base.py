@@ -81,14 +81,30 @@ def _get(response, path="Blstats.score", default=None, required=False):
     return node
 
 
-def _get_glyphs(response):
+def _get_as_np(response, attr, shape, dtype):
     if response is None:
-        return np.zeros(DUNGEON_SHAPE, dtype=np.int16)
+        return np.zeros(shape, dtype=dtype)
     o = response.Observation()
     # If done is True, Observation() is None.
     if o is None:
-        return np.zeros(DUNGEON_SHAPE, dtype=np.int16)
-    return o.Glyphs().DataAsNumpy().view(np.int16).reshape(DUNGEON_SHAPE)
+        return np.zeros(shape, dtype=dtype)
+    return getattr(o, attr)().DataAsNumpy().view(dtype).reshape(shape)
+
+
+def _get_glyphs(response):
+    return _get_as_np(response, "Glyphs", DUNGEON_SHAPE, np.int16)
+
+
+def _get_chars(response):
+    return _get_as_np(response, "Chars", DUNGEON_SHAPE, np.uint8)
+
+
+def _get_colors(response):
+    return _get_as_np(response, "Colors", DUNGEON_SHAPE, np.uint8)
+
+
+def _get_specials(response):
+    return _get_as_np(response, "Specials", DUNGEON_SHAPE, np.uint8)
 
 
 def _get_status_fast(response, entries=23):
@@ -292,7 +308,15 @@ class NLE(gym.Env):
         archivefile="nethack.%(pid)i.%(time)s.zip",
         character="mon-hum-neu-mal",
         max_episode_steps=5000,
-        observation_keys=("glyphs", "status", "message", "inventory"),
+        observation_keys=(
+            "glyphs",
+            "chars",
+            "colors",
+            "specials",
+            "status",
+            "message",
+            "inventory",
+        ),
         actions=None,
         options=None,
     ):
@@ -365,10 +389,16 @@ class NLE(gym.Env):
 
         space_dict = {
             "glyphs": gym.spaces.Box(
-                low=np.iinfo(np.int16).min,
-                high=np.iinfo(np.int16).max,
-                shape=DUNGEON_SHAPE,
-                dtype=np.int16,
+                low=0, high=nethack.MAX_GLYPH, shape=DUNGEON_SHAPE, dtype=np.int16
+            ),
+            "chars": gym.spaces.Box(
+                low=0, high=255, shape=DUNGEON_SHAPE, dtype=np.uint8
+            ),
+            "colors": gym.spaces.Box(
+                low=0, high=15, shape=DUNGEON_SHAPE, dtype=np.uint8
+            ),
+            "specials": gym.spaces.Box(
+                low=0, high=255, shape=DUNGEON_SHAPE, dtype=np.uint8
             ),
             "status": gym.spaces.Box(
                 low=np.iinfo(np.int32).min,
@@ -418,6 +448,9 @@ class NLE(gym.Env):
 
         self._key_functions = {
             "glyphs": _get_glyphs,
+            "chars": _get_chars,
+            "colors": _get_colors,
+            "specials": _get_specials,
             "status": _get_status_fast,
             "message": _get_padded_message,
             "inventory": _get_padded_inv,

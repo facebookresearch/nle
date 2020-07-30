@@ -34,6 +34,7 @@ def rollout_env(env, max_rollout_len):
 
     step = 0
     while True:
+        step += 1
         a = env.action_space.sample()
         obs, reward, done, info = env.step(a)
         assert env.observation_space.contains(obs)
@@ -97,6 +98,21 @@ class TestGymEnv:
         env = gym.make(env_name)
         obs = env.reset()
         assert env.observation_space.contains(obs)
+
+    def test_chars_colors_specials(self, env_name):
+        env = gym.make(
+            env_name, observation_keys=("chars", "colors", "specials", "status")
+        )
+        obs = env.reset()
+
+        assert "specials" in obs
+        x, y = obs["status"][:2]
+
+        # That's where you're @.
+        assert obs["chars"][y, x] == ord("@")
+
+        # You're bright (4th bit, 8) white (7), too.
+        assert obs["colors"][y, x] == 8 ^ 7
 
 
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
