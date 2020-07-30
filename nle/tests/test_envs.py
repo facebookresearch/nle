@@ -34,6 +34,7 @@ def rollout_env(env, max_rollout_len):
 
     step = 0
     while True:
+        step += 1
         a = env.action_space.sample()
         obs, reward, done, info = env.step(a)
         assert env.observation_space.contains(obs)
