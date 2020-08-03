@@ -65,12 +65,10 @@ STATIC_DCL void NDECL(dump_plines);
 STATIC_DCL void FDECL(dump_everything, (int, time_t));
 STATIC_DCL int NDECL(num_extinct);
 
-#ifdef NLE_UNDFINED
-#if defined(__BEOS__) || defined(MICRO) || defined(OS2)
-extern void FDECL(nethack_exit, (int));
+#if defined(__BEOS__) || defined(MICRO) || defined(OS2) || defined(RL_GRAPHICS)
+extern void FDECL(nethack_exit, (int)) NORETURN;
 #else
 #define nethack_exit exit
-#endif
 #endif
 
 #define done_stopprint program_state.stopprint
