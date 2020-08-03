@@ -230,7 +230,7 @@ add_custom_command(
   DEPENDS makedefs ${NLE_DAT}/bogusmon.txt ${NLE_DAT}/engrave.txt
           ${NLE_DAT}/epitaph.txt
   OUTPUT ${NLE_DAT}/bogusmon ${NLE_DAT}/epitaph ${NLE_DAT}/engrave
-  COMMAND $<TARGET_FILE:makedefs> ARGS -s
+  COMMAND $<TARGET_FILE:makedefs> -s
   # HACK see ../util/CMakeLists.txt
   WORKING_DIRECTORY ${NLE_DAT})
 
@@ -266,8 +266,9 @@ add_custom_command(
   COMMAND rm ${NLE_INC}/date.h
   WORKING_DIRECTORY ${NLE_DAT})
 
+# HACK: depends on bogusmon to avoid race wrt. makedef's grep.tmp file.
 add_custom_command(
-  DEPENDS makedefs dgn_comp ${NLE_DAT}/dungeon.def
+  DEPENDS makedefs dgn_comp ${NLE_DAT}/dungeon.def ${NLE_DAT}/bogusmon
   OUTPUT ${NLE_DAT}/dungeon ${NLE_DAT}/dungeon.pdf
   COMMAND $<TARGET_FILE:makedefs> -e
   COMMAND $<TARGET_FILE:dgn_comp> dungeon.pdf
