@@ -79,7 +79,7 @@ main(int argc, char **argv)
     tty.c_lflag &= ~ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 
-    nle_obs obs;
+    nle_obs obs{ 0, 0, nullptr, nullptr, nullptr, nullptr };
     constexpr int dungeon_size = ROWNO * (COLNO - 1);
     short glyphs[dungeon_size];
     obs.glyphs = &glyphs[0];
