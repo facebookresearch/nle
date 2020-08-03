@@ -12,7 +12,7 @@
 typedef struct nledl_ctx {
     void *dlhandle;
     void *nle_ctx;
-    void (*step)(void *, nle_obs *);
+    void *(*step)(void *, nle_obs *);
     FILE *outfile;
 } nle_ctx_t;
 

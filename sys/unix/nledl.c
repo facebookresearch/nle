@@ -21,7 +21,19 @@ nle_obs *obs;
     start = dlsym(nledl->dlhandle, "nle_start");
     nledl->nle_ctx = start(nledl->outfile, obs);
 
+    char *error = dlerror();
+    if (error != NULL) {
+        fprintf(stderr, "%s\n", error);
+        exit(EXIT_FAILURE);
+    }
+
     nledl->step = dlsym(nledl->dlhandle, "nle_step");
+
+    error = dlerror();
+    if (error != NULL) {
+        fprintf(stderr, "%s\n", error);
+        exit(EXIT_FAILURE);
+    }
 }
 
 void nledl_close(nledl) nle_ctx_t *nledl;

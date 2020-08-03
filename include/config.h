@@ -119,6 +119,12 @@
 #define HACKDIR "\\nethack"
 #endif
 
+#ifdef RL_GRAPHICS
+#ifndef DEFAULT_WINDOW_SYS
+#define DEFAULT_WINDOW_SYS "rl"
+#endif
+#endif
+
 #ifndef DEFAULT_WINDOW_SYS
 #define DEFAULT_WINDOW_SYS "tty"
 #endif
