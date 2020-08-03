@@ -46,7 +46,7 @@ static boolean wiz_error_flag = FALSE;
 static struct passwd *NDECL(get_unix_pw);
 
 int
-main(argc, argv)
+unixmain(argc, argv)
 int argc;
 char *argv[];
 {

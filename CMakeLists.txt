@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 3.14)
 file(STRINGS "version.txt" NLE_VERSION)
 project(nle VERSION ${NLE_VERSION})
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("Debug build.")
+  # Unclear if this is even necessary. `dsymutil rlmain -o rlmain.dSYM` seems to
+  # have done the trick.
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+  set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym")
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
+  message("Release build.")
+else()
+  message("Some other build type.")
+endif()
+
 message(STATUS "Building nle backend version: ${NLE_VERSION}")
 
 # We use this to decide where the root of the nle/ package is. Normally it
@@ -26,7 +39,7 @@ add_compile_definitions(
   NOMAIL
   NOTPARMDECL
   HACKDIR="${HACKDIR}"
-  DEFAULT_WINDOW_SYS="tty"
+  DEFAULT_WINDOW_SYS="rl"
   DLB)
 
 set(NLE_SRC ${nle_SOURCE_DIR}/src)
@@ -39,34 +52,51 @@ set(NLE_INC_GEN ${nle_BINARY_DIR}/include)
 set(NLE_DAT_GEN ${nle_BINARY_DIR}/dat)
 set(NLE_UTIL_GEN ${nle_BINARY_DIR}/util)
 
+add_subdirectory(third_party/deboost.context)
 add_subdirectory(util)
 add_subdirectory(dat)
-add_subdirectory(win/rl)
 
 file(
   GLOB
-  NLEHACK_SRC
+  NETHACK_SRC
   "src/*.c"
   "sys/share/posixregex.c"
   "sys/share/ioctl.c"
   "sys/unix/unixunix.c"
-  "sys/share/unixtty.c"
-  "sys/unix/unixres.c"
   "sys/unix/unixmain.c"
-  "win/tty/*.c")
+  "sys/unix/unixres.c"
+  "win/tty/*.c"
+  "win/rl/winrl.cc")
 
-add_executable(nethack ${NLEHACK_SRC})
-add_dependencies(nethack util winrl dat)
-
+# libnethack library
+add_library(nethack SHARED ${NETHACK_SRC})
+add_dependencies(nethack util dat)
+set_target_properties(nethack PROPERTIES CXX_STANDARD 14)
 target_include_directories(nethack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-                                          ${NLE_INC_GEN})
+                                          ${NLE_INC_GEN} /usr/local/include)
+target_link_directories(nethack PUBLIC /usr/local/lib)
+target_link_libraries(nethack PUBLIC ncurses m fcontext)
 
-find_library(CURSES ncurses)
-target_link_libraries(nethack PRIVATE ${CURSES} winrl)
+# dlopen wrapper library
+add_library(nethackdl SHARED "sys/unix/nledl.c")
+target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-install(TARGETS nethack)
-install(TARGETS nethack DESTINATION ${INSTDIR})
+# rlmain C++ (test) binary
+add_executable(rlmain "sys/unix/rlmain.cc")
+set_target_properties(rlmain PROPERTIES CXX_STANDARD 11)
+target_link_libraries(rlmain PUBLIC nethackdl)
+target_include_directories(rlmain PUBLIC ${NLE_INC_GEN})
+add_dependencies(rlmain util) # For pm.h.
 
-install(DIRECTORY DESTINATION ${VARDIR})
-install(DIRECTORY DESTINATION ${VARDIR}/save)
-install(DIRECTORY DESTINATION ${INSTDIR})
+# pybind11 python library.
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/pybind11)
+pybind11_add_module(pynle win/rl/pynle.cc)
+target_link_libraries(pynle PUBLIC nethackdl)
+set_target_properties(pynle PROPERTIES CXX_STANDARD 14)
+target_include_directories(pynle PUBLIC ${NLE_INC_GEN})
+add_dependencies(pynle util) # For pm.h.
+
+# install(TARGETS nethack) install(TARGETS nethack DESTINATION ${INSTDIR})
+
+# install(DIRECTORY DESTINATION ${VARDIR}) install(DIRECTORY DESTINATION
+# ${VARDIR}/save) install(DIRECTORY DESTINATION ${INSTDIR})

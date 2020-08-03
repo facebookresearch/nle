@@ -14,80 +14,7 @@
 
 #define STACK_SIZE (1 << 22) // 4MB
 
-/* We are fine with whatever. */
-boolean
-authorize_wizard_mode()
-{
-    return TRUE;
-}
-
-boolean check_user_string(optstr) char *optstr;
-{
-    return TRUE;
-}
-
-void port_insert_pastebuf(buf) char *buf;
-{
-}
-
-/* Copied from unixmain.c. */
-unsigned long
-sys_random_seed()
-{
-    unsigned long seed = 0L;
-    unsigned long pid = (unsigned long) getpid();
-    boolean no_seed = TRUE;
-#ifdef DEV_RANDOM
-    FILE *fptr;
-
-    fptr = fopen(DEV_RANDOM, "r");
-    if (fptr) {
-        fread(&seed, sizeof(long), 1, fptr);
-        has_strong_rngseed = TRUE; /* decl.c */
-        no_seed = FALSE;
-        (void) fclose(fptr);
-    } else {
-        /* leaves clue, doesn't exit */
-        paniclog("sys_random_seed", "falling back to weak seed");
-    }
-#endif
-    if (no_seed) {
-        seed = (unsigned long) getnow(); /* time((TIME_type) 0) */
-        /* Quick dirty band-aid to prevent PRNG prediction */
-        if (pid) {
-            if (!(pid & 3L))
-                pid -= 1L;
-            seed *= pid;
-        }
-    }
-    return seed;
-}
-
-/* Copied from unixmain.c. */
-void sethanguphandler(handler) void FDECL((*handler), (int) );
-{
-#ifdef SA_RESTART
-    /* don't want reads to restart.  If SA_RESTART is defined, we know
-     * sigaction exists and can be used to ensure reads won't restart.
-     * If it's not defined, assume reads do not restart.  If reads restart
-     * and a signal occurs, the game won't do anything until the read
-     * succeeds (or the stream returns EOF, which might not happen if
-     * reading from, say, a window manager). */
-    struct sigaction sact;
-
-    (void) memset((genericptr_t) &sact, 0, sizeof sact);
-    sact.sa_handler = (SIG_RET_TYPE) handler;
-    (void) sigaction(SIGHUP, &sact, (struct sigaction *) 0);
-#ifdef SIGXCPU
-    (void) sigaction(SIGXCPU, &sact, (struct sigaction *) 0);
-#endif
-#else /* !SA_RESTART */
-    (void) signal(SIGHUP, (SIG_RET_TYPE) handler);
-#ifdef SIGXCPU
-    (void) signal(SIGXCPU, (SIG_RET_TYPE) handler);
-#endif
-#endif /* ?SA_RESTART */
-}
+extern int unixmain(int, char **);
 
 nle_ctx_t *init_nle(outfile) FILE *outfile;
 {
@@ -104,92 +31,15 @@ nle_ctx_t *init_nle(outfile) FILE *outfile;
     return nle;
 }
 
+/* This is a copy of main() in unixmain.c. */
 void
 mainloop(fcontext_transfer_t ctx_transfer)
 {
     current_nle_ctx->returncontext = ctx_transfer.ctx;
 
-    early_init();
+    char *argv[1] = { "nethack" };
 
-    g.hname = "nethack";
-    g.hackpid = getpid();
-
-    choose_windows("rl");
-
-    /* TODO: Make nethack not require HACKDIR to be pwd. */
-    const char *dir = HACKDIR;
-    if (dir && chdir(dir) < 0) {
-        perror(dir);
-        error("Cannot chdir to %s.", dir);
-    }
-
-    strncpy(g.plname, "Agent", sizeof g.plname - 1);
-
-#ifdef _M_UNIX
-    check_sco_console();
-#endif
-#ifdef __linux__
-    check_linux_console();
-#endif
-    initoptions();
-
-    u.uhp = 1; /* prevent RIP on early quits */
-    g.program_state.preserve_locks = 1;
-
-    init_nhwindows(0, NULL); /* now we can set up window system */
-
-#ifndef NO_SIGNAL
-    sethanguphandler((SIG_RET_TYPE) hangup);
-#endif
-
-#ifdef _M_UNIX
-    init_sco_cons();
-#endif
-#ifdef __linux__
-    init_linux_cons();
-#endif
-
-    set_playmode(); /* sets plname to "wizard" for wizard mode */
-    /* hide any hyphens from plnamesuffix() */
-    g.plnamelen = (int) strlen(g.plname);
-
-    /* strip role,race,&c suffix; calls askname() if plname[] is empty
-       or holds a generic user name like "player" or "games" */
-    plnamesuffix();
-
-    dlb_init(); /* must be before newgame() */
-
-    /*
-     * Initialize the vision system.  This must be before mklev() on a
-     * new game or before a level restore on a saved game.
-     */
-    vision_init();
-
-    /* Creates and displays the game windows. */
-    display_gamewindows();
-
-    boolean resuming = FALSE;
-
-    if (*g.plname) {
-        /* TODO(heiner): Remove locks entirely.
-           By default, this also checks that we're on a pty... */
-        getlock();
-        g.program_state.preserve_locks = 0; /* after getlock() */
-    }
-
-    if (restore_saved_game() != 0) {
-        pline("Not restoring save file...");
-        if (yn("Do you want to keep the save file?") == 'n') {
-            (void) delete_savefile();
-        }
-    }
-
-    if (!resuming) {
-        player_selection();
-        newgame();
-    }
-
-    moveloop(resuming);
+    unixmain(1, argv);
 }
 
 boolean

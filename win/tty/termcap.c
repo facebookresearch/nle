@@ -586,11 +586,15 @@ void
 xputs(s)
 const char *s;
 {
+#ifdef RL_GRAPHICS
+    nle_xputs(s);
+#else
 #ifndef TERMLIB
     (void) fputs(s, stdout);
 #else
     tputs(s, 1, xputc);
 #endif
+#endif /*RL_GRAPHICS*/
 }
 
 void

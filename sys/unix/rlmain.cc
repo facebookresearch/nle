@@ -87,7 +87,7 @@ main(int argc, char **argv)
     obs.chars = &chars[0];
 
     nle_ctx_t *nle = nle_start(&obs);
-    randgame(nle, &obs);
+    // randgame(nle, &obs);
     play(nle, &obs);
     nle_reset(nle, &obs);
     play(nle, &obs);

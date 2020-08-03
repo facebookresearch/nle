@@ -312,9 +312,3 @@ add_custom_target(dat ALL DEPENDS ${NLE_DAT_GEN_OUTPUT} ${ALL_DAT_NOTGEN})
 
 install(FILES ${NLE_DAT_GEN_OUTPUT} DESTINATION ${INSTDIR})
 install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR})
-
-# NOTE: NetHack normally also generates a shell script at ~bin/nethack, however
-# we likely do not need this, as most users currently have straightforward
-# systems settings. It would be awesome though if someone were to run NLE on
-# some old systems with weird pagers and stuff, at some point, eventually...
-# after we solve AI :)
