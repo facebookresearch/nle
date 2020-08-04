@@ -20,14 +20,6 @@ import setuptools.command.build_ext
 import setuptools.command.build_py
 
 
-class BuildPy(setuptools.command.build_py.build_py):
-    def run(self):
-        self.run_command("build_ext")
-        # We append the package, as now the files have been created.
-        self.packages.append("nle.fbs")
-        return super().run()
-
-
 class CMakeBuild(setuptools.command.build_ext.build_ext):
     def run(self):
         build_lib_path = pathlib.Path(self.build_lib).resolve()
@@ -49,7 +41,6 @@ class CMakeBuild(setuptools.command.build_ext.build_ext):
         ]
         subprocess.check_call(cmake_cmd, cwd=build_path)
         subprocess.check_call(["make"], cwd=build_path)
-        subprocess.check_call(["make", "fbs"], cwd=build_path)
         subprocess.check_call(["make", "install"], cwd=build_path)
 
 
@@ -60,7 +51,6 @@ packages = [
     "nle.agent",
     "nle.scripts",
     "nle.tests",
-    # NOTE: nle.fbs will be created at build time
 ]
 
 entry_points = {
@@ -131,7 +121,7 @@ if __name__ == "__main__":
         entry_points=entry_points,
         packages=packages,
         ext_modules=[setuptools.Extension("nlehack", sources=[])],
-        cmdclass={"build_ext": CMakeBuild, "build_py": BuildPy},
+        cmdclass={"build_ext": CMakeBuild},
         setup_requires=["pybind11>=2.2"],
         install_requires=[
             "pybind11>=2.2",
@@ -157,10 +147,6 @@ if __name__ == "__main__":
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
             "Topic :: Games/Entertainment",
         ],
-        package_data={
-            "nle.nethack": ["helper*.so"],
-            "nle.fbs": ["*"],
-            "nle": ["nethackdir/**"],
-        },
+        package_data={"nle.nethack": ["pynle*.so"], "nle": ["nethackdir/**"],},
         include_package_data=True,
     )
