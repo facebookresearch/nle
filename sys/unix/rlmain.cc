@@ -7,15 +7,6 @@
 
 extern "C" {
 #include "hack.h"
-}
-
-/*
-extern "C" {
-#include "dlb.h"
-}
-*/
-
-extern "C" {
 #include "nledl.h"
 }
 
@@ -58,7 +49,7 @@ randgame(nle_ctx_t *nle, nle_obs *obs)
     obs->action = '\n';
     nle_step(nle, obs);
 
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 50; ++i) {
         randplay(nle, obs);
         nle_reset(nle, obs);
     }
@@ -67,11 +58,6 @@ randgame(nle_ctx_t *nle, nle_obs *obs)
 int
 main(int argc, char **argv)
 {
-    /*std::cerr << "short break before beginning: ";
-      int i;
-      read(STDIN_FILENO, &i, 1);
-    */
-
     struct termios old, tty;
     tcgetattr((int) STDIN_FILENO, &old);
     tty = old;
@@ -87,15 +73,11 @@ main(int argc, char **argv)
     obs.chars = &chars[0];
 
     nle_ctx_t *nle = nle_start(&obs);
-    // randgame(nle, &obs);
+    randgame(nle, &obs);
     play(nle, &obs);
     nle_reset(nle, &obs);
     play(nle, &obs);
     nle_end(nle);
 
-    /*
-    std::cerr << "short break before end: ";
-    read(STDIN_FILENO, &i, 1);
-    */
     tcsetattr(STDIN_FILENO, TCSANOW, &old);
 }
