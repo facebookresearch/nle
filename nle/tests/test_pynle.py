@@ -1,6 +1,5 @@
 import contextlib
 import termios
-import time
 import timeit
 import tty
 import random

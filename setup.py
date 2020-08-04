@@ -131,7 +131,7 @@ if __name__ == "__main__":
         ext_modules=[setuptools.Extension("nlehack", sources=[])],
         cmdclass={"build_ext": CMakeBuild},
         setup_requires=["pybind11>=2.2"],
-        install_requires=["pybind11>=2.2", "numpy>=1.16", "gym>=0.15",],
+        install_requires=["pybind11>=2.2", "numpy>=1.16", "gym>=0.15"],
         extras_require=extras_deps,
         python_requires=">=3.5",
         classifiers=[
@@ -149,7 +149,7 @@ if __name__ == "__main__":
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
             "Topic :: Games/Entertainment",
         ],
-        package_data={"nle.nethack": ["pynle*.so"], "nle": ["nethackdir/**"],},
+        package_data={"nle.nethack": ["pynle*.so"], "nle": ["nethackdir/**"]},
         include_package_data=True,
         zip_safe=False,
     )
