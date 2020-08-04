@@ -16,32 +16,40 @@ import subprocess
 import sys
 
 import setuptools
-import setuptools.command.build_ext
-import setuptools.command.build_py
+from setuptools.command import build_ext
 
 
-class CMakeBuild(setuptools.command.build_ext.build_ext):
+class CMakeBuild(build_ext.build_ext):
     def run(self):
-        build_lib_path = pathlib.Path(self.build_lib).resolve()
-        src_orig_path = pathlib.Path(__file__).parent.resolve().resolve()
-        build_path = build_lib_path.parent.joinpath("nlehack")
-        hackdir_path = os.getenv("HACKDIR", src_orig_path.joinpath("nle", "nethackdir"))
+        for ext in self.extensions:
+            self.build_extension(ext)
 
-        os.makedirs(build_path, exist_ok=True)
+    def build_extension(self, ext):
+        source_path = pathlib.Path(__file__).parent.resolve()
+        output_path = (
+            pathlib.Path(self.get_ext_fullpath(ext.name))
+            .parent.joinpath("nle")
+            .resolve()
+        )
+        hackdir_path = os.getenv("HACKDIR", source_path.joinpath("nle", "nethackdir"))
+
+        os.makedirs(self.build_temp, exist_ok=True)
 
         cmake_cmd = [
             "cmake",
-            str(src_orig_path),
-            "-DPYTHON_SRC_PARENT={}".format(src_orig_path),
-            # NOTE: This makes sure that cmake knows which python it is
-            # compiling against.
-            "-DPYTHON_EXECUTABLE={}".format(sys.executable),
-            "-DCMAKE_INSTALL_PREFIX={}".format(sys.base_prefix),
-            "-DHACKDIR={}".format(hackdir_path),
+            str(source_path),
+            "-DPYTHON_SRC_PARENT=%s" % source_path,
+            # Tell cmake which Python we want.
+            "-DPYTHON_EXECUTABLE=%s" % sys.executable,
+            "-DCMAKE_INSTALL_PREFIX=%s" % sys.base_prefix,
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=%s" % output_path,
+            "-DHACKDIR=%s" % hackdir_path,
         ]
-        subprocess.check_call(cmake_cmd, cwd=build_path)
-        subprocess.check_call(["make"], cwd=build_path)
-        subprocess.check_call(["make", "install"], cwd=build_path)
+
+        subprocess.check_call(cmake_cmd, cwd=self.build_temp)
+        subprocess.check_call(["make", "-j"], cwd=self.build_temp)
+        # Installs nethackdir. TODO: Can't we do this with setuptools?
+        subprocess.check_call(["make", "install"], cwd=self.build_temp)
 
 
 packages = [
@@ -123,13 +131,7 @@ if __name__ == "__main__":
         ext_modules=[setuptools.Extension("nlehack", sources=[])],
         cmdclass={"build_ext": CMakeBuild},
         setup_requires=["pybind11>=2.2"],
-        install_requires=[
-            "pybind11>=2.2",
-            "numpy>=1.16",
-            "gym>=0.15",
-            "pyzmq>=19.0.0",
-            "flatbuffers>=1.10",
-        ],
+        install_requires=["pybind11>=2.2", "numpy>=1.16", "gym>=0.15",],
         extras_require=extras_deps,
         python_requires=">=3.5",
         classifiers=[
@@ -149,4 +151,5 @@ if __name__ == "__main__":
         ],
         package_data={"nle.nethack": ["pynle*.so"], "nle": ["nethackdir/**"],},
         include_package_data=True,
+        zip_safe=False,
     )
