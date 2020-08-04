@@ -52,7 +52,8 @@ set(NLE_INC_GEN ${nle_BINARY_DIR}/include)
 set(NLE_DAT_GEN ${nle_BINARY_DIR}/dat)
 set(NLE_UTIL_GEN ${nle_BINARY_DIR}/util)
 
-add_subdirectory(third_party/deboost.context)
+# EXCLUDE_FROM_ALL: Don't install this static library into /usr/local.
+add_subdirectory(third_party/deboost.context EXCLUDE_FROM_ALL)
 add_subdirectory(util)
 add_subdirectory(dat)
 
