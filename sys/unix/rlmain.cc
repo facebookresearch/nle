@@ -73,7 +73,7 @@ main(int argc, char **argv)
     constexpr int dungeon_size = ROWNO * (COLNO - 1);
     short glyphs[dungeon_size];
     obs.glyphs = &glyphs[0];
-    char chars[dungeon_size];
+    unsigned char chars[dungeon_size];
     obs.chars = &chars[0];
     long blstats[23];
     obs.blstats = &blstats[0];

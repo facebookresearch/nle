@@ -29,14 +29,18 @@ namespace py = pybind11;
 class NLE
 {
   public:
-    NLE(const char *dl_path) : obs_{ 0, 0, nullptr, nullptr, nullptr }
+    NLE(std::string dlpath)
+        : dlpath_(std::move(dlpath)), obs_{ 0,       0,       nullptr,
+                                            nullptr, nullptr, nullptr }
     {
         obs_.chars = &chars_[0];
-        nle_ = nle_start(dl_path, &obs_);
+        obs_.blstats = &blstats_[0];
     }
     ~NLE()
     {
-        nle_end(nle_);
+        if (nle_) {
+            nle_end(nle_);
+        }
     }
     void
     step(int action)
@@ -52,19 +56,35 @@ class NLE
     void
     reset()
     {
+        if (!nle_) {
+            nle_ = nle_start(dlpath_.c_str(), &obs_);
+            return;
+        }
         nle_reset(nle_, &obs_);
     }
 
-    char *
-    observation()
+    void
+    set_buffers(py::array_t<uint8_t> array)
     {
-        return &chars_[0];
+        py::buffer_info buf = array.request();
+
+        if (buf.size != ROWNO * (COLNO - 1))
+            throw std::runtime_error("Array has wrong size");
+        if (buf.ndim != 2)
+            throw std::runtime_error("Array has wrong number of dims");
+        if (buf.shape[0] != ROWNO || buf.shape[1] != COLNO - 1)
+            throw std::runtime_error("Array has wrong shape");
+        if (!(array.flags() & py::array::c_style))
+            throw std::runtime_error("Array isn't C contiguous");
+        obs_.chars = static_cast<unsigned char *>(buf.ptr);
     }
 
   private:
-    char chars_[ROWNO * (COLNO - 1)];
+    std::string dlpath_;
+    unsigned char chars_[ROWNO * (COLNO - 1)];
+    long blstats_[23];
     nle_obs obs_;
-    nle_ctx_t *nle_;
+    nle_ctx_t *nle_ = nullptr;
 };
 
 PYBIND11_MODULE(pynle, m)
@@ -76,10 +96,7 @@ PYBIND11_MODULE(pynle, m)
         .def("step", &NLE::step, py::arg("action"))
         .def("done", &NLE::done)
         .def("reset", &NLE::reset)
-        .def("observation", [](NLE &self) {
-            return py::array(
-                py::buffer_info(self.observation(), ROWNO * (COLNO - 1)));
-        });
+        .def("set_buffers", &NLE::set_buffers, py::arg().noconvert());
 
     m.attr("NHW_MESSAGE") = py::int_(NHW_MESSAGE);
     m.attr("NHW_STATUS") = py::int_(NHW_STATUS);

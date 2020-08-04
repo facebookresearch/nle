@@ -5,10 +5,12 @@ import tty
 import random
 import os
 
+import numpy as np
+
 from nle import pynle
 
 
-SELF_PLAY = False
+SELF_PLAY = True
 
 
 @contextlib.contextmanager
@@ -47,6 +49,7 @@ def main():
 
     dlpath = os.path.join(os.path.dirname(pynle.__file__), "libnethack.so")
     nle = pynle.NLE(dlpath)
+    nle.reset()
 
     nle.step(ord("y"))
     nle.step(ord("y"))
@@ -59,7 +62,7 @@ def main():
     mean_sps = 0
     sps_n = 0
 
-    for episode in range(30):
+    for episode in range(5):
         while not nle.done():
             ch = random.choice(ACTIONS)
             nle.step(ch)
@@ -82,11 +85,13 @@ def main():
     if not SELF_PLAY:
         return
 
+    obs = np.zeros((21, 79), dtype=np.uint8)
+    nle.set_buffers(obs)
+
     while not nle.done():
-        obs = nle.observation()
-        obs = obs.reshape((21, 79))
         for line in obs:
             print(line.tobytes().decode("utf-8"))
+        # print(obs)
         with no_echo():
             nle.step(ord(os.read(0, 1)))
 
