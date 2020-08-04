@@ -62,7 +62,7 @@ def main():
     mean_sps = 0
     sps_n = 0
 
-    for episode in range(5):
+    for episode in range(2):
         while not nle.done():
             ch = random.choice(ACTIONS)
             nle.step(ch)
@@ -85,13 +85,14 @@ def main():
     if not SELF_PLAY:
         return
 
-    obs = np.zeros((21, 79), dtype=np.uint8)
-    nle.set_buffers(obs)
+    chars = np.zeros((21, 79), dtype=np.uint8)
+    blstats = np.zeros((23,), dtype=np.int64)
+    nle.set_buffers(chars=chars, blstats=blstats)
 
     while not nle.done():
-        for line in obs:
+        for line in chars:
             print(line.tobytes().decode("utf-8"))
-        # print(obs)
+        print(blstats)
         with no_echo():
             nle.step(ord(os.read(0, 1)))
 

@@ -26,6 +26,35 @@ extern "C" {
 
 namespace py = pybind11;
 
+template <typename T>
+T *
+checked_conversion(py::object obj, const std::vector<ssize_t> &shape)
+{
+    if (obj.is_none())
+        return nullptr;
+    auto array = py::array::ensure(obj.release());
+    if (!array)
+        throw std::runtime_error("Numpy array required");
+
+    // We don't use py::array_t<T> (or <T, 0>) above as that still
+    // causes conversions to "larger" types.
+
+    // TODO: Better error messages here and below.
+    if (!array.dtype().is(py::dtype::of<T>()))
+        throw std::runtime_error("Numpy array of right type required");
+
+    py::buffer_info buf = array.request();
+
+    if (buf.ndim != shape.size())
+        throw std::runtime_error("array has wrong number of dims");
+    if (!std::equal(shape.begin(), shape.end(), buf.shape.begin()))
+        throw std::runtime_error("Array has wrong shape");
+    if (!(array.flags() & py::array::c_style))
+        throw std::runtime_error("Array isn't C contiguous");
+
+    return static_cast<T *>(buf.ptr);
+}
+
 class NLE
 {
   public:
@@ -33,8 +62,6 @@ class NLE
         : dlpath_(std::move(dlpath)), obs_{ 0,       0,       nullptr,
                                             nullptr, nullptr, nullptr }
     {
-        obs_.chars = &chars_[0];
-        obs_.blstats = &blstats_[0];
     }
     ~NLE()
     {
@@ -64,25 +91,20 @@ class NLE
     }
 
     void
-    set_buffers(py::array_t<uint8_t> array)
+    set_buffers(py::object glyphs, py::object chars, py::object colors,
+                py::object specials, py::object blstats)
     {
-        py::buffer_info buf = array.request();
-
-        if (buf.size != ROWNO * (COLNO - 1))
-            throw std::runtime_error("Array has wrong size");
-        if (buf.ndim != 2)
-            throw std::runtime_error("Array has wrong number of dims");
-        if (buf.shape[0] != ROWNO || buf.shape[1] != COLNO - 1)
-            throw std::runtime_error("Array has wrong shape");
-        if (!(array.flags() & py::array::c_style))
-            throw std::runtime_error("Array isn't C contiguous");
-        obs_.chars = static_cast<unsigned char *>(buf.ptr);
+        std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
+        obs_.glyphs = checked_conversion<int16_t>(std::move(glyphs), dungeon);
+        obs_.chars = checked_conversion<uint8_t>(std::move(chars), dungeon);
+        obs_.colors = checked_conversion<uint8_t>(std::move(colors), dungeon);
+        obs_.specials =
+            checked_conversion<uint8_t>(std::move(specials), dungeon);
+        obs_.blstats = checked_conversion<long>(std::move(blstats), { 23 });
     }
 
   private:
     std::string dlpath_;
-    unsigned char chars_[ROWNO * (COLNO - 1)];
-    long blstats_[23];
     nle_obs obs_;
     nle_ctx_t *nle_ = nullptr;
 };
@@ -96,7 +118,13 @@ PYBIND11_MODULE(pynle, m)
         .def("step", &NLE::step, py::arg("action"))
         .def("done", &NLE::done)
         .def("reset", &NLE::reset)
-        .def("set_buffers", &NLE::set_buffers, py::arg().noconvert());
+        // TODO: add keepalive
+        .def("set_buffers", &NLE::set_buffers, py::arg("glyphs") = py::none(),
+             py::arg("chars") = py::none(), py::arg("colors") = py::none(),
+             py::arg("specials") = py::none(),
+             py::arg("blstats") = py::none(), py::keep_alive<1, 2>(),
+             py::keep_alive<1, 3>(), py::keep_alive<1, 4>(),
+             py::keep_alive<1, 5>(), py::keep_alive<1, 6>());
 
     m.attr("NHW_MESSAGE") = py::int_(NHW_MESSAGE);
     m.attr("NHW_STATUS") = py::int_(NHW_STATUS);
