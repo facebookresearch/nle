@@ -253,8 +253,11 @@ char *argv[];
         locknum = 0;
     } else {
         /* suppress interrupts while processing lock file */
+#ifndef NO_SIGNAL
+        /* NLE: Disable signal suppression. */
         (void) signal(SIGQUIT, SIG_IGN);
         (void) signal(SIGINT, SIG_IGN);
+#endif
     }
 
     dlb_init(); /* must be before newgame() */
