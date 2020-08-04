@@ -29,10 +29,10 @@ namespace py = pybind11;
 class NLE
 {
   public:
-    NLE() : obs_{ 0, 0, nullptr, nullptr, nullptr }
+    NLE(const char *dl_path) : obs_{ 0, 0, nullptr, nullptr, nullptr }
     {
         obs_.chars = &chars_[0];
-        nle_ = nle_start(&obs_);
+        nle_ = nle_start(dl_path, &obs_);
     }
     ~NLE()
     {
@@ -72,7 +72,7 @@ PYBIND11_MODULE(pynle, m)
     m.doc() = "The NetHack Learning Environment";
 
     py::class_<NLE>(m, "NLE")
-        .def(py::init<>())
+        .def(py::init<const char *>())
         .def("step", &NLE::step, py::arg("action"))
         .def("done", &NLE::done)
         .def("reset", &NLE::reset)

@@ -2,13 +2,14 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "nledl.h"
 
 void nledl_init(nledl, obs) nle_ctx_t *nledl;
 nle_obs *obs;
 {
-    nledl->dlhandle = dlopen("libnethack.dylib", RTLD_LAZY);
+    nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
 
     if (!nledl->dlhandle) {
         fprintf(stderr, "%s\n", dlerror());
@@ -51,10 +52,12 @@ void nledl_close(nledl) nle_ctx_t *nledl;
     dlerror();
 }
 
-nle_ctx_t *nle_start(obs) nle_obs *obs;
+nle_ctx_t *nle_start(dlpath, obs) const char *dlpath;
+nle_obs *obs;
 {
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
     nledl->outfile = fopen("nle.ttyrec", "a");
+    strncpy(nledl->dlpath, dlpath, sizeof(nledl->dlpath));
 
     nledl_init(nledl, obs);
     return nledl;

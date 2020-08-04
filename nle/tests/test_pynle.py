@@ -6,7 +6,7 @@ import tty
 import random
 import os
 
-import pynle
+from nle import pynle
 
 
 SELF_PLAY = False
@@ -46,7 +46,8 @@ def main():
 
     os.environ["NETHACKOPTIONS"] = "nolegacy,nocmdassist"
 
-    nle = pynle.NLE()
+    dlpath = os.path.join(os.path.dirname(pynle.__file__), "libnethack.so")
+    nle = pynle.NLE(dlpath)
 
     nle.step(ord("y"))
     nle.step(ord("y"))
@@ -59,7 +60,7 @@ def main():
     mean_sps = 0
     sps_n = 0
 
-    for episode in range(10):
+    for episode in range(30):
         while not nle.done():
             ch = random.choice(ACTIONS)
             nle.step(ch)

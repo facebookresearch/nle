@@ -72,7 +72,7 @@ file(
 # libnethack library
 add_library(nethack SHARED ${NETHACK_SRC})
 add_dependencies(nethack util dat)
-set_target_properties(nethack PROPERTIES CXX_STANDARD 14)
+set_target_properties(nethack PROPERTIES CXX_STANDARD 14 SUFFIX ".so")
 target_include_directories(nethack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN} /usr/local/include)
 target_link_directories(nethack PUBLIC /usr/local/lib)

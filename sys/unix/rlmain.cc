@@ -72,7 +72,7 @@ main(int argc, char **argv)
     char chars[dungeon_size];
     obs.chars = &chars[0];
 
-    nle_ctx_t *nle = nle_start(&obs);
+    nle_ctx_t *nle = nle_start("libnethack.so", &obs);
     randgame(nle, &obs);
     play(nle, &obs);
     nle_reset(nle, &obs);

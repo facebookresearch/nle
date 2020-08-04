@@ -2,7 +2,6 @@
 #include <assert.h>
 #include <sys/time.h>
 
-#include <signal.h>
 #include <string.h>
 
 #define NEED_VARARGS
