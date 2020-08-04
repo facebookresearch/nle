@@ -38,6 +38,7 @@ class CMakeBuild(build_ext.build_ext):
         cmake_cmd = [
             "cmake",
             str(source_path),
+            "-GNinja",
             "-DPYTHON_SRC_PARENT=%s" % source_path,
             # Tell cmake which Python we want.
             "-DPYTHON_EXECUTABLE=%s" % sys.executable,
@@ -47,9 +48,13 @@ class CMakeBuild(build_ext.build_ext):
         ]
 
         subprocess.check_call(cmake_cmd, cwd=self.build_temp)
-        subprocess.check_call(["make", "-j"], cwd=self.build_temp)
+        try:
+            subprocess.check_call(["ninja"], cwd=self.build_temp)
+        except subprocess.CalledProcessError:
+            # Don't obscure the error with a setuptools backtrace.
+            sys.exit(1)
         # Installs nethackdir. TODO: Can't we do this with setuptools?
-        subprocess.check_call(["make", "install"], cwd=self.build_temp)
+        subprocess.check_call(["ninja", "install"], cwd=self.build_temp)
 
 
 packages = [
