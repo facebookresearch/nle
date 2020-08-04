@@ -30,7 +30,7 @@ nle_ctx_t *init_nle(outfile) FILE *outfile;
     return nle;
 }
 
-/* This is a copy of main() in unixmain.c. */
+/* TODO: Consider copying the relevant parts of main() in unixmain.c. */
 void
 mainloop(fcontext_transfer_t ctx_transfer)
 {
@@ -188,6 +188,7 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
     return nle;
 }
 
+/* TODO: This doesn't properly free NetHack's memory. Fix. */
 void
 nle_end(nle_ctx_t *nle)
 {
