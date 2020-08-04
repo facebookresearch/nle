@@ -20,6 +20,10 @@ play(nle_ctx_t *nle, nle_obs *obs)
                 std::cout << obs->chars[r * (COLNO - 1) + c];
             std::cout << std::endl;
         }
+        for (int i = 0; i < 23; ++i) {
+            std::cout << obs->blstats[i] << " ";
+        }
+        std::cout << std::endl;
         read(STDIN_FILENO, &obs->action, 1);
         nle = nle_step(nle, obs);
     }
@@ -49,7 +53,7 @@ randgame(nle_ctx_t *nle, nle_obs *obs)
     obs->action = '\n';
     nle_step(nle, obs);
 
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 0; i < 15; ++i) {
         randplay(nle, obs);
         nle_reset(nle, obs);
     }
@@ -65,12 +69,14 @@ main(int argc, char **argv)
     tty.c_lflag &= ~ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 
-    nle_obs obs{ 0, 0, nullptr, nullptr, nullptr, nullptr };
+    nle_obs obs{ 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr };
     constexpr int dungeon_size = ROWNO * (COLNO - 1);
     short glyphs[dungeon_size];
     obs.glyphs = &glyphs[0];
     char chars[dungeon_size];
     obs.chars = &chars[0];
+    long blstats[23];
+    obs.blstats = &blstats[0];
 
     nle_ctx_t *nle = nle_start("libnethack.so", &obs);
     randgame(nle, &obs);

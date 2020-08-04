@@ -223,6 +223,21 @@ NetHackRL::player_selection_method()
 void
 NetHackRL::fill_obs(nle_obs *obs)
 {
+    if (!program_state.in_moveloop) {
+        // Game not yet started. Return zero observations.
+        if (obs->glyphs)
+            std::memset(obs->glyphs, 0, sizeof(short) * glyphs_.size());
+        if (obs->chars)
+            std::memset(obs->chars, 0, chars_.size());
+        if (obs->colors)
+            std::memset(obs->colors, 0, colors_.size());
+        if (obs->specials)
+            std::memset(obs->specials, 0, specials_.size());
+        if (obs->blstats)
+            std::memset(obs->blstats, 0, sizeof(long) * 23);
+        return;
+    }
+
     if (obs->glyphs) {
         std::memcpy(obs->glyphs, glyphs_.data(),
                     sizeof(int16_t) * glyphs_.size());
@@ -235,6 +250,50 @@ NetHackRL::fill_obs(nle_obs *obs)
     }
     if (obs->specials) {
         std::memcpy(obs->specials, specials_.data(), specials_.size());
+    }
+    if (obs->blstats) {
+        // Blstats
+        int hitpoints;
+
+        /* See botl.c. */
+        int i = Upolyd ? u.mh : u.uhp;
+        if (i < 0)
+            i = 0;
+
+        hitpoints = min(i, 9999);
+
+        int max_hitpoints;
+        i = Upolyd ? u.mhmax : u.uhpmax;
+        max_hitpoints = min(i, 9999);
+
+        long blstats[23] = {
+            /* Cf. botl.c. */
+            u.ux - 1,            /* x coordinate, 1 <= ux <= cols */
+            u.uy,                /* y coordinate, 0 <= uy < rows */
+            ACURRSTR,            /* strength_percentage */
+            ACURR(A_STR),        /* strength          */
+            ACURR(A_DEX),        /* dexterity         */
+            ACURR(A_CON),        /* constitution      */
+            ACURR(A_INT),        /* intelligence      */
+            ACURR(A_WIS),        /* wisdom            */
+            ACURR(A_CHA),        /* charisma          */
+            botl_score(),        /* score             */
+            hitpoints,           /* hitpoints         */
+            max_hitpoints,       /* max_hitpoints     */
+            depth(&u.uz),        /* depth             */
+            money_cnt(invent),   /* gold              */
+            min(u.uen, 9999),    /* energy            */
+            min(u.uenmax, 9999), /* max_energy        */
+            u.uac,               /* armor_class       */
+            Upolyd ? (int) mons[u.umonnum].mlevel : 0, /* monster_level     */
+            u.ulevel,                                  /* experience_level  */
+            u.uexp,                                    /* experience_points */
+            moves,                                     /* time              */
+            u.uhs,                                     /* hunger state      */
+            near_capacity()                            /* carrying_capacity */
+        };
+
+        std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));
     }
 }
 
