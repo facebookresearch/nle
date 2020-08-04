@@ -73,6 +73,7 @@ nle_obs *obs;
     return nledl;
 }
 
+/* TODO: This doesn't close nethack cleanly at all. */
 void nle_reset(nledl, obs) nle_ctx_t *nledl;
 nle_obs *obs;
 {
