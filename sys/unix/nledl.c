@@ -55,6 +55,7 @@ void nledl_close(nledl) nle_ctx_t *nledl;
 nle_ctx_t *nle_start(dlpath, obs) const char *dlpath;
 nle_obs *obs;
 {
+    /* TODO: Get outfile path from caller, optionally reset in reset. */
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
     nledl->outfile = fopen("nle.ttyrec", "a");
     strncpy(nledl->dlpath, dlpath, sizeof(nledl->dlpath));
