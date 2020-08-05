@@ -55,15 +55,15 @@ checked_conversion(py::object obj, const std::vector<ssize_t> &shape)
     return static_cast<T *>(buf.ptr);
 }
 
-class NLE
+class Nethack
 {
   public:
-    NLE(std::string dlpath)
+    Nethack(std::string dlpath)
         : dlpath_(std::move(dlpath)), obs_{ 0,       0,       nullptr,
                                             nullptr, nullptr, nullptr }
     {
     }
-    ~NLE()
+    ~Nethack()
     {
         if (nle_) {
             nle_end(nle_);
@@ -72,6 +72,9 @@ class NLE
     void
     step(int action)
     {
+        if (obs_.done) {
+            throw std::runtime_error("Called step on finished NetHack");
+        }
         obs_.action = action;
         nle_ = nle_step(nle_, &obs_);
     }
@@ -109,18 +112,18 @@ class NLE
     nle_ctx_t *nle_ = nullptr;
 };
 
-PYBIND11_MODULE(_pynle, m)
+PYBIND11_MODULE(_pynethack, m)
 {
     m.doc() = "The NetHack Learning Environment";
 
-    py::class_<NLE>(m, "NLE")
+    py::class_<Nethack>(m, "Nethack")
         .def(py::init<const char *>())
-        .def("step", &NLE::step, py::arg("action"))
-        .def("done", &NLE::done)
-        .def("reset", &NLE::reset)
-        .def("set_buffers", &NLE::set_buffers, py::arg("glyphs") = py::none(),
-             py::arg("chars") = py::none(), py::arg("colors") = py::none(),
-             py::arg("specials") = py::none(),
+        .def("step", &Nethack::step, py::arg("action"))
+        .def("done", &Nethack::done)
+        .def("reset", &Nethack::reset)
+        .def("set_buffers", &Nethack::set_buffers,
+             py::arg("glyphs") = py::none(), py::arg("chars") = py::none(),
+             py::arg("colors") = py::none(), py::arg("specials") = py::none(),
              py::arg("blstats") = py::none(), py::keep_alive<1, 2>(),
              py::keep_alive<1, 3>(), py::keep_alive<1, 4>(),
              py::keep_alive<1, 5>(), py::keep_alive<1, 6>());
