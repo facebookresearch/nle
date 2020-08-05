@@ -155,6 +155,9 @@ nle_yield(void *notdone)
 
 void nethack_exit(status) int status;
 {
+    if (status) {
+        fprintf(stderr, "NetHack exit with status %i\n", status);
+    }
     nle_yield(NULL);
 }
 
@@ -211,7 +214,7 @@ VA_DECL(const char *, s)
     Vprintf(s, VA_ARGS);
     (void) putchar('\n');
     VA_END();
-    exit(EXIT_FAILURE);
+    nethack_exit(EXIT_FAILURE);
 }
 
 /* From unixtty.c */
