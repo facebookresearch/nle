@@ -94,6 +94,7 @@ eraseoldlocks()
 void
 getlock()
 {
+#ifndef RL_GRAPHICS
     register int i = 0, fd, c;
     const char *fq_lock;
 
@@ -211,6 +212,7 @@ gotlock:
             error("cannot close lock (%s)", fq_lock);
         }
     }
+#endif /* RL_GRAPHICS */
 }
 
 /* normalize file name - we don't like .'s, /'s, spaces */
