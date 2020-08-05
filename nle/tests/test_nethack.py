@@ -32,10 +32,18 @@ ACTIONS = [
 
 
 class TestNetHack:
-    def test_run_n_episodes(self, tmpdir, episodes=3):
-        pytest.skip("Not ready yet")
+    def test_close_and_restart(self):
+        pytest.skip("No parallel tests")
+        game = nethack.Nethack()
+        game.reset()
+        game.close()
 
-        tmpdir.chdir()
+        game = nethack.Nethack()
+        game.reset()
+        game.close()
+
+    def test_run_n_episodes(self, tmpdir, episodes=3):
+        olddir = tmpdir.chdir()
 
         game = nethack.Nethack(observation_keys=("chars", "blstats"))
         chars, blstats = game.reset()
@@ -77,13 +85,15 @@ class TestNetHack:
         print("Finished after %i steps. Mean sps: %f" % (steps, mean_sps))
 
         nethackdir = tmpdir.chdir()
+
         assert nethackdir.fnmatch("*nethackdir")
         assert tmpdir.ensure("nle.ttyrec")
-
         assert mean_sps > 10000
 
         if mean_sps < 15000:
             warnings.warn("Mean sps was only %f" % mean_sps)
+        olddir.chdir()
+        game.close()
 
 
 class TestNetHackOld:
@@ -106,7 +116,6 @@ class TestNetHackOld:
             # TODO: Implement programstate observation.
             # while not response.ProgramState().InMoveloop():
             for _ in range(5):
-                print(_)
                 obs, done = game.step(nethack.MiscAction.MORE)
 
             obs, done = game.step(action)
@@ -117,7 +126,6 @@ class TestNetHackOld:
             glyphs, chars, _, _, blstats = obs
 
             x, y = blstats[:2]
-            print(x, y)
 
             assert np.count_nonzero(chars == ord("@")) == 1
             assert chars[y, x] == ord("@")
@@ -130,6 +138,8 @@ class TestNetHackOld:
             # class_sym = nethack.class_sym.from_mlet(mon.mlet)
             # self.assertEqual(class_sym.sym, "@")
             # self.assertEqual(class_sym.explain, "human or elf")
+
+        game.close()
 
 
 class TestNethackFunctionsAndConstants:

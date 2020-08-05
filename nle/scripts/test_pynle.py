@@ -80,7 +80,8 @@ def main():
 
     print("Finished after %i steps. Mean sps: %f" % (steps, mean_sps))
 
-    for _ in range(NO_SELF_PLAY):
+    for i in range(NO_SELF_PLAY):
+        print("Starting self-play episode", i)
         nle.reset()
         done = False
         while not done:

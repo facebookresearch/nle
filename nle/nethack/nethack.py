@@ -22,6 +22,7 @@ OBSERVATION_DESC = {
 
 
 class Nethack:
+    # TODO: Ensure we only create one of these, for now.
     def __init__(
         self, observation_keys=OBSERVATION_DESC.keys(), copy=False,
     ):
