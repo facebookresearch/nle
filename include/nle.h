@@ -21,6 +21,7 @@ typedef struct nle_globals {
     char *outbuf_write_ptr;
     char *outbuf_write_end;
 
+    boolean done;
     nle_obs *observation;
 } nle_ctx_t;
 

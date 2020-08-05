@@ -174,7 +174,8 @@ nle_obs *obs;
     current_nle_ctx = nle;
     fcontext_transfer_t t = jump_fcontext(nle->generatorcontext, NULL);
     nle->generatorcontext = t.ctx;
-    obs->done = (t.data == NULL);
+    nle->done = (t.data == NULL);
+    obs->done = nle->done;
 
     return nle;
 }
@@ -186,15 +187,24 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
     nle->observation = obs;
     fcontext_transfer_t t = jump_fcontext(nle->generatorcontext, obs);
     nle->generatorcontext = t.ctx;
-    obs->done = (t.data == NULL);
+    nle->done = (t.data == NULL);
+    obs->done = nle->done;
 
     return nle;
 }
 
-/* TODO: This doesn't properly free NetHack's memory. Fix. */
 void
 nle_end(nle_ctx_t *nle)
 {
+    if (!nle->done) {
+        /* Reset without closing nethack. Need free memory, etc.
+         * this is what nh_terminate in end.c does. I hope it's enough. */
+        if (!program_state.panicking) {
+            freedynamicdata();
+            dlb_cleanup();
+        }
+    }
+
     destroy_fcontext_stack(&nle->stack);
     free(nle);
 }

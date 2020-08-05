@@ -77,7 +77,8 @@ nle_obs *obs;
     return nledl;
 }
 
-/* TODO: This doesn't close nethack cleanly at all. */
+/* TODO: For a standard reset, we don't need the full close in nle.c.
+ * E.g., we could re-use the stack buffer and the nle_ctx_t. */
 void nle_reset(nledl, obs) nle_ctx_t *nledl;
 nle_obs *obs;
 {
