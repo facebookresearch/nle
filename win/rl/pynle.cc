@@ -109,7 +109,7 @@ class NLE
     nle_ctx_t *nle_ = nullptr;
 };
 
-PYBIND11_MODULE(pynle, m)
+PYBIND11_MODULE(_pynle, m)
 {
     m.doc() = "The NetHack Learning Environment";
 
@@ -118,7 +118,6 @@ PYBIND11_MODULE(pynle, m)
         .def("step", &NLE::step, py::arg("action"))
         .def("done", &NLE::done)
         .def("reset", &NLE::reset)
-        // TODO: add keepalive
         .def("set_buffers", &NLE::set_buffers, py::arg("glyphs") = py::none(),
              py::arg("chars") = py::none(), py::arg("colors") = py::none(),
              py::arg("specials") = py::none(),
@@ -126,100 +125,103 @@ PYBIND11_MODULE(pynle, m)
              py::keep_alive<1, 3>(), py::keep_alive<1, 4>(),
              py::keep_alive<1, 5>(), py::keep_alive<1, 6>());
 
-    m.attr("NHW_MESSAGE") = py::int_(NHW_MESSAGE);
-    m.attr("NHW_STATUS") = py::int_(NHW_STATUS);
-    m.attr("NHW_MAP") = py::int_(NHW_MAP);
-    m.attr("NHW_MENU") = py::int_(NHW_MENU);
-    m.attr("NHW_TEXT") = py::int_(NHW_TEXT);
+    py::module mn = m.def_submodule(
+        "nethack", "Collection of NetHack constants and functions");
 
-    // m.attr("MAXWIN") = py::int_(MAXWIN);
+    mn.attr("NHW_MESSAGE") = py::int_(NHW_MESSAGE);
+    mn.attr("NHW_STATUS") = py::int_(NHW_STATUS);
+    mn.attr("NHW_MAP") = py::int_(NHW_MAP);
+    mn.attr("NHW_MENU") = py::int_(NHW_MENU);
+    mn.attr("NHW_TEXT") = py::int_(NHW_TEXT);
 
-    m.attr("NUMMONS") = py::int_(NUMMONS);
+    // mn.attr("MAXWIN") = py::int_(MAXWIN);
+
+    mn.attr("NUMMONS") = py::int_(NUMMONS);
 
     // Glyph array offsets. This is what the glyph_is_* functions
     // are based on, see display.h.
-    m.attr("GLYPH_MON_OFF") = py::int_(GLYPH_MON_OFF);
-    m.attr("GLYPH_PET_OFF") = py::int_(GLYPH_PET_OFF);
-    m.attr("GLYPH_INVIS_OFF") = py::int_(GLYPH_INVIS_OFF);
-    m.attr("GLYPH_DETECT_OFF") = py::int_(GLYPH_DETECT_OFF);
-    m.attr("GLYPH_BODY_OFF") = py::int_(GLYPH_BODY_OFF);
-    m.attr("GLYPH_RIDDEN_OFF") = py::int_(GLYPH_RIDDEN_OFF);
-    m.attr("GLYPH_OBJ_OFF") = py::int_(GLYPH_OBJ_OFF);
-    m.attr("GLYPH_CMAP_OFF") = py::int_(GLYPH_CMAP_OFF);
-    m.attr("GLYPH_EXPLODE_OFF") = py::int_(GLYPH_EXPLODE_OFF);
-    m.attr("GLYPH_ZAP_OFF") = py::int_(GLYPH_ZAP_OFF);
-    m.attr("GLYPH_SWALLOW_OFF") = py::int_(GLYPH_SWALLOW_OFF);
-    m.attr("GLYPH_WARNING_OFF") = py::int_(GLYPH_WARNING_OFF);
-    m.attr("GLYPH_STATUE_OFF") = py::int_(GLYPH_STATUE_OFF);
-    m.attr("MAX_GLYPH") = py::int_(MAX_GLYPH);
+    mn.attr("GLYPH_MON_OFF") = py::int_(GLYPH_MON_OFF);
+    mn.attr("GLYPH_PET_OFF") = py::int_(GLYPH_PET_OFF);
+    mn.attr("GLYPH_INVIS_OFF") = py::int_(GLYPH_INVIS_OFF);
+    mn.attr("GLYPH_DETECT_OFF") = py::int_(GLYPH_DETECT_OFF);
+    mn.attr("GLYPH_BODY_OFF") = py::int_(GLYPH_BODY_OFF);
+    mn.attr("GLYPH_RIDDEN_OFF") = py::int_(GLYPH_RIDDEN_OFF);
+    mn.attr("GLYPH_OBJ_OFF") = py::int_(GLYPH_OBJ_OFF);
+    mn.attr("GLYPH_CMAP_OFF") = py::int_(GLYPH_CMAP_OFF);
+    mn.attr("GLYPH_EXPLODE_OFF") = py::int_(GLYPH_EXPLODE_OFF);
+    mn.attr("GLYPH_ZAP_OFF") = py::int_(GLYPH_ZAP_OFF);
+    mn.attr("GLYPH_SWALLOW_OFF") = py::int_(GLYPH_SWALLOW_OFF);
+    mn.attr("GLYPH_WARNING_OFF") = py::int_(GLYPH_WARNING_OFF);
+    mn.attr("GLYPH_STATUE_OFF") = py::int_(GLYPH_STATUE_OFF);
+    mn.attr("MAX_GLYPH") = py::int_(MAX_GLYPH);
 
-    m.attr("NO_GLYPH") = py::int_(NO_GLYPH);
-    m.attr("GLYPH_INVISIBLE") = py::int_(GLYPH_INVISIBLE);
+    mn.attr("NO_GLYPH") = py::int_(NO_GLYPH);
+    mn.attr("GLYPH_INVISIBLE") = py::int_(GLYPH_INVISIBLE);
 
-    m.attr("MAXPCHARS") = py::int_(static_cast<int>(MAXPCHARS));
-    m.attr("EXPL_MAX") = py::int_(static_cast<int>(EXPL_MAX));
-    m.attr("NUM_ZAP") = py::int_(static_cast<int>(NUM_ZAP));
-    m.attr("WARNCOUNT") = py::int_(static_cast<int>(WARNCOUNT));
+    mn.attr("MAXPCHARS") = py::int_(static_cast<int>(MAXPCHARS));
+    mn.attr("EXPL_MAX") = py::int_(static_cast<int>(EXPL_MAX));
+    mn.attr("NUM_ZAP") = py::int_(static_cast<int>(NUM_ZAP));
+    mn.attr("WARNCOUNT") = py::int_(static_cast<int>(WARNCOUNT));
 
     // From objclass.h
-    m.attr("RANDOM_CLASS") = py::int_(static_cast<int>(
+    mn.attr("RANDOM_CLASS") = py::int_(static_cast<int>(
         RANDOM_CLASS)); /* used for generating random objects */
-    m.attr("ILLOBJ_CLASS") = py::int_(static_cast<int>(ILLOBJ_CLASS));
-    m.attr("WEAPON_CLASS") = py::int_(static_cast<int>(WEAPON_CLASS));
-    m.attr("ARMOR_CLASS") = py::int_(static_cast<int>(ARMOR_CLASS));
-    m.attr("RING_CLASS") = py::int_(static_cast<int>(RING_CLASS));
-    m.attr("AMULET_CLASS") = py::int_(static_cast<int>(AMULET_CLASS));
-    m.attr("TOOL_CLASS") = py::int_(static_cast<int>(TOOL_CLASS));
-    m.attr("FOOD_CLASS") = py::int_(static_cast<int>(FOOD_CLASS));
-    m.attr("POTION_CLASS") = py::int_(static_cast<int>(POTION_CLASS));
-    m.attr("SCROLL_CLASS") = py::int_(static_cast<int>(SCROLL_CLASS));
-    m.attr("SPBOOK_CLASS") =
+    mn.attr("ILLOBJ_CLASS") = py::int_(static_cast<int>(ILLOBJ_CLASS));
+    mn.attr("WEAPON_CLASS") = py::int_(static_cast<int>(WEAPON_CLASS));
+    mn.attr("ARMOR_CLASS") = py::int_(static_cast<int>(ARMOR_CLASS));
+    mn.attr("RING_CLASS") = py::int_(static_cast<int>(RING_CLASS));
+    mn.attr("AMULET_CLASS") = py::int_(static_cast<int>(AMULET_CLASS));
+    mn.attr("TOOL_CLASS") = py::int_(static_cast<int>(TOOL_CLASS));
+    mn.attr("FOOD_CLASS") = py::int_(static_cast<int>(FOOD_CLASS));
+    mn.attr("POTION_CLASS") = py::int_(static_cast<int>(POTION_CLASS));
+    mn.attr("SCROLL_CLASS") = py::int_(static_cast<int>(SCROLL_CLASS));
+    mn.attr("SPBOOK_CLASS") =
         py::int_(static_cast<int>(SPBOOK_CLASS)); /* actually SPELL-book */
-    m.attr("WAND_CLASS") = py::int_(static_cast<int>(WAND_CLASS));
-    m.attr("COIN_CLASS") = py::int_(static_cast<int>(COIN_CLASS));
-    m.attr("GEM_CLASS") = py::int_(static_cast<int>(GEM_CLASS));
-    m.attr("ROCK_CLASS") = py::int_(static_cast<int>(ROCK_CLASS));
-    m.attr("BALL_CLASS") = py::int_(static_cast<int>(BALL_CLASS));
-    m.attr("CHAIN_CLASS") = py::int_(static_cast<int>(CHAIN_CLASS));
-    m.attr("VENOM_CLASS") = py::int_(static_cast<int>(VENOM_CLASS));
-    m.attr("MAXOCLASSES") = py::int_(static_cast<int>(MAXOCLASSES));
+    mn.attr("WAND_CLASS") = py::int_(static_cast<int>(WAND_CLASS));
+    mn.attr("COIN_CLASS") = py::int_(static_cast<int>(COIN_CLASS));
+    mn.attr("GEM_CLASS") = py::int_(static_cast<int>(GEM_CLASS));
+    mn.attr("ROCK_CLASS") = py::int_(static_cast<int>(ROCK_CLASS));
+    mn.attr("BALL_CLASS") = py::int_(static_cast<int>(BALL_CLASS));
+    mn.attr("CHAIN_CLASS") = py::int_(static_cast<int>(CHAIN_CLASS));
+    mn.attr("VENOM_CLASS") = py::int_(static_cast<int>(VENOM_CLASS));
+    mn.attr("MAXOCLASSES") = py::int_(static_cast<int>(MAXOCLASSES));
 
     // "Special" mapglyph
-    m.attr("MG_CORPSE") = py::int_(MG_CORPSE);
-    m.attr("MG_INVIS") = py::int_(MG_INVIS);
-    m.attr("MG_DETECT") = py::int_(MG_DETECT);
-    m.attr("MG_PET") = py::int_(MG_PET);
-    m.attr("MG_RIDDEN") = py::int_(MG_RIDDEN);
-    m.attr("MG_STATUE") = py::int_(MG_STATUE);
-    m.attr("MG_OBJPILE") =
+    mn.attr("MG_CORPSE") = py::int_(MG_CORPSE);
+    mn.attr("MG_INVIS") = py::int_(MG_INVIS);
+    mn.attr("MG_DETECT") = py::int_(MG_DETECT);
+    mn.attr("MG_PET") = py::int_(MG_PET);
+    mn.attr("MG_RIDDEN") = py::int_(MG_RIDDEN);
+    mn.attr("MG_STATUE") = py::int_(MG_STATUE);
+    mn.attr("MG_OBJPILE") =
         py::int_(MG_OBJPILE); /* more than one stack of objects */
-    m.attr("MG_BW_LAVA") = py::int_(MG_BW_LAVA); /* 'black & white lava' */
+    mn.attr("MG_BW_LAVA") = py::int_(MG_BW_LAVA); /* 'black & white lava' */
 
     // Expose macros as Python functions.
-    m.def("glyph_is_monster",
-          [](int glyph) { return glyph_is_monster(glyph); });
-    m.def("glyph_is_normal_monster",
-          [](int glyph) { return glyph_is_normal_monster(glyph); });
-    m.def("glyph_is_pet", [](int glyph) { return glyph_is_pet(glyph); });
-    m.def("glyph_is_body", [](int glyph) { return glyph_is_body(glyph); });
-    m.def("glyph_is_statue",
-          [](int glyph) { return glyph_is_statue(glyph); });
-    m.def("glyph_is_ridden_monster",
-          [](int glyph) { return glyph_is_ridden_monster(glyph); });
-    m.def("glyph_is_detected_monster",
-          [](int glyph) { return glyph_is_detected_monster(glyph); });
-    m.def("glyph_is_invisible",
-          [](int glyph) { return glyph_is_invisible(glyph); });
-    m.def("glyph_is_normal_object",
-          [](int glyph) { return glyph_is_normal_object(glyph); });
-    m.def("glyph_is_object",
-          [](int glyph) { return glyph_is_object(glyph); });
-    m.def("glyph_is_trap", [](int glyph) { return glyph_is_trap(glyph); });
-    m.def("glyph_is_cmap", [](int glyph) { return glyph_is_cmap(glyph); });
-    m.def("glyph_is_swallow",
-          [](int glyph) { return glyph_is_swallow(glyph); });
-    m.def("glyph_is_warning",
-          [](int glyph) { return glyph_is_warning(glyph); });
+    mn.def("glyph_is_monster",
+           [](int glyph) { return glyph_is_monster(glyph); });
+    mn.def("glyph_is_normal_monster",
+           [](int glyph) { return glyph_is_normal_monster(glyph); });
+    mn.def("glyph_is_pet", [](int glyph) { return glyph_is_pet(glyph); });
+    mn.def("glyph_is_body", [](int glyph) { return glyph_is_body(glyph); });
+    mn.def("glyph_is_statue",
+           [](int glyph) { return glyph_is_statue(glyph); });
+    mn.def("glyph_is_ridden_monster",
+           [](int glyph) { return glyph_is_ridden_monster(glyph); });
+    mn.def("glyph_is_detected_monster",
+           [](int glyph) { return glyph_is_detected_monster(glyph); });
+    mn.def("glyph_is_invisible",
+           [](int glyph) { return glyph_is_invisible(glyph); });
+    mn.def("glyph_is_normal_object",
+           [](int glyph) { return glyph_is_normal_object(glyph); });
+    mn.def("glyph_is_object",
+           [](int glyph) { return glyph_is_object(glyph); });
+    mn.def("glyph_is_trap", [](int glyph) { return glyph_is_trap(glyph); });
+    mn.def("glyph_is_cmap", [](int glyph) { return glyph_is_cmap(glyph); });
+    mn.def("glyph_is_swallow",
+           [](int glyph) { return glyph_is_swallow(glyph); });
+    mn.def("glyph_is_warning",
+           [](int glyph) { return glyph_is_warning(glyph); });
 
     py::class_<permonst>(m, "permonst")
         .def_readonly("mname", &permonst::mname)   /* full name */
@@ -262,14 +264,14 @@ PYBIND11_MODULE(pynle, m)
         });
 
     /*
-    m.def(
+    mn.def(
         "glyph_to_mon",
         [](int glyph) -> const permonst * {
             return &mons[glyph_to_mon(glyph)];
         },
         py::return_value_policy::reference);
 
-    m.def(
+    mn.def(
         "mlet_to_class_sym",
         [](char let) -> const class_sym * { return &def_monsyms[let]; },
         py::return_value_policy::reference);

@@ -47,8 +47,7 @@ def main():
 
     os.environ["NETHACKOPTIONS"] = "nolegacy,nocmdassist"
 
-    dlpath = os.path.join(os.path.dirname(pynle.__file__), "libnethack.so")
-    nle = pynle.NLE(dlpath)
+    nle = pynle.NLE(observation_keys=("chars", "blstats"))
     nle.reset()
 
     nle.step(ord("y"))
@@ -63,9 +62,11 @@ def main():
     sps_n = 0
 
     for episode in range(2):
-        while not nle.done():
+        while True:
             ch = random.choice(ACTIONS)
-            nle.step(ch)
+            _, done = nle.step(ch)
+            if done:
+                break
 
             steps += 1
 
@@ -85,16 +86,13 @@ def main():
     if not SELF_PLAY:
         return
 
-    chars = np.zeros((21, 79), dtype=np.uint8)
-    blstats = np.zeros((23,), dtype=np.int64)
-    nle.set_buffers(chars=chars, blstats=blstats)
-
-    while not nle.done():
+    done = False
+    while not done:
+        with no_echo():
+            (chars, blstats), done = nle.step(ord(os.read(0, 1)))
         for line in chars:
             print(line.tobytes().decode("utf-8"))
         print(blstats)
-        with no_echo():
-            nle.step(ord(os.read(0, 1)))
 
 
 main()
