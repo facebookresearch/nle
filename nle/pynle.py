@@ -3,7 +3,10 @@ import os
 import numpy as np
 
 from nle import _pynle
-from nle._pynle.nethack import *
+from nle._pynle.nethack import *  # noqa: F403
+
+# TOOD: Don't use environment variables for this, add to nle.c instead.
+os.environ["NETHACKOPTIONS"] = "nolegacy,nocmdassist"
 
 DLPATH = os.path.join(os.path.dirname(_pynle.__file__), "libnethack.so")
 
