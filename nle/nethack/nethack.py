@@ -50,3 +50,6 @@ class Nethack:
     def reset(self):
         self._pynethack.reset()
         return self._step_return()
+
+    def close(self):
+        self._pynethack.close()

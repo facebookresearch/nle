@@ -65,9 +65,7 @@ class Nethack
     }
     ~Nethack()
     {
-        if (nle_) {
-            nle_end(nle_);
-        }
+        close();
     }
     void
     step(int action)
@@ -83,6 +81,7 @@ class Nethack
     {
         return obs_.done;
     }
+
     void
     reset()
     {
@@ -106,6 +105,15 @@ class Nethack
         obs_.blstats = checked_conversion<long>(std::move(blstats), { 23 });
     }
 
+    void
+    close()
+    {
+        if (nle_) {
+            nle_end(nle_);
+            nle_ = nullptr;
+        }
+    }
+
   private:
     std::string dlpath_;
     nle_obs obs_;
@@ -126,7 +134,8 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("colors") = py::none(), py::arg("specials") = py::none(),
              py::arg("blstats") = py::none(), py::keep_alive<1, 2>(),
              py::keep_alive<1, 3>(), py::keep_alive<1, 4>(),
-             py::keep_alive<1, 5>(), py::keep_alive<1, 6>());
+             py::keep_alive<1, 5>(), py::keep_alive<1, 6>())
+        .def("close", &Nethack::close);
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");
