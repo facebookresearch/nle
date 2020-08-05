@@ -1,24 +1,25 @@
 import contextlib
 import termios
 import timeit
-import tty
 import random
-import os
+import sys
 
-from nle import pynle
+from nle import nethack
 
 
-SELF_PLAY = True
+NO_SELF_PLAY = 2
 
 
 @contextlib.contextmanager
-def no_echo():
-    tt = termios.tcgetattr(0)
+def no_echo(fd=0):
+    old = termios.tcgetattr(fd)
     try:
-        tty.setraw(0)
+        new = termios.tcgetattr(fd)
+        new[3] &= ~termios.ICANON & ~termios.ECHO  # lflags
+        termios.tcsetattr(fd, termios.TCSAFLUSH, new)
         yield
     finally:
-        termios.tcsetattr(0, termios.TCSAFLUSH, tt)
+        termios.tcsetattr(fd, termios.TCSAFLUSH, old)
 
 
 def main():
@@ -43,9 +44,7 @@ def main():
         89,
     ]
 
-    os.environ["NETHACKOPTIONS"] = "nolegacy,nocmdassist"
-
-    nle = pynle.NLE(observation_keys=("chars", "blstats"))
+    nle = nethack.Nethack(observation_keys=("chars", "blstats"))
     nle.reset()
 
     nle.step(ord("y"))
@@ -59,7 +58,7 @@ def main():
     mean_sps = 0
     sps_n = 0
 
-    for episode in range(2):
+    for episode in range(0):
         while True:
             ch = random.choice(ACTIONS)
             _, done = nle.step(ch)
@@ -81,16 +80,18 @@ def main():
 
     print("Finished after %i steps. Mean sps: %f" % (steps, mean_sps))
 
-    if not SELF_PLAY:
-        return
-
-    done = False
-    while not done:
-        with no_echo():
-            (chars, blstats), done = nle.step(ord(os.read(0, 1)))
-        for line in chars:
-            print(line.tobytes().decode("utf-8"))
-        print(blstats)
+    for _ in range(NO_SELF_PLAY):
+        nle.reset()
+        done = False
+        while not done:
+            try:
+                with no_echo():
+                    (chars, blstats), done = nle.step(ord(sys.stdin.read(1)))
+            except KeyboardInterrupt:
+                break
+            for line in chars:
+                print(line.tobytes().decode("utf-8"))
+            print(blstats)
 
 
 main()

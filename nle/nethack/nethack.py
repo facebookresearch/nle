@@ -1,253 +1,52 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-import functools
-import logging
 import os
-import pkg_resources
-import shutil
-import tempfile
-import time
-import warnings
-import weakref
-import zipfile
 
-from . import ptyprocess
-import zmq
+import numpy as np
 
+from nle import _pynethack
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    # Import all flatbuffer modules.
-    from nle.fbs import (  # noqa: F401
-        Blstats,
-        Condition,
-        DLevel,
-        Internal,
-        InventoryItem,
-        MenuItem,
-        Message,
-        NDArray,
-        Observation,
-        ProgramState,
-        Seeds,
-        Status,
-        Window,
-        You,
-    )
+# TOOD: Don't use environment variables for this, add to nle.c instead.
+os.environ["NETHACKOPTIONS"] = "nolegacy,nocmdassist"
+
+DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
+
+DUNGEON_SHAPE = (21, 79)
+BLSTATS_SHAPE = (23,)
+
+OBSERVATION_DESC = {
+    "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
+    "chars": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
+    "colors": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
+    "specials": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
+    "blstats": dict(shape=BLSTATS_SHAPE, dtype=np.int64),
+}
 
 
-SEED_KEYS = ["core", "disp"]
-
-NETHACKOPTIONS = [
-    "windowtype:rl",
-    "color",
-    "showexp",
-    "autopickup",
-    "pickup_types:$?!/",
-    "pickup_burden:unencumbered",
-]
-
-HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
-EXECUTABLE = os.path.join(HACKDIR, "nethack")
-
-
-def _exec_nethack(playername, hackdir, seeds=None, options=NETHACKOPTIONS):
-    """Turns current process into NetHack with right environment variables."""
-    user = playername % {"pid": os.getpid()}
-
-    env = {
-        "HACKDIR": hackdir,
-        "NETHACKOPTIONS": ",".join(options),
-        "USER": user,
-        "SHELL": "/bin/bash",
-        "TERM": "xterm-256color",
-    }
-
-    if seeds is not None:
-        for name, seed in seeds.items():
-            name = "NLE_SEED_" + name.upper()
-            env[name] = str(seed)
-
-    command = EXECUTABLE + " -u" + user
-
-    shell = os.environ.get("SHELL", "/bin/bash")
-    os.execle(shell, os.path.basename(shell), "-c", command, env)
-    raise OSError("This shouldn't happen.")
-
-
-def _finalize_one_run(hackdir):
-    prefix = str(os.getuid())
-    if not os.path.exists(hackdir):
-        # Removed in finalizer of NetHack object. Also fine.
-        return
-
-    with os.scandir(hackdir) as scandir:
-        for entry in scandir:
-            if entry.name.startswith(prefix):
-                os.unlink(entry.path)
-
-
-def _recordclosefn(archive, filename):
-    archive.write(filename)
-    os.unlink(filename)
-
-
-class NetHack:
+class Nethack:
     def __init__(
-        self,
-        archivefile="nethack.%(pid)i.%(time)s.zip",
-        playername="Agent%(pid)i-mon-hum-neu-mal",
-        options=None,
-        rows=24,
-        columns=80,
-        context=None,
+        self, observation_keys=OBSERVATION_DESC.keys(), copy=False,
     ):
-        """Constructs a new NetHack environment."""
-        self._playername = playername
-        self._rows = rows
-        self._columns = columns
+        self._copy = copy
+        self._pynethack = _pynethack.Nethack(DLPATH)
 
-        if options is None:
-            options = NETHACKOPTIONS
-        self._nethackoptions = options
+        self._obs_buffers = {}
 
-        self._episode = 0
-        self._info = {}
+        for key in observation_keys:
+            if key not in OBSERVATION_DESC:
+                raise ValueError("Unknown observation '%s'" % key)
+            self._obs_buffers[key] = np.zeros(**OBSERVATION_DESC[key])
 
-        self._finalizers = []
+        self._pynethack.set_buffers(**self._obs_buffers)
 
-        if not os.path.exists(HACKDIR) or not os.path.exists(
-            os.path.join(HACKDIR, "nethack")
-        ):
-            raise FileNotFoundError("Couldn't find NetHack installation.")
-
-        # Create a HACKDIR for us.
-        self._vardir = tempfile.mkdtemp(prefix="nle")
-
-        os.symlink(os.path.join(HACKDIR, "nhdat"), os.path.join(self._vardir, "nhdat"))
-
-        # touch a few files.
-        for filename in ["sysconf", "perm", "logfile", "xlogfile"]:
-            os.close(os.open(os.path.join(self._vardir, filename), os.O_CREAT))
-        os.mkdir(os.path.join(self._vardir, "save"))
-
-        if archivefile is None:
-            self._archive = None
-            self._recordclosefn = lambda f: None
+        self._obs = tuple(self._obs_buffers[key] for key in observation_keys)
+        if self._copy:
+            self._step_return = lambda: tuple(o.copy() for o in self._obs)
         else:
-            try:
-                self._archive = zipfile.ZipFile(
-                    archivefile
-                    % {"pid": os.getpid(), "time": time.strftime("%Y%m%d-%H%M%S")},
-                    "x",
-                )
-            except FileExistsError:
-                logging.exception("Archive file %s exists, terminating" % archivefile)
-                raise
-
-            self._recordclosefn = functools.partial(_recordclosefn, self._archive)
-            self._finalizers.append(
-                # Cannot close archive before final call to _recordclosefn.
-                # Binding to lifetime of self doesn't work here, so bind to
-                # _recordclosefn itself.
-                weakref.finalize(self._recordclosefn, self._archive.close)
-            )
-            logging.info("Archiving replays in %s" % self._archive.filename)
-
-        self._context = context or zmq.Context.instance()
-
-        # We use vardir for our temporary tty records. Like archive, this
-        # needs to stay alive longer than self. Binding it to lifetime of
-        # _recordclosefn as well.
-        self._finalizers.append(
-            weakref.finalize(self._recordclosefn, shutil.rmtree, self._vardir)
-        )
-
-        self._exec_nethack = None
-        self.seed(None)  # Sets self._exec_nethack.
-
-        # TODO(heiner): Consider having a collections.deque of processes for
-        # pre-loading. This requires us to have different connections, which
-        # would be great to support more than one NetHack object.
-        self._process = None
-
-    def _recv(self):
-        buf = self._socket.recv()
-        message = Message.Message.GetRootAsMessage(buf, 0)
-        # TODO(heiner): Consider waitpid'ing to get process status.
-        return message, message.NotRunning()
-
-    def reset(self):
-        if self._archive is None:
-            self.recordname = None
-        else:
-            # Create record files in (temporal) vardir.
-            self.recordname = "%s/nethack.run.%i.%%(time)s.%%(pid)i.ttyrec" % (
-                self._vardir,
-                self._episode,
-            )
-        self._process = ptyprocess.PtyProcess(
-            target=self._exec_nethack,
-            recordclosefn=self._recordclosefn,
-            recordname=self.recordname,
-        )
-        self._process.fork(rows=self._rows, columns=self._columns, wait_for_output=True)
-
-        socketfile = os.path.join(self._vardir, "%i.nle.sock" % self._process.pid)
-        address = "ipc://" + socketfile
-        logging.debug("Connecting to %s...", address)
-        self._socket = self._context.socket(zmq.PULL)
-        self._socket.connect(address)
-
-        weakref.finalize(self._process, self._socket.close)
-        weakref.finalize(self._process, _finalize_one_run, self._vardir)
-
-        if not self._socket.poll(timeout=1000):  # 1s timeout.
-            raise IOError("No response received from NetHack process -- is it running?")
-
-        message, done = self._recv()
-        assert not done, "NetHack closed without input."
-
-        # Connection established, can remove socket file from file system.
-        os.unlink(socketfile)
-
-        self._info["pid"] = self._process.pid
-        self._info["episode"] = self._episode
-
-        self._episode += 1
-
-        return message
+            self._step_return = lambda: self._obs
 
     def step(self, action):
-        self._process.write(bytes((action,)))
-        message, done = self._recv()
+        self._pynethack.step(action)
+        return self._step_return(), self._pynethack.done()
 
-        return message, done, self._info
-
-    def close(self):
-        del self._process  # Triggers finalizer.
-        for f in self._finalizers:
-            f()
-
-    def seed(self, seeds):
-        if isinstance(seeds, dict):
-            for k in SEED_KEYS:
-                if k not in seeds:
-                    continue
-                if seeds[k] < 1:
-                    raise ValueError(
-                        "Found %d for %s, but seeds must be positive integers.",
-                        seeds[k],
-                        k,
-                    )
-        elif seeds is not None:
-            raise ValueError("`seeds` is %s, but must be either None or a dict.", seeds)
-
-        self._seeds = seeds
-
-        self._exec_nethack = functools.partial(
-            _exec_nethack,
-            self._playername,
-            self._vardir,
-            self._seeds,
-            self._nethackoptions,
-        )
+    def reset(self):
+        self._pynethack.reset()
+        return self._step_return()
