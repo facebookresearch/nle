@@ -350,7 +350,7 @@
  *      died due to program or system crashes to be resumed from the point
  *      of the last level change, after running a utility program.
  */
-#define INSURANCE /* allow crashed game recovery */
+/* #define INSURANCE allow crashed game recovery */
 
 #ifndef MAC
 #define CHDIR /* delete if no chdir() available */
