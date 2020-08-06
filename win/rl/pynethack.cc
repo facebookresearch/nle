@@ -21,9 +21,6 @@ extern "C" {
 #undef min
 #undef max
 
-// From drawing.c. Needs drawing.o at link time.
-// extern const struct class_sym def_monsyms[MAXMCLASSES];
-
 namespace py = pybind11;
 
 template <typename T>
@@ -152,7 +149,9 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NHW_MENU") = py::int_(NHW_MENU);
     mn.attr("NHW_TEXT") = py::int_(NHW_TEXT);
 
-    // mn.attr("MAXWIN") = py::int_(MAXWIN);
+    // Cannot include wintty.h as it redefines putc etc.
+    // MAXWIN is #defined as 20 there.
+    mn.attr("MAXWIN") = py::int_(20);
 
     mn.attr("NUMMONS") = py::int_(NUMMONS);
 
@@ -241,7 +240,9 @@ PYBIND11_MODULE(_pynethack, m)
     mn.def("glyph_is_warning",
            [](int glyph) { return glyph_is_warning(glyph); });
 
-    py::class_<permonst>(m, "permonst")
+    py::class_<permonst, std::unique_ptr<permonst, py::nodelete> >(mn,
+                                                                   "permonst")
+        .def(py::init([](int index) -> permonst * { return &mons[index]; }))
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
         .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
@@ -272,7 +273,11 @@ PYBIND11_MODULE(_pynethack, m)
 #endif
         ;
 
-    py::class_<class_sym>(m, "class_sym")
+    py::class_<class_sym>(mn, "class_sym")
+        .def_static(
+            "from_mlet",
+            [](char let) -> const class_sym * { return &def_monsyms[let]; },
+            py::return_value_policy::reference)
         .def_readonly("sym", &class_sym::sym)
         .def_readonly("name", &class_sym::name)
         .def_readonly("explain", &class_sym::explain)
@@ -281,17 +286,12 @@ PYBIND11_MODULE(_pynethack, m)
                    + "' explain='" + std::string(cs.explain) + "'>";
         });
 
-    /*
-    mn.def(
-        "glyph_to_mon",
-        [](int glyph) -> const permonst * {
-            return &mons[glyph_to_mon(glyph)];
-        },
-        py::return_value_policy::reference);
-
-    mn.def(
-        "mlet_to_class_sym",
-        [](char let) -> const class_sym * { return &def_monsyms[let]; },
-        py::return_value_policy::reference);
-    */
+    mn.def("glyph_to_mon", [](int glyph) { return glyph_to_mon(glyph); });
+    mn.def("glyph_to_obj", [](int glyph) { return glyph_to_obj(glyph); });
+    mn.def("glyph_to_trap", [](int glyph) { return glyph_to_trap(glyph); });
+    mn.def("glyph_to_cmap", [](int glyph) { return glyph_to_cmap(glyph); });
+    mn.def("glyph_to_swallow",
+           [](int glyph) { return glyph_to_swallow(glyph); });
+    mn.def("glyph_to_warning",
+           [](int glyph) { return glyph_to_warning(glyph); });
 }

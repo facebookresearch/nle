@@ -136,43 +136,41 @@ class TestNetHackOld:
             # You're bright (4th bit, 8) white (7), too.
             assert colors[y, x] == 8 ^ 7
 
-            # # TODO: Re-add permonst, etc.
-            # mon = nethack.permonst(nethack.glyph_to_mon(glyphs[y][x]))
-            # self.assertEqual(mon.mname, "monk")
-            # self.assertEqual(mon.mlevel, 10)
+            mon = nethack.permonst(nethack.glyph_to_mon(glyphs[y][x]))
+            # TODO: Add feature to set nethack options.
+            # assert mon.mname == "monk"
+            assert mon.mlevel == 10
 
-            # class_sym = nethack.class_sym.from_mlet(mon.mlet)
-            # self.assertEqual(class_sym.sym, "@")
-            # self.assertEqual(class_sym.explain, "human or elf")
+            class_sym = nethack.class_sym.from_mlet(mon.mlet)
+            assert class_sym.sym == "@"
+            assert class_sym.explain == "human or elf"
 
         game.close()
 
 
 class TestNethackFunctionsAndConstants:
     def test_permonst_and_class_sym(self):
-        pytest.skip("Not ready yet")
         glyph = 155  # Lichen.
 
         mon = nethack.permonst(nethack.glyph_to_mon(glyph))
 
-        self.assertEqual(mon.mname, "lichen")
+        assert mon.mname == "lichen"
 
         cs = nethack.class_sym.from_mlet(mon.mlet)
 
-        self.assertEqual(cs.sym, "F")
-        self.assertEqual(cs.explain, "fungus or mold")
+        assert cs.sym == "F"
+        assert cs.explain == "fungus or mold"
 
-        self.assertEqual(nethack.NHW_MESSAGE, 1)
-        self.assertTrue(hasattr(nethack, "MAXWIN"))
+        assert nethack.NHW_MESSAGE == 1
+        assert hasattr(nethack, "MAXWIN")
 
     def test_permonst(self):
-        pytest.skip("Not ready yet")
         mon = nethack.permonst(0)
-        self.assertEqual(mon.mname, "giant ant")
+        assert mon.mname == "giant ant"
         del mon
 
         mon = nethack.permonst(1)
-        self.assertEqual(mon.mname, "killer bee")
+        assert mon.mname == "killer bee"
 
     def test_some_constants(self):
         assert nethack.GLYPH_MON_OFF == 0
