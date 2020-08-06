@@ -137,8 +137,7 @@ class TestNetHackOld:
             assert colors[y, x] == 8 ^ 7
 
             mon = nethack.permonst(nethack.glyph_to_mon(glyphs[y][x]))
-            # TODO: Add feature to set nethack options.
-            # assert mon.mname == "monk"
+            assert mon.mname == "monk"
             assert mon.mlevel == 10
 
             class_sym = nethack.class_sym.from_mlet(mon.mlet)

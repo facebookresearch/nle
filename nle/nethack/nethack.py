@@ -4,8 +4,6 @@ import numpy as np
 
 from nle import _pynethack
 
-# TOOD: Don't use environment variables for this, add to nle.c instead.
-os.environ["NETHACKOPTIONS"] = "nolegacy,nocmdassist"
 
 DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 
@@ -23,12 +21,33 @@ OBSERVATION_DESC = {
 }
 
 
+NETHACKOPTIONS = [
+    "color",
+    "showexp",
+    "autopickup",
+    "pickup_types:$?!/",
+    "pickup_burden:unencumbered",
+    "nolegacy",
+    "nocmdassist",
+]
+
+# TODO: Ensure we only create one of these, for now.
 class Nethack:
-    # TODO: Ensure we only create one of these, for now.
     def __init__(
-        self, observation_keys=OBSERVATION_DESC.keys(), copy=False,
+        self,
+        observation_keys=OBSERVATION_DESC.keys(),
+        playername="Agent-mon-hum-neu-mal",
+        options=None,
+        copy=False,
     ):
         self._copy = copy
+
+        if options is None:
+            options = NETHACKOPTIONS
+        options = list(options) + ["name:" + playername]
+
+        # TODO: Investigate not using environment variables for this.
+        os.environ["NETHACKOPTIONS"] = ",".join(options)
         self._pynethack = _pynethack.Nethack(DLPATH)
 
         self._obs_buffers = {}
