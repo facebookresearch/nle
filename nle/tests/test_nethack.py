@@ -101,8 +101,10 @@ class TestNetHackOld:
         # TODO: Implement ttyrecording filename in libnethack wrapper.
         # archivefile = tempfile.mktemp(suffix="nethack_test", prefix=".zip")
 
-        game = nethack.Nethack()
-        obs = game.reset()
+        game = nethack.Nethack(
+            observation_keys=("glyphs", "chars", "colors", "blstats", "program_state")
+        )
+        _, _, _, _, program_state = game.reset()
         actions = [
             nethack.MiscAction.MORE,
             nethack.MiscAction.MORE,
@@ -113,22 +115,26 @@ class TestNetHackOld:
         ]
 
         for action in actions:
-            # TODO: Implement programstate observation.
-            # while not response.ProgramState().InMoveloop():
-            for _ in range(5):
+            while not program_state[3]:  # in_moveloop.
                 obs, done = game.step(nethack.MiscAction.MORE)
+                _, _, _, _, program_state = obs
 
             obs, done = game.step(action)
             if done:
                 # Only the good die young.
                 obs = game.reset()
 
-            glyphs, chars, _, _, blstats = obs
+            glyphs, chars, colors, blstats, _ = obs
 
             x, y = blstats[:2]
 
             assert np.count_nonzero(chars == ord("@")) == 1
+
+            # That's where you're @.
             assert chars[y, x] == ord("@")
+
+            # You're bright (4th bit, 8) white (7), too.
+            assert colors[y, x] == 8 ^ 7
 
             # # TODO: Re-add permonst, etc.
             # mon = nethack.permonst(nethack.glyph_to_mon(glyphs[y][x]))

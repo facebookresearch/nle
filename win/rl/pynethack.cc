@@ -60,7 +60,8 @@ class Nethack
   public:
     Nethack(std::string dlpath)
         : dlpath_(std::move(dlpath)), obs_{ 0,       0,       nullptr,
-                                            nullptr, nullptr, nullptr }
+                                            nullptr, nullptr, nullptr,
+                                            nullptr }
     {
     }
     ~Nethack()
@@ -94,7 +95,8 @@ class Nethack
 
     void
     set_buffers(py::object glyphs, py::object chars, py::object colors,
-                py::object specials, py::object blstats)
+                py::object specials, py::object blstats,
+                py::object program_state)
     {
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
         obs_.glyphs = checked_conversion<int16_t>(std::move(glyphs), dungeon);
@@ -103,6 +105,8 @@ class Nethack
         obs_.specials =
             checked_conversion<uint8_t>(std::move(specials), dungeon);
         obs_.blstats = checked_conversion<long>(std::move(blstats), { 23 });
+        obs_.program_state =
+            checked_conversion<int>(std::move(program_state), { 5 });
     }
 
     void
@@ -132,9 +136,11 @@ PYBIND11_MODULE(_pynethack, m)
         .def("set_buffers", &Nethack::set_buffers,
              py::arg("glyphs") = py::none(), py::arg("chars") = py::none(),
              py::arg("colors") = py::none(), py::arg("specials") = py::none(),
-             py::arg("blstats") = py::none(), py::keep_alive<1, 2>(),
+             py::arg("blstats") = py::none(),
+             py::arg("program_state") = py::none(), py::keep_alive<1, 2>(),
              py::keep_alive<1, 3>(), py::keep_alive<1, 4>(),
-             py::keep_alive<1, 5>(), py::keep_alive<1, 6>())
+             py::keep_alive<1, 5>(), py::keep_alive<1, 6>(),
+             py::keep_alive<1, 7>())
         .def("close", &Nethack::close);
 
     py::module mn = m.def_submodule(

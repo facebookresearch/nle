@@ -10,6 +10,7 @@ typedef struct nle_observation {
     unsigned char *colors;   /* Size ROWNO * (COLNO - 1) */
     unsigned char *specials; /* Size ROWNO * (COLNO - 1) */
     long *blstats;           /* Size 23 */
+    int *program_state;      /* Size 5 */
 } nle_obs;
 
 #endif /* NLEOBS_H */

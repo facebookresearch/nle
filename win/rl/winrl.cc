@@ -223,6 +223,14 @@ NetHackRL::player_selection_method()
 void
 NetHackRL::fill_obs(nle_obs *obs)
 {
+    if (obs->program_state) {
+        obs->program_state[0] = program_state.gameover;
+        obs->program_state[1] = program_state.panicking;
+        obs->program_state[2] = program_state.exiting;
+        obs->program_state[3] = program_state.in_moveloop;
+        obs->program_state[4] = program_state.in_impossible;
+    }
+
     if (!program_state.in_moveloop) {
         // Game not yet started. Return zero observations.
         if (obs->glyphs)
