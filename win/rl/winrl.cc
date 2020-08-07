@@ -241,6 +241,8 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->colors, 0, colors_.size());
         if (obs->specials)
             std::memset(obs->specials, 0, specials_.size());
+        if (obs->message)
+            std::memset(obs->message, 0, 256);
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * 23);
         return;
@@ -258,6 +260,18 @@ NetHackRL::fill_obs(nle_obs *obs)
     }
     if (obs->specials) {
         std::memcpy(obs->specials, specials_.data(), specials_.size());
+    }
+    if (obs->message) {
+        rl_window *win = windows_[WIN_MESSAGE].get();
+        assert(win->type == NHW_MESSAGE);
+        int remaining = 256;
+        for (std::string &s : win->strings) {
+            std::memcpy(&obs->message[256 - remaining], s.c_str(),
+                        max(s.size(), remaining));
+            remaining -= s.size() + 1; // Keep one separation token.
+            if (remaining <= 0)
+                break;
+        }
     }
     if (obs->blstats) {
         // Blstats

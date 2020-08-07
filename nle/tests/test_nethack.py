@@ -153,6 +153,28 @@ class TestNetHackFurther:
         game.close()
 
 
+class TestNethackMessageObs:
+    @pytest.fixture
+    def game(self):  # Make sure we close even on test failure.
+        try:
+            g = nethack.Nethack(observation_keys=("program_state", "message"))
+            yield g
+        finally:
+            g.close()
+
+    def test_message(self, game):
+        program_state, message = game.reset()
+        while not program_state[3]:  # in_moveloop.
+            (program_state, message), done = game.step(nethack.MiscAction.MORE)
+
+        greeting = (
+            b"Hello Agent, welcome to NetHack!  You are a neutral male human Monk."
+        )
+        assert memoryview(message)[: len(greeting)] == greeting
+        assert memoryview(message)[len(greeting)] == 0
+        assert len(message) == 256
+
+
 class TestNethackFunctionsAndConstants:
     def test_permonst_and_class_sym(self):
         glyph = 155  # Lichen.

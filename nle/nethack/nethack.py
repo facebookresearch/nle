@@ -12,6 +12,7 @@ DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 DUNGEON_SHAPE = (21, 79)
 BLSTATS_SHAPE = (23,)
 PROGRAM_STATE_SHAPE = (5,)
+MESSAGE_SHAPE = (256,)
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
@@ -19,6 +20,7 @@ OBSERVATION_DESC = {
     "colors": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
     "specials": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
     "blstats": dict(shape=BLSTATS_SHAPE, dtype=np.int64),
+    "message": dict(shape=MESSAGE_SHAPE, dtype=np.uint8),
     "program_state": dict(shape=PROGRAM_STATE_SHAPE, dtype=np.int32),
 }
 
