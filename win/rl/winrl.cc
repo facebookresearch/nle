@@ -21,7 +21,7 @@ extern "C" {
 #include "nleobs.h"
 }
 
-#define USE_DEBUG_API 1
+#define USE_DEBUG_API 0
 
 #if USE_DEBUG_API
 #define DEBUG_API(x)    \
@@ -36,8 +36,6 @@ extern "C" {
  * We had to change xwaitforspace() in getline.c to tell the agent in a
  * --More-- situation that enter/return (ironically not necessarily space)
  * is required to continue.
- * This is one of the few places (the only place?) where we changed the tty
- * window port.
  */
 extern bool xwaitingforspace;
 
@@ -60,6 +58,8 @@ extern nle_obs *nle_get_obs();
 namespace nethack_rl
 {
 std::deque<std::string> win_proc_calls;
+bool in_yn_function = false;
+bool in_getlin = false;
 
 class ScopedStack
 {
@@ -245,6 +245,8 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->message, 0, 256);
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * 23);
+        if (obs->internal)
+            std::memset(obs->internal, 0, sizeof(int) * 5);
         return;
     }
 
@@ -316,6 +318,18 @@ NetHackRL::fill_obs(nle_obs *obs)
         };
 
         std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));
+    }
+    if (obs->internal) {
+        // From do.c. sstairs is a potential "special" staircase.
+        boolean stairs_down =
+            ((u.ux == xdnstair && u.uy == ydnstair)
+             || (u.ux == sstairs.sx && u.uy == sstairs.sy && !sstairs.up));
+
+        obs->internal[0] = deepest_lev_reached(false);
+        obs->internal[1] = in_yn_function;
+        obs->internal[2] = in_getlin;
+        obs->internal[3] = xwaitingforspace;
+        obs->internal[4] = stairs_down;
     }
 }
 
@@ -826,7 +840,9 @@ NetHackRL::rl_yn_function(const char *question_, const char *choices,
 {
     DEBUG_API("rl_yn_function" << std::endl);
     ScopedStack s(win_proc_calls, "yn_function");
+    in_yn_function = true;
     char result = tty_yn_function(question_, choices, def);
+    in_yn_function = false;
     return result;
 }
 
@@ -835,7 +851,9 @@ NetHackRL::rl_getlin(const char *prompt, char *line)
 {
     DEBUG_API("rl_getlin" << std::endl);
     ScopedStack s(win_proc_calls, "getlin");
+    in_getlin = true;
     tty_getlin(prompt, line);
+    in_getlin = false;
 }
 
 int

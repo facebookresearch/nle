@@ -70,7 +70,7 @@ main(int argc, char **argv)
     tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 
     nle_obs obs{ 0,       0,       nullptr, nullptr, nullptr,
-                 nullptr, nullptr, nullptr, nullptr };
+                 nullptr, nullptr, nullptr, nullptr, nullptr };
     constexpr int dungeon_size = ROWNO * (COLNO - 1);
     short glyphs[dungeon_size];
     obs.glyphs = &glyphs[0];
@@ -80,10 +80,13 @@ main(int argc, char **argv)
     obs.blstats = &blstats[0];
 
     nle_ctx_t *nle = nle_start("libnethack.so", &obs);
-    randgame(nle, &obs);
-    play(nle, &obs);
-    nle_reset(nle, &obs);
-    play(nle, &obs);
+    if (argc > 1 && argv[1][0] == 'r') {
+        randgame(nle, &obs);
+    } else {
+        play(nle, &obs);
+        nle_reset(nle, &obs);
+        play(nle, &obs);
+    }
     nle_end(nle);
 
     tcsetattr(STDIN_FILENO, TCSANOW, &old);

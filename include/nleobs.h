@@ -12,6 +12,7 @@ typedef struct nle_observation {
     unsigned char *message;  /* Size 256 */
     long *blstats;           /* Size 23 */
     int *program_state;      /* Size 5 */
+    int *internal;           /* Size 5 */
 } nle_obs;
 
 #endif /* NLEOBS_H */
