@@ -21,7 +21,7 @@ extern "C" {
 #include "nleobs.h"
 }
 
-#define USE_DEBUG_API 0
+#define USE_DEBUG_API 1
 
 #if USE_DEBUG_API
 #define DEBUG_API(x)    \
@@ -737,9 +737,12 @@ NetHackRL::rl_print_glyph(winid wid, XCHAR_P x, XCHAR_P y, int glyph,
                                     << ", glyph=(ch='" << (char) ch
                                     << "', color=" << color
                                     << ", special=" << special);
-    (void) mapglyph(bkglyph, &ch, &color, &special, x, y, 0);
-    DEBUG_API("), bkglyph=(ch='" << (char) ch << "', color=" << color
-                                 << ", special=" << special << ")"
+    int bch;
+    int bcolor;
+    unsigned bspecial;
+    (void) mapglyph(bkglyph, &bch, &bcolor, &bspecial, x, y, 0);
+    DEBUG_API("), bkglyph=(ch='" << (char) bch << "', color=" << bcolor
+                                 << ", special=" << bspecial << ")"
                                  << std::endl);
 #endif
 
