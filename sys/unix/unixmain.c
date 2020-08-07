@@ -94,7 +94,7 @@ char *argv[];
 
     hname = argv[0];
     hackpid = getpid();
-    (void) umask(0777 & ~FCMASK);
+    /* (void) umask(0777 & ~FCMASK); */
 
     choose_windows(DEFAULT_WINDOW_SYS);
 

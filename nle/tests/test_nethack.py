@@ -32,8 +32,15 @@ ACTIONS = [
 
 
 class TestNetHack:
+    @pytest.fixture
+    def game(self):  # Make sure we close even on test failure.
+        try:
+            g = nethack.Nethack(observation_keys=("chars", "blstats"))
+            yield g
+        finally:
+            g.close()
+
     def test_close_and_restart(self):
-        pytest.skip("No parallel tests")
         game = nethack.Nethack()
         game.reset()
         game.close()
@@ -42,10 +49,9 @@ class TestNetHack:
         game.reset()
         game.close()
 
-    def test_run_n_episodes(self, tmpdir, episodes=3):
+    def test_run_n_episodes(self, tmpdir, game, episodes=3):
         olddir = tmpdir.chdir()
 
-        game = nethack.Nethack(observation_keys=("chars", "blstats"))
         chars, blstats = game.reset()
 
         assert chars.shape == (21, 79)
@@ -86,7 +92,7 @@ class TestNetHack:
 
         nethackdir = tmpdir.chdir()
 
-        assert nethackdir.fnmatch("*nethackdir")
+        assert nethackdir.fnmatch("nle*")
         assert tmpdir.ensure("nle.ttyrec")
         assert mean_sps > 10000
 
@@ -96,7 +102,7 @@ class TestNetHack:
         game.close()
 
 
-class TestNetHackOld:
+class TestNetHackFurther:
     def test_run(self):
         # TODO: Implement ttyrecording filename in libnethack wrapper.
         # archivefile = tempfile.mktemp(suffix="nethack_test", prefix=".zip")

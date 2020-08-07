@@ -1,4 +1,6 @@
 import os
+import pkg_resources
+import tempfile
 
 import numpy as np
 
@@ -31,8 +33,16 @@ NETHACKOPTIONS = [
     "nocmdassist",
 ]
 
-# TODO: Ensure we only create one of these, for now.
+HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
+
+
+# TODO: Not thread-safe for many reasons.
+# TODO: On Linux, we could use dlmopen to use different linker namespaces,
+# which should allow several instances of this. On MacOS, that seems
+# a tough call.
 class Nethack:
+    _instances = 0
+
     def __init__(
         self,
         observation_keys=OBSERVATION_DESC.keys(),
@@ -42,13 +52,33 @@ class Nethack:
     ):
         self._copy = copy
 
+        if not os.path.exists(HACKDIR) or not os.path.exists(
+            os.path.join(HACKDIR, "sysconf")
+        ):
+            raise FileNotFoundError("Couldn't find NetHack installation.")
+
+        # Create a HACKDIR for us.
+        self._vardir = tempfile.mkdtemp(prefix="nle")
+        os.symlink(os.path.join(HACKDIR, "nhdat"), os.path.join(self._vardir, "nhdat"))
+        # touch a few files.
+        for filename in ["sysconf", "perm", "logfile", "xlogfile"]:
+            os.close(os.open(os.path.join(self._vardir, filename), os.O_CREAT))
+        os.mkdir(os.path.join(self._vardir, "save"))
+
         if options is None:
             options = NETHACKOPTIONS
         options = list(options) + ["name:" + playername]
 
         # TODO: Investigate not using environment variables for this.
         os.environ["NETHACKOPTIONS"] = ",".join(options)
+        os.environ["HACKDIR"] = self._vardir
+
+        if Nethack._instances > 0:
+            raise RuntimeError(
+                "Cannot have more than one open Nethack instance per process."
+            )
         self._pynethack = _pynethack.Nethack(DLPATH)
+        Nethack._instances += 1
 
         self._obs_buffers = {}
 
@@ -75,3 +105,4 @@ class Nethack:
 
     def close(self):
         self._pynethack.close()
+        Nethack._instances -= 1
