@@ -34,6 +34,7 @@ class CMakeBuild(build_ext.build_ext):
         hackdir_path = os.getenv("HACKDIR", source_path.joinpath("nle", "nethackdir"))
 
         os.makedirs(self.build_temp, exist_ok=True)
+        build_type = "Debug" if self.debug else "Release"
 
         cmake_cmd = [
             "cmake",
@@ -42,6 +43,7 @@ class CMakeBuild(build_ext.build_ext):
             "-DPYTHON_SRC_PARENT=%s" % source_path,
             # Tell cmake which Python we want.
             "-DPYTHON_EXECUTABLE=%s" % sys.executable,
+            "-DCMAKE_BUILD_TYPE=%s" % build_type,
             "-DCMAKE_INSTALL_PREFIX=%s" % sys.base_prefix,
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=%s" % output_path,
             "-DHACKDIR=%s" % hackdir_path,
