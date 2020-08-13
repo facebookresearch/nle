@@ -156,14 +156,17 @@ class NetHackRL
 
     struct rl_inventory_item {
         int glyph;
+        // TODO: Don't heap allocate this stuff.
         std::string str;
         char letter;
         char object_class;
+        // TODO: Don't heap allocate this stuff.
         std::string object_class_name;
     };
 
     static std::unique_ptr<NetHackRL> instance;
 
+    // TODO: Don't heap allocate this stuff.
     std::vector<std::unique_ptr<rl_window> > windows_;
 
     std::array<int16_t, (COLNO - 1) * ROWNO> glyphs_;
@@ -234,7 +237,7 @@ NetHackRL::fill_obs(nle_obs *obs)
     if (!program_state.in_moveloop) {
         // Game not yet started. Return zero observations.
         if (obs->glyphs)
-            std::memset(obs->glyphs, 0, sizeof(short) * glyphs_.size());
+            std::memset(obs->glyphs, 0, sizeof(int16_t) * glyphs_.size());
         if (obs->chars)
             std::memset(obs->chars, 0, chars_.size());
         if (obs->colors)
@@ -264,12 +267,13 @@ NetHackRL::fill_obs(nle_obs *obs)
         std::memcpy(obs->specials, specials_.data(), specials_.size());
     }
     if (obs->message) {
+        assert(windows_.size() > WIN_MESSAGE);
         rl_window *win = windows_[WIN_MESSAGE].get();
         assert(win->type == NHW_MESSAGE);
         int remaining = 256;
         for (std::string &s : win->strings) {
             std::memcpy(&obs->message[256 - remaining], s.c_str(),
-                        max(s.size(), remaining));
+                        min(s.size(), remaining));
             remaining -= s.size() + 1; // Keep one separation token.
             if (remaining <= 0)
                 break;
