@@ -90,6 +90,7 @@ class TestGymEnv:
     def test_init(self, env_name):
         """Tests default initialization given standard env specs."""
         env = gym.make(env_name)
+        del env
 
     def test_reset(self, env_name):
         """Tests default initialization given standard env specs."""

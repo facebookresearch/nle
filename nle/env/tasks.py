@@ -3,7 +3,6 @@ import enum
 
 import numpy as np
 
-import nle
 from nle.env import base
 from nle import nethack
 

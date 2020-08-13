@@ -16,7 +16,6 @@ import gym
 import numpy as np
 
 from nle import nethack
-import nle.nethack.print_message as nhprint
 
 
 logger = logging.getLogger(__name__)
@@ -318,22 +317,22 @@ class NLE(gym.Env):
         """Updates a stats dict tracking several env stats."""
         # Using class rather than instance to allow tasks to reuse this with
         # super()
-        return NLE.Stats(
-            end_status=int(end_status),
-            score=_get(message, "Blstats.score", required=True),
-            time=_get(message, "Blstats.time", required=True),
-            steps=self._steps,
-            hp=_get(message, "Blstats.hitpoints", required=True),
-            exp=_get(message, "Blstats.experience_points", required=True),
-            exp_lev=_get(message, "Blstats.experience_level", required=True),
-            gold=_get(message, "Blstats.gold", required=True),
-            hunger=_get(message, "You.uhunger", required=True),
-            # killer_name=self._killer_name,
-            deepest_lev=_get(message, "Internal.deepest_lev_reached", required=True),
-            episode=self._episode,
-            seeds=self.get_seeds(),
-            ttyrec=self.env._process.filename,
-        )
+        # return NLE.Stats(
+        #     end_status=int(end_status),
+        #     score=_get(message, "Blstats.score", required=True),
+        #     time=_get(message, "Blstats.time", required=True),
+        #     steps=self._steps,
+        #     hp=_get(message, "Blstats.hitpoints", required=True),
+        #     exp=_get(message, "Blstats.experience_points", required=True),
+        #     exp_lev=_get(message, "Blstats.experience_level", required=True),
+        #     gold=_get(message, "Blstats.gold", required=True),
+        #     hunger=_get(message, "You.uhunger", required=True),
+        #     # killer_name=self._killer_name,
+        #     deepest_lev=_get(message, "Internal.deepest_lev_reached", required=True),
+        #     episode=self._episode,
+        #     seeds=self.get_seeds(),
+        #     ttyrec=self.env._process.filename,
+        # )
 
     def _in_moveloop(self, observation):
         program_state = observation[self._program_state_index]
