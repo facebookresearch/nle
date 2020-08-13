@@ -185,6 +185,8 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
 {
     current_nle_ctx = nle;
     nle->observation = obs;
+    write_header(1, 1);
+    fputc(obs->action, nle->ttyrec);
     fcontext_transfer_t t = jump_fcontext(nle->generatorcontext, obs);
     nle->generatorcontext = t.ctx;
     nle->done = (t.data == NULL);
