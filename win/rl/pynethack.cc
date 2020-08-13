@@ -55,10 +55,7 @@ checked_conversion(py::object obj, const std::vector<ssize_t> &shape)
 class Nethack
 {
   public:
-    Nethack(std::string dlpath)
-        : dlpath_(std::move(dlpath)), obs_{ 0,       0,       nullptr,
-                                            nullptr, nullptr, nullptr,
-                                            nullptr, nullptr, nullptr }
+    Nethack(std::string dlpath) : dlpath_(std::move(dlpath)), obs_{}
     {
     }
     ~Nethack()
