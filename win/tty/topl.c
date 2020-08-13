@@ -152,7 +152,7 @@ const char *str;
 
     if (!(cw->flags & WIN_STOP)) {
         if (ttyDisplay->cury && ttyDisplay->toplin == 2)
-            tty_clear_nhwindow(WIN_MESSAGE);
+            clear_nhwindow(WIN_MESSAGE);
 
         cw->curx = cw->cury = 0;
         home();
@@ -430,7 +430,7 @@ char def;
                 ttyDisplay->inread = 0;
                 (void) tty_doprev_message();
                 ttyDisplay->inread = sav;
-                tty_clear_nhwindow(WIN_MESSAGE);
+                clear_nhwindow(WIN_MESSAGE);
                 cw->maxcol = cw->maxrow;
                 addtopl(prompt);
             } else {
@@ -445,7 +445,7 @@ char def;
             /* BUG[?]: this probably ought to check whether the
                character which has just been read is an acceptable
                response; if so, skip the reprompt and use it. */
-            tty_clear_nhwindow(WIN_MESSAGE);
+            clear_nhwindow(WIN_MESSAGE);
             cw->maxcol = cw->maxrow;
             doprev = 0;
             addtopl(prompt);
@@ -535,7 +535,7 @@ char def;
     if (ttyDisplay->intr)
         ttyDisplay->intr--;
     if (wins[WIN_MESSAGE]->cury)
-        tty_clear_nhwindow(WIN_MESSAGE);
+        clear_nhwindow(WIN_MESSAGE);
 
     return q;
 }
