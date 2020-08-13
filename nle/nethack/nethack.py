@@ -9,8 +9,9 @@ from nle import _pynethack
 
 DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 
+# TODO: Consider getting this from C++.
 DUNGEON_SHAPE = (21, 79)
-BLSTATS_SHAPE = (23,)
+BLSTATS_SHAPE = (25,)
 MESSAGE_SHAPE = (256,)
 PROGRAM_STATE_SHAPE = (5,)
 INTERNAL_SHAPE = (5,)

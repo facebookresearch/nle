@@ -9,6 +9,8 @@ import re
 import sys
 import time
 import tempfile
+import warnings
+import weakref
 
 import gym
 import numpy as np
@@ -21,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 WIN_MESSAGE = 1  # Technically dynamic. Practically constant.
 
+# TODO: This doesn't handle all cases, e.g., shopkeepers getting our stuff.
 FINAL_QUESTIONS = re.compile(
     rb"Do you want ("
     rb"your possessions identified|"
@@ -30,23 +33,8 @@ FINAL_QUESTIONS = re.compile(
     rb"to see the dungeon overview)"
 )
 
-DUNGEON_SHAPE = (21, 79)
+DUNGEON_SHAPE = nethack.DUNGEON_SHAPE
 
-
-def _fb_ndarray_to_np(fb_ndarray):
-    result = fb_ndarray.DataAsNumpy()
-    result = result.view(np.typeDict[fb_ndarray.Dtype()])
-    result = result.reshape(fb_ndarray.ShapeAsNumpy().tolist())
-    return result
-
-
-INVFIELDS = [
-    "Glyph",
-    "Str",
-    "Letter",
-    "ObjectClass",
-    # "ObjectClassName",
-]
 
 DEFAULT_MSG_PAD = 256
 DEFAULT_INV_PAD = 55
@@ -65,196 +53,13 @@ FULL_ACTIONS.remove(nethack.Command.SAVE)
 FULL_ACTIONS.remove(nethack.Command.HELP)
 FULL_ACTIONS = tuple(FULL_ACTIONS)
 
-
-# TODO(NN): this logic should be refactored into a class with pythonic access to
-# its attributes.
-def _get(response, path="Blstats.score", default=None, required=False):
-    node = response
-
-    for attr in path.split("."):
-        attr = "".join(x.capitalize() for x in attr.split("_"))
-        node = getattr(node, attr)()
-        if node is None:
-            if required:
-                raise ValueError("%s not found in response, but required==True." % path)
-            return default
-    return node
-
-
-def _get_as_np(response, attr, shape, dtype):
-    if response is None:
-        return np.zeros(shape, dtype=dtype)
-    o = response.Observation()
-    # If done is True, Observation() is None.
-    if o is None:
-        return np.zeros(shape, dtype=dtype)
-    return getattr(o, attr)().DataAsNumpy().view(dtype).reshape(shape)
-
-
-def _get_glyphs(response):
-    return _get_as_np(response, "Glyphs", DUNGEON_SHAPE, np.int16)
-
-
-def _get_chars(response):
-    return _get_as_np(response, "Chars", DUNGEON_SHAPE, np.uint8)
-
-
-def _get_colors(response):
-    return _get_as_np(response, "Colors", DUNGEON_SHAPE, np.uint8)
-
-
-def _get_specials(response):
-    return _get_as_np(response, "Specials", DUNGEON_SHAPE, np.uint8)
-
-
-def _get_status_fast(response, entries=23):
-    # Fast version of _get_status. See that function for the order.
-    s = response.Blstats()
-    if s is None:
-        return np.zeros(entries, dtype=np.int32)
-    return np.frombuffer(
-        s._tab.Bytes[s._tab.Pos : s._tab.Pos + 4 * entries], dtype=np.int32
-    )
-
-
-def _get_status(response):
-    s = response.Blstats()
-    if s is None:
-        return np.zeros(23, dtype=np.int32)
-
-    return np.array(
-        (
-            s.CursX(),
-            s.CursY(),
-            # 1..125. See
-            # https://nethackwiki.com/wiki/Attribute#Strength_in_game_formulas
-            # and get_strength_str() in botl.c
-            s.StrengthPercentage(),
-            s.Strength(),
-            s.Dexterity(),
-            s.Constitution(),
-            s.Intelligence(),
-            s.Wisdom(),
-            s.Charisma(),
-            s.Score(),
-            s.Hitpoints(),
-            s.MaxHitpoints(),
-            s.Depth(),
-            s.Gold(),
-            s.Energy(),
-            s.MaxEnergy(),
-            s.ArmorClass(),
-            s.MonsterLevel(),
-            s.ExperienceLevel(),
-            s.ExperiencePoints(),
-            s.Time(),
-            s.HungerState(),
-            s.CarryingCapacity(),
-        ),
-        dtype=np.int32,
-    )
-
-
-def _get_padded_message(
-    response, padded_length=DEFAULT_MSG_PAD, alphabet_size=ord("~") - ord(" ") + 1
-):
-    # TODO: This would be faster if done in C++.
-    result = np.full(padded_length, fill_value=alphabet_size, dtype=np.uint8)
-    if response is None or response.NotRunning():
-        return result
-
-    win = response.Windows(WIN_MESSAGE)
-    if win is None:
-        logger.error("No message window. This shouldn't happen.")
-        return result
-
-    assert win.Type() == nethack.NHW_MESSAGE
-
-    offset = 0
-    for i in range(win.StringsLength()):
-        message = np.frombuffer(win.Strings(i), dtype=np.uint8)
-
-        # Subtract ord(" ") and assign. Crop if space runs out.
-        result[offset : offset + len(message)] = (
-            message[: max(len(result) - offset, 0)] - 0x20
-        )
-        offset += len(message) + 1  # Keep one separation token.
-    return result
-
-
-def _wait_for_space(response):
-    internal = response.Internal()
-    return internal and internal.Xwaitforspace()
-
-
-def _in_moveloop(response):
-    ps = response.ProgramState()
-    return ps and ps.InMoveloop()
-
-
-def _get_call_stack(response):
-    internal = response.Internal()
-    if internal is None:
-        return ()
-    return (internal.CallStack(i) for i in range(internal.CallStackLength()))
-
-
-def _get_inv(response):
-    result = {}
-    for field in INVFIELDS:
-        result[field] = []
-
-    o = response.Observation()
-    if o is None:
-        return result
-
-    for item in (o.Inventory(i) for i in range(o.InventoryLength())):
-        for field in INVFIELDS:
-            result[field].append(getattr(item, field)())
-    return result
-
-
-def _get_padded_inv(
-    response,
-    padded_length=DEFAULT_INV_PAD,
-    str_padded_length=DEFAULT_INVSTR_PAD,
-    alphabet_size=ord("~") - ord(" ") + 1,
-):
-    # TODO: This would be faster if done in C++.
-    inv = _get_inv(response)
-    strs = np.full(
-        (padded_length, str_padded_length), fill_value=alphabet_size, dtype=np.uint8
-    )
-    for i, b in enumerate(inv["Str"]):
-        strs[i, : len(b)] = np.frombuffer(b, dtype=np.uint8)[:str_padded_length] - 0x20
-
-    pad_width = (0, padded_length - len(inv["Str"]))
-    glyphs = np.pad(
-        np.asarray(inv["Glyph"], dtype=np.int16),
-        pad_width,
-        mode="constant",
-        constant_values=nethack.NO_GLYPH,
-    )
-    letters = np.pad(
-        np.asarray(inv["Letter"], dtype=np.uint8) - 0x20,
-        pad_width,
-        mode="constant",
-        constant_values=alphabet_size,
-    )
-    oclasses = np.pad(
-        np.asarray(inv["ObjectClass"], dtype=np.uint8),
-        pad_width,
-        mode="constant",
-        constant_values=nethack.MAXOCLASSES,
-    )
-
-    return glyphs, strs, letters, oclasses
+BLSTATS_SCORE_INDEX = 9
 
 
 class NLE(gym.Env):
     """Standard NetHack Learning Environment.
 
-    Implements a gym interface around `nethack.NetHack`.
+    Implements a gym interface around `nethack.Nethack`.
 
 
     Examples:
@@ -294,7 +99,7 @@ class NLE(gym.Env):
             "exp_lev",
             "gold",
             "hunger",
-            "killer_name",
+            # "killer_name",
             "deepest_lev",
             "episode",
             "seeds",
@@ -313,9 +118,8 @@ class NLE(gym.Env):
             "chars",
             "colors",
             "specials",
-            "status",
+            "blstats",
             "message",
-            "inventory",
         ),
         actions=None,
         options=None,
@@ -336,8 +140,8 @@ class NLE(gym.Env):
                 Defaults to all.
             actions (list): list of actions. If None, the full action space will
                 be used, i.e. ``nle.nethack.ACTIONS``. Defaults to None.
-            options (list): list of game options to initialize NetHack. If None,
-                NetHack will be initialized with the options found in
+            options (list): list of game options to initialize Nethack. If None,
+                Nethack will be initialized with the options found in
                 ``nle.nethack.NETHACKOPTIONS`. Defaults to None.
         """
 
@@ -348,9 +152,14 @@ class NLE(gym.Env):
             actions = FULL_ACTIONS
         self._actions = actions
 
-        self.response = None
+        self.last_observation = None
 
         if archivefile is not None:
+            warnings.warn("Setting archive file not yet implemented")
+            archivefile = None
+
+        if archivefile is not None:
+            warnings.warn("Setting archive file not yet implemented")
             try:
                 if savedir is None:
                     parent_dir = os.path.join(os.getcwd(), "nle_data")
@@ -376,11 +185,36 @@ class NLE(gym.Env):
 
         self._setup_statsfile = archivefile is not None
 
-        self.env = nethack.NetHack(
-            archivefile=self.archivefile,
-            options=options,
-            playername="Agent%(pid)i-" + self.character,
+        self._observation_keys = list(observation_keys)
+
+        # Observations we always need.
+        for key in (
+            "glyphs",
+            "blstats",
+            "message",
+            "program_state",
+            "internal",
+        ):
+            if key not in self._observation_keys:
+                self._observation_keys.append(key)
+
+        self._glyph_index = self._observation_keys.index("glyphs")
+        self._blstats_index = self._observation_keys.index("blstats")
+        self._message_index = self._observation_keys.index("message")
+        self._program_state_index = self._observation_keys.index("program_state")
+        self._internal_index = self._observation_keys.index("internal")
+
+        self._original_observation_keys = observation_keys
+        self._original_indices = tuple(
+            self._observation_keys.index(key) for key in observation_keys
         )
+
+        self.env = nethack.Nethack(
+            observation_keys=self._observation_keys,
+            options=options,
+            playername="Agent-" + self.character,
+        )
+        self._close_env = weakref.finalize(self, lambda e: e.close(), self.env)
 
         self._random = random.SystemRandom()
 
@@ -400,45 +234,17 @@ class NLE(gym.Env):
             "specials": gym.spaces.Box(
                 low=0, high=255, shape=DUNGEON_SHAPE, dtype=np.uint8
             ),
-            "status": gym.spaces.Box(
+            "blstats": gym.spaces.Box(
                 low=np.iinfo(np.int32).min,
                 high=np.iinfo(np.int32).max,
-                shape=(23,),
+                shape=nethack.BLSTATS_SHAPE,
                 dtype=np.int32,
             ),
             "message": gym.spaces.Box(
                 low=np.iinfo(np.uint8).min,
                 high=np.iinfo(np.uint8).max,
-                shape=(DEFAULT_MSG_PAD,),
+                shape=nethack.MESSAGE_SHAPE,
                 dtype=np.uint8,
-            ),
-            "inventory": gym.spaces.Tuple(
-                (
-                    gym.spaces.Box(
-                        low=np.iinfo(np.int16).min,
-                        high=np.iinfo(np.int16).max,
-                        shape=(DEFAULT_INV_PAD,),
-                        dtype=np.int16,
-                    ),
-                    gym.spaces.Box(
-                        low=np.iinfo(np.uint8).min,
-                        high=np.iinfo(np.uint8).max,
-                        shape=(DEFAULT_INV_PAD, DEFAULT_INVSTR_PAD),
-                        dtype=np.uint8,
-                    ),
-                    gym.spaces.Box(
-                        low=np.iinfo(np.uint8).min,
-                        high=np.iinfo(np.uint8).max,
-                        shape=(DEFAULT_INV_PAD,),
-                        dtype=np.uint8,
-                    ),
-                    gym.spaces.Box(
-                        low=np.iinfo(np.uint8).min,
-                        high=np.iinfo(np.uint8).max,
-                        shape=(DEFAULT_INV_PAD,),
-                        dtype=np.uint8,
-                    ),
-                )
             ),
         }
 
@@ -446,23 +252,13 @@ class NLE(gym.Env):
             {key: space_dict[key] for key in observation_keys}
         )
 
-        self._key_functions = {
-            "glyphs": _get_glyphs,
-            "chars": _get_chars,
-            "colors": _get_colors,
-            "specials": _get_specials,
-            "status": _get_status_fast,
-            "message": _get_padded_message,
-            "inventory": _get_padded_inv,
-        }
-        for key in list(self._key_functions.keys()):
-            if key not in observation_keys:
-                del self._key_functions[key]
-
         self.action_space = gym.spaces.Discrete(len(self._actions))
 
-    def _get_observation(self, response):
-        return {key: f(response) for key, f in self._key_functions.items()}
+    def _get_observation(self, observation):
+        return {
+            key: observation[i]
+            for key, i in zip(self._original_observation_keys, self._original_indices)
+        }
 
     def step(self, action: int):
         """Steps the environment.
@@ -481,30 +277,34 @@ class NLE(gym.Env):
                   `end_status`, i.e. a status info -- death, task win, etc. --
                   for the terminal state).
         """
-        response, done, info = self.env.step(self._actions[action])
-        response, done, info = self._perform_known_steps(response, done, info)
+        observation, done = self.env.step(self._actions[action])
+        observation, done = self._perform_known_steps(observation, done)
 
         self._steps += 1
 
-        last_response = self.response
-        self.response = response
+        last_observation = self.last_observation
+        self.last_observation = observation
 
         if self._steps >= self._max_episode_steps:
             end_status = self.StepStatus.ABORTED
         else:
-            end_status = self._is_episode_end(response)
+            end_status = self._is_episode_end(observation)
         end_status = self.StepStatus(done or end_status)
 
-        reward = float(self._reward_fn(last_response, response, end_status))
+        reward = float(self._reward_fn(last_observation, observation, end_status))
 
         if end_status and not done:
             # Try to end the game nicely.
-            self._quit_game(response, done, info)
+            self._quit_game(observation, done)
             done = True
 
+        info = {}
+
         if end_status:
-            stats = self._collect_stats(last_response, end_status)
-            stats = stats._asdict()
+            # TODO: fix stats
+            # stats = self._collect_stats(last_observation, end_status)
+            # stats = stats._asdict()
+            stats = {}
             info["stats"] = stats
 
             if self._stats_logger is not None:
@@ -512,7 +312,7 @@ class NLE(gym.Env):
 
         info["end_status"] = end_status
 
-        return self._get_observation(response), reward, done, info
+        return self._get_observation(observation), reward, done, info
 
     def _collect_stats(self, message, end_status):
         """Updates a stats dict tracking several env stats."""
@@ -528,12 +328,16 @@ class NLE(gym.Env):
             exp_lev=_get(message, "Blstats.experience_level", required=True),
             gold=_get(message, "Blstats.gold", required=True),
             hunger=_get(message, "You.uhunger", required=True),
-            killer_name=self._killer_name,
+            # killer_name=self._killer_name,
             deepest_lev=_get(message, "Internal.deepest_lev_reached", required=True),
             episode=self._episode,
             seeds=self.get_seeds(),
             ttyrec=self.env._process.filename,
         )
+
+    def _in_moveloop(self, observation):
+        program_state = observation[self._program_state_index]
+        return program_state[3]  # in_moveloop
 
     def reset(self):
         """Resets the environment.
@@ -541,13 +345,13 @@ class NLE(gym.Env):
         Note:
             We attempt to manually navigate the first few menus so that the
             first seen state is ready to be acted upon by the user. This might
-            fail in case NetHack is initialized with some uncommon options.
+            fail in case Nethack is initialized with some uncommon options.
 
         Returns:
             (dict): observation of the state as defined by
                     ``self.observation_space``
         """
-        self.response = self.env.reset()
+        self.last_observation = self.env.reset()
 
         # Only run on the first reset to initialize stats file
         if self._setup_statsfile:
@@ -563,28 +367,33 @@ class NLE(gym.Env):
         self._setup_statsfile = False
 
         self._episode += 1
-        self._killer_name = "UNK"
+        # self._killer_name = "UNK"
 
         self._steps = 0
-        self._info = self.env._info.copy()
+        self._info = {}
 
         self._info["seeds"] = {}
-        for k in nethack.SEED_KEYS:
-            self._info["seeds"][k] = getattr(self.response.Seeds(), k.capitalize())()
+        # TODO: Fix seeds
+        # for k in nethack.SEED_KEYS:
+        #    self._info["seeds"][k] = getattr(self.response.Seeds(), k.capitalize())()
 
-        while not _in_moveloop(self.response):
+        while not self._in_moveloop(self.last_observation):
             # Get past initial phase of game. This should make sure
             # all the observations are present.
-            self.response, done, _ = self.env.step(ASCII_SPACE)
+            self.last_observation, done = self.env.step(ASCII_SPACE)
             assert not done, "Game ended unexpectedly"
 
-        return self._get_observation(self.response)
+        return self._get_observation(self.last_observation)
+
+    def close(self):
+        self._close_env()
+        super().close()
 
     def get_seeds(self):
         """Returns current seeds.
 
         Returns:
-            (dict): seeds used by the current instance of NetHack.
+            (dict): seeds used by the current instance of Nethack.
         """
 
         return self._info["seeds"].copy()
@@ -632,14 +441,13 @@ class NLE(gym.Env):
 
         """
         if mode == "human":
-            nhprint.print_message(self.response)
+            # TODO: Fix print_message.
+            # nhprint.print_message(self.response)
             return
         elif mode == "ansi":
             # TODO(NN): refactor print_message and output string here
-            chars = _get(self.response, "Observation.Chars")
-            if chars is None:
-                return ""
-            chars = _fb_ndarray_to_np(chars)
+            chars_index = self._observation_keys.index("chars")
+            chars = self.last_observation[chars_index]
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
         else:
             return super().render(mode=mode)
@@ -647,7 +455,11 @@ class NLE(gym.Env):
     def __repr__(self):
         return "<%s>" % self.__class__.__name__
 
-    def _is_episode_end(self, response):
+    def _wait_for_space(self, observation):
+        internal = observation[self._internal_index]
+        return internal[3]  # xwaitforspace
+
+    def _is_episode_end(self, observation):
         """Returns whether the episode has ended.
 
         Tasks may override this method to specify different conditions, so long
@@ -658,55 +470,58 @@ class NLE(gym.Env):
         """
         return self.StepStatus.RUNNING
 
-    def _reward_fn(self, last_response, response, end_status):
+    def _reward_fn(self, last_observation, observation, end_status):
         """Reward function. Difference between previous score and new score."""
-        old_score = _get(last_response, "Blstats.score", 0)
-        score = _get(response, "Blstats.score", old_score)
+        old_score = last_observation[self._blstats_index][BLSTATS_SCORE_INDEX]
+        score = observation[self._blstats_index][BLSTATS_SCORE_INDEX]
         del end_status  # Unused for "score" reward.
         return score - old_score
 
-    def _perform_known_steps(self, response, done, info, exceptions=True):
+    def _perform_known_steps(self, observation, done, exceptions=True):
         while not done:
-            if _wait_for_space(response):
-                response, done, info = self.env.step(ASCII_SPACE)
+            if self._wait_for_space(observation):
+                observation, done = self.env.step(ASCII_SPACE)
                 continue
 
-            if self._killer_name == "UNK" and response.ProgramState().Gameover():
-                self._killer_name = _get(
-                    response, "Internal.killer_name", default="UNK"
-                )
-                if self._killer_name != "UNK":
-                    self._killer_name = self._killer_name.decode("utf-8")
+            # TODO: Think about killer_name.
+            # if self._killer_name == "UNK"
 
-            message_win = response.Windows(WIN_MESSAGE)
-            if message_win is None or not message_win.StringsLength():
-                break
-            msg = message_win.Strings(message_win.StringsLength() - 1)
+            internal = observation[self._internal_index]
+            in_yn_function = internal[1]
+            in_getlin = internal[2]
 
-            if msg.startswith(b"Beware, there will be no return!  Still climb?"):
-                response, done, info = self.env.step(ASCII_n)
-            elif re.match(FINAL_QUESTIONS, msg):
-                response, done, info = self.env.step(ASCII_y)
-            else:
-                call_stack = _get_call_stack(response)
-                if b"yn_function" in call_stack or b"getlin" in call_stack:
-                    if exceptions and (
-                        b"eat" in msg or b"attack" in msg or b"direction?" in msg
-                    ):
-                        # Allow agent to select stuff to eat, attack, and to
-                        # select directions.
+            if in_getlin:  # Game asking for a line of text. We don't do that.
+                observation, done = self.env.step(ASCII_ESC)
+                continue
+
+            if in_yn_function:  # Game asking for a single character.
+                # This causes an annoying unnecessary copy...
+                msg = bytes(observation[self._message_index])
+                # print(msg)
+                if re.match(FINAL_QUESTIONS, msg):
+                    print("matched final questions")
+                    # Auto-yes to the final questions.
+                    observation, done = self.env.step(ASCII_y)
+                    continue
+
+                if exceptions:
+                    # Allow agent to select stuff to eat, attack, and to
+                    # select directions.
+                    if b"eat" in msg or b"attack" in msg or b"direction?" in msg:
                         break
-                    response, done, info = self.env.step(ASCII_ESC)
-                else:
-                    break
 
-        return response, done, info
+                # Otherwise, auto-decline.
+                observation, done = self.env.step(ASCII_ESC)
 
-    def _quit_game(self, response, done, info):
+            break
+
+        return observation, done
+
+    def _quit_game(self, observation, done):
         """Smoothly quit a game."""
         # Get out of menus and windows.
-        response, done, info = self._perform_known_steps(
-            response, done, info, exceptions=False
+        observation, done = self._perform_known_steps(
+            observation, done, exceptions=False
         )
 
         if done:
@@ -715,25 +530,16 @@ class NLE(gym.Env):
         # Quit the game.
         actions = [0x80 | ord("q"), ord("y")]  # M-q y
         for a in actions:
-            response, done, info = self.env.step(a)
+            observation, done = self.env.step(a)
 
         # Answer final questions.
-        response, done, info = self._perform_known_steps(
-            response, done, info, exceptions=False
+        observation, done = self._perform_known_steps(
+            observation, done, exceptions=False
         )
 
         if not done:
-            # Somehow, the above logic failed us. We'll SIGTERM the game to close it.
-            if self.env._archive is None:
-                filename = "N/A"
-            else:
-                filename = self.env._archive.filename
-            logger.error(
-                "Warning: smooth quitting of game failed, aborting "
-                "(archive %s, episode %i).",
-                filename,
-                self.env._episode,
-            )
+            # Somehow, the above logic failed us.
+            warnings.warn("Warning: smooth quitting of game failed, aborting.")
 
 
 def seed_list_to_dict(seeds):
