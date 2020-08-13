@@ -247,7 +247,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         if (obs->message)
             std::memset(obs->message, 0, 256);
         if (obs->blstats)
-            std::memset(obs->blstats, 0, sizeof(long) * 23);
+            std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
         if (obs->internal)
             std::memset(obs->internal, 0, sizeof(int) * 5);
         return;
@@ -294,7 +294,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         i = Upolyd ? u.mhmax : u.uhpmax;
         max_hitpoints = min(i, 9999);
 
-        long blstats[23] = {
+        long blstats[NLE_BLSTATS_SIZE] = {
             /* Cf. botl.c. */
             u.ux - 1,            /* x coordinate, 1 <= ux <= cols */
             u.uy,                /* y coordinate, 0 <= uy < rows */
@@ -318,7 +318,9 @@ NetHackRL::fill_obs(nle_obs *obs)
             u.uexp,                                    /* experience_points */
             moves,                                     /* time              */
             u.uhs,                                     /* hunger state      */
-            near_capacity()                            /* carrying_capacity */
+            near_capacity(),                           /* carrying_capacity */
+            u.uz.dnum,
+            u.uz.dlevel,
         };
 
         std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));

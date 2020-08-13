@@ -98,7 +98,8 @@ class Nethack
         obs_.colors = checked_conversion<uint8_t>(std::move(colors), dungeon);
         obs_.specials =
             checked_conversion<uint8_t>(std::move(specials), dungeon);
-        obs_.blstats = checked_conversion<long>(std::move(blstats), { 23 });
+        obs_.blstats = checked_conversion<long>(std::move(blstats),
+                                                { NLE_BLSTATS_SIZE });
         obs_.message =
             checked_conversion<uint8_t>(std::move(message), { 256 });
         obs_.program_state =
