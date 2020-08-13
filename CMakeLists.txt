@@ -8,6 +8,12 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   # have done the trick.
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
   set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym")
+
+  # address sanitizer.
+
+  # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer
+  # -fsanitize=address") set(CMAKE_LINKER_FLAGS_DEBUG
+  # "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 elseif(CMAKE_BUILD_TYPE MATCHES Release)
   message("Release build.")
 else()
