@@ -245,7 +245,12 @@ PYBIND11_MODULE(_pynethack, m)
 
     py::class_<permonst, std::unique_ptr<permonst, py::nodelete> >(mn,
                                                                    "permonst")
-        .def(py::init([](int index) -> permonst * { return &mons[index]; }))
+        .def(py::init([](int index) -> permonst * {
+            if (index < 0 || index >= NUMMONS)
+                throw std::out_of_range(
+                    "Index should be between 0 and NUMMONS");
+            return &mons[index];
+        }))
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
         .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
@@ -279,7 +284,13 @@ PYBIND11_MODULE(_pynethack, m)
     py::class_<class_sym>(mn, "class_sym")
         .def_static(
             "from_mlet",
-            [](char let) -> const class_sym * { return &def_monsyms[let]; },
+            [](char let) -> const class_sym * {
+                if (let < 0 || let >= MAXMCLASSES)
+                    throw std::out_of_range(
+                        "Argument should be between 0 and MAXMCLASSES");
+
+                return &def_monsyms[let];
+            },
             py::return_value_policy::reference)
         .def_readonly("sym", &class_sym::sym)
         .def_readonly("name", &class_sym::name)

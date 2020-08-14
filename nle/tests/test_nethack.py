@@ -55,7 +55,7 @@ class TestNetHack:
         chars, blstats = game.reset()
 
         assert chars.shape == (21, 79)
-        assert blstats.shape == (23,)
+        assert blstats.shape == (25,)
 
         game.step(ord("y"))
         game.step(ord("y"))
@@ -214,3 +214,13 @@ class TestNethackFunctionsAndConstants:
     def test_some_constants(self):
         assert nethack.GLYPH_MON_OFF == 0
         assert nethack.NUMMONS > 300
+
+    def test_illegal_numbers(self):
+        with pytest.raises(IndexError):
+            nethack.permonst(10000)
+
+        with pytest.raises(IndexError):
+            nethack.permonst(-1)
+
+        with pytest.raises(IndexError):
+            nethack.class_sym.from_mlet("\xFF")
