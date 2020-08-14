@@ -89,6 +89,11 @@ class HelperTest(unittest.TestCase):
         mon = nethack.permonst(1)
         self.assertEqual(mon.mname, "killer bee")
 
+        # Test https://github.com/pybind/pybind11/issues/2394
+        for _ in range(2):
+            mon = nethack.permonst(0)
+            self.assertEqual(mon.mname, "giant ant")
+
 
 if __name__ == "__main__":
     unittest.main()
