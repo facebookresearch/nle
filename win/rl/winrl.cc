@@ -1,5 +1,7 @@
 /* Copyright (c) Facebook, Inc. and its affiliates. */
 #include <array>
+#include <cassert>
+#include <cstring>
 #include <deque>
 #include <iostream>
 #include <map>
