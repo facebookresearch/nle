@@ -87,6 +87,7 @@ target_link_libraries(nethack PUBLIC ncurses m fcontext)
 # dlopen wrapper library
 add_library(nethackdl SHARED "sys/unix/nledl.c")
 target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(nethackdl PUBLIC dl)
 
 # rlmain C++ (test) binary
 add_executable(rlmain "sys/unix/rlmain.cc")
