@@ -263,3 +263,60 @@ void
 introff()
 {
 }
+
+#ifdef __linux__ /* via Jesse Thilo and Ben Gertzfield */
+#include <sys/ioctl.h>
+#include <sys/vt.h>
+
+int linux_flag_console = 0;
+
+void NDECL(linux_mapon);
+void NDECL(linux_mapoff);
+void NDECL(check_linux_console);
+void NDECL(init_linux_cons);
+
+void
+linux_mapon()
+{
+#ifdef TTY_GRAPHICS
+    if (WINDOWPORT("tty") && linux_flag_console) {
+        write(1, "\033(B", 3);
+    }
+#endif
+}
+
+void
+linux_mapoff()
+{
+#ifdef TTY_GRAPHICS
+    if (WINDOWPORT("tty") && linux_flag_console) {
+        write(1, "\033(U", 3);
+    }
+#endif
+}
+
+void
+check_linux_console()
+{
+    struct vt_mode vtm;
+
+    if (isatty(0) && ioctl(0, VT_GETMODE, &vtm) >= 0) {
+        linux_flag_console = 1;
+    }
+}
+
+void
+init_linux_cons()
+{
+#ifdef TTY_GRAPHICS
+    if (WINDOWPORT("tty") && linux_flag_console) {
+        atexit(linux_mapon);
+        linux_mapoff();
+#ifdef TEXTCOLOR
+        if (has_colors())
+            iflags.use_color = TRUE;
+#endif
+    }
+#endif
+}
+#endif /* __linux__ */
