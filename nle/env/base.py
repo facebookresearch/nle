@@ -496,9 +496,7 @@ class NLE(gym.Env):
             if in_yn_function:  # Game asking for a single character.
                 # This causes an annoying unnecessary copy...
                 msg = bytes(observation[self._message_index])
-                # print(msg)
                 if re.match(FINAL_QUESTIONS, msg):
-                    print("matched final questions")
                     # Auto-yes to the final questions.
                     observation, done = self.env.step(ASCII_y)
                     continue
