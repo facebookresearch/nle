@@ -128,6 +128,9 @@ PYBIND11_MODULE(helper, m)
         .def(
             "__init__",
             [](py::detail::value_and_holder &v_h, int index) {
+                if (index < 0 || index >= NUMMONS)
+                    throw std::out_of_range(
+                        "Index should be between 0 and NUMMONS");
                 v_h.value_ptr() = &mons[index];
                 v_h.inst->owned = false;
                 v_h.set_holder_constructed(true);
@@ -165,7 +168,12 @@ PYBIND11_MODULE(helper, m)
     py::class_<class_sym>(m, "class_sym")
         .def_static(
             "from_mlet",
-            [](char let) -> const class_sym * { return &def_monsyms[let]; },
+            [](char let) -> const class_sym * {
+                if (let < 0 || let >= MAXMCLASSES)
+                    throw std::out_of_range(
+                        "Argument should be between 0 and MAXMCLASSES");
+                return &def_monsyms[let];
+            },
             py::return_value_policy::reference)
         .def_readonly("sym", &class_sym::sym)
         .def_readonly("name", &class_sym::name)

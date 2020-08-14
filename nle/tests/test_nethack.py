@@ -94,6 +94,16 @@ class HelperTest(unittest.TestCase):
             mon = nethack.permonst(0)
             self.assertEqual(mon.mname, "giant ant")
 
+    def test_illegal_numbers(self):
+        with self.assertRaisesRegex(IndexError, "NUMMONS"):
+            nethack.permonst(10000)
+
+        with self.assertRaisesRegex(IndexError, "NUMMONS"):
+            nethack.permonst(-1)
+
+        with self.assertRaisesRegex(IndexError, "MAXMCLASSES"):
+            nethack.class_sym.from_mlet("\xFF")
+
 
 if __name__ == "__main__":
     unittest.main()
