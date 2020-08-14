@@ -124,9 +124,15 @@ PYBIND11_MODULE(helper, m)
     m.def("glyph_is_warning",
           [](int glyph) { return glyph_is_warning(glyph); });
 
-    py::class_<permonst, std::unique_ptr<permonst, py::nodelete> >(m,
-                                                                   "permonst")
-        .def(py::init([](int index) -> permonst * { return &mons[index]; }))
+    py::class_<permonst>(m, "permonst")
+        .def(
+            "__init__",
+            [](py::detail::value_and_holder &v_h, int index) {
+                v_h.value_ptr() = &mons[index];
+                v_h.inst->owned = false;
+                v_h.set_holder_constructed(true);
+            },
+            py::detail::is_new_style_constructor())
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
         .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
