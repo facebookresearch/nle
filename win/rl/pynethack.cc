@@ -243,14 +243,18 @@ PYBIND11_MODULE(_pynethack, m)
     mn.def("glyph_is_warning",
            [](int glyph) { return glyph_is_warning(glyph); });
 
-    py::class_<permonst, std::unique_ptr<permonst, py::nodelete> >(mn,
-                                                                   "permonst")
-        .def(py::init([](int index) -> permonst * {
-            if (index < 0 || index >= NUMMONS)
-                throw std::out_of_range(
-                    "Index should be between 0 and NUMMONS");
-            return &mons[index];
-        }))
+    py::class_<permonst>(mn, "permonst")
+        .def(
+            "__init__",
+            [](py::detail::value_and_holder &v_h, int index) {
+                if (index < 0 || index >= NUMMONS)
+                    throw std::out_of_range(
+                        "Index should be between 0 and NUMMONS");
+                v_h.value_ptr() = &mons[index];
+                v_h.inst->owned = false;
+                v_h.set_holder_constructed(true);
+            },
+            py::detail::is_new_style_constructor())
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
         .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
