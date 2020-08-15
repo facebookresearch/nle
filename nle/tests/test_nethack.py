@@ -34,8 +34,8 @@ ACTIONS = [
 class TestNetHack:
     @pytest.fixture
     def game(self):  # Make sure we close even on test failure.
+        g = nethack.Nethack(observation_keys=("chars", "blstats"))
         try:
-            g = nethack.Nethack(observation_keys=("chars", "blstats"))
             yield g
         finally:
             g.close()
@@ -156,10 +156,8 @@ class TestNetHackFurther:
 class TestNethackSomeObs:
     @pytest.fixture
     def game(self):  # Make sure we close even on test failure.
+        g = nethack.Nethack(observation_keys=("program_state", "message", "internal"))
         try:
-            g = nethack.Nethack(
-                observation_keys=("program_state", "message", "internal")
-            )
             yield g
         finally:
             g.close()
