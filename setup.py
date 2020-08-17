@@ -32,7 +32,7 @@ class CMakeBuild(build_ext.build_ext):
             .parent.joinpath("nle")
             .resolve()
         )
-        hackdir_path = os.getenv("HACKDIR", source_path.joinpath("nle", "nethackdir"))
+        hackdir_path = os.getenv("HACKDIR", output_path.joinpath("nethackdir"))
 
         os.makedirs(self.build_temp, exist_ok=True)
         build_type = "Debug" if self.debug else "Release"
@@ -162,7 +162,5 @@ if __name__ == "__main__":
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
             "Topic :: Games/Entertainment",
         ],
-        package_data={"nle.nethack": ["pynle*.so"], "nle": ["nethackdir/**"]},
-        include_package_data=True,
         zip_safe=False,
     )
