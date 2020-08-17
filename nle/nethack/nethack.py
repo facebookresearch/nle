@@ -72,10 +72,10 @@ class Nethack:
 
         if options is None:
             options = NETHACKOPTIONS
-        options = list(options) + ["name:" + playername]
+        self._options = list(options) + ["name:" + playername]
 
         # TODO: Investigate not using environment variables for this.
-        os.environ["NETHACKOPTIONS"] = ",".join(options)
+        os.environ["NETHACKOPTIONS"] = ",".join(self._options)
         os.environ["HACKDIR"] = self._vardir
 
         if Nethack._instances > 0:
@@ -105,6 +105,9 @@ class Nethack:
         return self._step_return(), self._pynethack.done()
 
     def reset(self):
+        # TODO: Investigate not using environment variables for this.
+        os.environ["NETHACKOPTIONS"] = ",".join(self._options)
+        os.environ["HACKDIR"] = self._vardir
         self._pynethack.reset()
         return self._step_return()
 
