@@ -234,11 +234,12 @@ NetHackRL::fill_obs(nle_obs *obs)
         obs->program_state[2] = program_state.exiting;
         obs->program_state[3] = program_state.in_moveloop;
         obs->program_state[4] = program_state.in_impossible;
+        // TODO: Consider adding something_worth_saving.
     }
 
-    if (!program_state.in_moveloop || !iflags.window_inited) {
-        // Game not yet started (!in_moveloop) or windows have already been
-        // destroyed. Return zero observations.
+    if (!program_state.something_worth_saving || !iflags.window_inited) {
+        // Game not yet started (!something_worth_saving) or windows have
+        // already been destroyed. Return zero observations.
         if (obs->glyphs)
             std::memset(obs->glyphs, 0, sizeof(int16_t) * glyphs_.size());
         if (obs->chars)
@@ -274,13 +275,8 @@ NetHackRL::fill_obs(nle_obs *obs)
         rl_window *win = windows_[WIN_MESSAGE].get();
         assert(win->type == NHW_MESSAGE);
 
-        // Only copy final string. TODO: This whole setup should be fixed.
-        if (!win->strings.empty()) {
-            std::string &s = win->strings.back();
-            std::strncpy((char *) &obs->message[0], s.c_str(), 256);
-        } else {
-            std::memset(obs->message, 0, 256);
-        }
+        // Copy toplines[], see topl.c.
+        std::strncpy((char *) &obs->message[0], toplines, 256);
     }
     if (obs->blstats) {
         // Blstats

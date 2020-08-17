@@ -163,16 +163,28 @@ class TestNethackSomeObs:
             g.close()
 
     def test_message(self, game):
+        messages = []
+
         program_state, message, _ = game.reset()
+        messages.append(message)
         while not program_state[3]:  # in_moveloop.
             (program_state, message, _), done = game.step(nethack.MiscAction.MORE)
+            messages.append(message)
 
         greeting = (
             b"Hello Agent, welcome to NetHack!  You are a neutral male human Monk."
         )
-        assert memoryview(message)[: len(greeting)] == greeting
-        assert memoryview(message)[len(greeting)] == 0
-        assert len(message) == 256
+        saw_greeting = True
+        for message in messages:
+            # `greeting` is often the last message, but not always -- e.g.,
+            # it could also be "Be careful!  New moon tonight.".
+            assert len(message) == 256
+            if (
+                memoryview(message)[: len(greeting)] == greeting
+                and memoryview(message)[len(greeting)] == 0
+            ):
+                saw_greeting = True
+        assert saw_greeting
 
     def test_internal(self, game):
         program_state, _, internal = game.reset()
