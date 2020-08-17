@@ -42,7 +42,7 @@ commands:
             conda deactivate
             conda create -n nle python=<< parameters.python_version >>
             conda activate nle
-            conda install -y zeromq flatbuffers cmake
+            conda install -y cmake
             conda install -y -c conda-forge cppzmq
             python --version
             echo ". /home/circleci/miniconda/etc/profile.d/conda.sh" >> $BASH_ENV
@@ -55,16 +55,7 @@ commands:
           command: |
             sudo apt-get install software-properties-common
             sudo apt-get update -y
-            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison cmake
-            curl -fSL "https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz" -o flatbuffers.tar.gz \
-              && tar xzf flatbuffers.tar.gz \
-              && cd flatbuffers-* \
-              && cmake \
-                -G "Unix Makefiles" \
-                -DCMAKE_BUILD_TYPE=Release \
-              && make \
-              && sudo make install \
-              && sudo cp src/idl_parser.cpp src/idl_gen_text.cpp /usr/local/include/flatbuffers
+            sudo apt-get install -y libncurses5-dev flex bison cmake
 
   pip-install-nle:
     description: Installs NLE and its dependencies
