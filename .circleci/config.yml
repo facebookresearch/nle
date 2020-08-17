@@ -64,7 +64,7 @@ commands:
           name: Install NLE & deps
           command: |
             conda activate nle
-            pip install . -vv
+            CMAKE_BUILD_PARALLEL_LEVEL=10 pip install . -vv
 
 # -------------------------------------------------------------------------------------
 # Actual jobs

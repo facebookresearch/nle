@@ -52,7 +52,7 @@ class CMakeBuild(build_ext.build_ext):
             "-DHACKDIR=%s" % hackdir_path,
         ]
 
-        build_cmd = ["cmake", "--build", "."]
+        build_cmd = ["cmake", "--build", ".", "--parallel"]
         install_cmd = build_cmd + ["--target", "install"]
 
         try:
