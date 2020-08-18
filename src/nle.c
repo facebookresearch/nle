@@ -223,8 +223,8 @@ VA_DECL(const char *, s)
     if (iflags.window_inited)
         exit_nhwindows((char *) 0); /* for tty, will call settty() */
 
-    Vprintf(s, VA_ARGS);
-    (void) putchar('\n');
+    fprintf(stderr, s, VA_ARGS);
+    fprintf(stderr, "\n");
     VA_END();
     nethack_exit(EXIT_FAILURE);
 }
