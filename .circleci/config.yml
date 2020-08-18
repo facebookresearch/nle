@@ -43,7 +43,6 @@ commands:
             conda create -n nle python=<< parameters.python_version >>
             conda activate nle
             conda install -y cmake
-            conda install -y -c conda-forge cppzmq
             python --version
             echo ". /home/circleci/miniconda/etc/profile.d/conda.sh" >> $BASH_ENV
 
@@ -173,7 +172,7 @@ jobs:
             conda activate nle
             # cd back such that we are sure we are using sdist package
             cd ..
-            python -m pytest project/nle/tests --basetemp=$HOME/tests_data_sdist
+            python -m pytest project/nle/tests --basetemp=$HOME/tests_data_sdist -v
       - store_artifacts:
           path: /home/circleci/tests_data_sdist
           name: nle-tests-data-sdist
