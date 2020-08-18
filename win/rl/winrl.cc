@@ -235,11 +235,16 @@ NetHackRL::fill_obs(nle_obs *obs)
         obs->program_state[3] = program_state.in_moveloop;
         obs->program_state[4] = program_state.in_impossible;
         // TODO: Consider adding something_worth_saving.
+        // Also consider adding ttyDisplay->inmore ...
     }
 
-    if (!program_state.something_worth_saving || !iflags.window_inited) {
-        // Game not yet started (!something_worth_saving) or windows have
-        // already been destroyed. Return zero observations.
+    if ((!program_state.something_worth_saving && !program_state.in_moveloop)
+        || !iflags.window_inited) {
+        // Game not yet started (!something_worth_saving && !in_moveloop -- we
+        // need both as something_worth_saving also becomes false in
+        // really_done(), but we still want to see the "Do you want..."
+        // questions) or windows have already been destroyed. Return zero
+        // observations.
         if (obs->glyphs)
             std::memset(obs->glyphs, 0, sizeof(int16_t) * glyphs_.size());
         if (obs->chars)
@@ -271,12 +276,24 @@ NetHackRL::fill_obs(nle_obs *obs)
         std::memcpy(obs->specials, specials_.data(), specials_.size());
     }
     if (obs->message) {
-        assert(windows_.size() > WIN_MESSAGE);
-        rl_window *win = windows_[WIN_MESSAGE].get();
-        assert(win->type == NHW_MESSAGE);
+        // TODO: This doesn't show anything in situations where there's too
+        // many items at one tile, which will get displayed in a new window.
 
-        // Copy toplines[], see topl.c.
-        std::strncpy((char *) &obs->message[0], toplines, 256);
+        if (in_yn_function) {
+            // Special case. See tty_putstr: yn_function doesn't add to
+            // toplines until after that frame is over. Use last string on
+            // NHW_MESSAGE instead.
+            assert(windows_.size() > WIN_MESSAGE);
+            rl_window *win = windows_[WIN_MESSAGE].get();
+            assert(win->type == NHW_MESSAGE);
+            std::strncpy((char *) &obs->message[0],
+                         win->strings.back().c_str(), 256);
+        } else if (ttyDisplay->toplin) {
+            // Copy toplines[], see topl.c.
+            std::strncpy((char *) &obs->message[0], toplines, 256);
+        } else {
+            std::memset(obs->message, 0, 256);
+        }
     }
     if (obs->blstats) {
         // Blstats
