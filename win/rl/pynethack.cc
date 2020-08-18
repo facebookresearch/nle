@@ -81,12 +81,14 @@ class Nethack
     reset()
     {
         if (!nle_) {
+#ifdef ONLY_ONE_NLEDL
             if (instances_ > 0) {
                 throw std::runtime_error(
                     "Cannot have more than one open Nethack "
                     "instance per process.");
             }
             ++instances_;
+#endif
             nle_ = nle_start(dlpath_.c_str(), &obs_);
         } else
             nle_reset(nle_, &obs_);
@@ -121,18 +123,24 @@ class Nethack
         if (nle_) {
             nle_end(nle_);
             nle_ = nullptr;
+#ifdef ONLY_ONE_NLEDL
             --instances_;
+#endif
         }
     }
 
   private:
+#ifdef ONLY_ONE_NLEDL
     static std::atomic_uint instances_;
+#endif
     std::string dlpath_;
     nle_obs obs_;
     nle_ctx_t *nle_ = nullptr;
 };
 
+#ifdef ONLY_ONE_NLEDL
 std::atomic_uint Nethack::instances_{ 0 };
+#endif
 
 PYBIND11_MODULE(_pynethack, m)
 {

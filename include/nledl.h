@@ -9,6 +9,10 @@
 
 #include "nleobs.h"
 
+#ifndef __linux__
+#define ONLY_ONE_NLEDL
+#endif
+
 typedef struct nledl_ctx {
     char dlpath[1024];
     void *dlhandle;

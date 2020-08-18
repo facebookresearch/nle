@@ -9,7 +9,11 @@
 void nledl_init(nledl, obs) nle_ctx_t *nledl;
 nle_obs *obs;
 {
+#ifdef __linux__
+    nledl->dlhandle = dlmopen(LM_ID_NEWLM, nledl->dlpath, RTLD_LAZY);
+#else
     nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
+#endif
 
     if (!nledl->dlhandle) {
         fprintf(stderr, "%s\n", dlerror());
