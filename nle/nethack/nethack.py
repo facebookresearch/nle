@@ -77,6 +77,7 @@ class Nethack:
         # TODO: Investigate not using environment variables for this.
         os.environ["NETHACKOPTIONS"] = ",".join(self._options)
         os.environ["HACKDIR"] = self._vardir
+        os.environ["TERM"] = os.environ.get("TERM", "screen")
 
         if Nethack._instances > 0:
             raise RuntimeError(
@@ -108,6 +109,7 @@ class Nethack:
         # TODO: Investigate not using environment variables for this.
         os.environ["NETHACKOPTIONS"] = ",".join(self._options)
         os.environ["HACKDIR"] = self._vardir
+        os.environ["TERM"] = os.environ.get("TERM", "screen")
         self._pynethack.reset()
         return self._step_return()
 
