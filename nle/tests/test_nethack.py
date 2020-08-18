@@ -99,7 +99,19 @@ class TestNetHack:
         if mean_sps < 15000:
             warnings.warn("Mean sps was only %f" % mean_sps)
         olddir.chdir()
+        # No call to game.close() as fixture will do that for us.
+
+    def test_error_on_second(self, game):
+        game.reset()
+        with pytest.raises(RuntimeError, match="Cannot have more than one"):
+            game1 = nethack.Nethack()
+
+    def test_multi_close(self):
+        game = nethack.Nethack()
+        game.reset()
         game.close()
+        with pytest.raises(RuntimeError, match="Too many calls to close"):
+            game.close()
 
 
 class TestNetHackFurther:

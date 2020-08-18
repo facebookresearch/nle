@@ -79,7 +79,7 @@ class Nethack:
         os.environ["HACKDIR"] = self._vardir
         os.environ["TERM"] = os.environ.get("TERM", "screen")
 
-        if Nethack._instances > 0:
+        if Nethack._instances != 0:
             raise RuntimeError(
                 "Cannot have more than one open Nethack instance per process."
             )
@@ -114,5 +114,7 @@ class Nethack:
         return self._step_return()
 
     def close(self):
+        if Nethack._instances == 0:
+            raise RuntimeError("Too many calls to close()")
         self._pynethack.close()
         Nethack._instances -= 1
