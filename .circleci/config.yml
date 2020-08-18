@@ -112,7 +112,7 @@ jobs:
           command: |
             conda activate nle
             cd ..
-            python -m pytest project/nle/tests --basetemp=$HOME/tests_data
+            python -m pytest project/nle/tests --basetemp=$HOME/tests_data -v
       - store_artifacts:
           path: /home/circleci/tests_data
           name: nle-tests-data
