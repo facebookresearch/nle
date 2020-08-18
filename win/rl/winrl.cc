@@ -237,6 +237,18 @@ NetHackRL::fill_obs(nle_obs *obs)
         // TODO: Consider adding something_worth_saving.
         // Also consider adding ttyDisplay->inmore ...
     }
+    if (obs->internal) {
+        // From do.c. sstairs is a potential "special" staircase.
+        boolean stairs_down =
+            ((u.ux == xdnstair && u.uy == ydnstair)
+             || (u.ux == sstairs.sx && u.uy == sstairs.sy && !sstairs.up));
+
+        obs->internal[0] = deepest_lev_reached(false);
+        obs->internal[1] = in_yn_function;
+        obs->internal[2] = in_getlin;
+        obs->internal[3] = xwaitingforspace;
+        obs->internal[4] = stairs_down;
+    }
 
     if ((!program_state.something_worth_saving && !program_state.in_moveloop)
         || !iflags.window_inited) {
@@ -257,8 +269,6 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->message, 0, 256);
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
-        if (obs->internal)
-            std::memset(obs->internal, 0, sizeof(int) * 5);
         return;
     }
 
@@ -340,18 +350,6 @@ NetHackRL::fill_obs(nle_obs *obs)
         };
 
         std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));
-    }
-    if (obs->internal) {
-        // From do.c. sstairs is a potential "special" staircase.
-        boolean stairs_down =
-            ((u.ux == xdnstair && u.uy == ydnstair)
-             || (u.ux == sstairs.sx && u.uy == sstairs.sy && !sstairs.up));
-
-        obs->internal[0] = deepest_lev_reached(false);
-        obs->internal[1] = in_yn_function;
-        obs->internal[2] = in_getlin;
-        obs->internal[3] = xwaitingforspace;
-        obs->internal[4] = stairs_down;
     }
 }
 
