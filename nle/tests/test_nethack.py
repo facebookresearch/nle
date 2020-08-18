@@ -94,7 +94,6 @@ class TestNetHack:
 
         assert nethackdir.fnmatch("nle*")
         assert tmpdir.ensure("nle.ttyrec")
-        assert mean_sps > 10000
 
         if mean_sps < 15000:
             warnings.warn("Mean sps was only %f" % mean_sps)
