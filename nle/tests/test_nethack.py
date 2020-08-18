@@ -103,15 +103,9 @@ class TestNetHack:
 
     def test_error_on_second(self, game):
         game.reset()
+        game1 = nethack.Nethack()
         with pytest.raises(RuntimeError, match="Cannot have more than one"):
-            game1 = nethack.Nethack()
-
-    def test_multi_close(self):
-        game = nethack.Nethack()
-        game.reset()
-        game.close()
-        with pytest.raises(RuntimeError, match="Too many calls to close"):
-            game.close()
+            game1.reset()
 
 
 class TestNetHackFurther:
