@@ -1,4 +1,6 @@
 /* Copyright (c) Facebook, Inc. and its affiliates. */
+#include <atomic>
+
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
