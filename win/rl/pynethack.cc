@@ -80,11 +80,13 @@ class Nethack
     void
     reset()
     {
-        if (!nle_) {
+        if (!nle_)
             nle_ = nle_start(dlpath_.c_str(), &obs_);
-            return;
-        }
-        nle_reset(nle_, &obs_);
+        else
+            nle_reset(nle_, &obs_);
+
+        if (obs_.done)
+            throw std::runtime_error("NetHack done right after reset");
     }
 
     void
