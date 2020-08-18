@@ -305,6 +305,10 @@ check_linux_console()
     }
 }
 
+#ifdef NEED_HAS_COLORS_DECL
+int has_colors();
+#endif
+
 void
 init_linux_cons()
 {
