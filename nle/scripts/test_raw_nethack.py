@@ -1,66 +1,100 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-"""Debugging script for the NLE dev team."""
-
-import random
+import contextlib
+import termios
 import timeit
+import random
+import sys
 
 from nle import nethack
 
-ACTIONS = [nethack.MiscAction.MORE]
-ACTIONS += list(nethack.CompassDirection)
-ACTIONS += list(nethack.CompassDirectionLonger)
+
+NO_SELF_PLAY = 2
 
 
-def play(game, print_tombstone=True):
-    observation = game.reset()
-
-    steps = 0
-
-    while True:
-        ch = random.choice(ACTIONS)
-        last_observation = observation
-        observation, done, unused_info = game.step(ch)
-        steps += 1
-        if steps > 10000:
-            print("Game abandonned after", steps, "steps.")
-            return steps
-        if done:
-            if last_observation.ProgramState().Gameover():
-                # Print tombstone.
-                if last_observation.WindowsLength() < 1:
-                    return steps
-                window = last_observation.Windows(1)
-
-                if print_tombstone:
-                    for i in range(window.StringsLength()):
-                        print(window.Strings(i).decode("ascii"))
-                    killer_name = last_observation.Internal().KillerName()
-                    if killer_name:
-                        print(killer_name.decode("utf-8"))
-
-            return steps
+@contextlib.contextmanager
+def no_echo(fd=0):
+    old = termios.tcgetattr(fd)
+    try:
+        new = termios.tcgetattr(fd)
+        new[3] &= ~termios.ICANON & ~termios.ECHO  # lflags
+        termios.tcsetattr(fd, termios.TCSAFLUSH, new)
+        yield
+    finally:
+        termios.tcsetattr(fd, termios.TCSAFLUSH, old)
 
 
 def main():
-    episodes = 0
+    # MORE + compass directions + long compass directions.
+    ACTIONS = [
+        13,
+        107,
+        108,
+        106,
+        104,
+        117,
+        110,
+        98,
+        121,
+        75,
+        76,
+        74,
+        72,
+        85,
+        78,
+        66,
+        89,
+    ]
+
+    nle = nethack.Nethack(observation_keys=("chars", "blstats", "message"))
+    nle.reset()
+
+    nle.step(ord("y"))
+    nle.step(ord("y"))
+    nle.step(ord("\n"))
+
     steps = 0
+    start_time = timeit.default_timer()
+    start_steps = steps
 
-    game = nethack.NetHack(archivefile="random.zip")
+    mean_sps = 0
+    sps_n = 0
 
-    start = timeit.default_timer()
-    while True:
-        steps_delta = play(game, False)
-        time_delta = timeit.default_timer() - start
+    for episode in range(0):
+        while True:
+            ch = random.choice(ACTIONS)
+            _, done = nle.step(ch)
+            if done:
+                break
 
-        episodes += 1
-        steps += steps_delta
+            steps += 1
 
-        print(
-            "Episde: %i. Steps: %i. SPS: %f"
-            % (episodes, steps, steps_delta / time_delta)
-        )
-        start = timeit.default_timer()
+            if steps % 1000 == 0:
+                end_time = timeit.default_timer()
+                sps = (steps - start_steps) / (end_time - start_time)
+                sps_n += 1
+                mean_sps += (sps - mean_sps) / sps_n
+                print("%f SPS" % sps)
+                start_time = end_time
+                start_steps = steps
+        print("Finished episode %i after %i steps." % (episode + 1, steps))
+        nle.reset()
+
+    print("Finished after %i steps. Mean sps: %f" % (steps, mean_sps))
+
+    for i in range(NO_SELF_PLAY):
+        print("Starting self-play episode", i)
+        chars, blstats, message = nle.reset()
+        done = False
+        while not done:
+            message = bytes(message)
+            print(message)
+            for line in chars:
+                print(line.tobytes().decode("utf-8"))
+            print(blstats)
+            try:
+                with no_echo():
+                    (chars, blstats, message), done = nle.step(ord(sys.stdin.read(1)))
+            except KeyboardInterrupt:
+                break
 
 
-if __name__ == "__main__":
-    main()
+main()
