@@ -852,6 +852,10 @@ extern struct tm *FDECL(localtime, (time_t *));
 #endif
 STATIC_DCL struct tm *NDECL(getlt);
 
+/* NLE hack for seeds. Should stay in sync with rnglist in src/rnd.c. */
+unsigned long nle_seeds[] = {0L, 0L};
+extern int FDECL(whichrng, (int FDECL((*fn), (int))));
+
 /* Sets the seed for the random number generator */
 #ifdef USE_ISAAC64
 
@@ -860,6 +864,7 @@ set_random(seed, fn)
 unsigned long seed;
 int FDECL((*fn), (int));
 {
+    nle_seeds[whichrng(fn)] = seed;
     init_isaac64(seed, fn);
 }
 
@@ -871,6 +876,7 @@ set_random(seed, fn)
 unsigned long seed;
 int FDECL((*fn), (int)) UNUSED;
 {
+    nle_seeds[whichrng(fn)] = seed;
     /* the types are different enough here that sweeping the different
      * routine names into one via #defines is even more confusing
      */
@@ -899,11 +905,6 @@ int FDECL((*fn), (int)) UNUSED;
    port-specific code somewhere. It returns a number suitable
    as seed for the random number generator */
 extern unsigned long NDECL(sys_random_seed);
-
-// NLE hack for seeds. Should stay in sync with rnglist in src/rnd.c.
-unsigned long nle_seeds[] = {0L, 0L};
-enum { CORE = 0, DISP = 1 };
-extern int FDECL(whichrng, (int FDECL((*fn), (int))));
 
 /*
  * Initializes the random number generator.
