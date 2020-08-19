@@ -1,5 +1,6 @@
 import os
 import pkg_resources
+import shutil
 import tempfile
 
 import numpy as np
@@ -77,6 +78,10 @@ class Nethack:
             os.close(os.open(os.path.join(self._vardir, filename), os.O_CREAT))
         os.mkdir(os.path.join(self._vardir, "save"))
 
+        # Hacky AF: Copy our so into this directory to load several copies ...
+        dlpath = os.path.join(self._vardir, "libnethack.so")
+        shutil.copyfile(DLPATH, dlpath)
+
         if options is None:
             options = NETHACKOPTIONS
         self._options = list(options) + ["name:" + playername]
@@ -84,7 +89,7 @@ class Nethack:
         _set_env_vars(self._options, self._vardir)
         self._seeds = None
 
-        self._pynethack = _pynethack.Nethack(DLPATH)
+        self._pynethack = _pynethack.Nethack(dlpath)
 
         self._obs_buffers = {}
 

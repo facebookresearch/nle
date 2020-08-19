@@ -100,12 +100,22 @@ class TestNetHack:
         olddir.chdir()
         # No call to game.close() as fixture will do that for us.
 
-    def test_error_on_second(self, game):
+    def test_several_nethacks(self, game):
         game.reset()
         game1 = nethack.Nethack()
-        with pytest.raises(RuntimeError, match="Cannot have more than one"):
-            game1.reset()
+        game1.reset()
 
+        try:
+            for _ in range(300):
+                ch = random.choice(ACTIONS)
+                _, done = game.step(ch)
+                if done:
+                    game.reset()
+                _, done = game1.step(ch)
+                if done:
+                    game1.reset()
+        finally:
+            game1.close()
 
     def test_set_seed(self, game):
         game.reset()
