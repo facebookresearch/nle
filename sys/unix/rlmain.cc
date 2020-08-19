@@ -73,10 +73,27 @@ main(int argc, char **argv)
     constexpr int dungeon_size = ROWNO * (COLNO - 1);
     short glyphs[dungeon_size];
     obs.glyphs = &glyphs[0];
+
     unsigned char chars[dungeon_size];
     obs.chars = &chars[0];
-    long blstats[23];
+
+    unsigned char colors[dungeon_size];
+    obs.colors = &colors[0];
+
+    unsigned char specials[dungeon_size];
+    obs.specials = &specials[0];
+
+    unsigned char message[256];
+    obs.message = &message[0];
+
+    long blstats[NLE_BLSTATS_SIZE];
     obs.blstats = &blstats[0];
+
+    int program_state[NLE_PROGRAM_STATE_SIZE];
+    obs.program_state = &program_state[0];
+
+    int internal[NLE_INTERNAL_SIZE];
+    obs.internal = &internal[0];
 
     nle_ctx_t *nle = nle_start("libnethack.so", &obs);
     if (argc > 1 && argv[1][0] == 'r') {

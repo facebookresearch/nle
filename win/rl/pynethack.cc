@@ -107,9 +107,10 @@ class Nethack
                                                 { NLE_BLSTATS_SIZE });
         obs_.message =
             checked_conversion<uint8_t>(std::move(message), { 256 });
-        obs_.program_state =
-            checked_conversion<int>(std::move(program_state), { 5 });
-        obs_.internal = checked_conversion<int>(std::move(internal), { 5 });
+        obs_.program_state = checked_conversion<int>(
+            std::move(program_state), { NLE_PROGRAM_STATE_SIZE });
+        obs_.internal = checked_conversion<int>(std::move(internal),
+                                                { NLE_INTERNAL_SIZE });
     }
 
     void
@@ -160,6 +161,11 @@ PYBIND11_MODULE(_pynethack, m)
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");
 
+    /* NLE specific constants. */
+    mn.attr("NLE_BLSTATS_SIZE") = py::int_(NLE_BLSTATS_SIZE);
+    mn.attr("NLE_INTERNAL_SIZE") = py::int_(NLE_INTERNAL_SIZE);
+
+    /* NetHack constants specific constants. */
     mn.attr("NHW_MESSAGE") = py::int_(NHW_MESSAGE);
     mn.attr("NHW_STATUS") = py::int_(NHW_STATUS);
     mn.attr("NHW_MAP") = py::int_(NHW_MAP);
