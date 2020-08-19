@@ -67,9 +67,10 @@ class Nethack
     void
     step(int action)
     {
-        if (obs_.done) {
+        if (!nle_)
+            throw std::runtime_error("step called without reset()");
+        if (obs_.done)
             throw std::runtime_error("Called step on finished NetHack");
-        }
         obs_.action = action;
         nle_ = nle_step(nle_, &obs_);
     }
@@ -127,6 +128,14 @@ class Nethack
         }
     }
 
+    void
+    set_seed(unsigned long core, unsigned long disp, bool reseed)
+    {
+        if (!nle_)
+            throw std::runtime_error("set_seed called without reset()");
+        nle_set_seed(nle_, core, disp, reseed);
+    }
+
   private:
     static std::atomic_uint instances_;
     std::string dlpath_;
@@ -155,7 +164,8 @@ PYBIND11_MODULE(_pynethack, m)
              py::keep_alive<1, 5>(), py::keep_alive<1, 6>(),
              py::keep_alive<1, 7>(), py::keep_alive<1, 8>(),
              py::keep_alive<1, 9>())
-        .def("close", &Nethack::close);
+        .def("close", &Nethack::close)
+        .def("set_seed", &Nethack::set_seed);
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");

@@ -107,6 +107,11 @@ class TestNetHack:
             game1.reset()
 
 
+    def test_set_seed(self, game):
+        game.reset()
+        game.seed(core=42, disp=666)
+
+
 class TestNetHackFurther:
     def test_run(self):
         # TODO: Implement ttyrecording filename in libnethack wrapper.

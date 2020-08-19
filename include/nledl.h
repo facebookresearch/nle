@@ -9,6 +9,7 @@
 
 #include "nleobs.h"
 
+/* TODO: Don't call this nle_ctx_t as well. */
 typedef struct nledl_ctx {
     char dlpath[1024];
     void *dlhandle;
@@ -22,5 +23,7 @@ nle_ctx_t *nle_step(nle_ctx_t *, nle_obs *);
 
 void nle_reset(nle_ctx_t *, nle_obs *);
 void nle_end(nle_ctx_t *);
+
+void nle_set_seed(nle_ctx_t *, unsigned long, unsigned long, int);
 
 #endif /* NLEDL_H */

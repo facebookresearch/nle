@@ -855,7 +855,7 @@ STATIC_DCL struct tm *NDECL(getlt);
 /* Sets the seed for the random number generator */
 #ifdef USE_ISAAC64
 
-static void
+void
 set_random(seed, fn)
 unsigned long seed;
 int FDECL((*fn), (int));
@@ -866,7 +866,7 @@ int FDECL((*fn), (int));
 #else /* USE_ISAAC64 */
 
 /*ARGSUSED*/
-static void
+void
 set_random(seed, fn)
 unsigned long seed;
 int FDECL((*fn), (int)) UNUSED;
@@ -913,31 +913,7 @@ void
 init_random(fn)
 int FDECL((*fn), (int));
 {
-    // NLE hack for seeds added.
-    unsigned long seed;
-    char* env = NULL;
-
-    int rngindx = whichrng(fn);
-
-    switch(rngindx) {
-    case CORE:
-        env = nh_getenv("NLE_SEED_CORE");
-        break;
-    case DISP:
-        env = nh_getenv("NLE_SEED_DISP");
-        break;
-    default:
-        panic("NLE doesn't know this RNG function");
-    }
-
-    if (env != NULL)
-      /* Overwrite nethack's seed with the supplied value. */
-      seed = strtoul(env, (char **) 0, 0);
-    else
-      seed = sys_random_seed();
-
-    set_random(seed, fn);
-    nle_seeds[rngindx] = seed;
+    set_random(sys_random_seed(), fn);
 }
 
 /* Reshuffles the random number generator. */
@@ -947,10 +923,8 @@ int FDECL((*fn), (int));
 {
    /* only reseed if we are certain that the seed generation is unguessable
     * by the players. */
-
-   /* Commented out for NLE -- we want to be able to recreate runs. */
-   /* if (has_strong_rngseed)
-          init_random(fn); */
+    if (has_strong_rngseed)
+        init_random(fn);
 }
 
 time_t

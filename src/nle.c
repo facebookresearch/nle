@@ -211,6 +211,20 @@ nle_end(nle_ctx_t *nle)
     free(nle);
 }
 
+extern int FDECL(set_random, (unsigned long, int FDECL((*fn), (int) )));
+
+void
+nle_set_seed(nle_ctx_t *nle, unsigned long core, unsigned long disp,
+             boolean reseed)
+{
+    /* Keep up to date with rnglist[] in rnd.c. */
+    set_random(core, rn2);
+    set_random(core, rn2_on_display_rng);
+
+    /* Determines logic in reseed_random() in hacklib.c. */
+    has_strong_rngseed = reseed;
+};
+
 /* From unixtty.c */
 /* fatal error */
 /*VARARGS1*/

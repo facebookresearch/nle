@@ -92,3 +92,20 @@ void nle_end(nledl) nle_ctx_t *nledl;
     fclose(nledl->outfile);
     free(nledl);
 }
+
+void
+nle_set_seed(nle_ctx_t *nledl, unsigned long core, unsigned long disp,
+             int reseed)
+{
+    void (*set_seed)(void *, unsigned long, unsigned long, int);
+
+    set_seed = dlsym(nledl->dlhandle, "nle_set_seed");
+
+    char *error = dlerror();
+    if (error != NULL) {
+        fprintf(stderr, "%s\n", error);
+        exit(EXIT_FAILURE);
+    }
+
+    set_seed(nledl->nle_ctx, core, disp, reseed);
+}

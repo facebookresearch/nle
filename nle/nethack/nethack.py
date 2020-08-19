@@ -41,6 +41,13 @@ NETHACKOPTIONS = [
 HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
 
 
+def _set_env_vars(options, hackdir):
+    # TODO: Investigate not using environment variables for this.
+    os.environ["NETHACKOPTIONS"] = ",".join(options)
+    os.environ["HACKDIR"] = hackdir
+    os.environ["TERM"] = os.environ.get("TERM", "screen")
+
+
 # TODO: Not thread-safe for many reasons.
 # TODO: On Linux, we could use dlmopen to use different linker namespaces,
 # which should allow several instances of this. On MacOS, that seems
@@ -74,10 +81,8 @@ class Nethack:
             options = NETHACKOPTIONS
         self._options = list(options) + ["name:" + playername]
 
-        # TODO: Investigate not using environment variables for this.
-        os.environ["NETHACKOPTIONS"] = ",".join(self._options)
-        os.environ["HACKDIR"] = self._vardir
-        os.environ["TERM"] = os.environ.get("TERM", "screen")
+        _set_env_vars(self._options, self._vardir)
+        self._seeds = None
 
         self._pynethack = _pynethack.Nethack(DLPATH)
 
@@ -101,12 +106,18 @@ class Nethack:
         return self._step_return(), self._pynethack.done()
 
     def reset(self):
-        # TODO: Investigate not using environment variables for this.
-        os.environ["NETHACKOPTIONS"] = ",".join(self._options)
-        os.environ["HACKDIR"] = self._vardir
-        os.environ["TERM"] = os.environ.get("TERM", "screen")
+        _set_env_vars(self._options, self._vardir)
         self._pynethack.reset()
+        if self._seeds is not None:
+            self._pynethack.set_seed(*self._seeds)
         return self._step_return()
 
     def close(self):
         self._pynethack.close()
+
+    def seed(self, core, disp, reseed=False):
+        if core is None or disp is None:
+            self._seeds = None
+            return
+        self._pynethack.set_seed(core, disp, reseed)
+        self._seeds = (core, disp, reseed)
