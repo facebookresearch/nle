@@ -351,6 +351,8 @@ NetHackRL::fill_obs(nle_obs *obs)
             u.uz.dlevel,
         };
 
+        assert(sizeof(blstats) == NLE_BLSTATS_SIZE * sizeof(long));
+
         std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));
     }
 }

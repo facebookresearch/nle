@@ -25,6 +25,8 @@ play(nle_ctx_t *nle, nle_obs *obs)
         }
         std::cout << std::endl;
         read(STDIN_FILENO, &obs->action, 1);
+        if (obs->action == 'r')
+            nle_reset(nle, obs);
         nle = nle_step(nle, obs);
     }
 }

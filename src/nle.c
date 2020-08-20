@@ -20,6 +20,7 @@ nle_ctx_t *init_nle(outfile) FILE *outfile;
     nle_ctx_t *nle = malloc(sizeof(nle_ctx_t));
 
     if (!outfile) {
+        /* TODO: Why to *we* open this /dev/null file? */
         outfile = fopen("/dev/null", "w");
     }
     nle->ttyrec = outfile;
