@@ -6,8 +6,8 @@
 
 #include "nledl.h"
 
-void nledl_init(nledl, obs) nle_ctx_t *nledl;
-nle_obs *obs;
+void
+nledl_init(nle_ctx_t *nledl, nle_obs *obs)
 {
     nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
 
@@ -37,7 +37,8 @@ nle_obs *obs;
     }
 }
 
-void nledl_close(nledl) nle_ctx_t *nledl;
+void
+nledl_close(nle_ctx_t *nledl)
 {
     void (*end)(void *);
 
@@ -52,8 +53,8 @@ void nledl_close(nledl) nle_ctx_t *nledl;
     dlerror();
 }
 
-nle_ctx_t *nle_start(dlpath, obs) const char *dlpath;
-nle_obs *obs;
+nle_ctx_t *
+nle_start(const char *dlpath, nle_obs *obs)
 {
     /* TODO: Get outfile path from caller, optionally reset in reset. */
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
@@ -64,8 +65,8 @@ nle_obs *obs;
     return nledl;
 };
 
-nle_ctx_t *nle_step(nledl, obs) nle_ctx_t *nledl;
-nle_obs *obs;
+nle_ctx_t *
+nle_step(nle_ctx_t *nledl, nle_obs *obs)
 {
     if (!nledl || !nledl->dlhandle || !nledl->nle_ctx) {
         fprintf(stderr, "Illegal nledl_ctx\n");
@@ -79,14 +80,15 @@ nle_obs *obs;
 
 /* TODO: For a standard reset, we don't need the full close in nle.c.
  * E.g., we could re-use the stack buffer and the nle_ctx_t. */
-void nle_reset(nledl, obs) nle_ctx_t *nledl;
-nle_obs *obs;
+void
+nle_reset(nle_ctx_t *nledl, nle_obs *obs)
 {
     nledl_close(nledl);
     nledl_init(nledl, obs);
 }
 
-void nle_end(nledl) nle_ctx_t *nledl;
+void
+nle_end(nle_ctx_t *nledl)
 {
     nledl_close(nledl);
     fclose(nledl->outfile);

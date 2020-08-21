@@ -23,7 +23,8 @@
 
 extern int unixmain(int, char **);
 
-nle_ctx_t *init_nle(outfile) FILE *outfile;
+nle_ctx_t *
+init_nle(FILE *outfile)
 {
     nle_ctx_t *nle = malloc(sizeof(nle_ctx_t));
 
@@ -89,7 +90,8 @@ write_header(int length, unsigned char channel)
 }
 
 /* win/tty only calls fflush(stdout). */
-int nle_fflush(stream) FILE *stream;
+int
+nle_fflush(FILE *stream)
 {
     /* Only act on fflush(stdout). */
     if (stream != stdout) {
@@ -115,7 +117,8 @@ int nle_fflush(stream) FILE *stream;
  * NetHack prints most of its output via putchar. We do our
  * own buffering.
  */
-int nle_putchar(c) int c;
+int
+nle_putchar(int c)
 {
     nle_ctx_t *nle = current_nle_ctx;
     if (nle->outbuf_write_ptr >= nle->outbuf_write_end) {
@@ -129,7 +132,8 @@ int nle_putchar(c) int c;
  * Used in place of xputs from termcap.c. Not using
  * the tputs padding logic from tclib.c.
  */
-void nle_xputs(str) const char *str;
+void
+nle_xputs(const char *str)
 {
     int c;
     const char *p = str;
@@ -146,7 +150,8 @@ void nle_xputs(str) const char *str;
  * puts seems to be called only by tty_raw_print and tty_raw_print_bold.
  * We could probably override this in winrl instead.
  */
-int nle_puts(str) const char *str;
+int
+nle_puts(const char *str)
 {
     int val = fputs(str, stdout);
     putc('\n', stdout); /* puts includes a newline, fputs doesn't */
@@ -178,7 +183,8 @@ nle_yield(void *notdone)
     return t.data;
 }
 
-void nethack_exit(status) int status;
+void
+nethack_exit(int status)
 {
     if (status) {
         fprintf(stderr, "NetHack exit with status %i\n", status);
@@ -186,8 +192,8 @@ void nethack_exit(status) int status;
     nle_yield(NULL);
 }
 
-nle_ctx_t *nle_start(outfile, obs) FILE *outfile;
-nle_obs *obs;
+nle_ctx_t *
+nle_start(FILE *outfile, nle_obs *obs)
 {
     nle_ctx_t *nle = init_nle(outfile);
     nle->observation = obs;
@@ -277,7 +283,8 @@ gettty()
     /* Should set erase_char, intr_char, kill_char */
 }
 
-void settty(s) const char *s;
+void
+settty(const char *s)
 {
     end_screen();
     if (s)
