@@ -13,6 +13,10 @@
 
 #define STACK_SIZE (1 << 15) // 32KiB
 
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#include <sanitizer/asan_interface.h>
+#endif
+
 extern int unixmain(int, char **);
 
 nle_ctx_t *init_nle(outfile) FILE *outfile;
@@ -36,6 +40,17 @@ void
 mainloop(fcontext_transfer_t ctx_transfer)
 {
     current_nle_ctx->returncontext = ctx_transfer.ctx;
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+    /* ASan isn't happy with fcontext's assembly.
+     * See: https://bugs.llvm.org/show_bug.cgi?id=27627 and
+     * https://github.com/boostorg/coroutine/issues/30#issuecomment-325578344
+     * TODO: I don't understand why __sanitizer_(start/finish)_switch_fiber
+     * doesn't work here.
+     */
+    fcontext_stack_t *stack = &current_nle_ctx->stack;
+    ASAN_UNPOISON_MEMORY_REGION((char *) stack->sptr - stack->ssize,
+                                stack->ssize);
+#endif
 
     char *argv[1] = { "nethack" };
 
@@ -147,6 +162,11 @@ nle_yield(void *notdone)
     nle_fflush(stdout);
     fcontext_transfer_t t =
         jump_fcontext(current_nle_ctx->returncontext, notdone);
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+    fcontext_stack_t *stack = &current_nle_ctx->stack;
+    ASAN_UNPOISON_MEMORY_REGION((char *) stack->sptr - stack->ssize,
+                                stack->ssize);
+#endif
 
     if (notdone)
         current_nle_ctx->returncontext = t.ctx;
