@@ -158,7 +158,6 @@ class NLE(gym.Env):
             archivefile = None
 
         if archivefile is not None:
-            warnings.warn("Setting archive file not yet implemented")
             try:
                 if savedir is None:
                     parent_dir = os.path.join(os.getcwd(), "nle_data")
