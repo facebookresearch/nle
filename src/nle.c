@@ -13,6 +13,10 @@
 
 #define STACK_SIZE (1 << 15) // 32KiB
 
+#ifndef __has_feature
+#define __has_feature(x) 0 // Compatibility with non-clang compilers.
+#endif
+
 #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
 #include <sanitizer/asan_interface.h>
 #endif
