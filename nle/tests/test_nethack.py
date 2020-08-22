@@ -172,6 +172,13 @@ class TestNetHackFurther:
 
         game.close()
 
+    def test_illegal_filename(self):
+        with pytest.raises(IOError):
+            nethack.Nethack(ttyrec="")
+        game = nethack.Nethack()
+        with pytest.raises(IOError):
+            game.reset("")
+
 
 class TestNethackSomeObs:
     @pytest.fixture

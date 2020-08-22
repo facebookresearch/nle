@@ -15,13 +15,13 @@ typedef struct nledl_ctx {
     void *dlhandle;
     void *nle_ctx;
     void *(*step)(void *, nle_obs *);
-    FILE *outfile;
+    FILE *ttyrec;
 } nle_ctx_t;
 
-nle_ctx_t *nle_start(const char *, nle_obs *);
+nle_ctx_t *nle_start(const char *, nle_obs *, FILE *);
 nle_ctx_t *nle_step(nle_ctx_t *, nle_obs *);
 
-void nle_reset(nle_ctx_t *, nle_obs *);
+void nle_reset(nle_ctx_t *, nle_obs *, FILE *);
 void nle_end(nle_ctx_t *);
 
 void nle_set_seed(nle_ctx_t *, unsigned long, unsigned long, int);

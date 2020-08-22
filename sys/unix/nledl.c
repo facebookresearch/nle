@@ -18,9 +18,9 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs)
 
     dlerror(); /* Clear any existing error */
 
-    void *(*start)(void *, nle_obs *);
+    void *(*start)(nle_obs *, FILE *);
     start = dlsym(nledl->dlhandle, "nle_start");
-    nledl->nle_ctx = start(nledl->outfile, obs);
+    nledl->nle_ctx = start(obs, nledl->ttyrec);
 
     char *error = dlerror();
     if (error != NULL) {
@@ -54,11 +54,11 @@ nledl_close(nle_ctx_t *nledl)
 }
 
 nle_ctx_t *
-nle_start(const char *dlpath, nle_obs *obs)
+nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec)
 {
-    /* TODO: Get outfile path from caller, optionally reset in reset. */
+    /* TODO: Consider getting ttyrec path from caller? */
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
-    nledl->outfile = fopen("nle.ttyrec", "a");
+    nledl->ttyrec = ttyrec;
     strncpy(nledl->dlpath, dlpath, sizeof(nledl->dlpath));
 
     nledl_init(nledl, obs);
@@ -81,9 +81,12 @@ nle_step(nle_ctx_t *nledl, nle_obs *obs)
 /* TODO: For a standard reset, we don't need the full close in nle.c.
  * E.g., we could re-use the stack buffer and the nle_ctx_t. */
 void
-nle_reset(nle_ctx_t *nledl, nle_obs *obs)
+nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec)
 {
     nledl_close(nledl);
+    /* Reset file only if not-NULL. */
+    if (ttyrec)
+        nledl->ttyrec = ttyrec;
     nledl_init(nledl, obs);
 }
 
@@ -91,7 +94,6 @@ void
 nle_end(nle_ctx_t *nledl)
 {
     nledl_close(nledl);
-    fclose(nledl->outfile);
     free(nledl);
 }
 

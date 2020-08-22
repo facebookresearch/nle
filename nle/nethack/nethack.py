@@ -60,6 +60,7 @@ class Nethack:
         self,
         observation_keys=OBSERVATION_DESC.keys(),
         playername="Agent-mon-hum-neu-mal",
+        ttyrec="nle.ttyrec",
         options=None,
         copy=False,
     ):
@@ -88,8 +89,9 @@ class Nethack:
 
         _set_env_vars(self._options, self._vardir)
         self._seeds = None
+        self._ttyrec = ttyrec
 
-        self._pynethack = _pynethack.Nethack(dlpath)
+        self._pynethack = _pynethack.Nethack(dlpath, ttyrec)
 
         self._obs_buffers = {}
 
@@ -110,9 +112,13 @@ class Nethack:
         self._pynethack.step(action)
         return self._step_return(), self._pynethack.done()
 
-    def reset(self):
+    def reset(self, new_ttyrec=None):
         _set_env_vars(self._options, self._vardir)
-        self._pynethack.reset()
+        if new_ttyrec is None:
+            self._pynethack.reset()
+        else:
+            self._pynethack.reset(new_ttyrec)
+            self._ttyrec = new_ttyrec
         if self._seeds is not None:
             self._pynethack.set_seed(*self._seeds)
         return self._step_return()

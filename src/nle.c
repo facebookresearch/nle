@@ -24,15 +24,12 @@
 extern int unixmain(int, char **);
 
 nle_ctx_t *
-init_nle(FILE *outfile)
+init_nle(FILE *ttyrec)
 {
     nle_ctx_t *nle = malloc(sizeof(nle_ctx_t));
 
-    if (!outfile) {
-        /* TODO: Why to *we* open this /dev/null file? */
-        outfile = fopen("/dev/null", "w");
-    }
-    nle->ttyrec = outfile;
+    assert(ttyrec != NULL);
+    nle->ttyrec = ttyrec;
 
     nle->outbuf_write_ptr = nle->outbuf;
     nle->outbuf_write_end = nle->outbuf + sizeof(nle->outbuf);
@@ -193,9 +190,9 @@ nethack_exit(int status)
 }
 
 nle_ctx_t *
-nle_start(FILE *outfile, nle_obs *obs)
+nle_start(nle_obs *obs, FILE *ttyrec)
 {
-    nle_ctx_t *nle = init_nle(outfile);
+    nle_ctx_t *nle = init_nle(ttyrec);
     nle->observation = obs;
 
     nle->stack = create_fcontext_stack(STACK_SIZE);
@@ -229,6 +226,7 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
 void
 nle_end(nle_ctx_t *nle)
 {
+    nle_fflush(stdout);
     if (!nle->done) {
         /* Reset without closing nethack. Need free memory, etc.
          * this is what nh_terminate in end.c does. I hope it's enough. */

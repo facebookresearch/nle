@@ -1,5 +1,6 @@
 /* Copyright (c) Facebook, Inc. and its affiliates. */
 #include <atomic>
+#include <cstdio>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -57,8 +58,14 @@ checked_conversion(py::object obj, const std::vector<ssize_t> &shape)
 class Nethack
 {
   public:
-    Nethack(std::string dlpath) : dlpath_(std::move(dlpath)), obs_{}
+    Nethack(std::string dlpath, std::string ttyrec)
+        : dlpath_(std::move(dlpath)), obs_{},
+          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose)
     {
+        if (!ttyrec_) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
+            throw py::error_already_set();
+        }
     }
     ~Nethack()
     {
@@ -83,13 +90,20 @@ class Nethack
     void
     reset()
     {
-        if (!nle_) {
-            nle_ = nle_start(dlpath_.c_str(), &obs_);
-        } else
-            nle_reset(nle_, &obs_);
+        reset(nullptr);
+    }
 
-        if (obs_.done)
-            throw std::runtime_error("NetHack done right after reset");
+    void
+    reset(std::string ttyrec)
+    {
+        FILE *f = std::fopen(ttyrec.c_str(), "a");
+        if (!f) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
+            throw py::error_already_set();
+        }
+        // Reset environment, then close original FILE.
+        reset(f);
+        ttyrec_.reset(f);
     }
 
     void
@@ -131,9 +145,23 @@ class Nethack
     }
 
   private:
+    void
+    reset(FILE *ttyrec)
+    {
+        if (!nle_) {
+            nle_ = nle_start(dlpath_.c_str(), &obs_,
+                             ttyrec ? ttyrec : ttyrec_.get());
+        } else
+            nle_reset(nle_, &obs_, ttyrec);
+
+        if (obs_.done)
+            throw std::runtime_error("NetHack done right after reset");
+    }
+
     std::string dlpath_;
     nle_obs obs_;
     nle_ctx_t *nle_ = nullptr;
+    std::unique_ptr<std::FILE, int (*)(std::FILE *)> ttyrec_;
 };
 
 PYBIND11_MODULE(_pynethack, m)
@@ -141,10 +169,12 @@ PYBIND11_MODULE(_pynethack, m)
     m.doc() = "The NetHack Learning Environment";
 
     py::class_<Nethack>(m, "Nethack")
-        .def(py::init<const char *>())
+        .def(py::init<std::string, std::string>(), py::arg("dlpath"),
+             py::arg("ttyrec"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
-        .def("reset", &Nethack::reset)
+        .def("reset", py::overload_cast<>(&Nethack::reset))
+        .def("reset", py::overload_cast<std::string>(&Nethack::reset))
         .def("set_buffers", &Nethack::set_buffers,
              py::arg("glyphs") = py::none(), py::arg("chars") = py::none(),
              py::arg("colors") = py::none(), py::arg("specials") = py::none(),
