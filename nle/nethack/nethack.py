@@ -37,6 +37,12 @@ NETHACKOPTIONS = [
     "pickup_burden:unencumbered",
     "nolegacy",
     "nocmdassist",
+    "disclose:+i +a +v +g +c +o",
+    "runmode:teleport",
+    "mention_walls",
+    "nosparkle",
+    "showexp",
+    "showscore",
 ]
 
 HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
