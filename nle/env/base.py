@@ -108,7 +108,7 @@ class NLE(gym.Env):
 
     def __init__(
         self,
-        savedir=None,
+        savedir="",
         archivefile="nethack.%(pid)i.%(time)s.zip",
         character="mon-hum-neu-mal",
         max_episode_steps=5000,
@@ -126,11 +126,10 @@ class NLE(gym.Env):
         """Constructs a new NLE environment.
 
         Args:
-            savedir (str or None): path to save archives into. Defaults to None.
-            archivefile (str or None): Template for the zip archive filename of
-                NetHack ttyrec files. Use "%(pid)i" for the process id of the
-                NetHack process, "%(time)s" for the creation time. Use None to
-                disable writing archivefiles.
+            savedir (str or None): path to save ttyrecs (game recordings) into.
+                Defaults to "" (empty string), which makes NLE chose the
+                directory name. If None, don't save any data. Otherwise,
+                interpreted as a path to a new or existing directory.
             character (str): name of character. Defaults to "mon-hum-neu-mal".
             max_episode_steps (int): maximum amount of steps allowed before the
                 game is forcefully quit. In such cases, ``info["end_status"]``
@@ -153,35 +152,33 @@ class NLE(gym.Env):
 
         self.last_observation = None
 
-        if archivefile is not None:
-            warnings.warn("Setting archive file not yet implemented")
-            archivefile = None
-
-        if archivefile is not None:
-            try:
-                if savedir is None:
-                    parent_dir = os.path.join(os.getcwd(), "nle_data")
-                    os.makedirs(parent_dir, exist_ok=True)
-                    # Create a unique subdirectory for us.
-                    self.savedir = tempfile.mkdtemp(
-                        prefix=time.strftime("%Y%m%d-%H%M%S_"), dir=parent_dir
-                    )
-                else:
-                    self.savedir = savedir
-                    os.makedirs(self.savedir)
-            except FileExistsError:
-                logger.info("Using existing savedir: %s", self.savedir)
-            else:
-                logger.info("Created savedir: %s", self.savedir)
-
-            self.archivefile = os.path.join(self.savedir, archivefile)
+        try:
+            if savedir is None:
+                self.savedir = None
+                self._stats_file = None
+                self._stats_logger = None
+            elif savedir:
+                self.savedir = savedir
+                os.makedirs(self.savedir)
+            else:  # Empty savedir: We create our unique savedir inside nle_data/.
+                parent_dir = os.path.join(os.getcwd(), "nle_data")
+                os.makedirs(parent_dir, exist_ok=True)
+                self.savedir = tempfile.mkdtemp(
+                    prefix=time.strftime("%Y%m%d-%H%M%S_"), dir=parent_dir
+                )
+        except FileExistsError:
+            logger.info("Using existing savedir: %s", self.savedir)
         else:
-            self.savedir = None
-            self.archivefile = None
-            self._stats_file = None
-            self._stats_logger = None
+            if self.savedir:
+                logger.info("Created savedir: %s", self.savedir)
+            else:
+                logger.info("Not saving any NLE data.")
 
-        self._setup_statsfile = archivefile is not None
+        # TODO: Fix stats_file logic.
+        # self._setup_statsfile = self.savedir is not None
+        self._setup_statsfile = False
+        self._stats_file = None
+        self._stats_logger = None
 
         self._observation_keys = list(observation_keys)
 
@@ -207,10 +204,19 @@ class NLE(gym.Env):
             self._observation_keys.index(key) for key in observation_keys
         )
 
+        if self.savedir:
+            self._ttyrec_pattern = os.path.join(
+                self.savedir, "nle.%i.%%i.ttyrec" % os.getpid()
+            )
+            ttyrec = self._ttyrec_pattern % 0
+        else:
+            ttyrec = "/dev/null"
+
         self.env = nethack.Nethack(
             observation_keys=self._observation_keys,
             options=options,
             playername="Agent-" + self.character,
+            ttyrec=ttyrec,
         )
         self._close_env = weakref.finalize(self, lambda e: e.close(), self.env)
 
@@ -297,7 +303,6 @@ class NLE(gym.Env):
             done = True
 
         info = {}
-
         if end_status:
             # TODO: fix stats
             # stats = self._collect_stats(last_observation, end_status)
@@ -307,7 +312,6 @@ class NLE(gym.Env):
 
             if self._stats_logger is not None:
                 self._stats_logger.writerow(stats)
-
         info["end_status"] = end_status
 
         return self._get_observation(observation), reward, done, info
@@ -346,17 +350,19 @@ class NLE(gym.Env):
             fail in case Nethack is initialized with some uncommon options.
 
         Returns:
-            (dict): observation of the state as defined by
-                    ``self.observation_space``
+            [dict] Observation of the state as defined by
+                `self.observation_space`.
         """
-        self.last_observation = self.env.reset()
+        self._episode += 1
+        new_ttyrec = self._ttyrec_pattern % self._episode if self.savedir else None
+        self.last_observation = self.env.reset(new_ttyrec)
 
         # Only run on the first reset to initialize stats file
         if self._setup_statsfile:
-            stats_file = os.path.splitext(self.env._archive.filename)[0] + ".csv"
-            add_header = not os.path.exists(stats_file)
+            filename = os.path.join(self.savedir, "stats.csv")
+            add_header = not os.path.exists(filename)
 
-            self._stats_file = open(stats_file, "a", 1)  # line buffered
+            self._stats_file = open(filename, "a", 1)  # line buffered.
             self._stats_logger = csv.DictWriter(
                 self._stats_file, fieldnames=self.Stats._fields
             )
@@ -364,16 +370,9 @@ class NLE(gym.Env):
                 self._stats_logger.writeheader()
         self._setup_statsfile = False
 
-        self._episode += 1
         # self._killer_name = "UNK"
 
         self._steps = 0
-        self._info = {}
-
-        self._info["seeds"] = {}
-        # TODO: Fix seeds
-        # for k in nethack.SEED_KEYS:
-        #    self._info["seeds"][k] = getattr(self.response.Seeds(), k.capitalize())()
 
         while not self._in_moveloop(self.last_observation):
             # Get past initial phase of game. This should make sure
@@ -393,8 +392,7 @@ class NLE(gym.Env):
         Returns:
             (dict): seeds used by the current instance of Nethack.
         """
-
-        return self._info["seeds"].copy()
+        raise NotImplementedError
 
     def seed(self, seeds=None):
         """Seeds the environment.
@@ -497,6 +495,7 @@ class NLE(gym.Env):
                 msg = bytes(observation[self._message_index])
                 if re.match(FINAL_QUESTIONS, msg):
                     # Auto-yes to the final questions.
+                    # Note: The disclose option should make this obsolete.
                     observation, done = self.env.step(ASCII_y)
                     continue
 

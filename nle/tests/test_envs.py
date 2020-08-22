@@ -130,9 +130,8 @@ class TestGymEnvRollout:
 
     def test_rollout_no_archive(self, env_name, rollout_len):
         """Tests rollout_len steps (or until termination) of random policy."""
-        env = gym.make(env_name, archivefile=None)
+        env = gym.make(env_name, savedir=None)
         assert env.savedir is None
-        assert env.archivefile is None
         assert env._stats_file is None
         assert env._stats_logger is None
         rollout_env(env, rollout_len)
