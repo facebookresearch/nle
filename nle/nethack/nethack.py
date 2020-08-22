@@ -126,6 +126,7 @@ class Nethack:
             self._pynethack.reset(new_ttyrec)
             self._ttyrec = new_ttyrec
         if self._seeds is not None:
+            # TODO: This is dangerous -- it gives us the same episode again and again!
             self._pynethack.set_seed(*self._seeds)
         return self._step_return()
 
@@ -138,3 +139,6 @@ class Nethack:
             return
         self._pynethack.set_seed(core, disp, reseed)
         self._seeds = (core, disp, reseed)
+
+    def get_seed(self):
+        return self._pynethack.get_seed()

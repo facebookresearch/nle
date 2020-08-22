@@ -248,10 +248,21 @@ nle_set_seed(nle_ctx_t *nle, unsigned long core, unsigned long disp,
 {
     /* Keep up to date with rnglist[] in rnd.c. */
     set_random(core, rn2);
-    set_random(core, rn2_on_display_rng);
+    set_random(disp, rn2_on_display_rng);
 
     /* Determines logic in reseed_random() in hacklib.c. */
     has_strong_rngseed = reseed;
+};
+
+extern unsigned long nle_seeds[];
+
+void
+nle_get_seed(nle_ctx_t *nle, unsigned long *core, unsigned long *disp,
+             boolean *reseed)
+{
+    *core = nle_seeds[0];
+    *disp = nle_seeds[1];
+    *reseed = has_strong_rngseed;
 };
 
 /* From unixtty.c */

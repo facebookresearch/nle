@@ -145,6 +145,20 @@ class Nethack
         nle_set_seed(nle_, core, disp, reseed);
     }
 
+    std::tuple<unsigned long, unsigned long, bool>
+    get_seed()
+    {
+        if (!nle_)
+            throw std::runtime_error("get_seed called without reset()");
+        std::tuple<unsigned long, unsigned long, bool> result;
+        char
+            reseed; /* NetHack's booleans are not necessarily C++ bools ... */
+        nle_get_seed(nle_, &std::get<0>(result), &std::get<1>(result),
+                     &reseed);
+        std::get<2>(result) = reseed;
+        return result;
+    }
+
   private:
     void
     reset(FILE *ttyrec)
@@ -187,7 +201,8 @@ PYBIND11_MODULE(_pynethack, m)
              py::keep_alive<1, 7>(), py::keep_alive<1, 8>(),
              py::keep_alive<1, 9>())
         .def("close", &Nethack::close)
-        .def("set_seed", &Nethack::set_seed);
+        .def("set_seed", &Nethack::set_seed)
+        .def("get_seed", &Nethack::get_seed);
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");

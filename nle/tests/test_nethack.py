@@ -120,6 +120,7 @@ class TestNetHack:
     def test_set_seed(self, game):
         game.reset()
         game.seed(core=42, disp=666)
+        assert game.get_seed() == (42, 666, False)
 
 
 class TestNetHackFurther:
