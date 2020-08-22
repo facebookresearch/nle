@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 #
 # Copyright (c) Facebook, Inc. and its affiliates.
+import os
 import random
 import sys
+import tempfile
 
 import numpy as np
 import pytest
@@ -125,8 +127,14 @@ class TestGymEnvRollout:
 
     def test_rollout(self, env_name, rollout_len):
         """Tests rollout_len steps (or until termination) of random policy."""
-        env = gym.make(env_name)
-        rollout_env(env, rollout_len)
+        with tempfile.TemporaryDirectory() as savedir:
+            env = gym.make(env_name, savedir=savedir)
+            rollout_env(env, rollout_len)
+            env.close()
+
+            assert os.path.exists(
+                os.path.join(savedir, "nle.%i.0.ttyrec" % os.getpid())
+            )
 
     def test_rollout_no_archive(self, env_name, rollout_len):
         """Tests rollout_len steps (or until termination) of random policy."""
