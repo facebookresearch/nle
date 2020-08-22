@@ -1,8 +1,8 @@
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <termios.h>
 #include <unistd.h>
 
