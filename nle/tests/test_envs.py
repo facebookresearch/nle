@@ -61,19 +61,9 @@ def compare_rollouts(env0, env1, max_rollout_len):
         assert reward0 == reward1
         assert done0 == done1
 
-        # pid entries (and thus ttyrecs) won't match. Copy before removing.
-        info0, info1 = info0.copy(), info1.copy()
-        del info0["pid"], info1["pid"]
-
         if done0:
             assert "stats" in info0  # just to be sure
             assert "stats" in info1
-
-            for k in ["ttyrec"]:
-                assert info0["stats"][k] != info1["stats"][k]
-
-                del info0["stats"][k]
-                del info1["stats"][k]
 
         assert info0 == info1
 
@@ -117,7 +107,7 @@ class TestGymEnv:
 
 
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
-@pytest.mark.parametrize("rollout_len", [1000])
+@pytest.mark.parametrize("rollout_len", [500])
 class TestGymEnvRollout:
     @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
@@ -146,81 +136,61 @@ class TestGymEnvRollout:
 
     def test_seed_interface_output(self, env_name, rollout_len):
         """Tests whether env.seed output can be reused correctly."""
-        pytest.skip("Cannot have two NLEs currently.")
         env0 = gym.make(env_name)
         env1 = gym.make(env_name)
 
         seed_list0 = env0.seed()
         env0.reset()
 
-        seed_dict = nle.env.seed_list_to_dict(seed_list0)
-        assert env0.get_seeds() == seed_dict
+        assert env0.get_seeds() == seed_list0
 
-        seed_list1 = env1.seed(seed_dict)
+        seed_list1 = env1.seed(*seed_list0)
         assert seed_list0 == seed_list1
-
-    def test_seed_rollout_from_nethack(self, env_name, rollout_len):
-        """Tests that two NetHack instances with same seeds return same obs."""
-
-        pytest.skip("Cannot have two NLEs currently.")
-        env0 = gym.make(env_name)
-        env1 = gym.make(env_name)
-
-        obs0 = env0.reset()  # no env.seed() call, so uses NetHack's seeds
-        seeds = env0.get_seeds()
-
-        env1.seed(seeds)
-        obs1 = env1.reset()
-
-        del obs0["message"]  # because of different names
-        del obs1["message"]
-        np.testing.assert_equal(obs0, obs1)
-        compare_rollouts(env0, env1, rollout_len)
 
     def test_seed_rollout_seeded(self, env_name, rollout_len):
         """Tests that two seeded envs return same step data."""
-        pytest.skip("Cannot have two NLEs currently.")
         env0 = gym.make(env_name)
         env1 = gym.make(env_name)
 
-        env0.seed()
+        env0.seed(123456, 789012)
         obs0 = env0.reset()
         seeds0 = env0.get_seeds()
 
-        env1.seed(seeds0)
+        assert seeds0 == (123456, 789012, False)
+
+        env1.seed(*seeds0)
         obs1 = env1.reset()
         seeds1 = env1.get_seeds()
 
         assert seeds0 == seeds1
 
-        del obs0["message"]  # because of different names
-        del obs1["message"]
         np.testing.assert_equal(obs0, obs1)
         compare_rollouts(env0, env1, rollout_len)
 
     def test_seed_rollout_seeded_int(self, env_name, rollout_len):
         """Tests that two seeded envs return same step data."""
-        pytest.skip("Cannot have two NLEs currently.")
         env0 = gym.make(env_name)
         env1 = gym.make(env_name)
 
-        env0.seed(random.randrange(sys.maxsize))
+        initial_seeds = (
+            random.randrange(sys.maxsize),
+            random.randrange(sys.maxsize),
+            False,
+        )
+        env0.seed(*initial_seeds)
         obs0 = env0.reset()
         seeds0 = env0.get_seeds()
 
-        env1.seed(seeds0)
+        env1.seed(*seeds0)
         obs1 = env1.reset()
         seeds1 = env1.get_seeds()
 
-        assert seeds0 == seeds1
+        assert seeds0 == seeds1 == initial_seeds
 
-        del obs0["message"]  # because of different names
-        del obs1["message"]
         np.testing.assert_equal(obs0, obs1)
         compare_rollouts(env0, env1, rollout_len)
 
     def test_render_ansi(self, env_name, rollout_len):
-        print(env_name)
         env = gym.make(env_name)
         env.reset()
         for _ in range(rollout_len):

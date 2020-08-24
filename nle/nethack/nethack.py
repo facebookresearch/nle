@@ -134,7 +134,7 @@ class Nethack:
     def set_initial_seeds(self, core, disp, reseed=False):
         self._pynethack.set_initial_seeds(core, disp, reseed)
 
-    def set_current_seeds(self, core, disp, reseed=False):
+    def set_current_seeds(self, core=None, disp=None, reseed=False):
         """Sets the seeds of NetHack right now.
 
         If either of the three arguments is None, its current value will be
@@ -160,7 +160,7 @@ class Nethack:
         if any(s is None for s in seeds):
             if all(s is None for s in seeds):
                 return
-            for i, (s, s0) in enumerate(zip(seeds, self.get_seeds())):
+            for i, (s, s0) in enumerate(zip(seeds, self.get_current_seeds())):
                 if s is None:
                     seeds[i] = s0
             return self._pynethack.set_seeds(*seeds)

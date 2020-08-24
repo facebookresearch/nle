@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from gym.envs import registration
 
-from nle.env.base import NLE, DUNGEON_SHAPE, seed_list_to_dict
+from nle.env.base import NLE, DUNGEON_SHAPE
 
 registration.register(id="NetHack-v0", entry_point="nle.env.base:NLE")
 

@@ -122,7 +122,7 @@ class TestNetHack:
         game.set_initial_seeds(core=42, disp=666)
         obs0 = game.reset()
         try:
-            seeds0 = game.get_seeds()
+            seeds0 = game.get_current_seeds()
             game.set_initial_seeds(core=42, disp=666)
             obs1 = game.reset()
             seeds1 = game.get_current_seeds()
