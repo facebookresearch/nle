@@ -95,14 +95,26 @@ class HelperTest(unittest.TestCase):
             self.assertEqual(mon.mname, "giant ant")
 
     def test_illegal_numbers(self):
-        with self.assertRaisesRegex(IndexError, "NUMMONS"):
+        with self.assertRaisesRegex(
+            IndexError,
+            r"should be between 0 and NUMMONS \(%i\) but got %i"
+            % (nethack.NUMMONS, nethack.NUMMONS),
+        ):
             nethack.permonst(nethack.NUMMONS)
 
-        with self.assertRaisesRegex(IndexError, "NUMMONS"):
+        with self.assertRaisesRegex(
+            IndexError,
+            r"should be between 0 and NUMMONS \(%i\) but got %i"
+            % (nethack.NUMMONS, -1),
+        ):
             nethack.permonst(-1)
 
-        with self.assertRaisesRegex(IndexError, "MAXMCLASSES"):
-            nethack.class_sym.from_mlet("\xFF")
+        with self.assertRaisesRegex(
+            IndexError,
+            r"should be between 0 and MAXMCLASSES \(%i\) but got 127"
+            % nethack.MAXMCLASSES,
+        ):
+            nethack.class_sym.from_mlet("\x7F")
 
 
 if __name__ == "__main__":
