@@ -270,11 +270,23 @@ class TestNethackFunctionsAndConstants:
         assert nethack.NUMMONS > 300
 
     def test_illegal_numbers(self):
-        with pytest.raises(IndexError):
-            nethack.permonst(10000)
+        with pytest.raises(
+            IndexError,
+            match=r"should be between 0 and NUMMONS \(%i\) but got %i"
+            % (nethack.NUMMONS, nethack.NUMMONS),
+        ):
+            nethack.permonst(nethack.NUMMONS)
 
-        with pytest.raises(IndexError):
+        with pytest.raises(
+            IndexError,
+            match=r"should be between 0 and NUMMONS \(%i\) but got %i"
+            % (nethack.NUMMONS, -1),
+        ):
             nethack.permonst(-1)
 
-        with pytest.raises(IndexError):
-            nethack.class_sym.from_mlet("\xFF")
+        with pytest.raises(
+            IndexError,
+            match=r"should be between 0 and MAXMCLASSES \(%i\) but got 127"
+            % nethack.MAXMCLASSES,
+        ):
+            nethack.class_sym.from_mlet("\x7F")
