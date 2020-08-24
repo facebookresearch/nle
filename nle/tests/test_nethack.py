@@ -96,7 +96,7 @@ class HelperTest(unittest.TestCase):
 
     def test_illegal_numbers(self):
         with self.assertRaisesRegex(IndexError, "NUMMONS"):
-            nethack.permonst(10000)
+            nethack.permonst(nethack.NUMMONS)
 
         with self.assertRaisesRegex(IndexError, "NUMMONS"):
             nethack.permonst(-1)
