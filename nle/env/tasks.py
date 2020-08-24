@@ -264,7 +264,7 @@ class NetHackScout(NetHackScore):
         explored_old = 0
         if key in self.dungeon_explored:
             explored_old = self.dungeon_explored[key]
-            reward = explored - explored_old
-            self.dungeon_explored[key] = explored
+        reward = explored - explored_old
+        self.dungeon_explored[key] = explored
         time_penalty = self._get_time_penalty(last_observation, observation)
         return reward + time_penalty
