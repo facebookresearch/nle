@@ -281,12 +281,14 @@ class NLE(gym.Env):
                   `end_status`, i.e. a status info -- death, task win, etc. --
                   for the terminal state).
         """
+        # Careful: By default we re-use Numpy arrays, so copy before!
+        last_observation = tuple(a.copy() for a in self.last_observation)
+
         observation, done = self.env.step(self._actions[action])
         observation, done = self._perform_known_steps(observation, done)
 
         self._steps += 1
 
-        last_observation = self.last_observation
         self.last_observation = observation
 
         if self._steps >= self._max_episode_steps:
