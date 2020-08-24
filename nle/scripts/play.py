@@ -66,12 +66,12 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debu
     env_name = env
     is_raw_env = env_name == "nethack"
 
+    print("Available actions:", env._actions)
     if is_raw_env:
-        if archivefile is not None:
+        if savedir is not None:
             os.makedirs(savedir, exist_ok=True)
-            archivefile = os.path.join(savedir, archivefile)
-        print("Available actions:", env._actions)
-        env = nethack.NetHack(archivefile=archivefile)
+            ttyrec = os.path.join(savedir, "nle.ttyrec")
+        env = nethack.NetHack(ttyrec=ttyrec)
     else:
         env = gym.make(env_name, savedir=savedir, max_episode_steps=max_steps,)
         if seeds is not None:
