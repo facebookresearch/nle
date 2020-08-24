@@ -62,31 +62,18 @@ def get_action(env, action_mode, is_raw_env):
     return action
 
 
-def play(
-    env_name,
-    play_mode,
-    ngames,
-    max_steps,
-    seeds,
-    savedir,
-    archivefile,
-    no_clear,
-    no_render,
-):
+def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debug):
+    env_name = env
     is_raw_env = env_name == "nethack"
 
     if is_raw_env:
         if archivefile is not None:
             os.makedirs(savedir, exist_ok=True)
             archivefile = os.path.join(savedir, archivefile)
+        print("Available actions:", env._actions)
         env = nethack.NetHack(archivefile=archivefile)
     else:
-        env = gym.make(
-            env_name,
-            savedir=savedir,
-            archivefile=archivefile,
-            max_episode_steps=max_steps,
-        )
+        env = gym.make(env_name, savedir=savedir, max_episode_steps=max_steps,)
         if seeds is not None:
             env.seed(seeds)
 
@@ -107,7 +94,6 @@ def play(
 
             if not is_raw_env:
                 print("Previous reward:", reward)
-                print("Available actions:", env._actions)
                 print(
                     "Previous action: {}{!r})".format(
                         "{} --".format(chr(ch)) if ch is not None else "",
@@ -120,7 +106,7 @@ def play(
                 print("Previous actions:", action)
                 print_message.print_message(obs)
 
-        action = get_action(env, play_mode, is_raw_env)
+        action = get_action(env, mode, is_raw_env)
         if action is None:
             break
 
@@ -190,7 +176,7 @@ def main():
         "-e",
         "--env",
         type=str,
-        default="NetHackStaircase-v0",
+        default="NetHackScore-v0",
         help="Gym environment spec. Defaults to 'NetHackStaircase-v0'.",
     )
     parser.add_argument(
@@ -219,16 +205,7 @@ def main():
         help="Directory path where data will be saved. "
         "Defaults to 'nle_data/play_data'.",
     )
-    parser.add_argument(
-        "--archivefile",
-        default="args",
-        help=(
-            "Namefile of the archive. If provided with an empty string, "
-            "archives won't be saved. Defaults to 'args', which means "
-            "that the archivefile will be named after the arguments of "
-            "the script (including default values, whenever used)."
-        ),
-    )
+
     parser.add_argument("--no-clear", action="store_true", help="Disables tty clears.")
     parser.add_argument(
         "--no-render", action="store_true", help="Disables env.render()."
@@ -247,24 +224,12 @@ def main():
             # to handle both int and dicts
             flags.seeds = ast.literal_eval(flags.seeds)
 
-        if flags.archivefile == "":
-            flags.archivefile = None
-        elif flags.archivefile == "args":
-            flags.archivefile = "{}_{}_{}.zip".format(
+        if flags.savedir == "args":
+            flags.savedir = "{}_{}_{}.zip".format(
                 time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env
             )
 
-        play(
-            flags.env,
-            flags.mode,
-            flags.ngames,
-            flags.max_steps,
-            flags.seeds,
-            flags.savedir,
-            flags.archivefile,
-            flags.no_clear,
-            flags.no_render,
-        )
+        play(**vars(flags))
 
 
 if __name__ == "__main__":

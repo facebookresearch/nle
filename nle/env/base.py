@@ -433,13 +433,35 @@ class NLE(gym.Env):
                        "ansi", otherwise a ``ValueError`` is raised.
 
         """
+        chars_index = self._observation_keys.index("chars")
         if mode == "human":
+            message_index = self._observation_keys.index("message")
+            message = bytes(self.last_observation[message_index])
+            print(message[: message.index(b"\0")])
+            colors_index = self._observation_keys.index("colors")
+            chars = self.last_observation[chars_index]
+            colors = self.last_observation[colors_index]
+            rows, cols = chars.shape
+            nh_HE = "\033[0m"
+            BRIGHT = 8
+            for r in range(rows):
+                # With no colors:
+                # print(chars[r].tobytes().decode("utf-8"))
+                # continue
+                for c in range(cols):
+                    # cf. termcap.c.
+                    start_color = "\033[%d" % bool(colors[r][c] & BRIGHT)
+                    start_color += ";3%d" % (colors[r][c] & ~BRIGHT)
+                    start_color += "m"
+
+                    print(start_color + chr(chars[r][c]), end=nh_HE)
+                print("")
+
             # TODO: Fix print_message.
             # nhprint.print_message(self.response)
             return
         elif mode == "ansi":
             # TODO(NN): refactor print_message and output string here
-            chars_index = self._observation_keys.index("chars")
             chars = self.last_observation[chars_index]
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
         else:
