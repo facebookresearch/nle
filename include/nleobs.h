@@ -19,4 +19,9 @@ typedef struct nle_observation {
     int *internal;           /* NLE_INTERNAL_SIZE */
 } nle_obs;
 
+typedef struct {
+    unsigned long seeds[2]; /* core, disp */
+    char reseed; /* boolean: use NetHack's anti-TAS reseed mechanism? */
+} nle_seeds_init_t;
+
 #endif /* NLEOBS_H */

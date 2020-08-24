@@ -138,7 +138,16 @@ class Nethack
     }
 
     void
-    set_seed(unsigned long core, unsigned long disp, bool reseed)
+    set_initial_seeds(unsigned long core, unsigned long disp, bool reseed)
+    {
+        seed_init_.seeds[0] = core;
+        seed_init_.seeds[1] = disp;
+        seed_init_.reseed = reseed;
+        use_seed_init = true;
+    }
+
+    void
+    set_seeds(unsigned long core, unsigned long disp, bool reseed)
     {
         if (!nle_)
             throw std::runtime_error("set_seed called without reset()");
@@ -146,7 +155,7 @@ class Nethack
     }
 
     std::tuple<unsigned long, unsigned long, bool>
-    get_seed()
+    get_seeds()
     {
         if (!nle_)
             throw std::runtime_error("get_seed called without reset()");
@@ -165,9 +174,13 @@ class Nethack
     {
         if (!nle_) {
             nle_ = nle_start(dlpath_.c_str(), &obs_,
-                             ttyrec ? ttyrec : ttyrec_.get());
+                             ttyrec ? ttyrec : ttyrec_.get(),
+                             use_seed_init ? &seed_init_ : nullptr);
         } else
-            nle_reset(nle_, &obs_, ttyrec);
+            nle_reset(nle_, &obs_, ttyrec,
+                      use_seed_init ? &seed_init_ : nullptr);
+
+        use_seed_init = false;
 
         if (obs_.done)
             throw std::runtime_error("NetHack done right after reset");
@@ -175,6 +188,8 @@ class Nethack
 
     std::string dlpath_;
     nle_obs obs_;
+    nle_seeds_init_t seed_init_;
+    bool use_seed_init = false;
     nle_ctx_t *nle_ = nullptr;
     std::unique_ptr<std::FILE, int (*)(std::FILE *)> ttyrec_;
 };
@@ -201,8 +216,9 @@ PYBIND11_MODULE(_pynethack, m)
              py::keep_alive<1, 7>(), py::keep_alive<1, 8>(),
              py::keep_alive<1, 9>())
         .def("close", &Nethack::close)
-        .def("set_seed", &Nethack::set_seed)
-        .def("get_seed", &Nethack::get_seed);
+        .def("set_initial_seeds", &Nethack::set_initial_seeds)
+        .def("set_seeds", &Nethack::set_seeds)
+        .def("get_seeds", &Nethack::get_seeds);
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");

@@ -52,7 +52,6 @@
         boolean         fuzzymatch      (const char *, const char *,
                                          const char *, boolean)
         void            setrandom       (void)
-        void            init_random     (fn)
         void            reseed_random   (fn)
         time_t          getnow          (void)
         int             getyear         (void)
@@ -901,21 +900,7 @@ int FDECL((*fn), (int)) UNUSED;
 
 #endif /* USE_ISAAC64 */
 
-/* An appropriate version of this must always be provided in
-   port-specific code somewhere. It returns a number suitable
-   as seed for the random number generator */
-extern unsigned long NDECL(sys_random_seed);
-
-/*
- * Initializes the random number generator.
- * Only call once.
- */
-void
-init_random(fn)
-int FDECL((*fn), (int));
-{
-    set_random(sys_random_seed(), fn);
-}
+/* init_random moved to nle.c. */
 
 /* Reshuffles the random number generator. */
 void

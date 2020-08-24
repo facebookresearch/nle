@@ -189,11 +189,39 @@ nethack_exit(int status)
     nle_yield(NULL);
 }
 
+nle_seeds_init_t *nle_seeds_init;
+
+/* See rng.c. */
+extern int FDECL(whichrng, (int FDECL((*fn), (int) )));
+
+/* See hacklib.c. */
+extern int FDECL(set_random, (unsigned long, int FDECL((*fn), (int) )));
+/* An appropriate version of this must always be provided in
+   port-specific code somewhere. It returns a number suitable
+   as seed for the random number generator */
+extern unsigned long NDECL(sys_random_seed);
+
+/*
+ * Initializes the random number generator.
+ * Originally in hacklib.c.
+ */
+void
+init_random(int FDECL((*fn), (int) ))
+{
+    if (!nle_seeds_init) {
+        set_random(sys_random_seed(), fn);
+        return;
+    }
+    set_random(nle_seeds_init->seeds[whichrng(fn)], fn);
+    has_strong_rngseed = nle_seeds_init->reseed;
+}
+
 nle_ctx_t *
-nle_start(nle_obs *obs, FILE *ttyrec)
+nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init)
 {
     nle_ctx_t *nle = init_nle(ttyrec);
     nle->observation = obs;
+    nle_seeds_init = seed_init;
 
     nle->stack = create_fcontext_stack(STACK_SIZE);
     nle->generatorcontext =
@@ -204,6 +232,8 @@ nle_start(nle_obs *obs, FILE *ttyrec)
     nle->generatorcontext = t.ctx;
     nle->done = (t.data == NULL);
     obs->done = nle->done;
+    nle_seeds_init =
+        NULL; /* Don't set to *these* seeds on subsequent reseeds, if any. */
 
     return nle;
 }
@@ -239,8 +269,6 @@ nle_end(nle_ctx_t *nle)
     destroy_fcontext_stack(&nle->stack);
     free(nle);
 }
-
-extern int FDECL(set_random, (unsigned long, int FDECL((*fn), (int) )));
 
 void
 nle_set_seed(nle_ctx_t *nle, unsigned long core, unsigned long disp,

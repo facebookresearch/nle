@@ -94,7 +94,6 @@ class Nethack:
         self._options = list(options) + ["name:" + playername]
 
         _set_env_vars(self._options, self._vardir)
-        self._seeds = None
         self._ttyrec = ttyrec
 
         self._pynethack = _pynethack.Nethack(dlpath, ttyrec)
@@ -125,20 +124,47 @@ class Nethack:
         else:
             self._pynethack.reset(new_ttyrec)
             self._ttyrec = new_ttyrec
-        if self._seeds is not None:
-            # TODO: This is dangerous -- it gives us the same episode again and again!
-            self._pynethack.set_seed(*self._seeds)
+        # No seeding performed here: If we fixed the seeds, we'd only
+        # get one episode.
         return self._step_return()
 
     def close(self):
         self._pynethack.close()
 
-    def seed(self, core, disp, reseed=False):
-        if core is None or disp is None:
-            self._seeds = None
-            return
-        self._pynethack.set_seed(core, disp, reseed)
-        self._seeds = (core, disp, reseed)
+    def set_initial_seeds(self, core, disp, reseed=False):
+        self._pynethack.set_initial_seeds(core, disp, reseed)
 
-    def get_seed(self):
-        return self._pynethack.get_seed()
+    def set_current_seeds(self, core, disp, reseed=False):
+        """Sets the seeds of NetHack right now.
+
+        If either of the three arguments is None, its current value will be
+        used instead. Calling with default arguments will not change
+        the RNG seeds but disable reseeding. Calling
+        `set_current_seeds(reseed=None)` is a no-op and only returns the current
+        values. If NetHack detects a good source of random numbers (true on most
+        modern systems), its default value for `reseed` before the first call to
+        this method is `True`.
+
+        Arguments:
+            core [int or None]: Seed for the core RNG.
+            disp [int or None]: Seed for the disp (anti-TAS) RNG.
+            reseed [boolean or None]: As an Anti-TAS (automation) measure,
+                NetHack 3.6 reseeds with true randomness every now and then. This
+                flag enables or disables this behavior. If set to True, trajectories
+                won't be reproducible.
+
+        Returns:
+            [list] the seeds used by NetHack.
+        """
+        seeds = [core, disp, reseed]
+        if any(s is None for s in seeds):
+            if all(s is None for s in seeds):
+                return
+            for i, (s, s0) in enumerate(zip(seeds, self.get_seeds())):
+                if s is None:
+                    seeds[i] = s0
+            return self._pynethack.set_seeds(*seeds)
+        return self._pynethack.set_seeds(core, disp, reseed)
+
+    def get_current_seeds(self):
+        return self._pynethack.get_seeds()

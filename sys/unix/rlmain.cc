@@ -27,7 +27,7 @@ play(nle_ctx_t *nle, nle_obs *obs)
         std::cout << std::endl;
         read(STDIN_FILENO, &obs->action, 1);
         if (obs->action == 'r')
-            nle_reset(nle, obs, nullptr);
+            nle_reset(nle, obs, nullptr, nullptr);
         nle = nle_step(nle, obs);
     }
 }
@@ -58,7 +58,7 @@ randgame(nle_ctx_t *nle, nle_obs *obs)
 
     for (int i = 0; i < 15; ++i) {
         randplay(nle, obs);
-        nle_reset(nle, obs, nullptr);
+        nle_reset(nle, obs, nullptr, nullptr);
     }
 }
 
@@ -101,12 +101,12 @@ main(int argc, char **argv)
     std::unique_ptr<FILE, int (*)(FILE *)> ttyrec(fopen("nle.ttyrec", "a"),
                                                   fclose);
 
-    nle_ctx_t *nle = nle_start("libnethack.so", &obs, ttyrec.get());
+    nle_ctx_t *nle = nle_start("libnethack.so", &obs, ttyrec.get(), nullptr);
     if (argc > 1 && argv[1][0] == 'r') {
         randgame(nle, &obs);
     } else {
         play(nle, &obs);
-        nle_reset(nle, &obs, nullptr);
+        nle_reset(nle, &obs, nullptr, nullptr);
         play(nle, &obs);
     }
     nle_end(nle);

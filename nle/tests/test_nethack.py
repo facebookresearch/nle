@@ -117,10 +117,26 @@ class TestNetHack:
         finally:
             game1.close()
 
-    def test_set_seed(self, game):
+    def test_set_initial_seedS(self):
+        game = nethack.Nethack(copy=True)
+        game.set_initial_seeds(core=42, disp=666)
+        obs0 = game.reset()
+        try:
+            seeds0 = game.get_seeds()
+            game.set_initial_seeds(core=42, disp=666)
+            obs1 = game.reset()
+            seeds1 = game.get_current_seeds()
+            np.testing.assert_equal(obs0, obs1)
+            assert seeds0 == seeds1
+        finally:
+            game.close()
+
+    def test_set_seed_after_reset(self, game):
         game.reset()
-        game.seed(core=42, disp=666)
-        assert game.get_seed() == (42, 666, False)
+        # Could fail on a system without a good source of randomness:
+        assert game.get_current_seeds()[2] == True
+        game.set_current_seeds(core=42, disp=666)
+        assert game.get_current_seeds() == (42, 666, False)
 
 
 class TestNetHackFurther:
