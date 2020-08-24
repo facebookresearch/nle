@@ -87,6 +87,9 @@ PYBIND11_MODULE(helper, m)
     m.attr("VENOM_CLASS") = py::int_(static_cast<int>(VENOM_CLASS));
     m.attr("MAXOCLASSES") = py::int_(static_cast<int>(MAXOCLASSES));
 
+    // From monsym.h.
+    m.attr("MAXMCLASSES") = py::int_(static_cast<int>(MAXMCLASSES));
+
     // "Special" mapglyph
     m.attr("MG_CORPSE") = py::int_(MG_CORPSE);
     m.attr("MG_INVIS") = py::int_(MG_INVIS);
@@ -130,7 +133,9 @@ PYBIND11_MODULE(helper, m)
             [](py::detail::value_and_holder &v_h, int index) {
                 if (index < 0 || index >= NUMMONS)
                     throw std::out_of_range(
-                        "Index should be between 0 and NUMMONS (int)");
+                        "Index should be between 0 and NUMMONS ("
+                        + std::to_string(NUMMONS) + ") but got "
+                        + std::to_string(index));
                 v_h.value_ptr() = &mons[index];
                 v_h.inst->owned = false;
                 v_h.set_holder_constructed(true);
@@ -171,7 +176,9 @@ PYBIND11_MODULE(helper, m)
             [](char let) -> const class_sym * {
                 if (let < 0 || let >= MAXMCLASSES)
                     throw std::out_of_range(
-                        "Argument should be between 0 and MAXMCLASSES (int)");
+                        "Argument should be between 0 and MAXMCLASSES ("
+                        + std::to_string(MAXMCLASSES) + ") but got "
+                        + std::to_string(let));
                 return &def_monsyms[let];
             },
             py::return_value_policy::reference)
