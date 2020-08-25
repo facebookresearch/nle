@@ -15,7 +15,13 @@ import gym
 
 import nle  # noqa: F401
 from nle import nethack
-from nle.nethack import print_message
+
+
+_ACTIONS = tuple(
+    [nethack.MiscAction.MORE]
+    + list(nethack.CompassDirection)
+    + list(nethack.CompassDirectionLonger)
+)
 
 
 @contextlib.contextmanager
@@ -38,7 +44,7 @@ def get_action(env, action_mode, is_raw_env):
         if not is_raw_env:
             action = env.action_space.sample()
         else:
-            action = random.choice(nle.env.base.FULL_ACTIONS)
+            action = random.choice(_ACTIONS)
     elif action_mode == "human":
         while True:
             with no_echo():
@@ -61,17 +67,19 @@ def get_action(env, action_mode, is_raw_env):
     return action
 
 
-def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debug):
+def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
     env_name = env
-    is_raw_env = env_name == "nethack"
+    is_raw_env = env_name == "raw"
 
     if is_raw_env:
         if savedir is not None:
             os.makedirs(savedir, exist_ok=True)
             ttyrec = os.path.join(savedir, "nle.ttyrec")
-        env = nethack.NetHack(ttyrec=ttyrec)
+        else:
+            ttyrec = "/dev/null"
+        env = nethack.Nethack(ttyrec=ttyrec)
     else:
-        env = gym.make(env_name, savedir=savedir, max_episode_steps=max_steps,)
+        env = gym.make(env_name, savedir=savedir, max_episode_steps=max_steps)
         if seeds is not None:
             env.seed(seeds)
         if not no_render:
@@ -89,25 +97,26 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debu
     start_time = timeit.default_timer()
     while True:
         if not no_render:
-            if not no_clear:
-                # TODO: This really needn't be a system call.
-                os.system("cls" if os.name == "nt" else "clear")
-
             if not is_raw_env:
                 print("Previous reward:", reward)
                 if action is not None:
                     print("Previous action: %s" % repr(env._actions[action]))
                 env.render()
             else:
-                print("Previous actions:", action)
-                print_message.print_message(obs)
+                print("Previous action:", action)
+                _, chars, _, _, blstats, message, *_ = obs
+                msg = bytes(message)
+                print(msg[: msg.index(b"\0")])
+                for line in chars:
+                    print(line.tobytes().decode("utf-8"))
+                print(blstats)
 
         action = get_action(env, mode, is_raw_env)
         if action is None:
             break
 
         if is_raw_env:
-            obs, done, info = env.step(action)
+            obs, done = env.step(action)
         else:
             obs, reward, done, info = env.step(action)
         steps += 1
@@ -118,11 +127,12 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debu
         if not done:
             continue
 
+        time_delta = timeit.default_timer() - start_time
+
         if not is_raw_env:
             print("Final reward:", reward)
             print("End status:", info["end_status"].name)
 
-        time_delta = timeit.default_timer() - start_time
         sps = steps / time_delta
         print("Episode: %i. Steps: %i. SPS: %f" % (episodes, steps, sps))
 
@@ -189,7 +199,6 @@ def main():
         "Defaults to 'nle_data/play_data'.",
     )
 
-    parser.add_argument("--no-clear", action="store_true", help="Disables tty clears.")
     parser.add_argument(
         "--no-render", action="store_true", help="Disables env.render()."
     )
@@ -211,6 +220,7 @@ def main():
             flags.savedir = "{}_{}_{}.zip".format(
                 time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env
             )
+        flags.savedir = None
 
         play(**vars(flags))
 

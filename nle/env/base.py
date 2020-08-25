@@ -432,9 +432,6 @@ class NLE(gym.Env):
             nh_HE = "\033[0m"
             BRIGHT = 8
             for r in range(rows):
-                # With no colors:
-                # print(chars[r].tobytes().decode("utf-8"))
-                # continue
                 for c in range(cols):
                     # cf. termcap.c.
                     start_color = "\033[%d" % bool(colors[r][c] & BRIGHT)
@@ -443,12 +440,8 @@ class NLE(gym.Env):
 
                     print(start_color + chr(chars[r][c]), end=nh_HE)
                 print("")
-
-            # TODO: Fix print_message.
-            # nhprint.print_message(self.response)
             return
         elif mode == "ansi":
-            # TODO(NN): refactor print_message and output string here
             chars = self.last_observation[chars_index]
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
         else:
