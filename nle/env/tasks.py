@@ -186,7 +186,7 @@ class NetHackGold(NetHackScore):
         if options is None:
             # Copy & swap out "pickup_types".
             options = []
-            for option in NETHACKOPTIONS:
+            for option in nethack.NETHACKOPTIONS:
                 if option.startswith("pickup_types"):
                     options.append("pickup_types:$")
                     continue

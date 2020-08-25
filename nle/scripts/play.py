@@ -220,7 +220,6 @@ def main():
             flags.savedir = "{}_{}_{}.zip".format(
                 time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env
             )
-        flags.savedir = None
 
         play(**vars(flags))
 
