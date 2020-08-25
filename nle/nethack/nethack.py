@@ -35,6 +35,7 @@ NETHACKOPTIONS = [
     "autopickup",
     "pickup_types:$?!/",
     "pickup_burden:unencumbered",
+    "nobones",
     "nolegacy",
     "nocmdassist",
     "disclose:+i +a +v +g +c +o",

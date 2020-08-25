@@ -181,17 +181,16 @@ class NetHackGold(NetHackScore):
     """
 
     def __init__(self, *args, **kwargs):
-        options = kwargs.pop(
-            "options",
-            (
-                "windowtype:rl",
-                "color",
-                "showexp",
-                "nobones",
-                "autopickup",
-                "pickup_types:$",
-            ),
-        )
+        options = kwargs.pop("options", None)
+
+        if options is None:
+            # Copy & swap out "pickup_types".
+            options = []
+            for option in NETHACKOPTIONS:
+                if option.startswith("pickup_types"):
+                    options.append("pickup_types:$")
+                    continue
+                options.append(option)
 
         super().__init__(*args, options=options, **kwargs)
 
