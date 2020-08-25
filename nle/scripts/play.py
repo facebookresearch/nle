@@ -66,7 +66,6 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debu
     env_name = env
     is_raw_env = env_name == "nethack"
 
-    print("Available actions:", env._actions)
     if is_raw_env:
         if savedir is not None:
             os.makedirs(savedir, exist_ok=True)
@@ -76,33 +75,31 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debu
         env = gym.make(env_name, savedir=savedir, max_episode_steps=max_steps,)
         if seeds is not None:
             env.seed(seeds)
+        if not no_render:
+            print("Available actions:", env._actions)
 
     obs = env.reset()
-    last_obs = None  # needed for "nethack" env
 
     steps = 0
     episodes = 0
     reward = 0.0
     action = None
-    ch = None
+
+    mean_sps = 0
 
     start_time = timeit.default_timer()
     while True:
         if not no_render:
             if not no_clear:
+                # TODO: This really needn't be a system call.
                 os.system("cls" if os.name == "nt" else "clear")
 
             if not is_raw_env:
                 print("Previous reward:", reward)
-                print(
-                    "Previous action: {}{!r})".format(
-                        "{} --".format(chr(ch)) if ch is not None else "",
-                        env._actions[action] if action is not None else None,
-                    )
-                )
+                if action is not None:
+                    print("Previous action: %s" % repr(env._actions[action]))
                 env.render()
             else:
-                print("Available actions:", nle.env.base.FULL_ACTIONS)
                 print("Previous actions:", action)
                 print_message.print_message(obs)
 
@@ -111,14 +108,12 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debu
             break
 
         if is_raw_env:
-            last_obs = obs
             obs, done, info = env.step(action)
         else:
             obs, reward, done, info = env.step(action)
         steps += 1
 
-        # NOTE: NLE by default already supports this
-        if is_raw_env:
+        if is_raw_env:  # NLE does this by default.
             done = done or steps >= max_steps
 
         if not done:
@@ -127,32 +122,21 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_clear, no_render, debu
         if not is_raw_env:
             print("Final reward:", reward)
             print("End status:", info["end_status"].name)
-            print("Env stats:")
-            pprint.pprint(info["stats"])
-        else:
-            if last_obs.ProgramState().Gameover():
-                # Print tombstone.
-                if last_obs.WindowsLength() < 1:
-                    return steps
-                window = last_obs.Windows(1)
-
-                if not no_render:
-                    for i in range(window.StringsLength()):
-                        print(window.Strings(i).decode("ascii"))
 
         time_delta = timeit.default_timer() - start_time
-        print(
-            "Episode: {}. Steps: {}. SPS: {:f}".format(
-                episodes, steps, steps / time_delta
-            )
-        )
-        start_time = timeit.default_timer()
+        sps = steps / time_delta
+        print("Episode: %i. Steps: %i. SPS: %f" % (episodes, steps, sps))
 
         episodes += 1
+        mean_sps += (sps - mean_sps) / episodes
+
+        start_time = timeit.default_timer()
+
         steps = 0
         if episodes == ngames:
             break
         env.reset()
+    print("Finished after %i episodes. Mean sps: %f" % (episodes, mean_sps))
 
 
 def main():
