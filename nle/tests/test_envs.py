@@ -12,6 +12,7 @@ import gym
 
 import nle
 import nle.env
+from nle import nethack
 
 
 def get_nethack_env_ids():
@@ -201,3 +202,38 @@ class TestGymEnvRollout:
             output = env.render(mode="ansi")
             assert isinstance(output, str)
             assert len(output.replace("\n", "")) == np.prod(nle.env.DUNGEON_SHAPE)
+
+
+class TestGymDynamics:
+    """Tests a few game dynamics."""
+
+    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    def make_cwd_tmp(self, tmpdir):
+        """Makes cwd point to the test's tmpdir."""
+        with tmpdir.as_cwd():
+            yield
+
+    @pytest.fixture
+    def env(self):
+        e = gym.make("NetHackScore-v0")
+        try:
+            yield e
+        finally:
+            e.close()
+
+    def test_kick_and_quit(self, env):
+        actions = env._actions
+        env.reset()
+        kick = actions.index(nethack.Command.KICK)
+        obs, reward, done, _ = env.step(kick)
+        assert b"In what direction? " in bytes(obs["message"])
+        env.step(nethack.MiscAction.MORE)
+
+        # Hack to quit.
+        env.env.step(nethack.M("q"))
+        env.render()
+        obs, reward, done, _ = env.step(actions.index(ord("y")))
+        env.render()
+
+        assert done
+        assert reward == 0.0

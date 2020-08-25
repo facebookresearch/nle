@@ -488,7 +488,8 @@ class NLE(gym.Env):
             if in_yn_function:  # Game asking for a single character.
                 # Note: No auto-yes to final questions thanks to the disclose option.
                 if exceptions:
-                    msg = memoryview(observation[self._message_index])
+                    # This causes an annoying unnecessary copy...
+                    msg = bytes(observation[self._message_index])
                     # Allow agent to select stuff to eat, attack, and to
                     # select directions.
                     if b"eat" in msg or b"attack" in msg or b"direction?" in msg:
