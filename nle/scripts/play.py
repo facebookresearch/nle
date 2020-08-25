@@ -93,6 +93,7 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
     action = None
 
     mean_sps = 0
+    mean_reward = 0.0
 
     start_time = timeit.default_timer()
     while True:
@@ -121,8 +122,10 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
             obs, reward, done, info = env.step(action)
         steps += 1
 
-        if is_raw_env:  # NLE does this by default.
-            done = done or steps >= max_steps
+        if is_raw_env:
+            done = done or steps >= max_steps  # NLE does this by default.
+        else:
+            mean_reward += (reward - mean_reward) / steps
 
         if not done:
             continue
@@ -132,6 +135,7 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
         if not is_raw_env:
             print("Final reward:", reward)
             print("End status:", info["end_status"].name)
+            print("Mean reward:", mean_reward)
 
         sps = steps / time_delta
         print("Episode: %i. Steps: %i. SPS: %f" % (episodes, steps, sps))
@@ -142,6 +146,8 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
         start_time = timeit.default_timer()
 
         steps = 0
+        mean_reward = 0.0
+
         if episodes == ngames:
             break
         env.reset()

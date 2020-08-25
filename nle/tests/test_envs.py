@@ -30,7 +30,8 @@ def get_nethack_env_ids():
 def rollout_env(env, max_rollout_len):
     """Produces a rollout and asserts step outputs.
 
-    Does *not* assume that the environment has already been reset.
+    Returns final reward. Does not assume that the environment has already been
+    reset.
     """
     obs = env.reset()
     assert env.observation_space.contains(obs)
@@ -45,6 +46,7 @@ def rollout_env(env, max_rollout_len):
         if done:
             break
     env.close()
+    return reward
 
 
 def compare_rollouts(env0, env1, max_rollout_len):
@@ -231,9 +233,31 @@ class TestGymDynamics:
 
         # Hack to quit.
         env.env.step(nethack.M("q"))
-        env.render()
         obs, reward, done, _ = env.step(actions.index(ord("y")))
-        env.render()
+
+        assert done
+        assert reward == 0.0
+
+    def test_final_reward(self, env):
+        obs = env.reset()
+
+        for _ in range(100):
+            obs, reward, done, info = env.step(env.action_space.sample())
+            if done:
+                break
+
+        if done:
+            assert reward == 0.0
+            return
+
+        # Hopefully, we got some positive reward by now.
+
+        # Get out of any menu / yn_function.
+        env.step(env._actions.index(ord("\r")))
+
+        # Hack to quit.
+        env.env.step(nethack.M("q"))
+        _, reward, done, _ = env.step(env._actions.index(ord("y")))
 
         assert done
         assert reward == 0.0

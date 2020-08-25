@@ -259,6 +259,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         // really_done(), but we still want to see the "Do you want..."
         // questions) or windows have already been destroyed. Return zero
         // observations.
+        obs->in_normal_game = false;
         if (obs->glyphs)
             std::memset(obs->glyphs, 0, sizeof(int16_t) * glyphs_.size());
         if (obs->chars)
@@ -273,6 +274,7 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
         return;
     }
+    obs->in_normal_game = true;
 
     if (obs->glyphs) {
         std::memcpy(obs->glyphs, glyphs_.data(),

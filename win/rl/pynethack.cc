@@ -168,6 +168,12 @@ class Nethack
         return result;
     }
 
+    boolean
+    in_normal_game()
+    {
+        return obs_.in_normal_game;
+    }
+
   private:
     void
     reset(FILE *ttyrec)
@@ -218,7 +224,8 @@ PYBIND11_MODULE(_pynethack, m)
         .def("close", &Nethack::close)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)
-        .def("get_seeds", &Nethack::get_seeds);
+        .def("get_seeds", &Nethack::get_seeds)
+        .def("in_normal_game", &Nethack::in_normal_game);
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");

@@ -169,3 +169,6 @@ class Nethack:
 
     def get_current_seeds(self):
         return self._pynethack.get_seeds()
+
+    def in_normal_game(self):
+        return self._pynethack.in_normal_game()

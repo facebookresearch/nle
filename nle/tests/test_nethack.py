@@ -233,8 +233,10 @@ class TestNethackSomeObs:
     def test_internal(self, game):
         program_state, _, internal = game.reset()
         while not program_state[3]:  # in_moveloop.
+            assert not game.in_normal_game()
             (program_state, _, internal), done = game.step(nethack.MiscAction.MORE)
 
+        assert game.in_normal_game()
         assert internal[0] == 1  # deepest_lev_reached.
 
         (_, _, internal), done = game.step(nethack.Command.INVENTORY)

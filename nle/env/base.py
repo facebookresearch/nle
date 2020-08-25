@@ -463,6 +463,9 @@ class NLE(gym.Env):
 
     def _reward_fn(self, last_observation, observation, end_status):
         """Reward function. Difference between previous score and new score."""
+        if not self.env.in_normal_game():
+            # Before game started or after it ended stats are zero.
+            return 0.0
         old_score = last_observation[self._blstats_index][BLSTATS_SCORE_INDEX]
         score = observation[self._blstats_index][BLSTATS_SCORE_INDEX]
         del end_status  # Unused for "score" reward.

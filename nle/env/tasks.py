@@ -197,6 +197,9 @@ class NetHackGold(NetHackScore):
     def _reward_fn(self, last_observation, observation, end_status):
         """Difference between previous gold and new gold."""
         del end_status  # Unused
+        if not self.env.in_normal_game():
+            # Before game started or after it ended stats are zero.
+            return 0.0
 
         old_blstats = last_observation[self._blstats_index]
         blstats = observation[self._blstats_index]
@@ -225,6 +228,10 @@ class NetHackEat(NetHackScore):
         """Difference between previous hunger and new hunger."""
         del end_status  # Unused
 
+        if not self.env.in_normal_game():
+            # Before game started or after it ended stats are zero.
+            return 0.0
+
         old_blstats = last_observation[self._blstats_index]
         blstats = observation[self._blstats_index]
 
@@ -251,6 +258,10 @@ class NetHackScout(NetHackScore):
 
     def _reward_fn(self, last_observation, observation, end_status):
         del end_status  # Unused
+
+        if not self.env.in_normal_game():
+            # Before game started or after it ended stats are zero.
+            return 0.0
 
         reward = 0
         glyphs = observation[self._glyph_index]

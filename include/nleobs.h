@@ -9,6 +9,7 @@
 typedef struct nle_observation {
     int action;
     int done;
+    char in_normal_game;     /* Bool indicating if other obs are set. */
     short *glyphs;           /* Size ROWNO * (COLNO - 1) */
     unsigned char *chars;    /* Size ROWNO * (COLNO - 1) */
     unsigned char *colors;   /* Size ROWNO * (COLNO - 1) */
