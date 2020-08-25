@@ -89,6 +89,9 @@ nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
     /* Reset file only if not-NULL. */
     if (ttyrec)
         nledl->ttyrec = ttyrec;
+
+    // TODO: Consider refactoring nledl.h such that we expose this init
+    // function but drop reset.
     nledl_init(nledl, obs, seed_init);
 }
 

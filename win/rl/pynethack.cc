@@ -102,7 +102,9 @@ class Nethack
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
             throw py::error_already_set();
         }
-        // Reset environment, then close original FILE.
+        // Reset environment, then close original FILE. Cannot use freopen
+        // as the game may still need to write to the original but reset()
+        // wants to get the new one already.
         reset(f);
         ttyrec_.reset(f);
     }
