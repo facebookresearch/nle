@@ -5,7 +5,6 @@ import enum
 import logging
 import os
 import random
-import re
 import sys
 import tempfile
 import time
@@ -19,18 +18,6 @@ from nle import nethack
 
 
 logger = logging.getLogger(__name__)
-
-WIN_MESSAGE = 1  # Technically dynamic. Practically constant.
-
-# TODO: This doesn't handle all cases, e.g., shopkeepers getting our stuff.
-FINAL_QUESTIONS = re.compile(
-    rb"Do you want ("
-    rb"your possessions identified|"
-    rb"to see your attributes|"
-    rb"an account of creatures vanquished|"
-    rb"to see your conduct|"
-    rb"to see the dungeon overview)"
-)
 
 DUNGEON_SHAPE = nethack.DUNGEON_SHAPE
 
@@ -158,7 +145,7 @@ class NLE(gym.Env):
                 self._stats_file = None
                 self._stats_logger = None
             elif savedir:
-                self.savedir = savedir
+                self.savedir = os.path.abspath(savedir)
                 os.makedirs(self.savedir)
             else:  # Empty savedir: We create our unique savedir inside nle_data/.
                 parent_dir = os.path.join(os.getcwd(), "nle_data")
@@ -470,10 +457,6 @@ class NLE(gym.Env):
     def __repr__(self):
         return "<%s>" % self.__class__.__name__
 
-    def _wait_for_space(self, observation):
-        internal = observation[self._internal_index]
-        return internal[3]  # xwaitforspace
-
     def _is_episode_end(self, observation):
         """Returns whether the episode has ended.
 
@@ -494,7 +477,7 @@ class NLE(gym.Env):
 
     def _perform_known_steps(self, observation, done, exceptions=True):
         while not done:
-            if self._wait_for_space(observation):
+            if observation[self._internal_index][3]:  # xwaitforspace
                 observation, done = self.env.step(ASCII_SPACE)
                 continue
 
@@ -510,15 +493,9 @@ class NLE(gym.Env):
                 continue
 
             if in_yn_function:  # Game asking for a single character.
-                # This causes an annoying unnecessary copy...
-                msg = bytes(observation[self._message_index])
-                if re.match(FINAL_QUESTIONS, msg):
-                    # Auto-yes to the final questions.
-                    # Note: The disclose option should make this obsolete.
-                    observation, done = self.env.step(ASCII_y)
-                    continue
-
+                # Note: No auto-yes to final questions thanks to the disclose option.
                 if exceptions:
+                    msg = memoryview(observation[self._message_index])
                     # Allow agent to select stuff to eat, attack, and to
                     # select directions.
                     if b"eat" in msg or b"attack" in msg or b"direction?" in msg:

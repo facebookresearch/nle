@@ -4,7 +4,6 @@
 import argparse
 import ast
 import contextlib
-import pprint
 import random
 import os
 import termios
