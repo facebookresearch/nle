@@ -1,21 +1,3 @@
-# TODO: This creates lots of files in ${NLE_DAT}, i.e. in the source dir. We
-# should create files in the binary dir only. NetHack's utils require their
-# arguments to be in the same local directory, so this requires copying files
-# from ${NLE_DAT} to ${NLE_DAT_GEN}
-
-set(VARDATND) # NOTE: this is empty for us
-
-set(VARDATD
-    bogusmon
-    data
-    engrave
-    epitaph
-    oracles
-    options
-    quest.dat
-    rumors)
-set(VARDAT ${VARDATD} ${VARDATND})
-
 set(DATHELP
     help
     hh
@@ -53,7 +35,38 @@ set(QUEST_LEVELS
     Valkyrie.des
     Wizard.des)
 
-set(DATNODLB ${VARDATND} license symbols)
+set(DATDLB
+    ${DATHELP}
+    dungeon
+    tribute
+    bogusmon
+    data
+    engrave
+    epitaph
+    oracles
+    options
+    quest.dat
+    rumors)
+
+file(MAKE_DIRECTORY ${NLE_DAT_GEN})
+
+foreach(
+  filename
+  ${DATHELP}
+  ${SPECIAL_LEVELS}
+  ${QUEST_LEVELS}
+  bogusmon.txt
+  data.base
+  dungeon.def
+  engrave.txt
+  epitaph.txt
+  oracles.txt
+  quest.txt
+  rumors.fal
+  rumors.tru
+  tribute)
+  configure_file(${NLE_DAT}/${filename} ${filename} COPYONLY)
+endforeach(filename)
 
 # TODO(NN): try to glob .lev automatically
 #
@@ -186,12 +199,7 @@ set(LEVS_GEN
     wizard2.lev
     wizard3.lev)
 
-# NOTE: *.lev files will be added later
-set(DATDLB ${DATHELP} dungeon tribute ${VARDATD})
-
-set(DAT ${DATNODLB} ${DATDLB})
-
-# NOTE: This is missing *.lev, which gets added later in the install decl
+# NOTE: This is missing *.lev, which needs the special lev_comp below.
 set(NLE_DAT_OUTPUT
     bogusmon
     epitaph
@@ -205,104 +213,65 @@ set(NLE_DAT_OUTPUT
     dungeon.pdf
     nhdat)
 
-set(ALL_DAT_NOTGEN
-    license
-    symbols
-    help
-    hh
-    cmdhelp
-    history
-    opthelp
-    wizhelp)
-
-set(PLAIN_LEVS_GEN ${LEVS_GEN})
-
-# We transform these as we use them later.
-list(TRANSFORM DAT PREPEND ${NLE_DAT}/)
-list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT}/)
-
-set(NLE_DAT_GEN_OUTPUT ${NLE_DAT_OUTPUT} perm record logfile xlogfile sysconf)
-list(TRANSFORM NLE_DAT_GEN_OUTPUT PREPEND ${NLE_DAT_GEN}/)
+add_custom_command(
+  DEPENDS makedefs bogusmon.txt engrave.txt epitaph.txt
+  OUTPUT bogusmon epitaph engrave
+  COMMAND $<TARGET_FILE:makedefs> ARGS -s)
 
 add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/bogusmon.txt ${NLE_DAT}/engrave.txt
-          ${NLE_DAT}/epitaph.txt
-  OUTPUT ${NLE_DAT}/bogusmon ${NLE_DAT}/epitaph ${NLE_DAT}/engrave
-  COMMAND $<TARGET_FILE:makedefs> -s
-  # HACK see ../util/CMakeLists.txt
-  WORKING_DIRECTORY ${NLE_DAT})
+  DEPENDS makedefs data.base
+  OUTPUT data
+  COMMAND $<TARGET_FILE:makedefs> ARGS -d)
 
 add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/data.base
-  OUTPUT ${NLE_DAT}/data
-  COMMAND $<TARGET_FILE:makedefs> -d
-  WORKING_DIRECTORY ${NLE_DAT})
+  DEPENDS makedefs rumors.tru rumors.fal
+  OUTPUT rumors
+  COMMAND $<TARGET_FILE:makedefs> ARGS -r)
 
 add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/rumors.tru ${NLE_DAT}/rumors.fal
-  OUTPUT ${NLE_DAT}/rumors
-  COMMAND $<TARGET_FILE:makedefs> -r
-  WORKING_DIRECTORY ${NLE_DAT})
+  DEPENDS makedefs quest.txt
+  OUTPUT quest.dat
+  COMMAND $<TARGET_FILE:makedefs> ARGS -q)
 
 add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/quest.txt
-  OUTPUT ${NLE_DAT}/quest.dat
-  COMMAND $<TARGET_FILE:makedefs> -q
-  WORKING_DIRECTORY ${NLE_DAT})
+  DEPENDS makedefs oracles.txt
+  OUTPUT oracles
+  COMMAND $<TARGET_FILE:makedefs> ARGS -h)
 
-add_custom_command(
-  DEPENDS makedefs ${NLE_DAT}/oracles.txt
-  OUTPUT ${NLE_DAT}/oracles
-  COMMAND $<TARGET_FILE:makedefs> -h
-  WORKING_DIRECTORY ${NLE_DAT})
-
-# HACK: depends on date.h to avoid race wrt. the rm command
+# Hack: Depend on date.h to avoid race.
 add_custom_command(
   DEPENDS makedefs ${NLE_INC_GEN}/date.h
-  OUTPUT ${NLE_DAT}/options
-  COMMAND $<TARGET_FILE:makedefs> -v
-  COMMAND rm ${NLE_INC}/date.h
-  WORKING_DIRECTORY ${NLE_DAT})
+  OUTPUT options
+  COMMAND $<TARGET_FILE:makedefs> ARGS -v)
 
-# HACK: depends on bogusmon to avoid race wrt. makedef's grep.tmp file.
+# Hack: Depend on bogusmon to avoid race wrt. makedef's grep.tmp file.
 add_custom_command(
-  DEPENDS makedefs dgn_comp ${NLE_DAT}/dungeon.def ${NLE_DAT}/bogusmon
-  OUTPUT ${NLE_DAT}/dungeon ${NLE_DAT}/dungeon.pdf
-  COMMAND $<TARGET_FILE:makedefs> -e
-  COMMAND $<TARGET_FILE:dgn_comp> dungeon.pdf
-  WORKING_DIRECTORY ${NLE_DAT})
+  DEPENDS makedefs dgn_comp dungeon.def bogusmon
+  OUTPUT dungeon dungeon.pdf
+  COMMAND $<TARGET_FILE:makedefs> ARGS -e
+  COMMAND $<TARGET_FILE:dgn_comp> ARGS dungeon.pdf)
 
 add_custom_command(
   DEPENDS lev_comp
   OUTPUT ${LEVS_GEN}
   COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
-  COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS}
-  WORKING_DIRECTORY ${NLE_DAT})
+  COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS})
 
 add_custom_command(
   OUTPUT perm record logfile xlogfile sysconf
   COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile sysconf)
 
-# NOTE: originally this only depended on options, however that's not quite
-# right, as dlb needs to tar generated levels.
-#
-# We also assume that dat/options contains librarian (since we build with -DDLB)
 add_custom_command(
-  # originally this (technically) only depended on options
-  DEPENDS dlb options ${DATDLB} ${LEVS_GEN}
-  OUTPUT ${NLE_DAT}/nhdat
-  COMMAND LC_ALL=C $<TARGET_FILE:dlb> cf nhdat ${DATDLB} ${PLAIN_LEVS_GEN}
-  WORKING_DIRECTORY ${NLE_DAT})
+  DEPENDS dlb ${DATDLB} ${LEVS_GEN}
+  OUTPUT nhdat
+  COMMAND LC_ALL=C $<TARGET_FILE:dlb> ARGS cf nhdat ${DATDLB} ${LEVS_GEN})
 
-set(NLE_DAT_OUTPUT_MOVED ${NLE_DAT_OUTPUT})
-list(TRANSFORM NLE_DAT_OUTPUT_MOVED PREPEND ${NLE_DAT_GEN}/)
-add_custom_command(
-  DEPENDS ${NLE_DAT}/nhdat
-  OUTPUT ${NLE_DAT_OUTPUT_MOVED}
-  COMMAND mv ${NLE_DAT_OUTPUT} ${NLE_DAT_GEN}
-  WORKING_DIRECTORY ${NLE_DAT})
+set(ALL_DAT_GEN nhdat perm record logfile xlogfile sysconf)
+list(TRANSFORM ALL_DAT_GEN PREPEND ${NLE_DAT_GEN}/)
 
-add_custom_target(dat ALL DEPENDS ${NLE_DAT_GEN_OUTPUT} ${ALL_DAT_NOTGEN})
+set(ALL_DAT_NOTGEN license symbols)
 
-install(FILES ${NLE_DAT_GEN_OUTPUT} DESTINATION ${INSTDIR})
+add_custom_target(dat ALL DEPENDS ${ALL_DAT_GEN} ${ALL_DAT_NOTGEN})
+
+install(FILES ${ALL_DAT_GEN} DESTINATION ${INSTDIR})
 install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR})
