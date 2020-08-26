@@ -284,14 +284,14 @@ add_custom_command(
   DEPENDS lev_comp
   OUTPUT spec_levs
   COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch spec_levs
+  COMMAND ${CMAKE_COMMAND} -E touch ${NLE_DAT_GEN}/spec_levs
   WORKING_DIRECTORY ${NLE_DAT})
 
 add_custom_command(
   DEPENDS lev_comp
   OUTPUT quest_levs
   COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch quest_levs
+  COMMAND ${CMAKE_COMMAND} -E touch ${NLE_DAT_GEN}/quest_levs
   WORKING_DIRECTORY ${NLE_DAT})
 
 add_custom_command(
