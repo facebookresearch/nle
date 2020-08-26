@@ -70,6 +70,7 @@ class Nethack:
         ttyrec="nle.ttyrec",
         options=None,
         copy=False,
+        wizard=False,
     ):
         self._copy = copy
 
@@ -80,10 +81,13 @@ class Nethack:
 
         # Create a HACKDIR for us.
         self._vardir = tempfile.mkdtemp(prefix="nle")
-        os.symlink(os.path.join(HACKDIR, "nhdat"), os.path.join(self._vardir, "nhdat"))
-        # touch a few files.
-        for filename in ["sysconf", "perm", "logfile", "xlogfile"]:
-            os.close(os.open(os.path.join(self._vardir, filename), os.O_CREAT))
+
+        # Symlink a few files.
+        for fn in ["nhdat", "sysconf"]:
+            os.symlink(os.path.join(HACKDIR, fn), os.path.join(self._vardir, fn))
+        # Touch a few files.
+        for fn in ["perm", "logfile", "xlogfile"]:
+            os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
         os.mkdir(os.path.join(self._vardir, "save"))
 
         # Hacky AF: Copy our so into this directory to load several copies ...
@@ -93,6 +97,8 @@ class Nethack:
         if options is None:
             options = NETHACKOPTIONS
         self._options = list(options) + ["name:" + playername]
+        if wizard:
+            self._options.append("playmode:debug")
 
         _set_env_vars(self._options, self._vardir)
         self._ttyrec = ttyrec

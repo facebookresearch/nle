@@ -259,7 +259,8 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT perm record logfile xlogfile sysconf
-  COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile sysconf)
+  COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile
+  COMMAND ${CMAKE_COMMAND} -E echo "WIZARDS=*" > sysconf)
 
 add_custom_command(
   DEPENDS dlb ${DATDLB} ${LEVS_GEN}
@@ -275,3 +276,4 @@ add_custom_target(dat ALL DEPENDS ${ALL_DAT_GEN} ${ALL_DAT_NOTGEN})
 
 install(FILES ${ALL_DAT_GEN} DESTINATION ${INSTDIR})
 install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR})
+install(DIRECTORY DESTINATION ${INSTDIR}/save)
