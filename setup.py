@@ -10,6 +10,9 @@
 #  NLE_BUILD_RELEASE
 #    If set, builds wheel (s)dist such as to prepare it for upload to PyPI.
 #
+#  HACKDIR
+#    If set, install NetHack's data files in this directory.
+#
 import os
 import pathlib
 import subprocess
@@ -21,10 +24,6 @@ from distutils import spawn
 
 
 class CMakeBuild(build_ext.build_ext):
-    def run(self):
-        for ext in self.extensions:
-            self.build_extension(ext)
-
     def build_extension(self, ext):
         source_path = pathlib.Path(__file__).parent.resolve()
         output_path = (
@@ -141,7 +140,7 @@ if __name__ == "__main__":
         license="NetHack General Public License",
         entry_points=entry_points,
         packages=packages,
-        ext_modules=[setuptools.Extension("nlehack", sources=[])],
+        ext_modules=[setuptools.Extension("nle", sources=[])],
         cmdclass={"build_ext": CMakeBuild},
         setup_requires=["pybind11>=2.2"],
         install_requires=["pybind11>=2.2", "numpy>=1.16", "gym>=0.15"],
