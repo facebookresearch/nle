@@ -219,17 +219,9 @@ set(PLAIN_LEVS_GEN ${LEVS_GEN})
 
 # We transform these as we use them later.
 list(TRANSFORM DAT PREPEND ${NLE_DAT}/)
-list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT_GEN}/)
+list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT}/)
 
-set(NLE_DAT_GEN_OUTPUT
-    ${NLE_DAT_OUTPUT}
-    spec_levs
-    quest_levs
-    perm
-    record
-    logfile
-    xlogfile
-    sysconf)
+set(NLE_DAT_GEN_OUTPUT ${NLE_DAT_OUTPUT} perm record logfile xlogfile sysconf)
 list(TRANSFORM NLE_DAT_GEN_OUTPUT PREPEND ${NLE_DAT_GEN}/)
 
 add_custom_command(
@@ -282,16 +274,9 @@ add_custom_command(
 
 add_custom_command(
   DEPENDS lev_comp
-  OUTPUT spec_levs
+  OUTPUT ${LEVS_GEN}
   COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch ${NLE_DAT_GEN}/spec_levs
-  WORKING_DIRECTORY ${NLE_DAT})
-
-add_custom_command(
-  DEPENDS lev_comp
-  OUTPUT quest_levs
   COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch ${NLE_DAT_GEN}/quest_levs
   WORKING_DIRECTORY ${NLE_DAT})
 
 add_custom_command(
@@ -304,7 +289,7 @@ add_custom_command(
 # We also assume that dat/options contains librarian (since we build with -DDLB)
 add_custom_command(
   # originally this (technically) only depended on options
-  DEPENDS dlb options ${DATDLB}
+  DEPENDS dlb options ${DATDLB} ${LEVS_GEN}
   OUTPUT ${NLE_DAT}/nhdat
   COMMAND LC_ALL=C $<TARGET_FILE:dlb> cf nhdat ${DATDLB} ${PLAIN_LEVS_GEN}
   WORKING_DIRECTORY ${NLE_DAT})
