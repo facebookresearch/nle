@@ -1,4 +1,10 @@
+# TODO: This creates lots of files in ${NLE_DAT}, i.e. in the source dir. We
+# should create files in the binary dir only. NetHack's utils require their
+# arguments to be in the same local directory, so this requires copying files
+# from ${NLE_DAT} to ${NLE_DAT_GEN}
+
 set(VARDATND) # NOTE: this is empty for us
+
 set(VARDATD
     bogusmon
     data
@@ -209,9 +215,9 @@ set(ALL_DAT_NOTGEN
     opthelp
     wizhelp)
 
-# We transform these as we use them later
-list(TRANSFORM QUEST_LEVELS PREPEND ${NLE_DAT}/)
-list(TRANSFORM SPECIAL_LEVELS PREPEND ${NLE_DAT}/)
+set(PLAIN_LEVS_GEN ${LEVS_GEN})
+
+# We transform these as we use them later.
 list(TRANSFORM DAT PREPEND ${NLE_DAT}/)
 list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT_GEN}/)
 
@@ -278,13 +284,15 @@ add_custom_command(
   DEPENDS lev_comp
   OUTPUT spec_levs
   COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch spec_levs)
+  COMMAND ${CMAKE_COMMAND} -E touch spec_levs
+  WORKING_DIRECTORY ${NLE_DAT})
 
 add_custom_command(
   DEPENDS lev_comp
   OUTPUT quest_levs
   COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS}
-  COMMAND ${CMAKE_COMMAND} -E touch quest_levs)
+  COMMAND ${CMAKE_COMMAND} -E touch quest_levs
+  WORKING_DIRECTORY ${NLE_DAT})
 
 add_custom_command(
   OUTPUT perm record logfile xlogfile sysconf
@@ -298,7 +306,7 @@ add_custom_command(
   # originally this (technically) only depended on options
   DEPENDS dlb options ${DATDLB}
   OUTPUT ${NLE_DAT}/nhdat
-  COMMAND LC_ALL=C $<TARGET_FILE:dlb> cf nhdat ${DATDLB}
+  COMMAND LC_ALL=C $<TARGET_FILE:dlb> cf nhdat ${DATDLB} ${PLAIN_LEVS_GEN}
   WORKING_DIRECTORY ${NLE_DAT})
 
 set(NLE_DAT_OUTPUT_MOVED ${NLE_DAT_OUTPUT})
