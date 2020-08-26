@@ -1,3 +1,6 @@
+find_program(FLEX_EXECUTABLE NAMES flex flex.exe)
+find_program(BISON_EXECUTABLE NAMES bison bison.exe)
+
 set(MAKEDEFS_SRC makedefs.c ${NLE_SRC}/monst.c ${NLE_SRC}/objects.c)
 
 set(DGN_COMP_SRC dgn_main.c panic.c ${NLE_SRC}/alloc.c
@@ -20,7 +23,6 @@ set(MAKEDEFS_HEADERS ${NLE_INC_GEN}/date.h ${NLE_INC_GEN}/onames.h
 set(DLB_SRC dlb_main.c ${NLE_SRC}/dlb.c panic.c ${NLE_SRC}/alloc.c)
 
 file(MAKE_DIRECTORY ${NLE_INC_GEN})
-file(MAKE_DIRECTORY ${NLE_DAT_GEN})
 
 add_executable(makedefs ${MAKEDEFS_SRC})
 target_include_directories(makedefs PRIVATE ${NLE_INC} ${NLE_INC_GEN}
@@ -41,25 +43,17 @@ target_include_directories(recover PRIVATE ${NLE_INC} ${NLE_INC_GEN}
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/date.h
-  COMMAND $<TARGET_FILE:makedefs> -v
-  # HACK: due to makedefs being stubborn about in-source build
-  COMMAND mv ${NLE_INC}/date.h ${NLE_INC_GEN}/date.h
-  COMMAND rm ${NLE_DAT}/options # Since we don't need this here yet
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/util)
+  COMMAND $<TARGET_FILE:makedefs> ARGS -v)
 
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/onames.h
-  COMMAND $<TARGET_FILE:makedefs> -o
-  COMMAND mv ${NLE_INC}/onames.h ${NLE_INC_GEN}/onames.h
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/util)
+  COMMAND $<TARGET_FILE:makedefs> ARGS -o)
 
 add_custom_command(
   DEPENDS makedefs
   OUTPUT ${NLE_INC_GEN}/pm.h
-  COMMAND $<TARGET_FILE:makedefs> -p
-  COMMAND mv ${NLE_INC}/pm.h ${NLE_INC_GEN}/pm.h
-  WORKING_DIRECTORY ${nle_SOURCE_DIR}/util)
+  COMMAND $<TARGET_FILE:makedefs> ARGS -p)
 
 add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/dgn_parser.c ${NLE_UTIL_GEN}/dgn_comp.h
@@ -69,18 +63,20 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/dgn_scanner.c
-  COMMAND flex -o${NLE_UTIL_GEN}/dgn_scanner.c ${NLE_UTIL}/dgn_comp.l
+  COMMAND ${FLEX_EXECUTABLE} ARGS -o${NLE_UTIL_GEN}/dgn_scanner.c
+          ${NLE_UTIL}/dgn_comp.l
   DEPENDS ${NLE_UTIL}/dgn_comp.l)
 
 add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/lev_parser.c ${NLE_UTIL_GEN}/lev_comp.h
-  COMMAND bison -y --defines=${NLE_UTIL_GEN}/lev_comp.h -o
+  COMMAND ${BISON_EXECUTABLE} ARGS -y --defines=${NLE_UTIL_GEN}/lev_comp.h -o
           ${NLE_UTIL_GEN}/lev_parser.c ${NLE_UTIL}/lev_comp.y
   DEPENDS ${NLE_UTIL}/lev_comp.y)
 
 add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/lev_scanner.c
-  COMMAND flex -o${NLE_UTIL_GEN}/lev_scanner.c ${NLE_UTIL}/lev_comp.l
+  COMMAND ${FLEX_EXECUTABLE} ARGS -o${NLE_UTIL_GEN}/lev_scanner.c
+          ${NLE_UTIL}/lev_comp.l
   DEPENDS ${NLE_UTIL}/lev_comp.l)
 
 add_custom_target(util DEPENDS ${MAKEDEFS_HEADERS} recover)
