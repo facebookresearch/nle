@@ -363,11 +363,21 @@ class NLE(gym.Env):
 
         self._steps = 0
 
-        while not self._in_moveloop(self.last_observation):
+        for _ in range(1000):
             # Get past initial phase of game. This should make sure
             # all the observations are present.
+            if self._in_moveloop(self.last_observation):
+                break
+            # This fails if the agent picks up a scroll of scare
+            # monster at the 0th turn and gets asked to name it.
+            # Hence the defensive iteration above.
             self.last_observation, done = self.env.step(ASCII_SPACE)
             assert not done, "Game ended unexpectedly"
+        else:
+            warnings.warn(
+                "Not in moveloop after 1000 tries, aborting (ttyrec: %s)." % new_ttyrec
+            )
+            return reset()
 
         return self._get_observation(self.last_observation)
 
