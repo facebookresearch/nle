@@ -371,6 +371,7 @@ class NLE(gym.Env):
             # This fails if the agent picks up a scroll of scare
             # monster at the 0th turn and gets asked to name it.
             # Hence the defensive iteration above.
+            # TODO: Detect this 'in_getlin' situation and handle it.
             self.last_observation, done = self.env.step(ASCII_SPACE)
             assert not done, "Game ended unexpectedly"
         else:
