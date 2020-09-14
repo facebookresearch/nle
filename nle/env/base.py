@@ -377,7 +377,7 @@ class NLE(gym.Env):
             warnings.warn(
                 "Not in moveloop after 1000 tries, aborting (ttyrec: %s)." % new_ttyrec
             )
-            return reset()
+            return self.reset()
 
         return self._get_observation(self.last_observation)
 
