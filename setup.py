@@ -24,6 +24,10 @@ from distutils import spawn
 
 
 class CMakeBuild(build_ext.build_ext):
+    def run(self):
+        for ext in self.extensions:
+            self.build_extension(ext)
+
     def build_extension(self, ext):
         source_path = pathlib.Path(__file__).parent.resolve()
         output_path = (
