@@ -24,7 +24,7 @@ from distutils import spawn
 
 
 class CMakeBuild(build_ext.build_ext):
-    def run(self):
+    def run(self):  # Necessary for pip install -e.
         for ext in self.extensions:
             self.build_extension(ext)
 
