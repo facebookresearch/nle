@@ -4,7 +4,6 @@
 import argparse
 import ast
 import contextlib
-import pprint
 import random
 import os
 import termios
@@ -16,7 +15,13 @@ import gym
 
 import nle  # noqa: F401
 from nle import nethack
-from nle.nethack import print_message
+
+
+_ACTIONS = tuple(
+    [nethack.MiscAction.MORE]
+    + list(nethack.CompassDirection)
+    + list(nethack.CompassDirectionLonger)
+)
 
 
 @contextlib.contextmanager
@@ -39,7 +44,7 @@ def get_action(env, action_mode, is_raw_env):
         if not is_raw_env:
             action = env.action_space.sample()
         else:
-            action = random.choice(nle.env.base.FULL_ACTIONS)
+            action = random.choice(_ACTIONS)
     elif action_mode == "human":
         while True:
             with no_echo():
@@ -62,111 +67,91 @@ def get_action(env, action_mode, is_raw_env):
     return action
 
 
-def play(
-    env_name,
-    play_mode,
-    ngames,
-    max_steps,
-    seeds,
-    savedir,
-    archivefile,
-    no_clear,
-    no_render,
-):
-    is_raw_env = env_name == "nethack"
+def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
+    env_name = env
+    is_raw_env = env_name == "raw"
 
     if is_raw_env:
-        if archivefile is not None:
+        if savedir is not None:
             os.makedirs(savedir, exist_ok=True)
-            archivefile = os.path.join(savedir, archivefile)
-        env = nethack.NetHack(archivefile=archivefile)
+            ttyrec = os.path.join(savedir, "nle.ttyrec")
+        else:
+            ttyrec = "/dev/null"
+        env = nethack.Nethack(ttyrec=ttyrec)
     else:
-        env = gym.make(
-            env_name,
-            savedir=savedir,
-            archivefile=archivefile,
-            max_episode_steps=max_steps,
-        )
+        env = gym.make(env_name, savedir=savedir, max_episode_steps=max_steps)
         if seeds is not None:
             env.seed(seeds)
+        if not no_render:
+            print("Available actions:", env._actions)
 
     obs = env.reset()
-    last_obs = None  # needed for "nethack" env
 
     steps = 0
     episodes = 0
     reward = 0.0
     action = None
-    ch = None
+
+    mean_sps = 0
+    mean_reward = 0.0
 
     start_time = timeit.default_timer()
     while True:
         if not no_render:
-            if not no_clear:
-                os.system("cls" if os.name == "nt" else "clear")
-
             if not is_raw_env:
                 print("Previous reward:", reward)
-                print("Available actions:", env._actions)
-                print(
-                    "Previous action: {}{!r})".format(
-                        "{} --".format(chr(ch)) if ch is not None else "",
-                        env._actions[action] if action is not None else None,
-                    )
-                )
+                if action is not None:
+                    print("Previous action: %s" % repr(env._actions[action]))
                 env.render()
             else:
-                print("Available actions:", nle.env.base.FULL_ACTIONS)
-                print("Previous actions:", action)
-                print_message.print_message(obs)
+                print("Previous action:", action)
+                _, chars, _, _, blstats, message, *_ = obs
+                msg = bytes(message)
+                print(msg[: msg.index(b"\0")])
+                for line in chars:
+                    print(line.tobytes().decode("utf-8"))
+                print(blstats)
 
-        action = get_action(env, play_mode, is_raw_env)
+        action = get_action(env, mode, is_raw_env)
         if action is None:
             break
 
         if is_raw_env:
-            last_obs = obs
-            obs, done, info = env.step(action)
+            obs, done = env.step(action)
         else:
             obs, reward, done, info = env.step(action)
         steps += 1
 
-        # NOTE: NLE by default already supports this
         if is_raw_env:
-            done = done or steps >= max_steps
+            done = done or steps >= max_steps  # NLE does this by default.
+        else:
+            mean_reward += (reward - mean_reward) / steps
 
         if not done:
             continue
 
+        time_delta = timeit.default_timer() - start_time
+
         if not is_raw_env:
             print("Final reward:", reward)
             print("End status:", info["end_status"].name)
-            print("Env stats:")
-            pprint.pprint(info["stats"])
-        else:
-            if last_obs.ProgramState().Gameover():
-                # Print tombstone.
-                if last_obs.WindowsLength() < 1:
-                    return steps
-                window = last_obs.Windows(1)
+            print("Mean reward:", mean_reward)
 
-                if not no_render:
-                    for i in range(window.StringsLength()):
-                        print(window.Strings(i).decode("ascii"))
-
-        time_delta = timeit.default_timer() - start_time
-        print(
-            "Episode: {}. Steps: {}. SPS: {:f}".format(
-                episodes, steps, steps / time_delta
-            )
-        )
-        start_time = timeit.default_timer()
+        sps = steps / time_delta
+        print("Episode: %i. Steps: %i. SPS: %f" % (episodes, steps, sps))
 
         episodes += 1
+        mean_sps += (sps - mean_sps) / episodes
+
+        start_time = timeit.default_timer()
+
         steps = 0
+        mean_reward = 0.0
+
         if episodes == ngames:
             break
         env.reset()
+    print("Finished after %i episodes. Mean sps: %f" % (episodes, mean_sps))
 
 
 def main():
@@ -190,7 +175,7 @@ def main():
         "-e",
         "--env",
         type=str,
-        default="NetHackStaircase-v0",
+        default="NetHackScore-v0",
         help="Gym environment spec. Defaults to 'NetHackStaircase-v0'.",
     )
     parser.add_argument(
@@ -219,17 +204,7 @@ def main():
         help="Directory path where data will be saved. "
         "Defaults to 'nle_data/play_data'.",
     )
-    parser.add_argument(
-        "--archivefile",
-        default="args",
-        help=(
-            "Namefile of the archive. If provided with an empty string, "
-            "archives won't be saved. Defaults to 'args', which means "
-            "that the archivefile will be named after the arguments of "
-            "the script (including default values, whenever used)."
-        ),
-    )
-    parser.add_argument("--no-clear", action="store_true", help="Disables tty clears.")
+
     parser.add_argument(
         "--no-render", action="store_true", help="Disables env.render()."
     )
@@ -247,24 +222,12 @@ def main():
             # to handle both int and dicts
             flags.seeds = ast.literal_eval(flags.seeds)
 
-        if flags.archivefile == "":
-            flags.archivefile = None
-        elif flags.archivefile == "args":
-            flags.archivefile = "{}_{}_{}.zip".format(
+        if flags.savedir == "args":
+            flags.savedir = "{}_{}_{}.zip".format(
                 time.strftime("%Y%m%d-%H%M%S"), flags.mode, flags.env
             )
 
-        play(
-            flags.env,
-            flags.mode,
-            flags.ngames,
-            flags.max_steps,
-            flags.seeds,
-            flags.savedir,
-            flags.archivefile,
-            flags.no_clear,
-            flags.no_render,
-        )
+        play(**vars(flags))
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ import enum
 
 import numpy as np
 
-import nle
 from nle.env import base
 from nle import nethack
 
@@ -44,7 +43,7 @@ class NetHackScore(base.NLE):
         penalty_step: float = -0.01,
         penalty_time: float = -0.0,
         **kwargs,
-    ) -> None:
+    ):
         self.penalty_mode = penalty_mode
         self.penalty_step = penalty_step
         self.penalty_time = penalty_time
@@ -54,42 +53,39 @@ class NetHackScore(base.NLE):
         actions = kwargs.pop("actions", TASK_ACTIONS)
         super().__init__(*args, actions=actions, **kwargs)
 
-    def _get_time_penalty(self, last_response, response):
-        blstats_old = last_response.Blstats()
-        blstats_new = response.Blstats()
+    def _get_time_penalty(self, last_observation, observation):
+        blstats_old = last_observation[self._blstats_index]
+        blstats_new = observation[self._blstats_index]
 
-        if blstats_old is None or blstats_new is None:
-            return 0
+        old_time = blstats_old[20]  # moves
+        new_time = blstats_new[20]  # moves
+
+        if old_time == new_time:
+            self._frozen_steps += 1
         else:
-            old_time = blstats_old.Time()
-            new_time = blstats_new.Time()
+            self._frozen_steps = 0
 
-            if old_time == new_time:
-                self._frozen_steps += 1
-            else:
-                self._frozen_steps = 0
-
-            penalty = 0
-            if self.penalty_mode == "constant":
-                if self._frozen_steps > 0:
-                    penalty += self.penalty_step
-            elif self.penalty_mode == "exp":
-                penalty += 2 ** self._frozen_steps * self.penalty_step
-            elif self.penalty_mode == "square":
-                penalty += self._frozen_steps ** 2 * self.penalty_step
-            elif self.penalty_mode == "linear":
-                penalty += self._frozen_steps * self.penalty_step
-            elif self.penalty_mode == "always":
+        penalty = 0
+        if self.penalty_mode == "constant":
+            if self._frozen_steps > 0:
                 penalty += self.penalty_step
-            else:  # default
-                raise ValueError("Unknown penalty_mode '%s'" % self.penalty_mode)
-            penalty += (new_time - old_time) * self.penalty_time
-            return penalty
+        elif self.penalty_mode == "exp":
+            penalty += 2 ** self._frozen_steps * self.penalty_step
+        elif self.penalty_mode == "square":
+            penalty += self._frozen_steps ** 2 * self.penalty_step
+        elif self.penalty_mode == "linear":
+            penalty += self._frozen_steps * self.penalty_step
+        elif self.penalty_mode == "always":
+            penalty += self.penalty_step
+        else:  # default
+            raise ValueError("Unknown penalty_mode '%s'" % self.penalty_mode)
+        penalty += (new_time - old_time) * self.penalty_time
+        return penalty
 
-    def _reward_fn(self, last_response, response, end_status):
+    def _reward_fn(self, last_observation, observation, end_status):
         """Score delta, but with added a state loop penalty."""
-        score_diff = super()._reward_fn(last_response, response, end_status)
-        time_penalty = self._get_time_penalty(last_response, response)
+        score_diff = super()._reward_fn(last_observation, observation, end_status)
+        time_penalty = self._get_time_penalty(last_observation, observation)
         return score_diff + time_penalty
 
 
@@ -108,14 +104,15 @@ class NetHackStaircase(NetHackScore):
         DEATH = 1
         TASK_SUCCESSFUL = 2
 
-    def _is_episode_end(self, response) -> None:
-        internal = response.Internal()
-        if internal and internal.StairsDown():
+    def _is_episode_end(self, observation):
+        internal = observation[self._internal_index]
+        stairs_down = internal[4]
+        if stairs_down:
             return self.StepStatus.TASK_SUCCESSFUL
         return self.StepStatus.RUNNING
 
-    def _reward_fn(self, last_response, response, end_status):
-        time_penalty = self._get_time_penalty(last_response, response)
+    def _reward_fn(self, last_observation, observation, end_status):
+        time_penalty = self._get_time_penalty(last_observation, observation)
         if end_status == self.StepStatus.TASK_SUCCESSFUL:
             reward = 1
         else:
@@ -130,25 +127,19 @@ class NetHackStaircasePet(NetHackStaircase):
     having their pet next to it. See `NetHackStaircase` for the reward function.
     """
 
-    def _is_episode_end(self, response) -> None:
-        internal = response.Internal()
-        if internal and internal.StairsDown():
-            obs = response.Observation()
-            s = response.Blstats()
-            if obs and s:
-                glyphs = (
-                    obs.Glyphs()
-                    .DataAsNumpy()
-                    .view(np.int16)
-                    .reshape(base.DUNGEON_SHAPE)
-                )
-                x = s.CursX()
-                y = s.CursY()
-                neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
-                # TODO: vectorize
-                for glyph in neighbors:
-                    if nethack.glyph_is_pet(glyph):
-                        return self.StepStatus.TASK_SUCCESSFUL
+    def _is_episode_end(self, observation):
+        internal = observation[self._internal_index]
+        stairs_down = internal[4]
+        if stairs_down:
+            glyphs = observation[self._glyph_index]
+            blstats = observation[self._blstats_index]
+            x, y = blstats[:2]
+
+            neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
+            # TODO: vectorize
+            for glyph in neighbors:
+                if nethack.glyph_is_pet(glyph):
+                    return self.StepStatus.TASK_SUCCESSFUL
         return self.StepStatus.RUNNING
 
 
@@ -168,24 +159,14 @@ class NetHackOracle(NetHackStaircase):
                 break
         assert self.oracle_glyph is not None
 
-    def _is_episode_end(self, response) -> None:
-        internal = response.Internal()
-        if internal:
-            obs = response.Observation()
-            s = response.Blstats()
-            if obs and s:
-                glyphs = (
-                    obs.Glyphs()
-                    .DataAsNumpy()
-                    .view(np.int16)
-                    .reshape(base.DUNGEON_SHAPE)
-                )
-                x = s.CursX()
-                y = s.CursY()
-                neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
-                # TODO: vectorize
-                if self.oracle_glyph in neighbors:
-                    return self.StepStatus.TASK_SUCCESSFUL
+    def _is_episode_end(self, observation):
+        glyphs = observation[self._glyph_index]
+        blstats = observation[self._blstats_index]
+        x, y = blstats[:2]
+
+        neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2]
+        if np.any(neighbors == self.oracle_glyph):
+            return self.StepStatus.TASK_SUCCESSFUL
         return self.StepStatus.RUNNING
 
 
@@ -200,27 +181,33 @@ class NetHackGold(NetHackScore):
     """
 
     def __init__(self, *args, **kwargs):
-        options = kwargs.pop(
-            "options",
-            (
-                "windowtype:rl",
-                "color",
-                "showexp",
-                "nobones",
-                "autopickup",
-                "pickup_types:$",
-            ),
-        )
+        options = kwargs.pop("options", None)
+
+        if options is None:
+            # Copy & swap out "pickup_types".
+            options = []
+            for option in nethack.NETHACKOPTIONS:
+                if option.startswith("pickup_types"):
+                    options.append("pickup_types:$")
+                    continue
+                options.append(option)
 
         super().__init__(*args, options=options, **kwargs)
 
-    def _reward_fn(self, last_response, response, end_status):
+    def _reward_fn(self, last_observation, observation, end_status):
         """Difference between previous gold and new gold."""
         del end_status  # Unused
+        if not self.env.in_normal_game():
+            # Before game started or after it ended stats are zero.
+            return 0.0
 
-        old_gold = base._get(last_response, "Blstats.gold", 0)
-        gold = base._get(response, "Blstats.gold", old_gold)
-        time_penalty = self._get_time_penalty(last_response, response)
+        old_blstats = last_observation[self._blstats_index]
+        blstats = observation[self._blstats_index]
+
+        old_gold = old_blstats[14]
+        gold = blstats[14]
+
+        time_penalty = self._get_time_penalty(last_observation, observation)
 
         return gold - old_gold + time_penalty
 
@@ -237,16 +224,23 @@ class NetHackEat(NetHackScore):
     comestibles or monster corpses), rather than the score.
     """
 
-    def _reward_fn(self, last_response, response, end_status):
+    def _reward_fn(self, last_observation, observation, end_status):
         """Difference between previous hunger and new hunger."""
         del end_status  # Unused
 
-        old_hunger = base._get(last_response, "You.uhunger", 0)
-        hunger = base._get(response, "You.uhunger", old_hunger)
+        if not self.env.in_normal_game():
+            # Before game started or after it ended stats are zero.
+            return 0.0
+
+        old_blstats = last_observation[self._blstats_index]
+        blstats = observation[self._blstats_index]
+
+        old_hunger = old_blstats[21]
+        hunger = blstats[21]
 
         reward = max(0, hunger - old_hunger)
 
-        time_penalty = self._get_time_penalty(last_response, response)
+        time_penalty = self._get_time_penalty(last_observation, observation)
 
         return reward + time_penalty
 
@@ -262,32 +256,25 @@ class NetHackScout(NetHackScore):
         self.dungeon_explored = {}
         return super().reset(*args, **kwargs)
 
-    def _reward_fn(self, last_response, response, end_status):
+    def _reward_fn(self, last_observation, observation, end_status):
         del end_status  # Unused
 
-        reward = 0
-        internal = response.Internal()
-        if internal:
-            obs = response.Observation()
-            s = response.Blstats()
-            if obs and s:
-                glyphs = (
-                    obs.Glyphs()
-                    .DataAsNumpy()
-                    .view(np.int16)
-                    .reshape(base.DUNGEON_SHAPE)
-                )
-                dlevel = response.You().Uz(nle.fbs.DLevel.DLevel())
-                dungeon_num = dlevel.Dnum()
-                dungeon_level = dlevel.Dlevel()
+        if not self.env.in_normal_game():
+            # Before game started or after it ended stats are zero.
+            return 0.0
 
-                key = (dungeon_num, dungeon_level)
-                if glyphs is not None:
-                    explored = (glyphs != 0).sum()
-                    explored_old = 0
-                    if key in self.dungeon_explored:
-                        explored_old = self.dungeon_explored[key]
-                    reward = explored - explored_old
-                    self.dungeon_explored[key] = explored
-        time_penalty = self._get_time_penalty(last_response, response)
+        reward = 0
+        glyphs = observation[self._glyph_index]
+        blstats = observation[self._blstats_index]
+
+        dungeon_num, dungeon_level = blstats[23:25]
+
+        key = (dungeon_num, dungeon_level)
+        explored = np.sum(glyphs != 0)
+        explored_old = 0
+        if key in self.dungeon_explored:
+            explored_old = self.dungeon_explored[key]
+        reward = explored - explored_old
+        self.dungeon_explored[key] = explored
+        time_penalty = self._get_time_penalty(last_observation, observation)
         return reward + time_penalty

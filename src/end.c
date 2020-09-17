@@ -65,8 +65,8 @@ STATIC_DCL void NDECL(dump_plines);
 STATIC_DCL void FDECL(dump_everything, (int, time_t));
 STATIC_DCL int NDECL(num_extinct);
 
-#if defined(__BEOS__) || defined(MICRO) || defined(OS2)
-extern void FDECL(nethack_exit, (int));
+#if defined(__BEOS__) || defined(MICRO) || defined(OS2) || defined(RL_GRAPHICS)
+extern void FDECL(nethack_exit, (int)) NORETURN;
 #else
 #define nethack_exit exit
 #endif
@@ -137,7 +137,7 @@ int sig_unused UNUSED;
 {
 #define SIG_MSG "\nSignal received.\n"
     int f2;
-    
+
     f2 = (int) write(2, SIG_MSG, sizeof SIG_MSG - 1);
     nhUse(f2);  /* what could we do if write to fd#2 (stderr) fails  */
     NH_abort(); /* ... and we're already in the process of quitting? */

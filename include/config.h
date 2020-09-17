@@ -53,6 +53,8 @@
 /* #define MSWIN_GRAPHICS */ /* Windows NT, CE, Graphics */
 #define RL_GRAPHICS  /* Reinforcement learning 'window' port */
 
+#define NO_SIGNAL
+
 /*
  * Define the default window system.  This should be one that is compiled
  * into your system (see defines above).  Known window systems are:
@@ -115,6 +117,12 @@
 #define DEFAULT_WINDOW_SYS "mswin"
 #endif
 #define HACKDIR "\\nethack"
+#endif
+
+#ifdef RL_GRAPHICS
+#ifndef DEFAULT_WINDOW_SYS
+#define DEFAULT_WINDOW_SYS "rl"
+#endif
 #endif
 
 #ifndef DEFAULT_WINDOW_SYS
@@ -265,8 +273,8 @@
 
 #if defined(UNIX) && !defined(ZLIB_COMP) && !defined(COMPRESS)
 /* path and file name extension for compression program */
-#define COMPRESS "/usr/bin/compress" /* Lempel-Ziv compression */
-#define COMPRESS_EXTENSION ".Z"      /* compress's extension */
+/* #define COMPRESS "/usr/bin/compress" */ /* Lempel-Ziv compression */
+/* #define COMPRESS_EXTENSION ".Z" */     /* compress's extension */
 /* An example of one alternative you might want to use: */
 /* #define COMPRESS "/usr/local/bin/gzip" */ /* FSF gzip compression */
 /* #define COMPRESS_EXTENSION ".gz" */       /* normal gzip extension */
@@ -342,7 +350,7 @@
  *      died due to program or system crashes to be resumed from the point
  *      of the last level change, after running a utility program.
  */
-#define INSURANCE /* allow crashed game recovery */
+/* #define INSURANCE allow crashed game recovery */
 
 #ifndef MAC
 #define CHDIR /* delete if no chdir() available */

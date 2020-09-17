@@ -42,8 +42,7 @@ commands:
             conda deactivate
             conda create -n nle python=<< parameters.python_version >>
             conda activate nle
-            conda install -y zeromq flatbuffers cmake
-            conda install -y -c conda-forge cppzmq
+            conda install -y cmake
             python --version
             echo ". /home/circleci/miniconda/etc/profile.d/conda.sh" >> $BASH_ENV
 
@@ -55,16 +54,7 @@ commands:
           command: |
             sudo apt-get install software-properties-common
             sudo apt-get update -y
-            sudo apt-get install -y libzmq3-dev libncurses5-dev flex bison cmake
-            curl -fSL "https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz" -o flatbuffers.tar.gz \
-              && tar xzf flatbuffers.tar.gz \
-              && cd flatbuffers-* \
-              && cmake \
-                -G "Unix Makefiles" \
-                -DCMAKE_BUILD_TYPE=Release \
-              && make \
-              && sudo make install \
-              && sudo cp src/idl_parser.cpp src/idl_gen_text.cpp /usr/local/include/flatbuffers
+            sudo apt-get install -y libncurses5 libncurses5-dev flex bison cmake
 
   pip-install-nle:
     description: Installs NLE and its dependencies
@@ -73,7 +63,7 @@ commands:
           name: Install NLE & deps
           command: |
             conda activate nle
-            pip install . -vv
+            CMAKE_BUILD_PARALLEL_LEVEL=10 pip install . -vv
 
 # -------------------------------------------------------------------------------------
 # Actual jobs
@@ -121,7 +111,7 @@ jobs:
           command: |
             conda activate nle
             cd ..
-            python -m pytest project/nle/tests --basetemp=$HOME/tests_data
+            python -m pytest project/nle/tests --basetemp=$HOME/tests_data -v
       - store_artifacts:
           path: /home/circleci/tests_data
           name: nle-tests-data
@@ -182,7 +172,7 @@ jobs:
             conda activate nle
             # cd back such that we are sure we are using sdist package
             cd ..
-            python -m pytest project/nle/tests --basetemp=$HOME/tests_data_sdist
+            python -m pytest project/nle/tests --basetemp=$HOME/tests_data_sdist -v
       - store_artifacts:
           path: /home/circleci/tests_data_sdist
           name: nle-tests-data-sdist

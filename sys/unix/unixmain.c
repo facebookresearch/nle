@@ -46,7 +46,7 @@ static boolean wiz_error_flag = FALSE;
 static struct passwd *NDECL(get_unix_pw);
 
 int
-main(argc, argv)
+unixmain(argc, argv)
 int argc;
 char *argv[];
 {
@@ -94,7 +94,7 @@ char *argv[];
 
     hname = argv[0];
     hackpid = getpid();
-    (void) umask(0777 & ~FCMASK);
+    /* (void) umask(0777 & ~FCMASK); */
 
     choose_windows(DEFAULT_WINDOW_SYS);
 
@@ -253,8 +253,11 @@ char *argv[];
         locknum = 0;
     } else {
         /* suppress interrupts while processing lock file */
+#ifndef NO_SIGNAL
+        /* NLE: Disable signal suppression. */
         (void) signal(SIGQUIT, SIG_IGN);
         (void) signal(SIGINT, SIG_IGN);
+#endif
     }
 
     dlb_init(); /* must be before newgame() */

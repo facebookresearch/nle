@@ -143,7 +143,7 @@ E void FDECL(Lift_covet_and_placebc, (int, const char *, int));
 #define unplacebc_and_covet_placebc() \
             Unplacebc_and_covet_placebc(__FUNCTION__, __LINE__)
 #define lift_covet_and_placebc(x) \
-            Lift_covet_and_placebc(x, __FUNCTION__, __LINE__) 
+            Lift_covet_and_placebc(x, __FUNCTION__, __LINE__)
 #endif
 E void FDECL(set_bc, (int));
 E void FDECL(move_bc, (int, int, XCHAR_P, XCHAR_P, XCHAR_P, XCHAR_P));
@@ -2602,6 +2602,10 @@ E void FDECL(settty, (const char *));
 E void NDECL(setftty);
 E void NDECL(intron);
 E void NDECL(introff);
+/* GCC's libc has error() */
+#ifdef error
+#undef error
+#endif
 E void VDECL(error, (const char *, ...)) PRINTF_F(1, 2);
 #endif /* UNIX || __BEOS__ */
 

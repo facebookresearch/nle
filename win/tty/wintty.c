@@ -1256,7 +1256,7 @@ tty_askname()
         tty_curs(BASE_WINDOW, (int) (sizeof who_are_you),
                  wins[BASE_WINDOW]->cury - 1);
         ct = 0;
-        while ((c = tty_nhgetch()) != '\n') {
+        while ((c = nhgetch()) != '\n') {
             if (c == EOF)
                 c = '\033';
             if (c == '\r')
@@ -4143,7 +4143,7 @@ status_sanity_check(VOID_ARGS)
         "BL_TIME", "BL_HUNGER", "BL_HP", "BL_HPMAX",           /* 16.. 19 */
         "BL_LEVELDESC", "BL_EXP", "BL_CONDITION"              /* 20.. 22 */
     };
-   
+
     if (in_sanity_check)
         return;
     in_sanity_check = TRUE;

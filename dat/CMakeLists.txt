@@ -259,7 +259,8 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT perm record logfile xlogfile sysconf
-  COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile sysconf)
+  COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile
+  COMMAND ${CMAKE_COMMAND} -E echo "WIZARDS=*" > sysconf)
 
 add_custom_command(
   DEPENDS dlb ${DATDLB} ${LEVS_GEN}
@@ -275,9 +276,4 @@ add_custom_target(dat ALL DEPENDS ${ALL_DAT_GEN} ${ALL_DAT_NOTGEN})
 
 install(FILES ${ALL_DAT_GEN} DESTINATION ${INSTDIR})
 install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR})
-
-# NOTE: NetHack normally also generates a shell script at ~bin/nethack, however
-# we likely do not need this, as most users currently have straightforward
-# systems settings. It would be awesome though if someone were to run NLE on
-# some old systems with weird pagers and stuff, at some point, eventually...
-# after we solve AI :)
+install(DIRECTORY DESTINATION ${INSTDIR}/save)

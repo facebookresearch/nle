@@ -52,7 +52,6 @@
         boolean         fuzzymatch      (const char *, const char *,
                                          const char *, boolean)
         void            setrandom       (void)
-        void            init_random     (fn)
         void            reseed_random   (fn)
         time_t          getnow          (void)
         int             getyear         (void)
@@ -852,25 +851,31 @@ extern struct tm *FDECL(localtime, (time_t *));
 #endif
 STATIC_DCL struct tm *NDECL(getlt);
 
+/* NLE hack for seeds. Should stay in sync with rnglist in src/rnd.c. */
+unsigned long nle_seeds[] = {0L, 0L};
+extern int FDECL(whichrng, (int FDECL((*fn), (int))));
+
 /* Sets the seed for the random number generator */
 #ifdef USE_ISAAC64
 
-static void
+void
 set_random(seed, fn)
 unsigned long seed;
 int FDECL((*fn), (int));
 {
+    nle_seeds[whichrng(fn)] = seed;
     init_isaac64(seed, fn);
 }
 
 #else /* USE_ISAAC64 */
 
 /*ARGSUSED*/
-static void
+void
 set_random(seed, fn)
 unsigned long seed;
 int FDECL((*fn), (int)) UNUSED;
 {
+    nle_seeds[whichrng(fn)] = seed;
     /* the types are different enough here that sweeping the different
      * routine names into one via #defines is even more confusing
      */
@@ -895,50 +900,7 @@ int FDECL((*fn), (int)) UNUSED;
 
 #endif /* USE_ISAAC64 */
 
-/* An appropriate version of this must always be provided in
-   port-specific code somewhere. It returns a number suitable
-   as seed for the random number generator */
-extern unsigned long NDECL(sys_random_seed);
-
-// NLE hack for seeds. Should stay in sync with rnglist in src/rnd.c.
-unsigned long nle_seeds[] = {0L, 0L};
-enum { CORE = 0, DISP = 1 };
-extern int FDECL(whichrng, (int FDECL((*fn), (int))));
-
-/*
- * Initializes the random number generator.
- * Only call once.
- */
-void
-init_random(fn)
-int FDECL((*fn), (int));
-{
-    // NLE hack for seeds added.
-    unsigned long seed;
-    char* env = NULL;
-
-    int rngindx = whichrng(fn);
-
-    switch(rngindx) {
-    case CORE:
-        env = nh_getenv("NLE_SEED_CORE");
-        break;
-    case DISP:
-        env = nh_getenv("NLE_SEED_DISP");
-        break;
-    default:
-        panic("NLE doesn't know this RNG function");
-    }
-
-    if (env != NULL)
-      /* Overwrite nethack's seed with the supplied value. */
-      seed = strtoul(env, (char **) 0, 0);
-    else
-      seed = sys_random_seed();
-
-    set_random(seed, fn);
-    nle_seeds[rngindx] = seed;
-}
+/* init_random moved to nle.c. */
 
 /* Reshuffles the random number generator. */
 void
@@ -947,10 +909,8 @@ int FDECL((*fn), (int));
 {
    /* only reseed if we are certain that the seed generation is unguessable
     * by the players. */
-
-   /* Commented out for NLE -- we want to be able to recreate runs. */
-   /* if (has_strong_rngseed)
-          init_random(fn); */
+    if (has_strong_rngseed)
+        init_random(fn);
 }
 
 time_t
