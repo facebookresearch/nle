@@ -3,7 +3,7 @@
 #define NLEOBS_H
 
 #define NLE_BLSTATS_SIZE 25
-#define NLE_PROGRAM_STATE_SIZE 5
+#define NLE_PROGRAM_STATE_SIZE 6
 #define NLE_INTERNAL_SIZE 7
 
 typedef struct nle_observation {

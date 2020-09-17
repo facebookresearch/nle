@@ -233,7 +233,10 @@ class TestNethackSomeObs:
     def test_internal(self, game):
         program_state, _, internal = game.reset()
         while not program_state[3]:  # in_moveloop.
-            assert not game.in_normal_game()
+            # We are not in moveloop. We might still be in "normal game"
+            # if something_worth_saving is true. Example: Startup with
+            # "--More--", "Be careful!  New moon tonight."
+            assert game.in_normal_game() == program_state[5]  # something_worth_saving.
             (program_state, _, internal), done = game.step(nethack.MiscAction.MORE)
 
         assert game.in_normal_game()

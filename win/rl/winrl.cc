@@ -234,6 +234,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         obs->program_state[2] = program_state.exiting;
         obs->program_state[3] = program_state.in_moveloop;
         obs->program_state[4] = program_state.in_impossible;
+        obs->program_state[5] = program_state.something_worth_saving;
         // TODO: Consider adding something_worth_saving.
         // Also consider adding ttyDisplay->inmore ...
     }

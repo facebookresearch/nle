@@ -234,6 +234,7 @@ PYBIND11_MODULE(_pynethack, m)
 
     /* NLE specific constants. */
     mn.attr("NLE_BLSTATS_SIZE") = py::int_(NLE_BLSTATS_SIZE);
+    mn.attr("NLE_PROGRAM_STATE_SIZE") = py::int_(NLE_PROGRAM_STATE_SIZE);
     mn.attr("NLE_INTERNAL_SIZE") = py::int_(NLE_INTERNAL_SIZE);
 
     /* NetHack constants specific constants. */
