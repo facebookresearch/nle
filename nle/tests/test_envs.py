@@ -75,6 +75,7 @@ def compare_rollouts(env0, env1, max_rollout_len):
 
 
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
+@pytest.mark.parametrize("wizard", [False, True])
 class TestGymEnv:
     @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
@@ -82,18 +83,18 @@ class TestGymEnv:
         with tmpdir.as_cwd():
             yield
 
-    def test_init(self, env_name):
+    def test_init(self, env_name, wizard):
         """Tests default initialization given standard env specs."""
-        env = gym.make(env_name)
+        env = gym.make(env_name, wizard=wizard)
         del env
 
-    def test_reset(self, env_name):
+    def test_reset(self, env_name, wizard):
         """Tests default initialization given standard env specs."""
-        env = gym.make(env_name)
+        env = gym.make(env_name, wizard=wizard)
         obs = env.reset()
         assert env.observation_space.contains(obs)
 
-    def test_chars_colors_specials(self, env_name):
+    def test_chars_colors_specials(self, env_name, wizard):
         env = gym.make(
             env_name, observation_keys=("chars", "colors", "specials", "blstats")
         )
@@ -108,9 +109,19 @@ class TestGymEnv:
         # You're bright (4th bit, 8) white (7), too.
         assert obs["colors"][y, x] == 8 ^ 7
 
+    def test_default_wizard_mode(self, env_name, wizard):
+        if wizard:
+            env = gym.make(env_name, wizard=wizard)
+            assert "playmode:debug" in env.env._options
+        else:
+            # do not send a parameter to test a default
+            env = gym.make(env_name)
+            assert "playmode:debug" not in env.env._options
+
 
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
 @pytest.mark.parametrize("rollout_len", [500])
+@pytest.mark.parametrize("wizard", [False, True])
 class TestGymEnvRollout:
     @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
@@ -118,10 +129,10 @@ class TestGymEnvRollout:
         with tmpdir.as_cwd():
             yield
 
-    def test_rollout(self, env_name, rollout_len):
+    def test_rollout(self, env_name, rollout_len, wizard):
         """Tests rollout_len steps (or until termination) of random policy."""
         with tempfile.TemporaryDirectory() as savedir:
-            env = gym.make(env_name, savedir=savedir)
+            env = gym.make(env_name, savedir=savedir, wizard=wizard)
             rollout_env(env, rollout_len)
             env.close()
 
@@ -129,18 +140,18 @@ class TestGymEnvRollout:
                 os.path.join(savedir, "nle.%i.0.ttyrec" % os.getpid())
             )
 
-    def test_rollout_no_archive(self, env_name, rollout_len):
+    def test_rollout_no_archive(self, env_name, rollout_len, wizard):
         """Tests rollout_len steps (or until termination) of random policy."""
-        env = gym.make(env_name, savedir=None)
+        env = gym.make(env_name, savedir=None, wizard=wizard)
         assert env.savedir is None
         assert env._stats_file is None
         assert env._stats_logger is None
         rollout_env(env, rollout_len)
 
-    def test_seed_interface_output(self, env_name, rollout_len):
+    def test_seed_interface_output(self, env_name, rollout_len, wizard):
         """Tests whether env.seed output can be reused correctly."""
-        env0 = gym.make(env_name)
-        env1 = gym.make(env_name)
+        env0 = gym.make(env_name, wizard=wizard)
+        env1 = gym.make(env_name, wizard=wizard)
 
         seed_list0 = env0.seed()
         env0.reset()
@@ -150,10 +161,10 @@ class TestGymEnvRollout:
         seed_list1 = env1.seed(*seed_list0)
         assert seed_list0 == seed_list1
 
-    def test_seed_rollout_seeded(self, env_name, rollout_len):
+    def test_seed_rollout_seeded(self, env_name, rollout_len, wizard):
         """Tests that two seeded envs return same step data."""
-        env0 = gym.make(env_name)
-        env1 = gym.make(env_name)
+        env0 = gym.make(env_name, wizard=wizard)
+        env1 = gym.make(env_name, wizard=wizard)
 
         env0.seed(123456, 789012)
         obs0 = env0.reset()
@@ -170,10 +181,10 @@ class TestGymEnvRollout:
         np.testing.assert_equal(obs0, obs1)
         compare_rollouts(env0, env1, rollout_len)
 
-    def test_seed_rollout_seeded_int(self, env_name, rollout_len):
+    def test_seed_rollout_seeded_int(self, env_name, rollout_len, wizard):
         """Tests that two seeded envs return same step data."""
-        env0 = gym.make(env_name)
-        env1 = gym.make(env_name)
+        env0 = gym.make(env_name, wizard=wizard)
+        env1 = gym.make(env_name, wizard=wizard)
 
         initial_seeds = (
             random.randrange(sys.maxsize),
@@ -193,8 +204,8 @@ class TestGymEnvRollout:
         np.testing.assert_equal(obs0, obs1)
         compare_rollouts(env0, env1, rollout_len)
 
-    def test_render_ansi(self, env_name, rollout_len):
-        env = gym.make(env_name)
+    def test_render_ansi(self, env_name, rollout_len, wizard):
+        env = gym.make(env_name, wizard=wizard)
         env.reset()
         for _ in range(rollout_len):
             action = env.action_space.sample()
