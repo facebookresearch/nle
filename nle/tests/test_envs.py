@@ -75,6 +75,7 @@ def compare_rollouts(env0, env1, max_rollout_len):
 
 
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
+@pytest.mark.parametrize("wizard", [False, True])
 class TestGymEnv:
     @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
@@ -82,18 +83,18 @@ class TestGymEnv:
         with tmpdir.as_cwd():
             yield
 
-    def test_init(self, env_name):
+    def test_init(self, env_name, wizard):
         """Tests default initialization given standard env specs."""
-        env = gym.make(env_name)
+        env = gym.make(env_name, wizard=wizard)
         del env
 
-    def test_reset(self, env_name):
+    def test_reset(self, env_name, wizard):
         """Tests default initialization given standard env specs."""
-        env = gym.make(env_name)
+        env = gym.make(env_name, wizard=wizard)
         obs = env.reset()
         assert env.observation_space.contains(obs)
 
-    def test_chars_colors_specials(self, env_name):
+    def test_chars_colors_specials(self, env_name, wizard):
         env = gym.make(
             env_name, observation_keys=("chars", "colors", "specials", "blstats")
         )
@@ -107,6 +108,15 @@ class TestGymEnv:
 
         # You're bright (4th bit, 8) white (7), too.
         assert obs["colors"][y, x] == 8 ^ 7
+
+    def test_default_wizard_mode(self, env_name, wizard):
+        if wizard:
+            env = gym.make(env_name, wizard=wizard)
+            assert "playmode:debug" in env.env._options
+        else:
+            # do not send a parameter to test a default
+            env = gym.make(env_name)
+            assert "playmode:debug" not in env.env._options
 
 
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())

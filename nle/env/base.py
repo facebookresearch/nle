@@ -109,6 +109,7 @@ class NLE(gym.Env):
         ),
         actions=None,
         options=None,
+        wizard=False,
     ):
         """Constructs a new NLE environment.
 
@@ -204,6 +205,7 @@ class NLE(gym.Env):
             options=options,
             playername="Agent-" + self.character,
             ttyrec=ttyrec,
+            wizard=wizard,
         )
         self._close_env = weakref.finalize(self, lambda e: e.close(), self.env)
 
