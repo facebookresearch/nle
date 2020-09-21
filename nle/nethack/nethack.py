@@ -17,6 +17,7 @@ BLSTATS_SHAPE = (_pynethack.nethack.NLE_BLSTATS_SIZE,)
 MESSAGE_SHAPE = (256,)
 PROGRAM_STATE_SHAPE = (_pynethack.nethack.NLE_PROGRAM_STATE_SIZE,)
 INTERNAL_SHAPE = (_pynethack.nethack.NLE_INTERNAL_SIZE,)
+INV_GLYPHS_SHAPE = (_pynethack.nethack.NLE_INVENTORY_SIZE,)
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
@@ -27,6 +28,7 @@ OBSERVATION_DESC = {
     "message": dict(shape=MESSAGE_SHAPE, dtype=np.uint8),
     "program_state": dict(shape=PROGRAM_STATE_SHAPE, dtype=np.int32),
     "internal": dict(shape=INTERNAL_SHAPE, dtype=np.int32),
+    "inv_glyphs": dict(shape=INV_GLYPHS_SHAPE, dtype=np.int16),
 }
 
 
