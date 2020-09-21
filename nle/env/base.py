@@ -253,6 +253,10 @@ class NLE(gym.Env):
             for key, i in zip(self._original_observation_keys, self._original_indices)
         }
 
+    def _print_action_meanings(self):
+        for a_idx, a in enumerate(self._actions):
+            print(a_idx, a)
+
     def step(self, action: int):
         """Steps the environment.
 
