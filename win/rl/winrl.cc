@@ -367,6 +367,27 @@ NetHackRL::fill_obs(nle_obs *obs)
             obs->inv_glyphs[i] = NO_GLYPH;
         }
     }
+    if (obs->inv_letters) {
+        /* This iterates over the invent linked list once per inv observation
+         instead of only once. Could instead also check all the observations
+         and only copy if they all exist.*/
+        int i = 0;
+        for (const struct obj *otmp = invent; otmp; otmp = otmp->nobj) {
+            obs->inv_letters[i++] = otmp->invlet;
+        }
+        for (; i < NLE_INVENTORY_SIZE; ++i) {
+            obs->inv_letters[i] = 0;
+        }
+    }
+    if (obs->inv_oclasses) {
+        int i = 0;
+        for (const struct obj *otmp = invent; otmp; otmp = otmp->nobj) {
+            obs->inv_oclasses[i++] = otmp->oclass;
+        }
+        for (; i < NLE_INVENTORY_SIZE; ++i) {
+            obs->inv_oclasses[i] = MAXOCLASSES;
+        }
+    }
 }
 
 int

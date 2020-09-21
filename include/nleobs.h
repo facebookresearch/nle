@@ -10,16 +10,18 @@
 typedef struct nle_observation {
     int action;
     int done;
-    char in_normal_game;     /* Bool indicating if other obs are set. */
-    short *glyphs;           /* Size ROWNO * (COLNO - 1) */
-    unsigned char *chars;    /* Size ROWNO * (COLNO - 1) */
-    unsigned char *colors;   /* Size ROWNO * (COLNO - 1) */
-    unsigned char *specials; /* Size ROWNO * (COLNO - 1) */
-    unsigned char *message;  /* Size 256 */
-    long *blstats;           /* NLE_BLSTATS_SIZE */
-    int *program_state;      /* NLE_PROGRAM_STATE_SIZE */
-    int *internal;           /* NLE_INTERNAL_SIZE */
-    short *inv_glyphs;       /* NLE_INVENTORY_SIZE */
+    char in_normal_game;         /* Bool indicating if other obs are set. */
+    short *glyphs;               /* Size ROWNO * (COLNO - 1) */
+    unsigned char *chars;        /* Size ROWNO * (COLNO - 1) */
+    unsigned char *colors;       /* Size ROWNO * (COLNO - 1) */
+    unsigned char *specials;     /* Size ROWNO * (COLNO - 1) */
+    unsigned char *message;      /* Size 256 */
+    long *blstats;               /* NLE_BLSTATS_SIZE */
+    int *program_state;          /* NLE_PROGRAM_STATE_SIZE */
+    int *internal;               /* NLE_INTERNAL_SIZE */
+    short *inv_glyphs;           /* NLE_INVENTORY_SIZE */
+    unsigned char *inv_letters;  /* NLE_INVENTORY_SIZE */
+    unsigned char *inv_oclasses; /* NLE_INVENTORY_SIZE */
 } nle_obs;
 
 typedef struct {
