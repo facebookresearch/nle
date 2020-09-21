@@ -5,6 +5,7 @@
 #define NLE_BLSTATS_SIZE 25
 #define NLE_PROGRAM_STATE_SIZE 6
 #define NLE_INTERNAL_SIZE 7
+#define NLE_INVENTORY_SIZE 55
 
 typedef struct nle_observation {
     int action;
@@ -18,6 +19,7 @@ typedef struct nle_observation {
     long *blstats;           /* NLE_BLSTATS_SIZE */
     int *program_state;      /* NLE_PROGRAM_STATE_SIZE */
     int *internal;           /* NLE_INTERNAL_SIZE */
+    short *inv_glyphs;       /* NLE_INVENTORY_SIZE */
 } nle_obs;
 
 typedef struct {

@@ -358,6 +358,15 @@ NetHackRL::fill_obs(nle_obs *obs)
 
         std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));
     }
+    if (obs->inv_glyphs) {
+        int i = 0;
+        for (const struct obj *otmp = invent; otmp; otmp = otmp->nobj) {
+            obs->inv_glyphs[i++] = obj_to_glyph(otmp, rn2_on_display_rng);
+        }
+        for (; i < NLE_INVENTORY_SIZE; ++i) {
+            obs->inv_glyphs[i] = NO_GLYPH;
+        }
+    }
 }
 
 int

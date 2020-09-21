@@ -8,7 +8,7 @@ import sys
 from nle import nethack
 
 
-NO_SELF_PLAY = 2
+SELF_PLAY_EPISODES = 2
 
 
 @contextlib.contextmanager
@@ -45,7 +45,9 @@ def main():
         89,
     ]
 
-    nle = nethack.Nethack(observation_keys=("chars", "blstats", "message"))
+    nle = nethack.Nethack(
+        observation_keys=("chars", "blstats", "message", "inv_glyphs")
+    )
     nle.reset()
 
     nle.step(ord("y"))
@@ -81,19 +83,22 @@ def main():
 
     print("Finished after %i steps. Mean sps: %f" % (steps, mean_sps))
 
-    for i in range(NO_SELF_PLAY):
+    for i in range(SELF_PLAY_EPISODES):
         print("Starting self-play episode", i)
-        chars, blstats, message = nle.reset()
+        chars, blstats, message, inv_glyphs = nle.reset()
         done = False
         while not done:
             message = bytes(message)
             print(message)
+            print(inv_glyphs)
             for line in chars:
                 print(line.tobytes().decode("utf-8"))
             print(blstats)
             try:
                 with no_echo():
-                    (chars, blstats, message), done = nle.step(ord(sys.stdin.read(1)))
+                    (chars, blstats, message, inv_glyphs), done = nle.step(
+                        ord(sys.stdin.read(1))
+                    )
             except KeyboardInterrupt:
                 break
 
