@@ -29,6 +29,8 @@ OBSERVATION_DESC = {
     "program_state": dict(shape=PROGRAM_STATE_SHAPE, dtype=np.int32),
     "internal": dict(shape=INTERNAL_SHAPE, dtype=np.int32),
     "inv_glyphs": dict(shape=INV_GLYPHS_SHAPE, dtype=np.int16),
+    "inv_letters": dict(shape=INV_GLYPHS_SHAPE, dtype=np.uint8),
+    "inv_oclasses": dict(shape=INV_GLYPHS_SHAPE, dtype=np.uint8),
 }
 
 

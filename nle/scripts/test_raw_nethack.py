@@ -46,7 +46,7 @@ def main():
     ]
 
     nle = nethack.Nethack(
-        observation_keys=("chars", "blstats", "message", "inv_glyphs")
+        observation_keys=("chars", "blstats", "message", "inv_letters")
     )
     nle.reset()
 
@@ -85,18 +85,18 @@ def main():
 
     for i in range(SELF_PLAY_EPISODES):
         print("Starting self-play episode", i)
-        chars, blstats, message, inv_glyphs = nle.reset()
+        chars, blstats, message, inv_letters = nle.reset()
         done = False
         while not done:
             message = bytes(message)
             print(message)
-            print(inv_glyphs)
+            print(inv_letters)
             for line in chars:
                 print(line.tobytes().decode("utf-8"))
             print(blstats)
             try:
                 with no_echo():
-                    (chars, blstats, message, inv_glyphs), done = nle.step(
+                    (chars, blstats, message, inv_letters), done = nle.step(
                         ord(sys.stdin.read(1))
                     )
             except KeyboardInterrupt:
