@@ -249,6 +249,7 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("MAXWIN") = py::int_(20);
 
     mn.attr("NUMMONS") = py::int_(NUMMONS);
+    mn.attr("NUM_OBJECTS") = py::int_(NUM_OBJECTS);
 
     // Glyph array offsets. This is what the glyph_is_* functions
     // are based on, see display.h.
@@ -270,6 +271,7 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NO_GLYPH") = py::int_(NO_GLYPH);
     mn.attr("GLYPH_INVISIBLE") = py::int_(GLYPH_INVISIBLE);
 
+    mn.attr("MAXEXPCHARS") = py::int_(MAXEXPCHARS);
     mn.attr("MAXPCHARS") = py::int_(static_cast<int>(MAXPCHARS));
     mn.attr("EXPL_MAX") = py::int_(static_cast<int>(EXPL_MAX));
     mn.attr("NUM_ZAP") = py::int_(static_cast<int>(NUM_ZAP));
