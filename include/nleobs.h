@@ -2,6 +2,7 @@
 #ifndef NLEOBS_H
 #define NLEOBS_H
 
+#define NLE_MESSAGE_SIZE 256
 #define NLE_BLSTATS_SIZE 25
 #define NLE_PROGRAM_STATE_SIZE 6
 #define NLE_INTERNAL_SIZE 7
@@ -16,7 +17,7 @@ typedef struct nle_observation {
     unsigned char *chars;    /* Size ROWNO * (COLNO - 1) */
     unsigned char *colors;   /* Size ROWNO * (COLNO - 1) */
     unsigned char *specials; /* Size ROWNO * (COLNO - 1) */
-    unsigned char *message;  /* Size 256 */
+    unsigned char *message;  /* Size NLE_MESSAGE_SIZE */
     long *blstats;           /* NLE_BLSTATS_SIZE */
     int *program_state;      /* NLE_PROGRAM_STATE_SIZE */
     int *internal;           /* NLE_INTERNAL_SIZE */

@@ -14,7 +14,7 @@ DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 # TODO: Consider getting this from C++.
 DUNGEON_SHAPE = (21, 79)
 BLSTATS_SHAPE = (_pynethack.nethack.NLE_BLSTATS_SIZE,)
-MESSAGE_SHAPE = (256,)
+MESSAGE_SHAPE = (_pynethack.nethack.NLE_MESSAGE_SIZE,)
 PROGRAM_STATE_SHAPE = (_pynethack.nethack.NLE_PROGRAM_STATE_SIZE,)
 INTERNAL_SHAPE = (_pynethack.nethack.NLE_INTERNAL_SIZE,)
 INV_SIZE = (_pynethack.nethack.NLE_INVENTORY_SIZE,)
