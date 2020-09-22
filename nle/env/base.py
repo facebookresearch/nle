@@ -242,13 +242,13 @@ class NLE(gym.Env):
                 **nethack.OBSERVATION_DESC["message"],
             ),
             "inv_glyphs": gym.spaces.Box(
-                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["inv_glyphs"],
+                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["inv_glyphs"]
             ),
             "inv_strs": gym.spaces.Box(
-                low=0, high=128, **nethack.OBSERVATION_DESC["inv_strs"],
+                low=0, high=128, **nethack.OBSERVATION_DESC["inv_strs"]
             ),
             "inv_letters": gym.spaces.Box(
-                low=0, high=128, **nethack.OBSERVATION_DESC["inv_letters"],
+                low=0, high=128, **nethack.OBSERVATION_DESC["inv_letters"]
             ),
             "inv_oclasses": gym.spaces.Box(
                 low=0,
