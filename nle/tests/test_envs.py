@@ -119,6 +119,37 @@ class TestGymEnv:
             assert "playmode:debug" not in env.env._options
 
 
+@pytest.mark.parametrize("env_name", [e for e in get_nethack_env_ids() if "Score" in e])
+class TestBasicGymEnv:
+    def test_inventory(self, env_name):
+        env = gym.make(
+            env_name,
+            observation_keys=(
+                "chars",
+                "inv_glyphs",
+                "inv_strs",
+                "inv_letters",
+                "inv_oclasses",
+            ),
+        )
+        obs = env.reset()
+
+        found = dict(spellbook=0, apple=0)
+        for line in obs["inv_strs"]:
+            if np.all(line == 0):
+                break
+            for key in found:
+                if key in line.tobytes().decode("utf-8"):
+                    found[key] += 1
+
+        for key, count in found.items():
+            assert key == key and count > 0
+
+        assert "inv_strs" in obs
+        assert obs["inv_letters"][0] == ord("a")
+        assert obs["inv_oclasses"][0] == nethack.ARMOR_CLASS
+
+
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
 @pytest.mark.parametrize("rollout_len", [500])
 class TestGymEnvRollout:
