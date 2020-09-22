@@ -359,21 +359,20 @@ NetHackRL::fill_obs(nle_obs *obs)
         std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));
     }
     if (obs->inv_glyphs) {
+        /* This iterates over the inventory_ vector list once per inv
+           observation instead of only once. I guess that's fine. */
         int i = 0;
-        for (const struct obj *otmp = invent; otmp; otmp = otmp->nobj) {
-            obs->inv_glyphs[i++] = obj_to_glyph(otmp, rn2_on_display_rng);
+        for (const rl_inventory_item &item : inventory_) {
+            obs->inv_glyphs[i++] = item.glyph;
         }
         for (; i < NLE_INVENTORY_SIZE; ++i) {
             obs->inv_glyphs[i] = NO_GLYPH;
         }
     }
     if (obs->inv_letters) {
-        /* This iterates over the invent linked list once per inv observation
-         instead of only once. Could instead also check all the observations
-         and only copy if they all exist.*/
         int i = 0;
-        for (const struct obj *otmp = invent; otmp; otmp = otmp->nobj) {
-            obs->inv_letters[i++] = otmp->invlet;
+        for (const rl_inventory_item &item : inventory_) {
+            obs->inv_letters[i++] = item.letter;
         }
         for (; i < NLE_INVENTORY_SIZE; ++i) {
             obs->inv_letters[i] = 0;
@@ -381,8 +380,8 @@ NetHackRL::fill_obs(nle_obs *obs)
     }
     if (obs->inv_oclasses) {
         int i = 0;
-        for (const struct obj *otmp = invent; otmp; otmp = otmp->nobj) {
-            obs->inv_oclasses[i++] = otmp->oclass;
+        for (const rl_inventory_item &item : inventory_) {
+            obs->inv_oclasses[i++] = item.object_class;
         }
         for (; i < NLE_INVENTORY_SIZE; ++i) {
             obs->inv_oclasses[i] = MAXOCLASSES;
