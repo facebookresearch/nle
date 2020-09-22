@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
 import os
 import pkg_resources
 import shutil
@@ -13,9 +14,14 @@ DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 # TODO: Consider getting this from C++.
 DUNGEON_SHAPE = (21, 79)
 BLSTATS_SHAPE = (_pynethack.nethack.NLE_BLSTATS_SIZE,)
-MESSAGE_SHAPE = (256,)
+MESSAGE_SHAPE = (_pynethack.nethack.NLE_MESSAGE_SIZE,)
 PROGRAM_STATE_SHAPE = (_pynethack.nethack.NLE_PROGRAM_STATE_SIZE,)
 INTERNAL_SHAPE = (_pynethack.nethack.NLE_INTERNAL_SIZE,)
+INV_SIZE = (_pynethack.nethack.NLE_INVENTORY_SIZE,)
+INV_STRS_SHAPE = (
+    _pynethack.nethack.NLE_INVENTORY_SIZE,
+    _pynethack.nethack.NLE_INVENTORY_STR_LENGTH,
+)
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
@@ -26,6 +32,10 @@ OBSERVATION_DESC = {
     "message": dict(shape=MESSAGE_SHAPE, dtype=np.uint8),
     "program_state": dict(shape=PROGRAM_STATE_SHAPE, dtype=np.int32),
     "internal": dict(shape=INTERNAL_SHAPE, dtype=np.int32),
+    "inv_glyphs": dict(shape=INV_SIZE, dtype=np.int16),
+    "inv_letters": dict(shape=INV_SIZE, dtype=np.uint8),
+    "inv_oclasses": dict(shape=INV_SIZE, dtype=np.uint8),
+    "inv_strs": dict(shape=INV_STRS_SHAPE, dtype=np.uint8),
 }
 
 

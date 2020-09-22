@@ -106,6 +106,10 @@ class NLE(gym.Env):
             "specials",
             "blstats",
             "message",
+            "inv_glyphs",
+            "inv_strs",
+            "inv_letters",
+            "inv_oclasses",
         ),
         actions=None,
         options=None,
@@ -216,28 +220,40 @@ class NLE(gym.Env):
 
         space_dict = {
             "glyphs": gym.spaces.Box(
-                low=0, high=nethack.MAX_GLYPH, shape=DUNGEON_SHAPE, dtype=np.int16
+                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["glyphs"]
             ),
             "chars": gym.spaces.Box(
-                low=0, high=255, shape=DUNGEON_SHAPE, dtype=np.uint8
+                low=0, high=255, **nethack.OBSERVATION_DESC["chars"]
             ),
             "colors": gym.spaces.Box(
-                low=0, high=15, shape=DUNGEON_SHAPE, dtype=np.uint8
+                low=0, high=15, **nethack.OBSERVATION_DESC["colors"]
             ),
             "specials": gym.spaces.Box(
-                low=0, high=255, shape=DUNGEON_SHAPE, dtype=np.uint8
+                low=0, high=255, **nethack.OBSERVATION_DESC["specials"]
             ),
             "blstats": gym.spaces.Box(
                 low=np.iinfo(np.int32).min,
                 high=np.iinfo(np.int32).max,
-                shape=nethack.BLSTATS_SHAPE,
-                dtype=np.int32,
+                **nethack.OBSERVATION_DESC["blstats"],
             ),
             "message": gym.spaces.Box(
                 low=np.iinfo(np.uint8).min,
                 high=np.iinfo(np.uint8).max,
-                shape=nethack.MESSAGE_SHAPE,
-                dtype=np.uint8,
+                **nethack.OBSERVATION_DESC["message"],
+            ),
+            "inv_glyphs": gym.spaces.Box(
+                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["inv_glyphs"]
+            ),
+            "inv_strs": gym.spaces.Box(
+                low=0, high=128, **nethack.OBSERVATION_DESC["inv_strs"]
+            ),
+            "inv_letters": gym.spaces.Box(
+                low=0, high=128, **nethack.OBSERVATION_DESC["inv_letters"]
+            ),
+            "inv_oclasses": gym.spaces.Box(
+                low=0,
+                high=nethack.MAXOCLASSES,
+                **nethack.OBSERVATION_DESC["inv_oclasses"],
             ),
         }
 
@@ -442,6 +458,15 @@ class NLE(gym.Env):
             message_index = self._observation_keys.index("message")
             message = bytes(self.last_observation[message_index])
             print(message[: message.index(b"\0")])
+            try:
+                inv_strs_index = self._observation_keys.index("inv_strs")
+                inv_strs = self.last_observation[inv_strs_index]
+                for line in inv_strs:
+                    if np.all(line == 0):
+                        break
+                    print(line.tobytes().decode("utf-8"))
+            except ValueError:  # inv_strs not used.
+                pass
             colors_index = self._observation_keys.index("colors")
             chars = self.last_observation[chars_index]
             colors = self.last_observation[colors_index]

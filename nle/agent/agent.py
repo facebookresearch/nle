@@ -139,7 +139,7 @@ def compute_policy_gradient_loss(logits, actions, advantages):
 
 
 def create_env(name, *args, **kwargs):
-    return gym.make(name, observation_keys=("glyphs", "status"), *args, **kwargs)
+    return gym.make(name, observation_keys=("glyphs", "blstats"), *args, **kwargs)
 
 
 def act(
@@ -154,11 +154,7 @@ def act(
     try:
         logging.info("Actor %i started.", actor_index)
 
-        gym_env = create_env(
-            flags.env,
-            savedir=flags.rundir,
-            archivefile="nethack.%i.%%(pid)i.%%(time)s.zip" % actor_index,
-        )
+        gym_env = create_env(flags.env, savedir=flags.rundir)
         env = ResettingEnvironment(gym_env)
         env_output = env.initial()
         agent_state = model.initial_state(batch_size=1)
@@ -325,7 +321,7 @@ def create_buffers(flags, observation_space, num_actions, num_overlapping_steps=
     return buffers
 
 
-def _format_observations(observation, keys=("glyphs", "status")):
+def _format_observations(observation, keys=("glyphs", "blstats")):
     observations = {}
     for key in keys:
         entry = observation[key]
@@ -729,7 +725,7 @@ class NetHackNet(nn.Module):
         super(NetHackNet, self).__init__()
 
         self.glyph_shape = observation_shape["glyphs"].shape
-        self.status_size = observation_shape["status"].shape[0]
+        self.blstats_size = observation_shape["blstats"].shape[0]
 
         self.num_actions = num_actions
         self.use_lstm = use_lstm
@@ -798,8 +794,8 @@ class NetHackNet(nn.Module):
         # CNN crop model.
         out_dim += self.crop_dim ** 2 * Y
 
-        self.embed_status = nn.Sequential(
-            nn.Linear(self.status_size, self.k_dim),
+        self.embed_blstats = nn.Sequential(
+            nn.Linear(self.blstats_size, self.k_dim),
             nn.ReLU(),
             nn.Linear(self.k_dim, self.k_dim),
             nn.ReLU(),
@@ -837,7 +833,7 @@ class NetHackNet(nn.Module):
         glyphs = env_outputs["glyphs"]
 
         # -- [T x B x F]
-        status = env_outputs["status"]
+        blstats = env_outputs["blstats"]
 
         T, B, *_ = glyphs.shape
 
@@ -845,26 +841,26 @@ class NetHackNet(nn.Module):
         glyphs = torch.flatten(glyphs, 0, 1)  # Merge time and batch.
 
         # -- [B' x F]
-        status = status.view(T * B, -1).float()
+        blstats = blstats.view(T * B, -1).float()
 
         # -- [B x H x W]
         glyphs = glyphs.long()
         # -- [B x 2] x,y coordinates
-        coordinates = status[:, :2]
+        coordinates = blstats[:, :2]
         # TODO ???
         # coordinates[:, 0].add_(-1)
 
         # -- [B x F]
-        # FIXME: hack to use compatible status to before
-        # status = status[:, [0, 1, 21, 10, 11]]
+        # FIXME: hack to use compatible blstats to before
+        # blstats = blstats[:, [0, 1, 21, 10, 11]]
 
-        status = status.view(T * B, -1).float()
+        blstats = blstats.view(T * B, -1).float()
         # -- [B x K]
-        status_emb = self.embed_status(status)
+        blstats_emb = self.embed_blstats(blstats)
 
-        assert status_emb.shape[0] == T * B
+        assert blstats_emb.shape[0] == T * B
 
-        reps = [status_emb]
+        reps = [blstats_emb]
 
         # -- [B x H' x W']
         crop = self.crop(glyphs, coordinates)
