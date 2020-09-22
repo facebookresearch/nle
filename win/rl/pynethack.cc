@@ -114,7 +114,7 @@ class Nethack
                 py::object specials, py::object blstats, py::object message,
                 py::object program_state, py::object internal,
                 py::object inv_glyphs, py::object inv_letters,
-                py::object inv_oclasses)
+                py::object inv_oclasses, py::object inv_strs)
     {
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
         obs_.glyphs = checked_conversion<int16_t>(std::move(glyphs), dungeon);
@@ -136,6 +136,9 @@ class Nethack
             std::move(inv_letters), { NLE_INVENTORY_SIZE });
         obs_.inv_oclasses = checked_conversion<uint8_t>(
             std::move(inv_oclasses), { NLE_INVENTORY_SIZE });
+        obs_.inv_strs = checked_conversion<uint8_t>(
+            std::move(inv_strs),
+            { NLE_INVENTORY_SIZE, NLE_INVENTORY_STR_LENGTH });
     }
 
     void
@@ -230,13 +233,14 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("inv_glyphs") = py::none(),
              py::arg("inv_letters") = py::none(),
              py::arg("inv_oclasses") = py::none(),
+             py::arg("inv_strs") = py::none(),
 
              py::keep_alive<1, 2>(), py::keep_alive<1, 3>(),
              py::keep_alive<1, 4>(), py::keep_alive<1, 5>(),
              py::keep_alive<1, 6>(), py::keep_alive<1, 7>(),
              py::keep_alive<1, 8>(), py::keep_alive<1, 9>(),
              py::keep_alive<1, 10>(), py::keep_alive<1, 11>(),
-             py::keep_alive<1, 12>())
+             py::keep_alive<1, 12>(), py::keep_alive<1, 13>())
         .def("close", &Nethack::close)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)
@@ -251,6 +255,7 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_PROGRAM_STATE_SIZE") = py::int_(NLE_PROGRAM_STATE_SIZE);
     mn.attr("NLE_INTERNAL_SIZE") = py::int_(NLE_INTERNAL_SIZE);
     mn.attr("NLE_INVENTORY_SIZE") = py::int_(NLE_INVENTORY_SIZE);
+    mn.attr("NLE_INVENTORY_STR_LENGTH") = py::int_(NLE_INVENTORY_STR_LENGTH);
 
     /* NetHack constants specific constants. */
     mn.attr("NHW_MESSAGE") = py::int_(NHW_MESSAGE);

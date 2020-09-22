@@ -369,6 +369,21 @@ NetHackRL::fill_obs(nle_obs *obs)
             obs->inv_glyphs[i] = NO_GLYPH;
         }
     }
+    if (obs->inv_strs) {
+        int i = 0;
+        for (const rl_inventory_item &item : inventory_) {
+            int j = 0;
+            for (int size = item.str.size(); j < size; ++j) {
+                obs->inv_strs[i++] = item.str[j];
+            }
+            for (; j < NLE_INVENTORY_STR_LENGTH; ++j) {
+                obs->inv_strs[i++] = 0;
+            }
+        }
+        for (; i < NLE_INVENTORY_SIZE * NLE_INVENTORY_STR_LENGTH; ++i) {
+            obs->inv_strs[i] = 0;
+        }
+    }
     if (obs->inv_letters) {
         int i = 0;
         for (const rl_inventory_item &item : inventory_) {

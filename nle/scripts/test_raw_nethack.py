@@ -5,6 +5,8 @@ import timeit
 import random
 import sys
 
+import numpy as np
+
 from nle import nethack
 
 
@@ -45,9 +47,7 @@ def main():
         89,
     ]
 
-    nle = nethack.Nethack(
-        observation_keys=("chars", "blstats", "message", "inv_letters")
-    )
+    nle = nethack.Nethack(observation_keys=("chars", "blstats", "message", "inv_strs"))
     nle.reset()
 
     nle.step(ord("y"))
@@ -85,18 +85,21 @@ def main():
 
     for i in range(SELF_PLAY_EPISODES):
         print("Starting self-play episode", i)
-        chars, blstats, message, inv_letters = nle.reset()
+        chars, blstats, message, inv_strs = nle.reset()
         done = False
         while not done:
             message = bytes(message)
             print(message)
-            print(inv_letters)
+            for line in inv_strs:
+                if np.all(line == 0):
+                    break
+                print(line.tobytes().decode("utf-8"))
             for line in chars:
                 print(line.tobytes().decode("utf-8"))
             print(blstats)
             try:
                 with no_echo():
-                    (chars, blstats, message, inv_letters), done = nle.step(
+                    (chars, blstats, message, inv_strs), done = nle.step(
                         ord(sys.stdin.read(1))
                     )
             except KeyboardInterrupt:
