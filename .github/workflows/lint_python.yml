@@ -31,7 +31,7 @@ jobs:
     - name: Install python linting deps
       run: "pip install -q black flake8 flake8-bugbear"
     - name: Run black
-      run: "black --check ."
+      run: "black --check --diff ."
     - name: Run flake8
       run: "flake8"
 ...
