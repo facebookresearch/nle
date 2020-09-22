@@ -9,4 +9,5 @@ from nle.nethack.nethack import (
     MESSAGE_SHAPE,
     PROGRAM_STATE_SHAPE,
     INTERNAL_SHAPE,
+    OBSERVATION_DESC,
 )
