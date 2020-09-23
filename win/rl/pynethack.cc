@@ -26,6 +26,7 @@ extern "C" {
 #undef max
 
 namespace py = pybind11;
+using namespace py::literals;
 
 template <typename T>
 T *
@@ -362,9 +363,10 @@ PYBIND11_MODULE(_pynethack, m)
     mn.def("glyph_is_warning",
            [](int glyph) { return glyph_is_warning(glyph); });
 
-    py::class_<permonst>(mn, "permonst")
+    py::class_<permonst>(mn, "permonst", "The permonst struct.")
         .def(
             "__init__",
+            // See https://github.com/pybind/pybind11/issues/2394
             [](py::detail::value_and_holder &v_h, int index) {
                 if (index < 0 || index >= NUMMONS)
                     throw std::out_of_range(
@@ -422,7 +424,7 @@ PYBIND11_MODULE(_pynethack, m)
         .def_readonly("name", &class_sym::name)
         .def_readonly("explain", &class_sym::explain)
         .def("__repr__", [](const class_sym &cs) {
-            return "<nethack.pynle.class_sym sym='" + std::string(1, cs.sym)
+            return "<nethack.class_sym sym='" + std::string(1, cs.sym)
                    + "' explain='" + std::string(cs.explain) + "'>";
         });
 
@@ -434,4 +436,83 @@ PYBIND11_MODULE(_pynethack, m)
            [](int glyph) { return glyph_to_swallow(glyph); });
     mn.def("glyph_to_warning",
            [](int glyph) { return glyph_to_warning(glyph); });
+
+    py::class_<objclass>(
+        mn, "objclass",
+        "The objclass struct.\n\n"
+        "All fields are constant and don't reflect user changes.")
+        .def(
+            "__init__",
+            // See https://github.com/pybind/pybind11/issues/2394
+            [](py::detail::value_and_holder &v_h, int i) {
+                if (i < 0 || i >= NUM_OBJECTS)
+                    throw std::out_of_range(
+                        "Index should be between 0 and NUM_OBJECTS ("
+                        + std::to_string(NUM_OBJECTS) + ") but got "
+                        + std::to_string(i));
+
+                /* Initialize. Cannot depend on o_init.c as it pulls
+                 * in all kinds of other code. Instead, do what
+                 * makedefs.c does at set it here.
+                 * Alternative: Get the pointer from the game itself?
+                 * Dangerous!
+                 */
+                objects[i].oc_name_idx = objects[i].oc_descr_idx = i;
+
+                v_h.value_ptr() = &objects[i];
+                v_h.inst->owned = false;
+                v_h.set_holder_constructed(true);
+            },
+            py::detail::is_new_style_constructor())
+        .def_readonly("oc_name_idx",
+                      &objclass::oc_name_idx) /* index of actual name */
+        .def_readonly(
+            "oc_descr_idx",
+            &objclass::oc_descr_idx) /* description when name unknown */
+        .def_readonly(
+            "oc_oprop",
+            &objclass::oc_oprop) /* property (invis, &c.) conveyed */
+        .def_readonly(
+            "oc_class",
+            &objclass::oc_class) /* object class (enum obj_class_types) */
+        .def_readonly(
+            "oc_delay",
+            &objclass::oc_delay) /* delay when using such an object */
+        .def_readonly("oc_color",
+                      &objclass::oc_color) /* color of the object */
+
+        .def_readonly("oc_prob",
+                      &objclass::oc_prob) /* probability, used in mkobj() */
+        .def_readonly("oc_weight",
+                      &objclass::oc_weight) /* encumbrance (1 cn = 0.1 lb.) */
+        .def_readonly("oc_cost", &objclass::oc_cost) /* base cost in shops */
+        /* And much more, see objclass.h. */;
+
+    mn.def("OBJ_NAME", [](const objclass &obj) { return OBJ_NAME(obj); });
+    mn.def("OBJ_DESCR", [](const objclass &obj) { return OBJ_DESCR(obj); });
+
+    py::class_<objdescr>(mn, "objdescr")
+        .def_static(
+            "from_idx",
+            [](int idx) -> const objdescr * {
+                if (idx < 0 || idx >= NUM_OBJECTS)
+                    throw std::out_of_range(
+                        "Argument should be between 0 and NUM_OBJECTS ("
+                        + std::to_string(NUM_OBJECTS) + ") but got "
+                        + std::to_string(idx));
+                return &obj_descr[idx];
+            },
+            py::return_value_policy::reference)
+        .def_readonly("oc_name", &objdescr::oc_name)
+        .def_readonly("oc_descr", &objdescr::oc_descr)
+        .def("__repr__", [](const objdescr &od) {
+            // clang-format doesn't like the _s UDL.
+            // clang-format off
+            return "<nethack.objdescr oc_name={!r} oc_descr={!r}>"_s
+                // clang-format on
+                .format(od.oc_name ? py::str(od.oc_name)
+                                   : py::object(py::none()),
+                        od.oc_descr ? py::str(od.oc_descr)
+                                    : py::object(py::none()));
+        });
 }

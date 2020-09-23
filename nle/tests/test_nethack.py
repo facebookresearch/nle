@@ -247,6 +247,15 @@ class TestNethackSomeObs:
         assert internal[3] == 1  # xwaitforspace
 
 
+def get_object(name):
+    for index in range(nethack.NUM_OBJECTS):
+        obj = nethack.objclass(index)
+        if nethack.OBJ_NAME(obj) == name:
+            return obj
+    else:
+        raise ValueError("'%s' not found!" % name)
+
+
 class TestNethackFunctionsAndConstants:
     def test_permonst_and_class_sym(self):
         glyph = 155  # Lichen.
@@ -296,3 +305,29 @@ class TestNethackFunctionsAndConstants:
             % nethack.MAXMCLASSES,
         ):
             nethack.class_sym.from_mlet("\x7F")
+
+    def test_objclass(self):
+        obj = nethack.objclass(0)
+        assert nethack.OBJ_NAME(obj) == "strange object"
+
+        food_ration = get_object("food ration")
+        assert food_ration.oc_weight == 20
+
+        elven_dagger = get_object("elven dagger")
+        assert nethack.OBJ_DESCR(elven_dagger) == "runed dagger"
+
+    def test_objdescr(self):
+        od = nethack.objdescr.from_idx(0)
+        assert od.oc_name == "strange object"
+        assert od.oc_descr is None
+
+        elven_dagger = get_object("elven dagger")
+        od = nethack.objdescr.from_idx(elven_dagger.oc_name_idx)
+        assert od.oc_name == "elven dagger"
+        assert od.oc_descr == "runed dagger"
+
+        # Example of how to do this with glyphs.
+        glyph = nethack.GLYPH_OBJ_OFF + elven_dagger.oc_name_idx
+        idx = nethack.glyph_to_obj(glyph)
+        assert idx == elven_dagger.oc_name_idx
+        assert nethack.objdescr.from_idx(idx) is od

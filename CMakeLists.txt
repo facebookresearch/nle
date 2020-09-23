@@ -109,7 +109,7 @@ add_dependencies(rlmain util) # For pm.h.
 # pybind11 python library.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/pybind11)
 pybind11_add_module(_pynethack win/rl/pynethack.cc src/monst.c src/decl.c
-                    src/drawing.c)
+                    src/drawing.c src/objects.c)
 target_link_libraries(_pynethack PUBLIC nethackdl)
 set_target_properties(_pynethack PROPERTIES CXX_STANDARD 14)
 target_include_directories(_pynethack PUBLIC ${NLE_INC_GEN})
