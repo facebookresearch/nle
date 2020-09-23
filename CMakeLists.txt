@@ -37,7 +37,7 @@ set(PYTHON_SRC_PARENT
     CACHE STRING "Directory containing the nle package files")
 
 set(HACKDIR
-    "$ENV{HOME}/nethackdir"
+    "$ENV{HOME}/nethackdir.nle"
     CACHE STRING "Configuration files for nethack")
 
 message(STATUS "HACKDIR set to: ${HACKDIR}")
@@ -59,6 +59,7 @@ set(NLE_SRC ${nle_SOURCE_DIR}/src)
 set(NLE_INC ${nle_SOURCE_DIR}/include)
 set(NLE_DAT ${nle_SOURCE_DIR}/dat)
 set(NLE_UTIL ${nle_SOURCE_DIR}/util)
+set(NLE_DOC ${nle_SOURCE_DIR}/doc)
 
 set(NLE_SRC_GEN ${nle_BINARY_DIR}/src)
 set(NLE_INC_GEN ${nle_BINARY_DIR}/include)

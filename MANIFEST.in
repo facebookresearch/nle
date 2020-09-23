@@ -1,6 +1,7 @@
 include version.txt
 
 include CMakeLists.txt
+recursive-include doc *
 recursive-include dat *
 recursive-include DEVEL *
 recursive-include include *
@@ -16,4 +17,3 @@ exclude nle/dashboard
 exclude nle/scripts/nh-clean-install.sh
 exclude nle/scripts/run-clang-format.py
 exclude nle/scripts/line-changed.sh
-
