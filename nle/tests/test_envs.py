@@ -190,8 +190,16 @@ class TestBasicGymEnv:
             assert key == key and count > 0
 
         assert "inv_strs" in obs
-        assert obs["inv_letters"][0] == ord("a")
-        assert obs["inv_oclasses"][0] == nethack.ARMOR_CLASS
+
+        index = 0
+        if obs["inv_letters"][index] != ord("a"):
+            # We autopickedup some gold.
+            assert obs["inv_letters"][index] == ord("$")
+            assert obs["inv_oclasses"][index] == nethack.COIN_CLASS
+            index = 1
+
+        assert obs["inv_letters"][index] == ord("a")
+        assert obs["inv_oclasses"][index] == nethack.ARMOR_CLASS
 
 
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
