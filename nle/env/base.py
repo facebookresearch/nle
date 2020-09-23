@@ -352,7 +352,7 @@ class NLE(gym.Env):
         program_state = observation[self._program_state_index]
         return program_state[3]  # in_moveloop
 
-    def reset(self, *args, **kwargs):
+    def reset(self, wizkit_items=None):
         """Resets the environment.
 
         Note:
@@ -366,7 +366,7 @@ class NLE(gym.Env):
         """
         self._episode += 1
         new_ttyrec = self._ttyrec_pattern % self._episode if self.savedir else None
-        self.last_observation = self.env.reset(new_ttyrec, **kwargs)
+        self.last_observation = self.env.reset(new_ttyrec, wizkit_items=wizkit_items)
 
         # Only run on the first reset to initialize stats file
         if self._setup_statsfile:
@@ -400,7 +400,7 @@ class NLE(gym.Env):
             warnings.warn(
                 "Not in moveloop after 1000 tries, aborting (ttyrec: %s)." % new_ttyrec
             )
-            return self.reset(*args, **kwargs)
+            return self.reset(wizkit_items=wizkit_items)
 
         return self._get_observation(self.last_observation)
 
