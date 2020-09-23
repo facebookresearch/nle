@@ -119,6 +119,50 @@ class TestGymEnv:
             assert "playmode:debug" not in env.env._options
 
 
+class TestWizkit:
+    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    def make_cwd_tmp(self, tmpdir):
+        """Makes cwd point to the test's tmpdir."""
+        with tmpdir.as_cwd():
+            yield
+
+    def test_meatball_exists(self):
+        """Test loading stuff via wizkit"""
+        env = gym.make("NetHack-v0", wizard=True)
+        found = dict(meatball=0)
+        obs = env.reset(wizkit_items=list(found.keys()))
+        for line in obs["inv_strs"]:
+            if np.all(line == 0):
+                break
+            for key in found:
+                if key in line.tobytes().decode("utf-8"):
+                    found[key] += 1
+        for key, count in found.items():
+            assert key == key and count > 0
+        del env
+
+    def test_wizkit_no_wizard_mode(self):
+        env = gym.make("NetHack-v0", wizard=False)
+        with pytest.raises(ValueError) as e_info:
+            env.reset(wizkit_items=["meatball"])
+        assert e_info.value.args[0] == "Set wizard=True to use the wizkit option."
+
+    def test_wizkit_file(self):
+        env = gym.make("NetHack-v0", wizard=True)
+        req_items = ["meatball", "apple"]
+        env.reset(wizkit_items=req_items)
+        path_to_wizkit = os.path.join(env.env._vardir, nethack.nethack.WIZKIT_FNAME)
+
+        # test file exists
+        os.path.exists(path_to_wizkit)
+
+        # test that file content corresponds to what you requested
+        with open(path_to_wizkit, "r") as f:
+            for item, line in zip(req_items, f):
+                assert item == line.strip()
+        del env
+
+
 @pytest.mark.parametrize("env_name", [e for e in get_nethack_env_ids() if "Score" in e])
 class TestBasicGymEnv:
     def test_inventory(self, env_name):

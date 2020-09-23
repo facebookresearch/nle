@@ -57,13 +57,16 @@ NETHACKOPTIONS = [
 ]
 
 HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
+WIZKIT_FNAME = "wizkit.txt"
 
 
-def _set_env_vars(options, hackdir):
+def _set_env_vars(options, hackdir, wizkit=None):
     # TODO: Investigate not using environment variables for this.
     os.environ["NETHACKOPTIONS"] = ",".join(options)
     os.environ["HACKDIR"] = hackdir
     os.environ["TERM"] = os.environ.get("TERM", "screen")
+    if wizkit is not None:
+        os.environ["WIZKIT"] = wizkit
 
 
 # TODO: Not thread-safe for many reasons.
@@ -109,6 +112,7 @@ class Nethack:
         self._options = list(options) + ["name:" + playername]
         if wizard:
             self._options.append("playmode:debug")
+        self._wizard = wizard
 
         _set_env_vars(self._options, self._vardir)
         self._ttyrec = ttyrec
@@ -134,8 +138,20 @@ class Nethack:
         self._pynethack.step(action)
         return self._step_return(), self._pynethack.done()
 
-    def reset(self, new_ttyrec=None):
-        _set_env_vars(self._options, self._vardir)
+    def _write_wizkit_file(self, wizkit_items):
+        # TODO ideally we need to check the validity of the requested items
+        with open(os.path.join(self._vardir, WIZKIT_FNAME), "a") as f:
+            for item in wizkit_items:
+                f.write(f"{item}\n")
+
+    def reset(self, new_ttyrec=None, wizkit_items=None):
+        if wizkit_items is not None:
+            if not self._wizard:
+                raise ValueError("Set wizard=True to use the wizkit option.")
+            self._write_wizkit_file(wizkit_items)
+            _set_env_vars(self._options, self._vardir, wizkit=WIZKIT_FNAME)
+        else:
+            _set_env_vars(self._options, self._vardir)
         if new_ttyrec is None:
             self._pynethack.reset()
         else:
