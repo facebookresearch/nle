@@ -85,4 +85,13 @@ add_custom_target(util DEPENDS ${MAKEDEFS_HEADERS} recover)
 add_dependencies(lev_comp util)
 add_dependencies(dgn_comp util)
 
-install(TARGETS recover DESTINATION ${INSTDIR})
+set(MAN_PAGES ${NLE_DOC}/makedefs.6 ${NLE_DOC}/dgn_comp.6 ${NLE_DOC}/lev_comp.6
+              ${NLE_DOC}/dlb.6 ${NLE_DOC}/recover.6 ${NLE_DOC}/nethack.6)
+
+set(TXT_DOCS
+    ${NLE_DOC}/makedefs.txt ${NLE_DOC}/dgn_comp.txt ${NLE_DOC}/lev_comp.txt
+    ${NLE_DOC}/dlb.txt ${NLE_DOC}/recover.txt ${NLE_DOC}/nethack.txt)
+
+install(TARGETS makedefs dgn_comp lev_comp dlb recover DESTINATION ${INSTDIR})
+install(FILES ${MAN_PAGES} DESTINATION ${INSTDIR}/man)
+install(FILES ${TXT_DOCS} DESTINATION ${INSTDIR}/doc)

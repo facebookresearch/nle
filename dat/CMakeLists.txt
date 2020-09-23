@@ -50,23 +50,29 @@ set(DATDLB
 
 file(MAKE_DIRECTORY ${NLE_DAT_GEN})
 
-foreach(
-  filename
-  ${DATHELP}
-  ${SPECIAL_LEVELS}
-  ${QUEST_LEVELS}
-  bogusmon.txt
-  data.base
-  dungeon.def
-  engrave.txt
-  epitaph.txt
-  oracles.txt
-  quest.txt
-  rumors.fal
-  rumors.tru
-  tribute)
+# Inputs to makedef and lev_comp (and transitive inputs to dgn_comp and dlb).
+set(ALL_DAT_NOTGEN
+    ${DATHELP}
+    ${SPECIAL_LEVELS}
+    ${QUEST_LEVELS}
+    bogusmon.txt
+    data.base
+    dungeon.def
+    engrave.txt
+    epitaph.txt
+    oracles.txt
+    quest.txt
+    rumors.fal
+    rumors.tru
+    tribute)
+
+# makedef and friends like having their inputs in the same directory.
+foreach(filename ${ALL_DAT_NOTGEN})
   configure_file(${NLE_DAT}/${filename} ${filename} COPYONLY)
 endforeach(filename)
+
+# Dat files that are not inputs to any tools.
+set(ALL_DAT_NOTGEN ${ALL_DAT_NOTGEN} license symbols)
 
 # TODO(NN): try to glob .lev automatically
 #
@@ -199,20 +205,6 @@ set(LEVS_GEN
     wizard2.lev
     wizard3.lev)
 
-# NOTE: This is missing *.lev, which needs the special lev_comp below.
-set(NLE_DAT_OUTPUT
-    bogusmon
-    epitaph
-    engrave
-    data
-    rumors
-    quest.dat
-    oracles
-    options
-    dungeon
-    dungeon.pdf
-    nhdat)
-
 add_custom_command(
   DEPENDS makedefs bogusmon.txt engrave.txt epitaph.txt
   OUTPUT bogusmon epitaph engrave
@@ -270,10 +262,8 @@ add_custom_command(
 set(ALL_DAT_GEN nhdat perm record logfile xlogfile sysconf)
 list(TRANSFORM ALL_DAT_GEN PREPEND ${NLE_DAT_GEN}/)
 
-set(ALL_DAT_NOTGEN license symbols)
-
 add_custom_target(dat ALL DEPENDS ${ALL_DAT_GEN} ${ALL_DAT_NOTGEN})
 
 install(FILES ${ALL_DAT_GEN} DESTINATION ${INSTDIR})
-install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR})
+install(FILES ${ALL_DAT_NOTGEN} DESTINATION ${INSTDIR}/dat)
 install(DIRECTORY DESTINATION ${INSTDIR}/save)
