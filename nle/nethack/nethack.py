@@ -84,20 +84,23 @@ class Nethack:
         options=None,
         copy=False,
         wizard=False,
+        hackdir=HACKDIR,
     ):
         self._copy = copy
 
-        if not os.path.exists(HACKDIR) or not os.path.exists(
-            os.path.join(HACKDIR, "sysconf")
+        if not os.path.exists(hackdir) or not os.path.exists(
+            os.path.join(hackdir, "sysconf")
         ):
-            raise FileNotFoundError("Couldn't find NetHack installation.")
+            raise FileNotFoundError(
+                "Couldn't find NetHack installation at '%s'." % hackdir
+            )
 
         # Create a HACKDIR for us.
         self._vardir = tempfile.mkdtemp(prefix="nle")
 
         # Symlink a few files.
         for fn in ["nhdat", "sysconf"]:
-            os.symlink(os.path.join(HACKDIR, fn), os.path.join(self._vardir, fn))
+            os.symlink(os.path.join(hackdir, fn), os.path.join(self._vardir, fn))
         # Touch a few files.
         for fn in ["perm", "logfile", "xlogfile"]:
             os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
