@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+# Copyright (c) Facebook, Inc. and its affiliates.
 set -euo pipefail
 
 ORIGDIR=$(pwd)
