@@ -2,10 +2,8 @@
 
 --------------------------------------------------------------------------------
 
-The NetHack Learning Environment (NLE) is a Reinforcement Learning environment
-based on [NetHack 3.6.6](https://github.com/NetHack/NetHack/tree/NetHack-3.6.6_PostRelease).
-NLE is designed to provide a standard RL interface to the game, and comes with
-tasks that function as a first step to evaluate agents on this new environment.
+The NetHack Learning Environment (NLE) is a Reinforcement Learning environment presented at [NeurIPS 2020](https://neurips.cc/Conferences/2020).
+NLE is based on [NetHack 3.6.6](https://github.com/NetHack/NetHack/tree/NetHack-3.6.6_PostRelease) and designed to provide a standard RL interface to the game, and comes with tasks that function as a first step to evaluate agents on this new environment.
 
 NetHack is one of the oldest and arguably most impactful videogames in history,
 as well as being one of the hardest roguelikes currently being played by humans.
@@ -15,8 +13,7 @@ being much cheaper to run compared to other challenging testbeds. Through NLE,
 we wish to establish NetHack as one of the next challenges for research in
 decision making and machine learning.
 
-You can read more about NLE in the [arXiv
-preprint](https://arxiv.org/abs/2006.13760), and about NetHack in its [original
+You can read more about NLE in the [NeurIPS 2020 paper](https://arxiv.org/abs/2006.13760), and about NetHack in its [original
 README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 [NetHack wiki](https://nethackwiki.com).
 
@@ -189,12 +186,16 @@ $ python -m nle.scripts.plot
 If you use NLE in any of your work, please cite:
 
 ```
-@misc{kuttler2020nethack,
-    title={The NetHack Learning Environment},
-    author={Heinrich K{\"u}ttler and Nantas Nardelli and Alexander H. Miller and Roberta Raileanu and Marco Selvatici and Edward Grefenstette and Tim Rockt{\"a}schel},
-    year={2020},
-    eprint={2006.13760},
-    archivePrefix={arXiv},
-    primaryClass={cs.LG}
+@inproceedings{kuettler2020nethack,
+  author    = {Heinrich K{\"{u}}ttler and
+               Nantas Nardelli and
+               Alexander H. Miller and
+               Roberta Raileanu and
+               Marco Selvatici and
+               Edward Grefenstette and
+               Tim Rockt{\"{a}}schel},
+  title     = {{The NetHack Learning Environment}},
+  booktitle = {Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)},
+  year      = {2020},
 }
 ```
