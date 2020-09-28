@@ -96,6 +96,7 @@ class Command(enum.IntEnum):
     ENGRAVE = ord("E")  # engrave writing on the floor
     ENHANCE = M("e")  # advance or check weapon and spell skills
     FIRE = ord("f")  # fire ammunition from quiver
+    FIGHT = ord("F")  # fight a monster
     FORCE = M("f")  # force a lock
     GLANCE = ord(";")  # show what type of thing a map symbol corresponds to
     HELP = ord("?")  # give a help message
@@ -110,6 +111,8 @@ class Command(enum.IntEnum):
     LOOK = ord(":")  # look at what is here
     LOOT = M("l")  # loot a box on the floor
     MONSTER = M("m")  # use monster's special ability
+    MOVE = ord("m")  # move, no pickup
+    MOVEFAR = ord("M")  # move far, no pickup
     OFFER = M("o")  # offer a sacrifice to the gods
     OPEN = ord("o")  # open a door
     OPTIONS = ord("O")  # show option settings, possibly change them
@@ -127,7 +130,7 @@ class Command(enum.IntEnum):
     REMOVE = ord("R")  # remove an accessory (ring, amulet, etc)
     RIDE = M("R")  # mount or dismount a saddled steed
     RUB = M("r")  # rub a lamp or a stone
-    RUSH = ord("g")
+    RUSH = ord("g")  # rush to a chosen direction
     SAVE = ord("S")  # save the game and exit
     SEARCH = ord("s")  # search for traps and secret doors
     SEEALL = ord("*")  # show all equipment in use
