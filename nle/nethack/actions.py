@@ -127,6 +127,7 @@ class Command(enum.IntEnum):
     REMOVE = ord("R")  # remove an accessory (ring, amulet, etc)
     RIDE = M("R")  # mount or dismount a saddled steed
     RUB = M("r")  # rub a lamp or a stone
+    RUSH = ord("g")
     SAVE = ord("S")  # save the game and exit
     SEARCH = ord("s")  # search for traps and secret doors
     SEEALL = ord("*")  # show all equipment in use
