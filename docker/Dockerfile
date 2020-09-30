@@ -24,8 +24,7 @@ RUN apt-get update && apt-get install -y \
     clang \
     bison \
     flex \
-    libncurses-dev \
-    libzmq3-dev
+    libncurses-dev
 
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
 
@@ -33,18 +32,6 @@ RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 RUN apt-get update && apt-get --allow-unauthenticated install -yq \
     cmake \
     kitware-archive-keyring
-
-WORKDIR /opt/flatbuffers
-
-RUN curl -fSL "https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz" -o flatbuffers.tar.gz \
-    && tar xzf flatbuffers.tar.gz \
-    && cd flatbuffers-* \
-    && cmake \
-       -G "Unix Makefiles" \
-       -DCMAKE_BUILD_TYPE=Release \
-    && make \
-    && make install \
-    && cp src/idl_parser.cpp src/idl_gen_text.cpp /usr/local/include/flatbuffers
 
 WORKDIR /opt/conda_setup
 
