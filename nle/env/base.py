@@ -241,6 +241,16 @@ class NLE(gym.Env):
                 high=np.iinfo(np.uint8).max,
                 **nethack.OBSERVATION_DESC["message"],
             ),
+            "program_state": gym.spaces.Box(
+                low=np.iinfo(np.int32).min,
+                high=np.iinfo(np.int32).max,
+                **nethack.OBSERVATION_DESC["program_state"],
+            ),
+            "internal": gym.spaces.Box(
+                low=np.iinfo(np.int32).min,
+                high=np.iinfo(np.int32).max,
+                **nethack.OBSERVATION_DESC["internal"],
+            ),
             "inv_glyphs": gym.spaces.Box(
                 low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["inv_glyphs"]
             ),
