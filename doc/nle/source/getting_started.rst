@@ -8,6 +8,12 @@ NLE requires `python>=3.7`, `cmake>=3.14` and some NetHack dependencies
 (e.g. `libncurses`) to be installed and available both when building the
 package, and at runtime.
 
+On **MacOS**, one can use `Homebrew` as follows:
+
+``` bash
+$ brew install ncurses cmake
+```
+
 On a plain **Ubuntu 18.04** distribution, `cmake` other dependencies
 can be installed by doing:
 

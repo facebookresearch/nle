@@ -20,6 +20,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Ensure latest pip & wheel
       run: "python -m pip install -q --upgrade pip wheel"
+    - name: Install dependencies
+      run: |
+        brew install cmake
     - name: Clone repo
       uses: actions/checkout@v2
     - name: Install nle via pip
