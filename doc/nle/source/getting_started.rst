@@ -14,7 +14,7 @@ On **MacOS**, one can use `Homebrew` as follows:
 $ brew install ncurses cmake
 ```
 
-On a plain **Ubuntu 18.04** distribution, `cmake` other dependencies
+On a plain **Ubuntu 18.04** distribution, `cmake` and other dependencies
 can be installed by doing:
 
 ```bash
