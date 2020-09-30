@@ -93,6 +93,7 @@ class Command(enum.IntEnum):
     DROP = ord("d")  # drop an item
     DROPTYPE = ord("D")  # drop specific item types
     EAT = ord("e")  # eat something
+    ESC = C("[")  # escape from the current query/action
     ENGRAVE = ord("E")  # engrave writing on the floor
     ENHANCE = M("e")  # advance or check weapon and spell skills
     FIRE = ord("f")  # fire ammunition from quiver
