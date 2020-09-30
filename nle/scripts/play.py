@@ -95,7 +95,8 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
     mean_sps = 0
     mean_reward = 0.0
 
-    start_time = timeit.default_timer()
+    total_start_time = timeit.default_timer()
+    start_time = total_start_time
     while True:
         if not no_render:
             if not is_raw_env:
@@ -151,7 +152,10 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
         if episodes == ngames:
             break
         env.reset()
-    print("Finished after %i episodes. Mean sps: %f" % (episodes, mean_sps))
+    print(
+        "Finished after %i episodes and %f seconds. Mean sps: %f"
+        % (episodes, timeit.default_timer() - total_start_time, mean_sps)
+    )
 
 
 def main():
