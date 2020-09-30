@@ -112,8 +112,8 @@ class Command(enum.IntEnum):
     LOOK = ord(":")  # look at what is here
     LOOT = M("l")  # loot a box on the floor
     MONSTER = M("m")  # use monster's special ability
-    MOVE = ord("m")  # move, no pickup
-    MOVEFAR = ord("M")  # move far, no pickup
+    MOVE = ord("m")  # Prefix: move without picking up objects/fighting
+    MOVEFAR = ord("M")  # Prefix: run without picking up objects/fighting
     OFFER = M("o")  # offer a sacrifice to the gods
     OPEN = ord("o")  # open a door
     OPTIONS = ord("O")  # show option settings, possibly change them
@@ -131,7 +131,7 @@ class Command(enum.IntEnum):
     REMOVE = ord("R")  # remove an accessory (ring, amulet, etc)
     RIDE = M("R")  # mount or dismount a saddled steed
     RUB = M("r")  # rub a lamp or a stone
-    RUSH = ord("g")  # rush to a chosen direction
+    RUSH = ord("g")  # Prefix: rush until something interesting is seen
     SAVE = ord("S")  # save the game and exit
     SEARCH = ord("s")  # search for traps and secret doors
     SEEALL = ord("*")  # show all equipment in use
