@@ -4,33 +4,25 @@ Getting Started
 Dependencies
 ************
 
-NLE requires ``python>=3.7``, ``libzmq``, and ``flatbuffers`` to be installed and
-available when building the package.
+NLE requires `python>=3.7`, `cmake>=3.14` and some NetHack dependencies
+(e.g. `libncurses`) to be installed and available both when building the
+package, and at runtime.
 
-On **MacOS** you can use brew to install ``libzmq``:
+On a plain **Ubuntu 18.04** distribution, `cmake` other dependencies
+can be installed by doing:
 
-.. code-block:: bash
+```bash
+# Python and most build deps
+$ sudo apt-get install -y build-essential autoconf libtool pkg-config \
+    python3-dev python3-pip python3-numpy git libncurses5-dev flex bison
 
-   $ brew install zeromq
-   $ sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
-       /usr/local/include
-
-
-On **Ubuntu 18.04** instead:
-
-.. code-block:: bash
-
-   $ sudo apt-get install libzmq3-dev
-
-
-For ``flatbuffers`` we instead advise to use conda, as that is the easiest way to
-pull the dependencies:
-
-.. code-block:: bash
-
-   $ conda create -n nledev python=3.7
-   $ conda activate nledev
-   $ conda install flatbuffers
+# recent cmake version
+$ wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
+$ sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+$ sudo apt-get update && apt-get --allow-unauthenticated install -y \
+    cmake \
+    kitware-archive-keyring
+```
 
 
 Installation

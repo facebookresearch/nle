@@ -28,27 +28,18 @@ with other gym / RL environments.
 
 ## Installation
 
-NLE requires `python>=3.7`, `cmake>=3.12`, `libzmq`, `flatbuffers`, and some
-NetHack dependencies (e.g. `libncurses`) to be installed and available both when
-building the package, and at runtime.
+NLE requires `python>=3.7`, `cmake>=3.14` and some NetHack dependencies
+(e.g. `libncurses`) to be installed and available both when building the
+package, and at runtime.
 
 
-On **MacOS**, one can use `Homebrew` as follows:
-
-``` bash
-$ brew install ncurses flatbuffers zeromq cmake
-$ sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
-     /usr/local/include
-```
-
-On a plain **Ubuntu 18.04** distribution, `cmake`, `flatbuffers` and other
-dependencies can be installed by doing:
+On a plain **Ubuntu 18.04** distribution, `cmake` other dependencies
+can be installed by doing:
 
 ```bash
-# zmq, python, and most build deps
+# Python and most build deps
 $ sudo apt-get install -y build-essential autoconf libtool pkg-config \
-    python3-dev python3-pip python3-numpy git libncurses5-dev \
-    libzmq3-dev flex bison
+    python3-dev python3-pip python3-numpy git libncurses5-dev flex bison
 
 # recent cmake version
 $ wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
@@ -56,13 +47,6 @@ $ sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 $ sudo apt-get update && apt-get --allow-unauthenticated install -y \
     cmake \
     kitware-archive-keyring
-
-# building flatbuffers
-$ git clone https://github.com/google/flatbuffers.git
-$ cd flatbuffers
-$ cmake -G "Unix Makefiles"
-$ make
-$ sudo make install
 ```
 
 Afterwards it's a matter of setting up your environment. We advise using a conda
@@ -71,7 +55,6 @@ environment for this:
 ```bash
 $ conda create -n nle python=3.8
 $ conda activate nle
-$ conda install cppzmq  # might not be necessary on some systems
 $ pip install nle
 ```
 
@@ -87,7 +70,8 @@ $ pre-commit install
 
 ## Docker
 
-We have provided some docker images. Please see the [relevant README](docker/README.md).
+We have provided some docker images. Please see the [relevant
+README](docker/README.md).
 
 
 ## Trying it out
@@ -135,7 +119,7 @@ $ python -m nle.agent.agent --num_actors 80 --batch_size 32 --unroll_length 80 -
 
 Plot the mean return over the last 100 episodes:
 ```bash
-$ python -m nle.scripts.plot 
+$ python -m nle.scripts.plot
 ```
 ```
                               averaged episode return
