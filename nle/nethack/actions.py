@@ -165,6 +165,37 @@ ACTIONS = tuple(
     + list(Command)
 )
 
+NON_RL_ACTIONS = (
+    Command.ANNOTATE,  # Could potentially be useful.
+    Command.AUTOPICKUP,
+    Command.CONDUCT,  # Could potentially be useful.
+    Command.EXTCMD,  # Potentially useful for some wizard actions.
+    Command.EXTLIST,
+    Command.GLANCE,
+    Command.HELP,
+    Command.HISTORY,
+    Command.KNOWN,  # Could potentially be useful.
+    Command.KNOWNCLASS,  # Could potentially be useful.
+    Command.OPTIONS,
+    Command.OVERVIEW,  # Could potentially be useful.
+    Command.PREVMSG,  # Could potentially be useful.
+    Command.QUIT,
+    Command.REDRAW,
+    Command.SAVE,
+    Command.SEEALL,  # Could potentially be useful.
+    Command.TRAVEL,  # Could potentially be useful.
+    Command.VERSION,
+    Command.VERSIONSHORT,
+    Command.WHATDOES,
+    Command.WHATIS,
+)
+
+_USEFUL_ACTIONS = list(ACTIONS)
+for action in NON_RL_ACTIONS:
+    _USEFUL_ACTIONS.remove(action)
+USEFUL_ACTIONS = tuple(_USEFUL_ACTIONS)
+del _USEFUL_ACTIONS
+
 _ACTIONS_DICT = {}
 for enum_class in [
     CompassDirection,

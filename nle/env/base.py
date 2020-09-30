@@ -31,13 +31,7 @@ ASCII_y = ord("y")
 ASCII_n = ord("n")
 ASCII_ESC = nethack.C("[")
 
-FULL_ACTIONS = list(nethack.ACTIONS)
-# Removing some problematic actions
-FULL_ACTIONS.remove(nethack.Command.SAVE)
-# TODO: consider re-adding help eventually, when we can handle its state machine
-# and output.
-FULL_ACTIONS.remove(nethack.Command.HELP)
-FULL_ACTIONS = tuple(FULL_ACTIONS)
+FULL_ACTIONS = nethack.USEFUL_ACTIONS
 
 BLSTATS_SCORE_INDEX = 9
 
