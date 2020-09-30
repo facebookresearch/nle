@@ -20,14 +20,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Ensure latest pip & wheel
       run: "python -m pip install -q --upgrade pip wheel"
-    - name: Install dependencies
-      run: |
-        brew install zeromq flatbuffers
-        sudo wget https://raw.githubusercontent.com/zeromq/cppzmq/v4.3.0/zmq.hpp -P \
-          /usr/local/include
     - name: Clone repo
       uses: actions/checkout@v2
-    - name: Install from repo in test mode
+    - name: Install nle via pip
       run: "pip install nle"
     - name: Check nethack is installed
-      run: "type -p nethack"
+      run: "python -c 'import nle; import gym; gym.make(\"NetHack-v0\")'"
