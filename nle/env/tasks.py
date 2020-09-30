@@ -204,8 +204,8 @@ class NetHackGold(NetHackScore):
         old_blstats = last_observation[self._blstats_index]
         blstats = observation[self._blstats_index]
 
-        old_gold = old_blstats[14]
-        gold = blstats[14]
+        old_gold = old_blstats[13]
+        gold = blstats[13]
 
         time_penalty = self._get_time_penalty(last_observation, observation)
 
