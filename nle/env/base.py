@@ -539,9 +539,15 @@ class NLE(gym.Env):
                 if exceptions:
                     # This causes an annoying unnecessary copy...
                     msg = bytes(observation[self._message_index])
-                    # Allow agent to select stuff to eat, attack, and to
+                    # Do not skip some questions to allow agent to select stuff to eat, attack, and to
                     # select directions.
-                    if b"eat" in msg or b"attack" in msg or b"direction?" in msg:
+                    decline = True
+                    # I would go with this to avoid surprises when we allow all but restrict some.
+                    for el in [b"eat", b"attack", b"direction?", b"pray"]:
+                        if el in msg:
+                            decline = False
+                            break
+                    if not decline:
                         break
 
                 # Otherwise, auto-decline.
