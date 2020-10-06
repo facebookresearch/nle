@@ -17,8 +17,8 @@ typedef struct nle_observation {
     unsigned char *chars;    /* Size ROWNO * (COLNO - 1) */
     unsigned char *colors;   /* Size ROWNO * (COLNO - 1) */
     unsigned char *specials; /* Size ROWNO * (COLNO - 1) */
-    unsigned char *message;  /* Size NLE_MESSAGE_SIZE */
     long *blstats;           /* NLE_BLSTATS_SIZE */
+    unsigned char *message;  /* Size NLE_MESSAGE_SIZE */
     int *program_state;      /* NLE_PROGRAM_STATE_SIZE */
     int *internal;           /* NLE_INTERNAL_SIZE */
     short *inv_glyphs;       /* NLE_INVENTORY_SIZE */

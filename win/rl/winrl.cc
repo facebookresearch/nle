@@ -350,8 +350,8 @@ NetHackRL::fill_obs(nle_obs *obs)
             moves,                                     /* time              */
             u.uhs,                                     /* hunger state      */
             near_capacity(),                           /* carrying_capacity */
-            u.uz.dnum,
-            u.uz.dlevel,
+            u.uz.dnum,                                 /* dungeon number */
+            u.uz.dlevel,                               /* level number */
         };
 
         assert(sizeof(blstats) == NLE_BLSTATS_SIZE * sizeof(long));

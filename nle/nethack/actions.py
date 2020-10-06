@@ -73,7 +73,7 @@ class MiscDirection(enum.IntEnum):
 
 
 class MiscAction(enum.IntEnum):
-    MORE = ord("\r")
+    MORE = ord("\r")  # read the next message
 
 
 class Command(enum.IntEnum):
@@ -97,7 +97,7 @@ class Command(enum.IntEnum):
     ENGRAVE = ord("E")  # engrave writing on the floor
     ENHANCE = M("e")  # advance or check weapon and spell skills
     FIRE = ord("f")  # fire ammunition from quiver
-    FIGHT = ord("F")  # fight a monster
+    FIGHT = ord("F")  # Prefix: force fight even if you don't see a monster
     FORCE = M("f")  # force a lock
     GLANCE = ord(";")  # show what type of thing a map symbol corresponds to
     HELP = ord("?")  # give a help message
