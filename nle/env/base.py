@@ -214,7 +214,9 @@ class NLE(gym.Env):
 
         space_dict = {
             "glyphs": gym.spaces.Box(
-                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["glyphs"]
+                low=0,
+                high=nethack.MAX_GLYPH,
+                **nethack.OBSERVATION_DESC["glyphs"],
             ),
             "chars": gym.spaces.Box(
                 low=0, high=255, **nethack.OBSERVATION_DESC["chars"]
@@ -246,7 +248,9 @@ class NLE(gym.Env):
                 **nethack.OBSERVATION_DESC["internal"],
             ),
             "inv_glyphs": gym.spaces.Box(
-                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["inv_glyphs"]
+                low=0,
+                high=nethack.MAX_GLYPH,
+                **nethack.OBSERVATION_DESC["inv_glyphs"],
             ),
             "inv_strs": gym.spaces.Box(
                 low=0, high=128, **nethack.OBSERVATION_DESC["inv_strs"]
@@ -539,10 +543,11 @@ class NLE(gym.Env):
                 if exceptions:
                     # This causes an annoying unnecessary copy...
                     msg = bytes(observation[self._message_index])
-                    # Do not skip some questions to allow agent to select stuff to eat, attack, and to
-                    # select directions.
+                    # Do not skip some questions to allow agent to select
+                    # stuff to eat, attack, and to select directions.
                     decline = True
-                    # I would go with this to avoid surprises when we allow all but restrict some.
+                    # I would go with this to avoid surprises when we allow all
+                    # but restrict some.
                     for el in [b"eat", b"attack", b"direction?", b"pray"]:
                         if el in msg:
                             decline = False
