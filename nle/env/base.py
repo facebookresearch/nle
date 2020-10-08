@@ -108,6 +108,7 @@ class NLE(gym.Env):
         actions=None,
         options=None,
         wizard=False,
+        skip_exceptions=True,
     ):
         """Constructs a new NLE environment.
 
@@ -127,10 +128,15 @@ class NLE(gym.Env):
             options (list): list of game options to initialize Nethack. If None,
                 Nethack will be initialized with the options found in
                 ``nle.nethack.NETHACKOPTIONS`. Defaults to None.
+            wizard (bool): activate wizard mode. Defaults to False.
+            skip_exceptions (bool):
+                Allow not to skip some y/n questions at step().
+                Defaults to True.
         """
 
         self.character = character
         self._max_episode_steps = max_episode_steps
+        self._skip_exceptions = skip_exceptions
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -302,7 +308,9 @@ class NLE(gym.Env):
         last_observation = tuple(a.copy() for a in self.last_observation)
 
         observation, done = self.env.step(self._actions[action])
-        observation, done = self._perform_known_steps(observation, done)
+        observation, done = self._perform_known_steps(
+            observation, done, exceptions=self._skip_exceptions
+        )
 
         self._steps += 1
 
