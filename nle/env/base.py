@@ -35,6 +35,8 @@ FULL_ACTIONS = nethack.USEFUL_ACTIONS
 
 BLSTATS_SCORE_INDEX = 9
 
+SKIP_EXCEPTIONS = (b"eat", b"attack", b"direction?", b"pray")
+
 
 class NLE(gym.Env):
     """Standard NetHack Learning Environment.
@@ -108,7 +110,7 @@ class NLE(gym.Env):
         actions=None,
         options=None,
         wizard=False,
-        skip_exceptions=True,
+        allow_all_yn_questions=False,
     ):
         """Constructs a new NLE environment.
 
@@ -129,14 +131,15 @@ class NLE(gym.Env):
                 Nethack will be initialized with the options found in
                 ``nle.nethack.NETHACKOPTIONS`. Defaults to None.
             wizard (bool): activate wizard mode. Defaults to False.
-            skip_exceptions (bool):
-                Allow not to skip some y/n questions at step().
-                Defaults to True.
+            allow_all_yn_questions (bool):
+                If set to True, no y/n questions in step() are declined.
+                If set to False, only elements of SKIP_EXCEPTIONS are not declined.
+                Defaults to False.
         """
 
         self.character = character
         self._max_episode_steps = max_episode_steps
-        self._skip_exceptions = skip_exceptions
+        self._allow_all_yn_questions = allow_all_yn_questions
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -309,7 +312,7 @@ class NLE(gym.Env):
 
         observation, done = self.env.step(self._actions[action])
         observation, done = self._perform_known_steps(
-            observation, done, exceptions=self._skip_exceptions
+            observation, done, exceptions=True
         )
 
         self._steps += 1
@@ -553,14 +556,11 @@ class NLE(gym.Env):
                     msg = bytes(observation[self._message_index])
                     # Do not skip some questions to allow agent to select
                     # stuff to eat, attack, and to select directions.
-                    decline = True
-                    # I would go with this to avoid surprises when we allow all
-                    # but restrict some.
-                    for el in [b"eat", b"attack", b"direction?", b"pray"]:
-                        if el in msg:
-                            decline = False
-                            break
-                    if not decline:
+
+                    # do not skip if all allowed or the allowed message appears
+                    if self._allow_all_yn_questions or any(
+                        el in msg for el in SKIP_EXCEPTIONS
+                    ):
                         break
 
                 # Otherwise, auto-decline.
