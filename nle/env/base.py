@@ -223,9 +223,7 @@ class NLE(gym.Env):
 
         space_dict = {
             "glyphs": gym.spaces.Box(
-                low=0,
-                high=nethack.MAX_GLYPH,
-                **nethack.OBSERVATION_DESC["glyphs"],
+                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["glyphs"]
             ),
             "chars": gym.spaces.Box(
                 low=0, high=255, **nethack.OBSERVATION_DESC["chars"]
