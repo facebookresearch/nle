@@ -35,6 +35,8 @@ FULL_ACTIONS = nethack.USEFUL_ACTIONS
 
 BLSTATS_SCORE_INDEX = 9
 
+SKIP_EXCEPTIONS = (b"eat", b"attack", b"direction?", b"pray")
+
 
 class NLE(gym.Env):
     """Standard NetHack Learning Environment.
@@ -108,6 +110,7 @@ class NLE(gym.Env):
         actions=None,
         options=None,
         wizard=False,
+        allow_all_yn_questions=False,
     ):
         """Constructs a new NLE environment.
 
@@ -127,10 +130,16 @@ class NLE(gym.Env):
             options (list): list of game options to initialize Nethack. If None,
                 Nethack will be initialized with the options found in
                 ``nle.nethack.NETHACKOPTIONS`. Defaults to None.
+            wizard (bool): activate wizard mode. Defaults to False.
+            allow_all_yn_questions (bool):
+                If set to True, no y/n questions in step() are declined.
+                If set to False, only elements of SKIP_EXCEPTIONS are not declined.
+                Defaults to False.
         """
 
         self.character = character
         self._max_episode_steps = max_episode_steps
+        self._allow_all_yn_questions = allow_all_yn_questions
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -246,7 +255,9 @@ class NLE(gym.Env):
                 **nethack.OBSERVATION_DESC["internal"],
             ),
             "inv_glyphs": gym.spaces.Box(
-                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["inv_glyphs"]
+                low=0,
+                high=nethack.MAX_GLYPH,
+                **nethack.OBSERVATION_DESC["inv_glyphs"],
             ),
             "inv_strs": gym.spaces.Box(
                 low=0, high=128, **nethack.OBSERVATION_DESC["inv_strs"]
@@ -298,7 +309,9 @@ class NLE(gym.Env):
         last_observation = tuple(a.copy() for a in self.last_observation)
 
         observation, done = self.env.step(self._actions[action])
-        observation, done = self._perform_known_steps(observation, done)
+        observation, done = self._perform_known_steps(
+            observation, done, exceptions=True
+        )
 
         self._steps += 1
 
@@ -539,9 +552,13 @@ class NLE(gym.Env):
                 if exceptions:
                     # This causes an annoying unnecessary copy...
                     msg = bytes(observation[self._message_index])
-                    # Allow agent to select stuff to eat, attack, and to
-                    # select directions.
-                    if b"eat" in msg or b"attack" in msg or b"direction?" in msg:
+                    # Do not skip some questions to allow agent to select
+                    # stuff to eat, attack, and to select directions.
+
+                    # do not skip if all allowed or the allowed message appears
+                    if self._allow_all_yn_questions or any(
+                        el in msg for el in SKIP_EXCEPTIONS
+                    ):
                         break
 
                 # Otherwise, auto-decline.
