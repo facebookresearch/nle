@@ -3,6 +3,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import argparse
 import os
+import re
 import select
 import struct
 import termios
@@ -97,7 +98,7 @@ def read_header(fd, peek=False, no_input=False):
         yield timestamp, length, channel
 
 
-CLRCODE = b"\033[2J"
+CLRCODE = re.compile(rb"\033\[2?J")  # https://stackoverflow.com/a/37778152/1136208
 
 
 def process(fd):
@@ -128,8 +129,7 @@ def process(fd):
         if jump == 0 and prev is not None:
             speed, drift, jump = wait(timestamp - prev, speed, drift)
 
-        offset = data.find(CLRCODE)
-        if offset >= 0:
+        if CLRCODE.search(data):
             clrscreen.append((lastpos, prev))
             if jump > 0:
                 jump = 0
