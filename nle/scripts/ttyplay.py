@@ -2,6 +2,8 @@
 #
 # Copyright (c) Facebook, Inc. and its affiliates.
 import argparse
+import bz2
+import gzip
 import os
 import re
 import select
@@ -167,6 +169,10 @@ def main():
     if FLAGS.filename == "-":
         f = os.fdopen(os.dup(0), "rb")
         os.dup2(1, 0)
+    elif os.path.splitext(FLAGS.filename)[1] in (".bz2", ".bzip2"):
+        f = bz2.BZ2File(FLAGS.filename)
+    elif os.path.splitext(FLAGS.filename)[1] in (".gz", ".gzip"):
+        f = gzip.GzipFile(FLAGS.filename)
     else:
         f = open(FLAGS.filename, "rb")
 
