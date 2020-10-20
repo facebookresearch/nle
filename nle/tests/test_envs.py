@@ -160,6 +160,11 @@ class TestWizkit:
         with open(path_to_wizkit, "r") as f:
             for item, line in zip(req_items, f):
                 assert item == line.strip()
+
+        env.reset(wizkit_items=req_items)
+        with open(path_to_wizkit, "r") as f:
+            lines = f.readlines()
+        assert len(lines) == len(req_items)
         del env
 
 
