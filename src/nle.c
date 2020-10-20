@@ -219,6 +219,10 @@ init_random(int FDECL((*fn), (int) ))
 nle_ctx_t *
 nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init)
 {
+    /* Set CO and LI to control ttyrec output size. */
+    CO = 80;
+    LI = 24;
+
     nle_ctx_t *nle = init_nle(ttyrec);
     nle->observation = obs;
     nle_seeds_init = seed_init;

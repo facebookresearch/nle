@@ -139,7 +139,7 @@
 #define TIMED_DELAY
 #endif
 
-/* #define AVOID_WIN_IOCTL */ /* ensure USE_WIN_IOCTL remains undefined */
+#define AVOID_WIN_IOCTL /* ensure USE_WIN_IOCTL remains undefined */
 
 /*
  * If you define MAIL, then the player will be notified of new mail
