@@ -143,7 +143,7 @@ class Nethack:
 
     def _write_wizkit_file(self, wizkit_items):
         # TODO ideally we need to check the validity of the requested items
-        with open(os.path.join(self._vardir, WIZKIT_FNAME), "a") as f:
+        with open(os.path.join(self._vardir, WIZKIT_FNAME), "w") as f:
             for item in wizkit_items:
                 f.write(f"{item}\n")
 
