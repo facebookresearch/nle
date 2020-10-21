@@ -74,7 +74,7 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
     if is_raw_env:
         if savedir is not None:
             os.makedirs(savedir, exist_ok=True)
-            ttyrec = os.path.join(savedir, "nle.ttyrec")
+            ttyrec = os.path.join(savedir, "nle.ttyrec.bz2")
         else:
             ttyrec = "/dev/null"
         env = nethack.Nethack(ttyrec=ttyrec)

@@ -80,7 +80,7 @@ class Nethack:
         self,
         observation_keys=OBSERVATION_DESC.keys(),
         playername="Agent-mon-hum-neu-mal",
-        ttyrec="nle.ttyrec",
+        ttyrec="nle.ttyrec.bz2",
         options=None,
         copy=False,
         wizard=False,

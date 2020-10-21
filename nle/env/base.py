@@ -201,7 +201,7 @@ class NLE(gym.Env):
 
         if self.savedir:
             self._ttyrec_pattern = os.path.join(
-                self.savedir, "nle.%i.%%i.ttyrec" % os.getpid()
+                self.savedir, "nle.%i.%%i.ttyrec.bz2" % os.getpid()
             )
             ttyrec = self._ttyrec_pattern % 0
         else:
