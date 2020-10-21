@@ -54,7 +54,7 @@ commands:
           command: |
             sudo apt-get install software-properties-common
             sudo apt-get update -y
-            sudo apt-get install -y libncurses5 libncurses5-dev flex bison cmake
+            sudo apt-get install -y libncurses5 libncurses5-dev flex bison cmake libbz2-dev
 
   pip-install-nle:
     description: Installs NLE and its dependencies

@@ -224,7 +224,7 @@ class TestGymEnvRollout:
             env.close()
 
             assert os.path.exists(
-                os.path.join(savedir, "nle.%i.0.ttyrec" % os.getpid())
+                os.path.join(savedir, "nle.%i.0.ttyrec.bz2" % os.getpid())
             )
 
     def test_rollout_no_archive(self, env_name, rollout_len):
