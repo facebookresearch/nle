@@ -1,8 +1,7 @@
 
 #include <assert.h>
-#include <sys/time.h>
-
 #include <string.h>
+#include <sys/time.h>
 
 #define NEED_VARARGS
 #include "hack.h"
@@ -10,6 +9,10 @@
 #include "dlb.h"
 
 #include "nle.h"
+
+#ifdef NLE_BZ2_TTYRECS
+#include <bzlib.h>
+#endif
 
 #define STACK_SIZE (1 << 15) // 32KiB
 
@@ -30,6 +33,12 @@ init_nle(FILE *ttyrec)
 
     assert(ttyrec != NULL);
     nle->ttyrec = ttyrec;
+
+#ifdef NLE_BZ2_TTYRECS
+    int bzerror;
+    nle->ttyrec_bz2 = BZ2_bzWriteOpen(&bzerror, ttyrec, 9, 0, 0);
+    assert(bzerror == BZ_OK);
+#endif
 
     nle->outbuf_write_ptr = nle->outbuf;
     nle->outbuf_write_end = nle->outbuf + sizeof(nle->outbuf);
@@ -60,6 +69,20 @@ mainloop(fcontext_transfer_t ctx_transfer)
 }
 
 boolean
+write_data(void *buf, int length)
+{
+    nle_ctx_t *nle = current_nle_ctx;
+#ifdef NLE_BZ2_TTYRECS
+    int bzerror;
+    BZ2_bzWrite(&bzerror, nle->ttyrec_bz2, buf, length);
+    assert(bzerror == BZ_OK);
+#else
+    assert(fwrite(buf, 1, length, nle->ttyrec) == 0);
+#endif
+    return TRUE;
+}
+
+boolean
 write_header(int length, unsigned char channel)
 {
     struct timeval tv;
@@ -70,18 +93,9 @@ write_header(int length, unsigned char channel)
     buffer[1] = tv.tv_usec;
     buffer[2] = length;
 
-    nle_ctx_t *nle = current_nle_ctx;
-
     /* Assumes little endianness */
-    if (fwrite(buffer, sizeof(int), 3, nle->ttyrec) == 0) {
-        assert(FALSE);
-        return FALSE;
-    }
-
-    if (fputc((int) channel, nle->ttyrec) != (int) channel) {
-        assert(FALSE);
-        return FALSE;
-    }
+    write_data(buffer, 3 * sizeof(int));
+    write_data(&channel, 1);
 
     return TRUE;
 }
@@ -102,12 +116,17 @@ nle_fflush(FILE *stream)
     ssize_t length = nle->outbuf_write_ptr - nle->outbuf;
     if (length == 0)
         return 0;
-    /* TODO(heiner): Given that we do our own buffering, consider
-     * using file descriptors instead of the ttyrec FILE*. */
+
     write_header(length, 0);
-    fwrite(nle->outbuf, 1, length, nle->ttyrec);
+    write_data(nle->outbuf, length);
+
     nle->outbuf_write_ptr = nle->outbuf;
+
+#ifdef NLE_BZ2_TTYRECS
+    return 0;
+#else
     return fflush(nle->ttyrec);
+#endif
 }
 
 /*
@@ -248,7 +267,7 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
     current_nle_ctx = nle;
     nle->observation = obs;
     write_header(1, 1);
-    fputc(obs->action, nle->ttyrec);
+    write_data(&obs->action, 1);
     fcontext_transfer_t t = jump_fcontext(nle->generatorcontext, obs);
     nle->generatorcontext = t.ctx;
     nle->done = (t.data == NULL);
@@ -260,7 +279,6 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
 void
 nle_end(nle_ctx_t *nle)
 {
-    nle_fflush(stdout);
     if (!nle->done) {
         /* Reset without closing nethack. Need free memory, etc.
          * this is what nh_terminate in end.c does. I hope it's enough. */
@@ -269,6 +287,13 @@ nle_end(nle_ctx_t *nle)
             dlb_cleanup();
         }
     }
+    nle_fflush(stdout);
+
+#ifdef NLE_BZ2_TTYRECS
+    int bzerror;
+    BZ2_bzWriteClose(&bzerror, nle->ttyrec_bz2, 0, NULL, NULL);
+    assert(bzerror == BZ_OK);
+#endif
 
     destroy_fcontext_stack(&nle->stack);
     free(nle);

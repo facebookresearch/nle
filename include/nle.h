@@ -1,6 +1,8 @@
 #ifndef NLE_H
 #define NLE_H
 
+#define NLE_BZ2_TTYRECS
+
 #include <stdio.h>
 
 #include <fcontext/fcontext.h>
@@ -20,6 +22,10 @@ typedef struct nle_globals {
     char outbuf[BUFSIZ];
     char *outbuf_write_ptr;
     char *outbuf_write_end;
+
+#ifdef NLE_BZ2_TTYRECS
+    void *ttyrec_bz2;
+#endif
 
     boolean done;
     nle_obs *observation;
