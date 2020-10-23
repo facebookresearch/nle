@@ -477,12 +477,17 @@ class NLE(gym.Env):
             print(message[: message.index(b"\0")])
             try:
                 inv_strs_index = self._observation_keys.index("inv_strs")
+                inv_letters_index = self._observation_keys.index("inv_letters")
+
                 inv_strs = self.last_observation[inv_strs_index]
-                for line in inv_strs:
+                inv_letters = self.last_observation[inv_letters_index]
+                for letter, line in zip(inv_letters, inv_strs):
                     if np.all(line == 0):
                         break
-                    print(line.tobytes().decode("utf-8"))
-            except ValueError:  # inv_strs not used.
+                    print(
+                        letter.tobytes().decode("utf-8"), line.tobytes().decode("utf-8")
+                    )
+            except ValueError:  # inv_strs/letters not used.
                 pass
             colors_index = self._observation_keys.index("colors")
             chars = self.last_observation[chars_index]
