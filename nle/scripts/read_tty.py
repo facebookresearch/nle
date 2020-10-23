@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import struct
 import os
+import re
 
 
 def ttyframes(f, tty2=True):
@@ -65,6 +66,15 @@ if __name__ == "__main__":
                 action, *_ = struct.unpack("<B", data)
                 data = action
                 channel = "->"
+
+            data = re.sub(r"\\x1b\[([0-9];?)*.", lambda m: color(m.group(0), 8), data)
+            data = re.sub(
+                r"(\\x1b\(0)(.*?)(\\x1b\(B)",
+                lambda m: (
+                    color(m.group(1), 4) + color(m.group(2), 3) + color(m.group(3), 4)
+                ),
+                data,
+            )
 
             print(
                 "%s %s%s%s%s"
