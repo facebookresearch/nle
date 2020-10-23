@@ -30,12 +30,8 @@ parser.add_argument("--keep_stderr", action="store_true", help="don't process st
 parser.add_argument(
     "filename", default="out.ttyrec", type=str, nargs="?", help="tty record file"
 )
-parser.add_argument(
-    "-c", "--columns", type=int, help="override number of columns",
-)
-parser.add_argument(
-    "-r", "--rows", type=int, help="override number rows",
-)
+parser.add_argument("-c", "--columns", type=int, help="override number of columns")
+parser.add_argument("-r", "--rows", type=int, help="override number rows")
 
 
 def write_header(fp, length, channel):
