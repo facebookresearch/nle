@@ -179,6 +179,7 @@ NON_RL_ACTIONS = (
     Command.OPTIONS,
     Command.OVERVIEW,  # Could potentially be useful.
     Command.PREVMSG,  # Could potentially be useful.
+    Command.TELEPORT,
     Command.QUIT,
     Command.REDRAW,
     Command.SAVE,
