@@ -331,3 +331,26 @@ class TestNethackFunctionsAndConstants:
         idx = nethack.glyph_to_obj(glyph)
         assert idx == elven_dagger.oc_name_idx
         assert nethack.objdescr.from_idx(idx) is od
+
+
+class TestNethackGlanceObservation:
+    def test_new_observation(self):
+        game = nethack.Nethack()
+        obs = game.reset()
+
+        new_obs_key = 'glyphs2'
+        np.set_printoptions(threshold=np.inf)
+        assert new_obs_key in nethack.OBSERVATION_DESC
+        assert new_obs_key in game._obs_buffers
+        np.testing.assert_equal(game._obs_buffers['glyphs'], game._obs_buffers[new_obs_key])
+        assert game._obs_buffers['glyphs'] is not game._obs_buffers[new_obs_key]
+        # do_screen_description(cc, looked, sym, *char outstr, firstmatch, permonst)
+        # const char *firstmatch = 0;
+        # sym=0, struct permonst *pm = 0, *supplemental_pm = 0;
+
+    def test_permonst(self):
+        mon = nethack.permonst(0)
+        assert mon.mname == "giant ant"
+        del mon
+
+        mon = nethack.permonst(1)

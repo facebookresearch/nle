@@ -178,9 +178,12 @@ class NetHackRL
     std::array<uint8_t, (COLNO - 1) * ROWNO> colors_;
     std::array<uint8_t, (COLNO - 1) * ROWNO> specials_;
 
+    std::array<int16_t, (COLNO - 1) * ROWNO> glyphs2_;
+
     void store_glyph(XCHAR_P x, XCHAR_P y, int glyph);
     void store_mapped_glyph(int ch, int color, int special, XCHAR_P x,
                             XCHAR_P y);
+    void store_glyph2(XCHAR_P x, XCHAR_P y, int glyph);
 
     void fill_obs(nle_obs *);
     int getch_method();
@@ -273,6 +276,8 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->message, 0, 256);
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
+        if (obs->glyphs2)
+            std::memset(obs->glyphs2, 0, sizeof(int16_t) * glyphs2_.size());
         return;
     }
     obs->in_normal_game = true;
@@ -402,6 +407,10 @@ NetHackRL::fill_obs(nle_obs *obs)
             obs->inv_oclasses[i] = MAXOCLASSES;
         }
     }
+    if (obs->glyphs2) {
+        std::memcpy(obs->glyphs2, glyphs2_.data(),
+                    sizeof(int16_t) * glyphs2_.size());
+    }
 }
 
 int
@@ -468,6 +477,18 @@ NetHackRL::store_mapped_glyph(int ch, int color, int special, XCHAR_P x,
     chars_[offset] = ch;
     colors_[offset] = color;
     specials_[offset] = special;
+}
+
+void
+NetHackRL::store_glyph2(XCHAR_P x, XCHAR_P y, int glyph)
+{
+    // 1 <= x < cols, 0 <= y < rows (!)
+    size_t i = (x - 1) % (COLNO - 1);
+    size_t j = y % ROWNO;
+    size_t offset = j * (COLNO - 1) + i;
+
+    // TODO: Glyphs might be taken from gbuf[y][x].glyph.
+    glyphs2_[offset] = glyph;
 }
 
 void
@@ -553,6 +574,7 @@ NetHackRL::clear_nhwindow_method(winid wid)
         chars_.fill(' ');
         colors_.fill(0);
         specials_.fill(0);
+        glyphs2_.fill(0);
     }
 
     DEBUG_API("rl_clear_nhwindow(wid=" << wid << ")" << std::endl);
@@ -835,6 +857,7 @@ NetHackRL::rl_print_glyph(winid wid, XCHAR_P x, XCHAR_P y, int glyph,
     if (wid == WIN_MAP) {
         instance->store_glyph(x, y, glyph);
         instance->store_mapped_glyph(ch, color, special, x, y);
+        instance->store_glyph2(x, y, glyph);
     } else {
         DEBUG_API("Window id is " << wid << ". This shouldn't happen."
                                   << std::endl);

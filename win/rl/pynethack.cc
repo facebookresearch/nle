@@ -115,7 +115,8 @@ class Nethack
                 py::object specials, py::object blstats, py::object message,
                 py::object program_state, py::object internal,
                 py::object inv_glyphs, py::object inv_letters,
-                py::object inv_oclasses, py::object inv_strs)
+                py::object inv_oclasses, py::object inv_strs,
+                py::object glyphs2)
     {
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
         obs_.glyphs = checked_conversion<int16_t>(glyphs, dungeon);
@@ -137,13 +138,15 @@ class Nethack
             checked_conversion<uint8_t>(inv_oclasses, { NLE_INVENTORY_SIZE });
         obs_.inv_strs = checked_conversion<uint8_t>(
             inv_strs, { NLE_INVENTORY_SIZE, NLE_INVENTORY_STR_LENGTH });
+        obs_.glyphs2 = checked_conversion<int16_t>(glyphs2, dungeon);
 
         py_buffers_ = { std::move(glyphs),        std::move(chars),
                         std::move(colors),        std::move(specials),
                         std::move(blstats),       std::move(message),
                         std::move(program_state), std::move(internal),
                         std::move(inv_glyphs),    std::move(inv_letters),
-                        std::move(inv_oclasses),  std::move(inv_strs) };
+                        std::move(inv_oclasses),  std::move(inv_strs),
+                        std::move(glyphs2)};
     }
 
     void
@@ -239,7 +242,8 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("inv_glyphs") = py::none(),
              py::arg("inv_letters") = py::none(),
              py::arg("inv_oclasses") = py::none(),
-             py::arg("inv_strs") = py::none())
+             py::arg("inv_strs") = py::none(),
+             py::arg("glyphs2") = py::none())
         .def("close", &Nethack::close)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)

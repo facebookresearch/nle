@@ -25,6 +25,7 @@ INV_STRS_SHAPE = (
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
+    "glyphs2": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
     "chars": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
     "colors": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
     "specials": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
