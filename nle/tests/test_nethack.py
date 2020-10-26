@@ -336,7 +336,7 @@ class TestNethackFunctionsAndConstants:
 class TestNethackGlanceObservation:
     def test_new_observation_shapes(self):
         game = nethack.Nethack()
-        obs = game.reset()
+        game.reset()
 
         glyph_str_buff = game._obs_buffers["glyph_strs"]
         glyph_buff = game._obs_buffers["glyphs"]
@@ -349,7 +349,7 @@ class TestNethackGlanceObservation:
         game = nethack.Nethack(
             playername="MonkBot-mon-hum-neu-mal",
         )
-        obs = game.reset()[0]
+        game.reset()
 
         # rather naughty - testing against private impl
         glyph_buff = game._obs_buffers["glyphs"]
@@ -357,10 +357,9 @@ class TestNethackGlanceObservation:
         desc_buff = game._obs_buffers["glyph_strs"]
 
         row, col = glyph_buff.shape
-        str_len = _pynethack.nethack.NLE_GLYPH_STR_LENGTH
         episodes = 6
         for _ in range(episodes):
-            obs = game.reset()[0]
+            game.reset()
             for i in range(row):
                 for j in range(col):
                     glyph = glyph_buff[i][j]
@@ -384,4 +383,4 @@ class TestNethackGlanceObservation:
                         elif glyph == 2363:
                             assert glance == "wall"
                         elif glyph == 2372:
-                            assert glance == 'open door'
+                            assert glance == "open door"
