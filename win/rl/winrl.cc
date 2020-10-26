@@ -177,13 +177,13 @@ class NetHackRL
     std::array<uint8_t, (COLNO - 1) * ROWNO> chars_;
     std::array<uint8_t, (COLNO - 1) * ROWNO> colors_;
     std::array<uint8_t, (COLNO - 1) * ROWNO> specials_;
-
-    std::array<int16_t, (COLNO - 1) * ROWNO> glyph_strs_;
-
+    
+    std::array<std::string, (COLNO - 1) * ROWNO> glyph_strs_;
+    
     void store_glyph(XCHAR_P x, XCHAR_P y, int glyph);
     void store_mapped_glyph(int ch, int color, int special, XCHAR_P x,
                             XCHAR_P y);
-    void store_glyph2(XCHAR_P x, XCHAR_P y, int glyph);
+    void store_glyph_str(XCHAR_P x, XCHAR_P y, int glyph);
 
     void fill_obs(nle_obs *);
     int getch_method();
@@ -277,7 +277,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
         if (obs->glyph_strs)
-            std::memset(obs->glyph_strs, 0, sizeof(int16_t) * glyph_strs_.size());
+            std::memset(obs->glyph_strs, 0, sizeof(uint8_t) * glyph_strs_.size());
         return;
     }
     obs->in_normal_game = true;
@@ -408,8 +408,17 @@ NetHackRL::fill_obs(nle_obs *obs)
         }
     }
     if (obs->glyph_strs) {
-        std::memcpy(obs->glyph_strs, glyph_strs_.data(),
-                    sizeof(int16_t) * glyph_strs_.size());
+        int i = 0;
+        for (const std::string &glyph_str : glyph_strs_) {
+            int j = 0;
+            for (int size = glyph_str.size(); j < size; ++j){
+                obs->glyph_strs[i++] = glyph_str[j];
+            }
+            for (; j < NLE_GLYPH_STR_LENGTH; ++j){
+                obs->glyph_strs[i++] = 0;
+            }
+
+        }
     }
 }
 
@@ -480,15 +489,29 @@ NetHackRL::store_mapped_glyph(int ch, int color, int special, XCHAR_P x,
 }
 
 void
-NetHackRL::store_glyph2(XCHAR_P x, XCHAR_P y, int glyph)
+NetHackRL::store_glyph_str(XCHAR_P x, XCHAR_P y, int glyph)
 {
     // 1 <= x < cols, 0 <= y < rows (!)
     size_t i = (x - 1) % (COLNO - 1);
     size_t j = y % ROWNO;
     size_t offset = j * (COLNO - 1) + i;
 
-    // TODO: Glyphs might be taken from gbuf[y][x].glyph.
-    glyph_strs_[offset] = glyph;
+    // see code in src/do_name.c:538 auto_describe
+    coord cc;
+    int sym = 0;
+    char tmpbuf[BUFSZ];
+    const char *firstmatch = "unknown";
+
+    cc.x = x;
+    cc.y = y;
+
+    if (do_screen_description(cc, TRUE, sym, tmpbuf, &firstmatch,
+                              (struct permonst **) 0)) {
+      glyph_strs_[offset] = firstmatch;
+    } else {
+      glyph_strs_[offset].clear();
+    }
+
 }
 
 void
@@ -574,7 +597,7 @@ NetHackRL::clear_nhwindow_method(winid wid)
         chars_.fill(' ');
         colors_.fill(0);
         specials_.fill(0);
-        glyph_strs_.fill(0);
+        glyph_strs_.fill("");
     }
 
     DEBUG_API("rl_clear_nhwindow(wid=" << wid << ")" << std::endl);
@@ -857,7 +880,7 @@ NetHackRL::rl_print_glyph(winid wid, XCHAR_P x, XCHAR_P y, int glyph,
     if (wid == WIN_MAP) {
         instance->store_glyph(x, y, glyph);
         instance->store_mapped_glyph(ch, color, special, x, y);
-        instance->store_glyph2(x, y, glyph);
+        instance->store_glyph_str(x, y, glyph);
     } else {
         DEBUG_API("Window id is " << wid << ". This shouldn't happen."
                                   << std::endl);

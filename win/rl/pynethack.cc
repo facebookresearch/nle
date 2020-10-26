@@ -138,7 +138,7 @@ class Nethack
             checked_conversion<uint8_t>(inv_oclasses, { NLE_INVENTORY_SIZE });
         obs_.inv_strs = checked_conversion<uint8_t>(
             inv_strs, { NLE_INVENTORY_SIZE, NLE_INVENTORY_STR_LENGTH });
-        obs_.glyph_strs = checked_conversion<int16_t>(glyph_strs, dungeon);
+        obs_.glyph_strs = checked_conversion<uint8_t>(glyph_strs, {ROWNO, COLNO-1, NLE_GLYPH_STR_LENGTH});
 
         py_buffers_ = { std::move(glyphs),        std::move(chars),
                         std::move(colors),        std::move(specials),
@@ -260,6 +260,7 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_INTERNAL_SIZE") = py::int_(NLE_INTERNAL_SIZE);
     mn.attr("NLE_INVENTORY_SIZE") = py::int_(NLE_INVENTORY_SIZE);
     mn.attr("NLE_INVENTORY_STR_LENGTH") = py::int_(NLE_INVENTORY_STR_LENGTH);
+    mn.attr("NLE_GLYPH_STR_LENGTH") = py::int_(NLE_GLYPH_STR_LENGTH);
 
     /* NetHack constants. */
     mn.attr("ROWNO") = py::int_(ROWNO);
