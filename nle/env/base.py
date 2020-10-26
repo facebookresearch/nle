@@ -106,7 +106,7 @@ class NLE(gym.Env):
             "inv_strs",
             "inv_letters",
             "inv_oclasses",
-            "glyph_strs"
+            "glyph_strs",
         ),
         actions=None,
         options=None,

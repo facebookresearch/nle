@@ -7,7 +7,7 @@ import numpy as np
 
 import pytest
 
-from nle import nethack
+from nle import nethack, _pynethack
 
 
 # MORE + compass directions + long compass directions.
@@ -334,23 +334,54 @@ class TestNethackFunctionsAndConstants:
 
 
 class TestNethackGlanceObservation:
-    def test_new_observation(self):
+    def test_new_observation_shapes(self):
         game = nethack.Nethack()
         obs = game.reset()
 
-        new_obs_key = 'glyph_strs'
-        np.set_printoptions(threshold=np.inf)
-        assert new_obs_key in nethack.OBSERVATION_DESC
-        assert new_obs_key in game._obs_buffers
-        np.testing.assert_equal(game._obs_buffers['glyphs'], game._obs_buffers[new_obs_key])
-        assert game._obs_buffers['glyphs'] is not game._obs_buffers[new_obs_key]
-        # do_screen_description(cc, looked, sym, *char outstr, firstmatch, permonst)
-        # const char *firstmatch = 0;
-        # sym=0, struct permonst *pm = 0, *supplemental_pm = 0;
+        glyph_str_buff = game._obs_buffers["glyph_strs"]
+        glyph_buff = game._obs_buffers["glyphs"]
+        glance_shape = glyph_str_buff.shape
+        assert glyph_buff.shape == glance_shape[:2]
+        assert _pynethack.nethack.NLE_GLYPH_STR_LENGTH == glance_shape[-1]
+        assert len(glance_shape) == 3
 
-    def test_permonst(self):
-        mon = nethack.permonst(0)
-        assert mon.mname == "giant ant"
-        del mon
+    def test_glance_descriptions(self):
+        game = nethack.Nethack(
+            playername="MonkBot-mon-hum-neu-mal",
+        )
+        obs = game.reset()[0]
 
-        mon = nethack.permonst(1)
+        # rather naughty - testing against private impl
+        glyph_buff = game._obs_buffers["glyphs"]
+        char_buff = game._obs_buffers["chars"]
+        desc_buff = game._obs_buffers["glyph_strs"]
+
+        row, col = glyph_buff.shape
+        str_len = _pynethack.nethack.NLE_GLYPH_STR_LENGTH
+        episodes = 6
+        for _ in range(episodes):
+            obs = game.reset()[0]
+            for i in range(row):
+                for j in range(col):
+                    glyph = glyph_buff[i][j]
+                    char = char_buff[i][j]
+                    letter = chr(char)
+                    glance = "".join(chr(c) for c in desc_buff[i][j] if c != 0)
+                    if char == 32:  # no text
+                        assert glance == ""
+                        assert (desc_buff[i][j] == 0).all()
+                    elif glyph == 2378 and letter == ".":
+                        assert glance == "floor of a room"
+                    elif glyph == 333 and letter == "@":  # us!
+                        assert glance == "human monk called MonkBot"
+                    elif glyph == 413:  # pet cat
+                        assert glance == "tame kitten"
+                    elif glyph == 397:  # pet dog
+                        assert glance == "tame little dog"
+                    elif letter in "-":  # illustrate same char, diff descrip
+                        if glyph == 2378:
+                            assert glance == "grave"
+                        elif glyph == 2363:
+                            assert glance == "wall"
+                        elif glyph == 2372:
+                            assert glance == 'open door'
