@@ -338,7 +338,7 @@ class TestNethackGlanceObservation:
         game = nethack.Nethack()
         obs = game.reset()
 
-        new_obs_key = 'glyphs2'
+        new_obs_key = 'glyph_strs'
         np.set_printoptions(threshold=np.inf)
         assert new_obs_key in nethack.OBSERVATION_DESC
         assert new_obs_key in game._obs_buffers

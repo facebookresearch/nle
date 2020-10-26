@@ -178,7 +178,7 @@ class NetHackRL
     std::array<uint8_t, (COLNO - 1) * ROWNO> colors_;
     std::array<uint8_t, (COLNO - 1) * ROWNO> specials_;
 
-    std::array<int16_t, (COLNO - 1) * ROWNO> glyphs2_;
+    std::array<int16_t, (COLNO - 1) * ROWNO> glyph_strs_;
 
     void store_glyph(XCHAR_P x, XCHAR_P y, int glyph);
     void store_mapped_glyph(int ch, int color, int special, XCHAR_P x,
@@ -276,8 +276,8 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->message, 0, 256);
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
-        if (obs->glyphs2)
-            std::memset(obs->glyphs2, 0, sizeof(int16_t) * glyphs2_.size());
+        if (obs->glyph_strs)
+            std::memset(obs->glyph_strs, 0, sizeof(int16_t) * glyph_strs_.size());
         return;
     }
     obs->in_normal_game = true;
@@ -407,9 +407,9 @@ NetHackRL::fill_obs(nle_obs *obs)
             obs->inv_oclasses[i] = MAXOCLASSES;
         }
     }
-    if (obs->glyphs2) {
-        std::memcpy(obs->glyphs2, glyphs2_.data(),
-                    sizeof(int16_t) * glyphs2_.size());
+    if (obs->glyph_strs) {
+        std::memcpy(obs->glyph_strs, glyph_strs_.data(),
+                    sizeof(int16_t) * glyph_strs_.size());
     }
 }
 
@@ -488,7 +488,7 @@ NetHackRL::store_glyph2(XCHAR_P x, XCHAR_P y, int glyph)
     size_t offset = j * (COLNO - 1) + i;
 
     // TODO: Glyphs might be taken from gbuf[y][x].glyph.
-    glyphs2_[offset] = glyph;
+    glyph_strs_[offset] = glyph;
 }
 
 void
@@ -574,7 +574,7 @@ NetHackRL::clear_nhwindow_method(winid wid)
         chars_.fill(' ');
         colors_.fill(0);
         specials_.fill(0);
-        glyphs2_.fill(0);
+        glyph_strs_.fill(0);
     }
 
     DEBUG_API("rl_clear_nhwindow(wid=" << wid << ")" << std::endl);
