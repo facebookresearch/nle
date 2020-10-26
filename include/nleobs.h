@@ -28,6 +28,7 @@ typedef struct nle_observation {
     unsigned char *inv_letters;  /* NLE_INVENTORY_SIZE */
     unsigned char *inv_oclasses; /* NLE_INVENTORY_SIZE */
     unsigned char *screen_descriptions;  /* Size ROWNO * (COLNO - 1) * NLE_SCREEN_DESCRIPTION_LENGTH */
+    short *glyphs2;           /* Size ROWNO * (COLNO - 1) */
 } nle_obs;
 
 typedef struct {
