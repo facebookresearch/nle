@@ -277,7 +277,8 @@ NetHackRL::fill_obs(nle_obs *obs)
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
         if (obs->glyph_strs)
-            std::memset(obs->glyph_strs, 0, sizeof(uint8_t) * glyph_strs_.size());
+            std::memset(obs->glyph_strs, 0,
+                       sizeof(uint8_t) * glyph_strs_.size() * NLE_GLYPH_STR_LENGTH);
         return;
     }
     obs->in_normal_game = true;
@@ -411,7 +412,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         int i = 0;
         for (const std::string &glyph_str : glyph_strs_) {
             int j = 0;
-            for (int size = glyph_str.size(); j < size; ++j){
+            for (int len = glyph_str.length(); j < len && j < NLE_GLYPH_STR_LENGTH; ++j){
                 obs->glyph_strs[i++] = glyph_str[j];
             }
             for (; j < NLE_GLYPH_STR_LENGTH; ++j){
@@ -507,7 +508,7 @@ NetHackRL::store_glyph_str(XCHAR_P x, XCHAR_P y, int glyph)
 
     if (do_screen_description(cc, TRUE, sym, tmpbuf, &firstmatch,
                               (struct permonst **) 0)) {
-      glyph_strs_[offset] = firstmatch;
+      glyph_strs_[offset].assign(firstmatch);
     } else {
       glyph_strs_[offset].clear();
     }
@@ -597,7 +598,9 @@ NetHackRL::clear_nhwindow_method(winid wid)
         chars_.fill(' ');
         colors_.fill(0);
         specials_.fill(0);
-        glyph_strs_.fill("");
+        for (std::string  &glyph_str : glyph_strs_) {
+          glyph_str.clear();
+        }
     }
 
     DEBUG_API("rl_clear_nhwindow(wid=" << wid << ")" << std::endl);
