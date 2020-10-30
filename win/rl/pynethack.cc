@@ -138,15 +138,23 @@ class Nethack
             checked_conversion<uint8_t>(inv_oclasses, { NLE_INVENTORY_SIZE });
         obs_.inv_strs = checked_conversion<uint8_t>(
             inv_strs, { NLE_INVENTORY_SIZE, NLE_INVENTORY_STR_LENGTH });
-        obs_.screen_descriptions = checked_conversion<uint8_t>(screen_descriptions, {ROWNO, COLNO-1, NLE_SCREEN_DESCRIPTION_LENGTH});
+        obs_.screen_descriptions = checked_conversion<uint8_t>(
+            screen_descriptions,
+            { ROWNO, COLNO - 1, NLE_SCREEN_DESCRIPTION_LENGTH });
 
-        py_buffers_ = { std::move(glyphs),        std::move(chars),
-                        std::move(colors),        std::move(specials),
-                        std::move(blstats),       std::move(message),
-                        std::move(program_state), std::move(internal),
-                        std::move(inv_glyphs),    std::move(inv_letters),
-                        std::move(inv_oclasses),  std::move(inv_strs),
-                        std::move(screen_descriptions)};
+        py_buffers_ = { std::move(glyphs),
+                        std::move(chars),
+                        std::move(colors),
+                        std::move(specials),
+                        std::move(blstats),
+                        std::move(message),
+                        std::move(program_state),
+                        std::move(internal),
+                        std::move(inv_glyphs),
+                        std::move(inv_letters),
+                        std::move(inv_oclasses),
+                        std::move(inv_strs),
+                        std::move(screen_descriptions) };
     }
 
     void
@@ -260,7 +268,8 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_INTERNAL_SIZE") = py::int_(NLE_INTERNAL_SIZE);
     mn.attr("NLE_INVENTORY_SIZE") = py::int_(NLE_INVENTORY_SIZE);
     mn.attr("NLE_INVENTORY_STR_LENGTH") = py::int_(NLE_INVENTORY_STR_LENGTH);
-    mn.attr("NLE_SCREEN_DESCRIPTION_LENGTH") = py::int_(NLE_SCREEN_DESCRIPTION_LENGTH);
+    mn.attr("NLE_SCREEN_DESCRIPTION_LENGTH") =
+        py::int_(NLE_SCREEN_DESCRIPTION_LENGTH);
 
     /* NetHack constants. */
     mn.attr("ROWNO") = py::int_(ROWNO);
@@ -369,20 +378,19 @@ PYBIND11_MODULE(_pynethack, m)
            [](int glyph) { return glyph_is_warning(glyph); });
 
     py::class_<permonst>(mn, "permonst", "The permonst struct.")
-        .def(
-            "__init__",
-            // See https://github.com/pybind/pybind11/issues/2394
-            [](py::detail::value_and_holder &v_h, int index) {
-                if (index < 0 || index >= NUMMONS)
-                    throw std::out_of_range(
-                        "Index should be between 0 and NUMMONS ("
-                        + std::to_string(NUMMONS) + ") but got "
-                        + std::to_string(index));
-                v_h.value_ptr() = &mons[index];
-                v_h.inst->owned = false;
-                v_h.set_holder_constructed(true);
-            },
-            py::detail::is_new_style_constructor())
+        .def("__init__",
+             // See https://github.com/pybind/pybind11/issues/2394
+             [](py::detail::value_and_holder &v_h, int index) {
+                 if (index < 0 || index >= NUMMONS)
+                     throw std::out_of_range(
+                         "Index should be between 0 and NUMMONS ("
+                         + std::to_string(NUMMONS) + ") but got "
+                         + std::to_string(index));
+                 v_h.value_ptr() = &mons[index];
+                 v_h.inst->owned = false;
+                 v_h.set_holder_constructed(true);
+             },
+             py::detail::is_new_style_constructor())
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
         .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
@@ -446,29 +454,28 @@ PYBIND11_MODULE(_pynethack, m)
         mn, "objclass",
         "The objclass struct.\n\n"
         "All fields are constant and don't reflect user changes.")
-        .def(
-            "__init__",
-            // See https://github.com/pybind/pybind11/issues/2394
-            [](py::detail::value_and_holder &v_h, int i) {
-                if (i < 0 || i >= NUM_OBJECTS)
-                    throw std::out_of_range(
-                        "Index should be between 0 and NUM_OBJECTS ("
-                        + std::to_string(NUM_OBJECTS) + ") but got "
-                        + std::to_string(i));
+        .def("__init__",
+             // See https://github.com/pybind/pybind11/issues/2394
+             [](py::detail::value_and_holder &v_h, int i) {
+                 if (i < 0 || i >= NUM_OBJECTS)
+                     throw std::out_of_range(
+                         "Index should be between 0 and NUM_OBJECTS ("
+                         + std::to_string(NUM_OBJECTS) + ") but got "
+                         + std::to_string(i));
 
-                /* Initialize. Cannot depend on o_init.c as it pulls
-                 * in all kinds of other code. Instead, do what
-                 * makedefs.c does at set it here.
-                 * Alternative: Get the pointer from the game itself?
-                 * Dangerous!
-                 */
-                objects[i].oc_name_idx = objects[i].oc_descr_idx = i;
+                 /* Initialize. Cannot depend on o_init.c as it pulls
+                  * in all kinds of other code. Instead, do what
+                  * makedefs.c does at set it here.
+                  * Alternative: Get the pointer from the game itself?
+                  * Dangerous!
+                  */
+                 objects[i].oc_name_idx = objects[i].oc_descr_idx = i;
 
-                v_h.value_ptr() = &objects[i];
-                v_h.inst->owned = false;
-                v_h.set_holder_constructed(true);
-            },
-            py::detail::is_new_style_constructor())
+                 v_h.value_ptr() = &objects[i];
+                 v_h.inst->owned = false;
+                 v_h.set_holder_constructed(true);
+             },
+             py::detail::is_new_style_constructor())
         .def_readonly("oc_name_idx",
                       &objclass::oc_name_idx) /* index of actual name */
         .def_readonly(
