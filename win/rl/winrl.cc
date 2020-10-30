@@ -278,7 +278,7 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
         if (obs->screen_descriptions)
             std::memset(obs->screen_descriptions, 0,
-                       sizeof(uint8_t) * screen_descriptions_.size() * NLE_SCREEN_DESCRIPTION_LENGTH);
+                        screen_descriptions_.size() * NLE_SCREEN_DESCRIPTION_LENGTH);
         return;
     }
     obs->in_normal_game = true;
