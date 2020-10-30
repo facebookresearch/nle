@@ -106,7 +106,7 @@ class NLE(gym.Env):
             "inv_strs",
             "inv_letters",
             "inv_oclasses",
-            "glyph_strs",
+            "screen_descriptions",
         ),
         actions=None,
         options=None,
@@ -271,8 +271,8 @@ class NLE(gym.Env):
                 high=nethack.MAXOCLASSES,
                 **nethack.OBSERVATION_DESC["inv_oclasses"],
             ),
-            "glyph_strs": gym.spaces.Box(
-                low=0, high=128, **nethack.OBSERVATION_DESC["glyph_strs"]
+            "screen_descriptions": gym.spaces.Box(
+                low=0, high=128, **nethack.OBSERVATION_DESC["screen_descriptions"]
             ),
         }
 

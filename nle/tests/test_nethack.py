@@ -338,11 +338,11 @@ class TestNethackGlanceObservation:
         game = nethack.Nethack()
         game.reset()
 
-        glyph_str_buff = game._obs_buffers["glyph_strs"]
+        screen_description_buff = game._obs_buffers["screen_descriptions"]
         glyph_buff = game._obs_buffers["glyphs"]
-        glance_shape = glyph_str_buff.shape
+        glance_shape = screen_description_buff.shape
         assert glyph_buff.shape == glance_shape[:2]
-        assert _pynethack.nethack.NLE_GLYPH_STR_LENGTH == glance_shape[-1]
+        assert _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH == glance_shape[-1]
         assert len(glance_shape) == 3
 
     def test_glance_descriptions(self):
@@ -354,7 +354,7 @@ class TestNethackGlanceObservation:
         # rather naughty - testing against private impl
         glyph_buff = game._obs_buffers["glyphs"]
         char_buff = game._obs_buffers["chars"]
-        desc_buff = game._obs_buffers["glyph_strs"]
+        desc_buff = game._obs_buffers["screen_descriptions"]
 
         row, col = glyph_buff.shape
         episodes = 6

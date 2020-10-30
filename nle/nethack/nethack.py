@@ -22,7 +22,9 @@ INV_STRS_SHAPE = (
     _pynethack.nethack.NLE_INVENTORY_SIZE,
     _pynethack.nethack.NLE_INVENTORY_STR_LENGTH,
 )
-GLYPH_STRS_SHAPE = DUNGEON_SHAPE + (_pynethack.nethack.NLE_GLYPH_STR_LENGTH,)
+SCREEN_DESCRIPTIONS_SHAPE = DUNGEON_SHAPE + (
+    _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH,
+)
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
@@ -37,7 +39,7 @@ OBSERVATION_DESC = {
     "inv_letters": dict(shape=INV_SIZE, dtype=np.uint8),
     "inv_oclasses": dict(shape=INV_SIZE, dtype=np.uint8),
     "inv_strs": dict(shape=INV_STRS_SHAPE, dtype=np.uint8),
-    "glyph_strs": dict(shape=GLYPH_STRS_SHAPE, dtype=np.uint8),
+    "screen_descriptions": dict(shape=SCREEN_DESCRIPTIONS_SHAPE, dtype=np.uint8),
 }
 
 

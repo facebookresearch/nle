@@ -8,7 +8,7 @@
 #define NLE_INTERNAL_SIZE 7
 #define NLE_INVENTORY_SIZE 55
 #define NLE_INVENTORY_STR_LENGTH 80
-#define NLE_GLYPH_STR_LENGTH 80
+#define NLE_SCREEN_DESCRIPTION_LENGTH 80
 
 typedef struct nle_observation {
     int action;
@@ -27,7 +27,7 @@ typedef struct nle_observation {
         *inv_strs; /* NLE_INVENTORY_SIZE * NLE_INVENTORY_STR_LENGTH */
     unsigned char *inv_letters;  /* NLE_INVENTORY_SIZE */
     unsigned char *inv_oclasses; /* NLE_INVENTORY_SIZE */
-    unsigned char *glyph_strs;  /* Size ROWNO * (COLNO - 1) * NLE_GLYPH_STR_LENGTH */
+    unsigned char *screen_descriptions;  /* Size ROWNO * (COLNO - 1) * NLE_SCREEN_DESCRIPTION_LENGTH */
 } nle_obs;
 
 typedef struct {
