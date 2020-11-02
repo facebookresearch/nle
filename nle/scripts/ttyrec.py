@@ -30,6 +30,8 @@ parser.add_argument("--keep_stderr", action="store_true", help="don't process st
 parser.add_argument(
     "filename", default="out.ttyrec", type=str, nargs="?", help="tty record file"
 )
+parser.add_argument("-c", "--columns", type=int, help="override number of columns")
+parser.add_argument("-r", "--rows", type=int, help="override number rows")
 
 
 def write_header(fp, length, channel):
@@ -113,6 +115,13 @@ def main():
 
     winsz = bytearray(8)
     fcntl.ioctl(0, termios.TIOCGWINSZ, winsz)
+
+    ws_row, ws_col, ws_xpixel, ws_ypixel = struct.unpack("HHHH", winsz)
+    if FLAGS.rows is not None:
+        ws_row = FLAGS.rows
+    if FLAGS.columns is not None:
+        ws_col = FLAGS.columns
+    struct.pack_into("HHHH", winsz, 0, ws_row, ws_col, ws_xpixel, ws_ypixel)
 
     fdmaster, fdslave = os.openpty()
     fcntl.ioctl(fdslave, termios.TIOCSWINSZ, winsz)

@@ -7,7 +7,7 @@ import numpy as np
 
 import pytest
 
-from nle import nethack
+from nle import nethack, _pynethack
 
 
 # MORE + compass directions + long compass directions.
@@ -331,3 +331,56 @@ class TestNethackFunctionsAndConstants:
         idx = nethack.glyph_to_obj(glyph)
         assert idx == elven_dagger.oc_name_idx
         assert nethack.objdescr.from_idx(idx) is od
+
+
+class TestNethackGlanceObservation:
+    def test_new_observation_shapes(self):
+        game = nethack.Nethack()
+        game.reset()
+
+        screen_description_buff = game._obs_buffers["screen_descriptions"]
+        glyph_buff = game._obs_buffers["glyphs"]
+        glance_shape = screen_description_buff.shape
+        assert glyph_buff.shape == glance_shape[:2]
+        assert _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH == glance_shape[-1]
+        assert len(glance_shape) == 3
+
+    def test_glance_descriptions(self):
+        game = nethack.Nethack(
+            playername="MonkBot-mon-hum-neu-mal",
+        )
+        game.reset()
+
+        # rather naughty - testing against private impl
+        glyph_buff = game._obs_buffers["glyphs"]
+        char_buff = game._obs_buffers["chars"]
+        desc_buff = game._obs_buffers["screen_descriptions"]
+
+        row, col = glyph_buff.shape
+        episodes = 6
+        for _ in range(episodes):
+            game.reset()
+            for i in range(row):
+                for j in range(col):
+                    glyph = glyph_buff[i][j]
+                    char = char_buff[i][j]
+                    letter = chr(char)
+                    glance = "".join(chr(c) for c in desc_buff[i][j] if c != 0)
+                    if char == 32:  # no text
+                        assert glance == ""
+                        assert (desc_buff[i][j] == 0).all()
+                    elif glyph == 2378 and letter == ".":
+                        assert glance == "floor of a room"
+                    elif glyph == 333 and letter == "@":  # us!
+                        assert glance == "human monk called MonkBot"
+                    elif glyph == 413:  # pet cat
+                        assert glance == "tame kitten"
+                    elif glyph == 397:  # pet dog
+                        assert glance == "tame little dog"
+                    elif letter in "-":  # illustrate same char, diff descrip
+                        if glyph == 2378:
+                            assert glance == "grave"
+                        elif glyph == 2363:
+                            assert glance == "wall"
+                        elif glyph == 2372:
+                            assert glance == "open door"
