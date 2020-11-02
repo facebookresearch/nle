@@ -179,13 +179,13 @@ NON_RL_ACTIONS = (
     Command.OPTIONS,
     Command.OVERVIEW,  # Could potentially be useful.
     Command.PREVMSG,  # Could potentially be useful.
+    Command.TELEPORT,
     Command.QUIT,
     Command.REDRAW,
     Command.SAVE,
     Command.SEEALL,  # Could potentially be useful.
     Command.TRAVEL,  # Could potentially be useful.
     Command.VERSION,
-    Command.VERSIONSHORT,
     Command.WHATDOES,
     Command.WHATIS,
 )
