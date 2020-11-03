@@ -115,7 +115,7 @@ class Nethack:
         shutil.copyfile(DLPATH, dlpath)
 
         if options is None:
-            options = list(NETHACKOPTIONS)
+            options = NETHACKOPTIONS
         self._options = list(options) + ["name:" + playername]
         if wizard:
             self._options.append("playmode:debug")
