@@ -273,7 +273,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         if (obs->specials)
             std::memset(obs->specials, 0, specials_.size());
         if (obs->message)
-            std::memset(obs->message, 0, 256);
+            std::memset(obs->message, 0, NLE_MESSAGE_SIZE);
         if (obs->blstats)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
         if (obs->screen_descriptions)
@@ -309,12 +309,13 @@ NetHackRL::fill_obs(nle_obs *obs)
             rl_window *win = windows_[WIN_MESSAGE].get();
             assert(win->type == NHW_MESSAGE);
             std::strncpy((char *) &obs->message[0],
-                         win->strings.back().c_str(), 256);
+                         win->strings.back().c_str(), NLE_MESSAGE_SIZE);
         } else if (ttyDisplay->toplin) {
             // Copy toplines[], see topl.c.
-            std::strncpy((char *) &obs->message[0], toplines, 256);
+            std::strncpy((char *) &obs->message[0], toplines,
+                         NLE_MESSAGE_SIZE);
         } else {
-            std::memset(obs->message, 0, 256);
+            std::memset(obs->message, 0, NLE_MESSAGE_SIZE);
         }
     }
     if (obs->blstats) {
