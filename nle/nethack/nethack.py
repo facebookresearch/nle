@@ -43,7 +43,7 @@ OBSERVATION_DESC = {
 }
 
 
-NETHACKOPTIONS = [
+NETHACKOPTIONS = (
     "color",
     "showexp",
     "autopickup",
@@ -58,7 +58,7 @@ NETHACKOPTIONS = [
     "nosparkle",
     "showexp",
     "showscore",
-]
+)
 
 HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
 WIZKIT_FNAME = "wizkit.txt"
@@ -115,7 +115,7 @@ class Nethack:
         shutil.copyfile(DLPATH, dlpath)
 
         if options is None:
-            options = NETHACKOPTIONS
+            options = list(NETHACKOPTIONS)
         self._options = list(options) + ["name:" + playername]
         if wizard:
             self._options.append("playmode:debug")
