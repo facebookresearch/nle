@@ -402,7 +402,9 @@ char **argv UNUSED;
      *    due to ordering of graphics settings
      */
 #if defined(UNIX) || defined(VMS)
+#ifndef RL_GRAPHICS
     setbuf(stdout, obuf);
+#endif
 #endif
     gettty();
 
