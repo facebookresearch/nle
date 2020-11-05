@@ -21,6 +21,7 @@ import sys
 import setuptools
 from setuptools.command import build_ext
 from distutils import spawn
+from distutils import sysconfig
 
 
 class CMakeBuild(build_ext.build_ext):
@@ -53,6 +54,8 @@ class CMakeBuild(build_ext.build_ext):
             "-DCMAKE_INSTALL_PREFIX=%s" % sys.base_prefix,
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=%s" % output_path,
             "-DHACKDIR=%s" % hackdir_path,
+            "-DPYTHON_INCLUDE_DIR=%s" % sysconfig.get_python_inc(),
+            "-DPYTHON_LIBRARY=%s" % sysconfig.get_config_var("LIBDIR"),
         ]
 
         build_cmd = ["cmake", "--build", ".", "--parallel"]
