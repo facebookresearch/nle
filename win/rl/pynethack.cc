@@ -30,11 +30,11 @@ using namespace py::literals;
 
 template <typename T>
 T *
-checked_conversion(py::object obj, const std::vector<ssize_t> &shape)
+checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 {
-    if (obj.is_none())
+    if (h.is_none())
         return nullptr;
-    py::array array = py::array::ensure(obj.release());
+    py::array array = py::array::ensure(h);
     if (!array)
         throw std::runtime_error("Numpy array required");
 
