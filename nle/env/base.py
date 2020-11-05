@@ -107,7 +107,8 @@ class NLE(gym.Env):
             "inv_letters",
             "inv_oclasses",
             "screen_descriptions",
-            "glyphs2",
+            "terminal_chars",
+            "terminal_fonts",
         ),
         actions=None,
         options=None,
@@ -275,8 +276,12 @@ class NLE(gym.Env):
             "screen_descriptions": gym.spaces.Box(
                 low=0, high=127, **nethack.OBSERVATION_DESC["screen_descriptions"]
             ),
-            "glyphs2": gym.spaces.Box(
-                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["glyphs2"]
+            "terminal_chars": gym.spaces.Box(
+                low=0, high=127, **nethack.OBSERVATION_DESC["terminal_chars"]
+            ),
+            "terminal_fonts": gym.spaces.Box(
+                low=np.iinfo(np.int16).min,
+                high=np.iinfo(np.int16).max, **nethack.OBSERVATION_DESC["terminal_fonts"]
             ),
         }
 

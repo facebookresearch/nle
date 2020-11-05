@@ -11,7 +11,7 @@ from nle import _pynethack
 
 DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 
-# TODO: Consider getting this from C++.
+# TODO: Consider getting this from C++. @EH
 DUNGEON_SHAPE = (21, 79)
 BLSTATS_SHAPE = (_pynethack.nethack.NLE_BLSTATS_SIZE,)
 MESSAGE_SHAPE = (_pynethack.nethack.NLE_MESSAGE_SIZE,)
@@ -25,10 +25,10 @@ INV_STRS_SHAPE = (
 SCREEN_DESCRIPTIONS_SHAPE = DUNGEON_SHAPE + (
     _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH,
 )
+TERMINAL_SHAPE = (_pynethack.nethack.NLE_TERM_LI, _pynethack.nethack.NLE_TERM_CO)
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
-    "glyphs2": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
     "chars": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
     "colors": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
     "specials": dict(shape=DUNGEON_SHAPE, dtype=np.uint8),
@@ -41,6 +41,8 @@ OBSERVATION_DESC = {
     "inv_oclasses": dict(shape=INV_SIZE, dtype=np.uint8),
     "inv_strs": dict(shape=INV_STRS_SHAPE, dtype=np.uint8),
     "screen_descriptions": dict(shape=SCREEN_DESCRIPTIONS_SHAPE, dtype=np.uint8),
+    "terminal_chars": dict(shape=TERMINAL_SHAPE, dtype=np.uint8),
+    "terminal_fonts": dict(shape=TERMINAL_SHAPE, dtype=np.int16),
 }
 
 

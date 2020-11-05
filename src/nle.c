@@ -26,8 +26,63 @@
 
 extern int unixmain(int, char **);
 
+short vt_font_attr_convert(TMTCHAR *c) {
+    /* short = 2x 1bit pad, 6x 1bit for each bool, 2x 4bit for each enum (1-9) */
+    short font = 0; 
+    font |= (c->a.bold      << 13);
+    font |= (c->a.dim       << 12);
+    font |= (c->a.underline << 11);
+    font |= (c->a.blink     << 10);
+    font |= (c->a.reverse   << 9);
+    font |= (c->a.invisible << 8);
+    font |= ((c->a.fg & 0xF) << 4);
+    font |= ((c->a.bg & 0XF) << 0);
+    return font;
+}
+
+void nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p) {
+    const TMTSCREEN *s = tmt_screen(vt);
+
+    nle_ctx_t *nle = (nle_ctx_t *) p;
+    if (!nle || !nle->observation ) {
+      return;
+    }
+
+    switch (m){
+       case TMT_MSG_BELL:
+            break;
+
+        case TMT_MSG_UPDATE:
+            for (size_t r = 0; r < s->nline; r++){
+                if (s->lines[r]->dirty){
+                  for (size_t c = 0; c < s->ncol; c++){
+                        
+                        size_t offset = (r * NLE_TERM_CO) + c;
+                        TMTCHAR *tmt_c = &(s->lines[r]->chars[c]) ;
+                        
+                        if (nle->observation->terminal_chars) {
+                            nle->observation->terminal_chars[offset] = tmt_c->c;
+                        }
+                        
+                        if (nle->observation->terminal_fonts){
+                            nle->observation->terminal_fonts[offset] = vt_font_attr_convert(tmt_c);
+                        }
+                    }
+                }
+            }
+            tmt_clean(vt);
+            break;
+
+        case TMT_MSG_ANSWER:
+            break;
+
+        case TMT_MSG_MOVED:
+            break;
+    }
+} 
+
 nle_ctx_t *
-init_nle(FILE *ttyrec)
+init_nle(FILE *ttyrec, nle_obs *obs)
 {
     nle_ctx_t *nle = malloc(sizeof(nle_ctx_t));
 
@@ -39,6 +94,12 @@ init_nle(FILE *ttyrec)
     nle->ttyrec_bz2 = BZ2_bzWriteOpen(&bzerror, ttyrec, 9, 0, 0);
     assert(bzerror == BZ_OK);
 #endif
+    
+    nle->observation = obs;
+
+    TMT *vterminal = tmt_open(LI, CO, nle_vt_callback, nle, NULL);
+    assert(!vterminal);
+    nle->vterminal = vterminal;
 
     nle->outbuf_write_ptr = nle->outbuf;
     nle->outbuf_write_end = nle->outbuf + sizeof(nle->outbuf);
@@ -119,7 +180,7 @@ nle_fflush(FILE *stream)
 
     write_header(length, 0);
     write_data(nle->outbuf, length);
-
+    tmt_write(nle->vterminal, nle->outbuf, length);
     nle->outbuf_write_ptr = nle->outbuf;
 
 #ifdef NLE_BZ2_TTYRECS
@@ -239,11 +300,10 @@ nle_ctx_t *
 nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init)
 {
     /* Set CO and LI to control ttyrec output size. */
-    CO = 80;
-    LI = 24;
+    CO = NLE_TERM_CO;
+    LI = NLE_TERM_LI;
 
-    nle_ctx_t *nle = init_nle(ttyrec);
-    nle->observation = obs;
+    nle_ctx_t *nle = init_nle(ttyrec, obs);
     nle_seeds_init = seed_init;
 
     nle->stack = create_fcontext_stack(STACK_SIZE);
@@ -294,6 +354,8 @@ nle_end(nle_ctx_t *nle)
     BZ2_bzWriteClose(&bzerror, nle->ttyrec_bz2, 0, NULL, NULL);
     assert(bzerror == BZ_OK);
 #endif
+    
+    tmt_close(nle->vterminal);
 
     destroy_fcontext_stack(&nle->stack);
     free(nle);
@@ -320,7 +382,7 @@ nle_get_seed(nle_ctx_t *nle, unsigned long *core, unsigned long *disp,
     *core = nle_seeds[0];
     *disp = nle_seeds[1];
     *reseed = has_strong_rngseed;
-};
+}
 
 /* From unixtty.c */
 /* fatal error */

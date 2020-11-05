@@ -384,3 +384,38 @@ class TestNethackGlanceObservation:
                             assert glance == "wall"
                         elif glyph == 2372:
                             assert glance == "open door"
+
+
+class TestNethackTerminalObservation:
+    def test_new_observation_shapes(self):
+        game = nethack.Nethack()
+        game.reset()
+
+        terminal_chars = game._obs_buffers["terminal_chars"]
+        terminal_fonts = game._obs_buffers["terminal_fonts"]
+        assert terminal_fonts.shape == terminal_chars.shape
+        terminal_shape = terminal_chars.shape
+        assert _pynethack.nethack.NLE_TERM_LI == terminal_shape[0]
+        assert _pynethack.nethack.NLE_TERM_CO == terminal_shape[1]
+
+
+    def test_observations(self):
+        game = nethack.Nethack()
+        game.reset()
+
+        terminal_chars = game._obs_buffers["terminal_chars"]
+        terminal_fonts = game._obs_buffers["terminal_fonts"]
+
+        top_line = "".join(chr(c) for c in terminal_chars[0])
+        bottom_sub1_line = "".join(chr(c) for c in terminal_chars[-2])
+        bottom_line = "".join(chr(c) for c in terminal_chars[-1])
+        assert top_line.startswith("Hello Agent, welcome to NetHack!  You are a neutral male human Monk.")
+        assert bottom_sub1_line.startswith("Agent the Candidate")
+        assert bottom_line.startswith("Dlvl:1")
+
+        for c, font in zip(terminal_chars.reshape(-1), terminal_fonts.reshape(-1)):
+            if chr(c) == '@':
+                assert font == 8335 # 00 1 0 0 0 0 0 | 8 F
+            if chr(c) == ' ':
+                assert font == 255  # 00 0 0 0 0 0 0 | F F
+

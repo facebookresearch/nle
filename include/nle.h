@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include <fcontext/fcontext.h>
+#include "tmt.h"
 
 #include "nleobs.h"
 
@@ -19,6 +20,7 @@ typedef struct nle_globals {
     fcontext_t generatorcontext;
 
     FILE *ttyrec;
+    TMT *vterminal;
     char outbuf[BUFSIZ];
     char *outbuf_write_ptr;
     char *outbuf_write_end;

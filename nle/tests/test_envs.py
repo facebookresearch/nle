@@ -48,6 +48,8 @@ def rollout_env(env, max_rollout_len):
     env.close()
     return reward
 
+def term_screen(obs):
+    return ('\n'.join(''.join(chr(c) for c in row) for row in obs['terminal_chars']))
 
 def compare_rollouts(env0, env1, max_rollout_len):
     """Checks that two active environments return the same rollout.
@@ -60,7 +62,13 @@ def compare_rollouts(env0, env1, max_rollout_len):
         obs0, reward0, done0, info0 = env0.step(a)
         obs1, reward1, done1, info1 = env1.step(a)
         step += 1
-        np.testing.assert_equal(obs0, obs1)
+
+        s0, s1 = term_screen(obs0), term_screen(obs1)
+        top_ten_msg = "You made the top ten list!"
+        if top_ten_msg in s0:
+            assert top_ten_msg in s1
+        else:
+            np.testing.assert_equal(obs0, obs1)
         assert reward0 == reward1
         assert done0 == done1
 
