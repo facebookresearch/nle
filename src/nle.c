@@ -77,7 +77,7 @@ write_data(void *buf, int length)
     BZ2_bzWrite(&bzerror, nle->ttyrec_bz2, buf, length);
     assert(bzerror == BZ_OK);
 #else
-    assert(fwrite(buf, 1, length, nle->ttyrec) == 0);
+    assert(fwrite(buf, 1, length, nle->ttyrec) == length);
 #endif
     return TRUE;
 }
@@ -169,6 +169,9 @@ nle_xputs(const char *str)
 int
 nle_puts(const char *str)
 {
+    if (!*str) /* At exit, an empty string gets printed in tty_raw_print. */
+        return 0;
+
     int val = fputs(str, stdout);
     putc('\n', stdout); /* puts includes a newline, fputs doesn't */
     return val;
