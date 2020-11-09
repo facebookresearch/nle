@@ -90,6 +90,7 @@ set_target_properties(nethack PROPERTIES CXX_STANDARD 14 SUFFIX ".so")
 target_include_directories(nethack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN} /usr/local/include)
 target_link_directories(nethack PUBLIC /usr/local/lib)
+target_compile_definitions(nethack PUBLIC "$<$<CONFIG:DEBUG>:MONITOR_HEAP>")
 
 # On Ubuntu 20.04, libncurses6 seems to cause a SEGFAULT on tgetent?
 find_library(NCURSES_LIB NAMES libncurses.so.5 libncurses ncurses)
