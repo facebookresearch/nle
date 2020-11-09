@@ -1,37 +1,22 @@
 # -*- mode: dockerfile -*-
 
-FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
+FROM ubuntu:20.04
 
 ARG PYTHON_VERSION=3.8
-ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -yq \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    wget \
-    git \
-    software-properties-common \
-    build-essential \
-    emacs \
-    vim \
-    python3-pip
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    make \
-    g++ \
-    clang \
-    bison \
-    flex \
-    libncurses-dev
-
-RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
-
-RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-RUN apt-get update && apt-get --allow-unauthenticated install -yq \
-    cmake \
-    kitware-archive-keyring
+        bison \
+        build-essential \
+        cmake \
+        curl \
+        flex \
+        git \
+        libbz2-dev \
+        libncurses5 \  # NLE breaks with libncurses6.
+        libncurses5-dev \
+        ninja-build \
+        wget
 
 WORKDIR /opt/conda_setup
 
@@ -44,10 +29,20 @@ ENV PATH /opt/conda/bin:$PATH
 
 RUN python -m pip install --upgrade pip ipython ipdb
 
+COPY . /opt/nle/
+
 WORKDIR /opt/nle
 
-COPY . .
+RUN pip install '.[all]'
 
-RUN pip install ".[all]"
+WORKDIR /workspace
 
-WORKDIR '/workspace'
+CMD ["/bin/bash"]
+
+
+# Docker commands:
+#   docker rm nle -v
+#   docker build -t nle -f docker/Dockerfile .
+#   docker run --rm --name nle nle
+# or
+#   docker run -it --entrypoint /bin/bash nle
