@@ -26,60 +26,65 @@
 
 extern int unixmain(int, char **);
 
-short vt_font_attr_convert(TMTCHAR *c) {
-    /* short = 2x 1bit pad, 6x 1bit for each bool, 2x 4bit for each enum (1-9) */
-    short font = 0; 
-    font |= (c->a.bold      << 13);
-    font |= (c->a.dim       << 12);
+short
+vt_font_attr_convert(TMTCHAR *c)
+{
+    /* short = 2x 1bit pad, 6x 1bit for each bool, 2x 4bit for each enum (1-9)
+     */
+    short font = 0;
+    font |= (c->a.bold << 13);
+    font |= (c->a.dim << 12);
     font |= (c->a.underline << 11);
-    font |= (c->a.blink     << 10);
-    font |= (c->a.reverse   << 9);
+    font |= (c->a.blink << 10);
+    font |= (c->a.reverse << 9);
     font |= (c->a.invisible << 8);
     font |= ((c->a.fg & 0xF) << 4);
     font |= ((c->a.bg & 0XF) << 0);
     return font;
 }
 
-void nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p) {
+void
+nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
+{
     const TMTSCREEN *s = tmt_screen(vt);
 
     nle_ctx_t *nle = (nle_ctx_t *) p;
-    if (!nle || !nle->observation ) {
-      return;
+    if (!nle || !nle->observation) {
+        return;
     }
 
-    switch (m){
-       case TMT_MSG_BELL:
-            break;
+    switch (m) {
+    case TMT_MSG_BELL:
+        break;
 
-        case TMT_MSG_UPDATE:
-            for (size_t r = 0; r < s->nline; r++){
-                if (s->lines[r]->dirty){
-                  for (size_t c = 0; c < s->ncol; c++){
-                        
-                        size_t offset = (r * NLE_TERM_CO) + c;
-                        TMTCHAR *tmt_c = &(s->lines[r]->chars[c]) ;
-                        
-                        if (nle->observation->terminal_chars) {
-                            nle->observation->terminal_chars[offset] = tmt_c->c;
-                        }
-                        
-                        if (nle->observation->terminal_fonts){
-                            nle->observation->terminal_fonts[offset] = vt_font_attr_convert(tmt_c);
-                        }
+    case TMT_MSG_UPDATE:
+        for (size_t r = 0; r < s->nline; r++) {
+            if (s->lines[r]->dirty) {
+                for (size_t c = 0; c < s->ncol; c++) {
+                    size_t offset = (r * NLE_TERM_CO) + c;
+                    TMTCHAR *tmt_c = &(s->lines[r]->chars[c]);
+
+                    if (nle->observation->terminal_chars) {
+                        nle->observation->terminal_chars[offset] = tmt_c->c;
+                    }
+
+                    if (nle->observation->terminal_fonts) {
+                        nle->observation->terminal_fonts[offset] =
+                            vt_font_attr_convert(tmt_c);
                     }
                 }
             }
-            tmt_clean(vt);
-            break;
+        }
+        tmt_clean(vt);
+        break;
 
-        case TMT_MSG_ANSWER:
-            break;
+    case TMT_MSG_ANSWER:
+        break;
 
-        case TMT_MSG_MOVED:
-            break;
+    case TMT_MSG_MOVED:
+        break;
     }
-} 
+}
 
 nle_ctx_t *
 init_nle(FILE *ttyrec, nle_obs *obs)
@@ -94,7 +99,7 @@ init_nle(FILE *ttyrec, nle_obs *obs)
     nle->ttyrec_bz2 = BZ2_bzWriteOpen(&bzerror, ttyrec, 9, 0, 0);
     assert(bzerror == BZ_OK);
 #endif
-    
+
     nle->observation = obs;
 
     TMT *vterminal = tmt_open(LI, CO, nle_vt_callback, nle, NULL);
@@ -354,7 +359,7 @@ nle_end(nle_ctx_t *nle)
     BZ2_bzWriteClose(&bzerror, nle->ttyrec_bz2, 0, NULL, NULL);
     assert(bzerror == BZ_OK);
 #endif
-    
+
     tmt_close(nle->vterminal);
 
     destroy_fcontext_stack(&nle->stack);

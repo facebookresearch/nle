@@ -281,7 +281,8 @@ class NLE(gym.Env):
             ),
             "terminal_fonts": gym.spaces.Box(
                 low=np.iinfo(np.int16).min,
-                high=np.iinfo(np.int16).max, **nethack.OBSERVATION_DESC["terminal_fonts"]
+                high=np.iinfo(np.int16).max,
+                **nethack.OBSERVATION_DESC["terminal_fonts"],
             ),
         }
 

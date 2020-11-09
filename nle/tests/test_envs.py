@@ -48,8 +48,10 @@ def rollout_env(env, max_rollout_len):
     env.close()
     return reward
 
+
 def term_screen(obs):
-    return ('\n'.join(''.join(chr(c) for c in row) for row in obs['terminal_chars']))
+    return "\n".join("".join(chr(c) for c in row) for row in obs["terminal_chars"])
+
 
 def compare_rollouts(env0, env1, max_rollout_len):
     """Checks that two active environments return the same rollout.

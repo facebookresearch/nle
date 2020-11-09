@@ -116,8 +116,7 @@ class Nethack
                 py::object program_state, py::object internal,
                 py::object inv_glyphs, py::object inv_letters,
                 py::object inv_oclasses, py::object inv_strs,
-                py::object screen_descriptions,
-                py::object terminal_chars,
+                py::object screen_descriptions, py::object terminal_chars,
                 py::object terminal_fonts)
     {
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
@@ -143,8 +142,10 @@ class Nethack
         obs_.screen_descriptions = checked_conversion<uint8_t>(
             screen_descriptions,
             { ROWNO, COLNO - 1, NLE_SCREEN_DESCRIPTION_LENGTH });
-        obs_.terminal_chars = checked_conversion<uint8_t>(terminal_chars, { NLE_TERM_LI, NLE_TERM_CO });
-        obs_.terminal_fonts = checked_conversion<int16_t>(terminal_fonts, { NLE_TERM_LI, NLE_TERM_CO });
+        obs_.terminal_chars = checked_conversion<uint8_t>(
+            terminal_chars, { NLE_TERM_LI, NLE_TERM_CO });
+        obs_.terminal_fonts = checked_conversion<int16_t>(
+            terminal_fonts, { NLE_TERM_LI, NLE_TERM_CO });
 
         py_buffers_ = { std::move(glyphs),
                         std::move(chars),
