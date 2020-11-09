@@ -232,13 +232,13 @@ class NetHackEat(NetHackScore):
             # Before game started or after it ended stats are zero.
             return 0.0
 
-        old_blstats = last_observation[self._blstats_index]
-        blstats = observation[self._blstats_index]
+        old_internal = last_observation[self._internal_index]
+        internal = observation[self._internal_index]
 
-        old_hunger = old_blstats[21]
-        hunger = blstats[21]
+        old_uhunger = old_internal[7]
+        uhunger = internal[7]
 
-        reward = max(0, hunger - old_hunger)
+        reward = max(0, uhunger - old_uhunger)
 
         time_penalty = self._get_time_penalty(last_observation, observation)
 
