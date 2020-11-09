@@ -4,6 +4,9 @@
 #include <sys/time.h>
 
 #define NEED_VARARGS
+#ifdef MONITOR_HEAP
+#undef MONITOR_HEAP
+#endif
 #include "hack.h"
 
 #include "dlb.h"
