@@ -5,6 +5,7 @@ FROM ubuntu:20.04
 ARG PYTHON_VERSION=3.8
 ENV DEBIAN_FRONTEND=noninteractive
 
+# TODO(heiner): NLE breaks with libncurses6. Fix.
 RUN apt-get update && apt-get install -yq \
         bison \
         build-essential \
@@ -13,7 +14,7 @@ RUN apt-get update && apt-get install -yq \
         flex \
         git \
         libbz2-dev \
-        libncurses5 \  # NLE breaks with libncurses6.
+        libncurses5 \
         libncurses5-dev \
         ninja-build \
         wget
