@@ -152,6 +152,7 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
         if episodes == ngames:
             break
         env.reset()
+    env.close()
     print(
         "Finished after %i episodes and %f seconds. Mean sps: %f"
         % (episodes, timeit.default_timer() - total_start_time, mean_sps)
