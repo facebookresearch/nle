@@ -503,6 +503,7 @@ VA_DECL(const char *, s)
     Vsprintf(pbuf, s, VA_ARGS);
 #endif
     pbuf[BUFSZ - 1] = '\0'; /* sanity */
+    fprintf(stderr, pbuf, VA_ARGS);
     paniclog("impossible", pbuf);
     if (iflags.debug_fuzzer)
         panic("%s", pbuf);

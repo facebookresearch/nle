@@ -1377,6 +1377,7 @@ void
 tty_exit_nhwindows(str)
 const char *str;
 {
+  //fprintf(stderr, "tty_exit_nhwindows\n");
     winid i;
 
     tty_suspend_nhwindows(str);

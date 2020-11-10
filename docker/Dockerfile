@@ -30,11 +30,15 @@ ENV PATH /opt/conda/bin:$PATH
 
 RUN python -m pip install --upgrade pip ipython ipdb
 
+RUN pip install pybind11 numpy gym
+
 COPY . /opt/nle/
 
 WORKDIR /opt/nle
 
-RUN pip install '.[all]'
+RUN pip install '.'
+
+RUN apt-get install -yq valgrind
 
 WORKDIR /workspace
 

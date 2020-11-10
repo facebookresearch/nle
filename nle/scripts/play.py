@@ -10,6 +10,7 @@ import termios
 import time
 import timeit
 import tty
+import psutil
 
 import gym
 
@@ -85,6 +86,8 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
         if not no_render:
             print("Available actions:", env._actions)
 
+    pwd = os.getcwd()
+    os.environ["NH_HEAPLOG"] = os.path.join(pwd, "heaplog-0.txt")
     obs = env.reset()
 
     steps = 0
@@ -133,13 +136,13 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
 
         time_delta = timeit.default_timer() - start_time
 
-        if not is_raw_env:
+        if False:
             print("Final reward:", reward)
             print("End status:", info["end_status"].name)
             print("Mean reward:", mean_reward)
 
         sps = steps / time_delta
-        print("Episode: %i. Steps: %i. SPS: %f" % (episodes, steps, sps))
+        # print("Episode: %i. Steps: %i. SPS: %f" % (episodes, steps, sps))
 
         episodes += 1
         mean_sps += (sps - mean_sps) / episodes
@@ -151,7 +154,14 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
 
         if episodes == ngames:
             break
+        os.environ["NH_HEAPLOG"] = os.path.join(pwd, "heaplog-%i.txt" % episodes)
         env.reset()
+
+        if episodes % 100 == 0:
+            process = psutil.Process(os.getpid())
+            mem_now = process.memory_info().rss
+            print(episodes, "mem usage", mem_now)
+
     env.close()
     print(
         "Finished after %i episodes and %f seconds. Mean sps: %f"

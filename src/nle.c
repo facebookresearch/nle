@@ -46,6 +46,8 @@ init_nle(FILE *ttyrec)
     nle->outbuf_write_ptr = nle->outbuf;
     nle->outbuf_write_end = nle->outbuf + sizeof(nle->outbuf);
 
+    nle->done = 0;
+
     return nle;
 }
 
@@ -286,6 +288,7 @@ void
 nle_end(nle_ctx_t *nle)
 {
     if (!nle->done) {
+        fprintf(stderr, "nle_end and not done\n");
         /* Reset without closing nethack. Need free memory, etc.
          * this is what nh_terminate in end.c does. I hope it's enough. */
         if (!program_state.panicking) {
