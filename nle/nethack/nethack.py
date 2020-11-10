@@ -71,7 +71,7 @@ def _set_env_vars(options, hackdir, wizkit=None):
     # TODO: Investigate not using environment variables for this.
     os.environ["NETHACKOPTIONS"] = ",".join(options)
     os.environ["HACKDIR"] = hackdir
-    os.environ["TERM"] = os.environ.get("TERM", "screen")
+    os.environ["TERM"] = "ansi"
     if wizkit is not None:
         os.environ["WIZKIT"] = wizkit
 
