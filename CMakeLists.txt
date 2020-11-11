@@ -90,16 +90,18 @@ set_target_properties(nethack PROPERTIES CXX_STANDARD 14 SUFFIX ".so")
 target_include_directories(nethack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                           ${NLE_INC_GEN} /usr/local/include)
 target_link_directories(nethack PUBLIC /usr/local/lib)
-target_compile_definitions(nethack PUBLIC "$<$<CONFIG:DEBUG>:MONITOR_HEAP>")
+
+# Careful with -DMONITOR_HEAP: Ironically, it fails to fclose FILE* heaplog.
+# target_compile_definitions(nethack PUBLIC "$<$<CONFIG:DEBUG>:MONITOR_HEAP>")
 
 # On Ubuntu 20.04, libncurses6 seems to cause a SEGFAULT on tgetent?
 find_library(NCURSES_LIB NAMES libncurses.so.5 libncurses ncurses)
-target_link_libraries(nethack PUBLIC m fcontext ${NCURSES_LIB} bz2)
+target_link_libraries(nethack PUBLIC m fcontext bz2 ${NCURSES_LIB})
 
 # dlopen wrapper library
 add_library(nethackdl STATIC "sys/unix/nledl.c")
 target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(nethackdl PUBLIC dl)
+target_link_libraries(nethackdl PUBLIC dl ${NCURSES_LIB})
 
 # rlmain C++ (test) binary
 add_executable(rlmain "sys/unix/rlmain.cc")

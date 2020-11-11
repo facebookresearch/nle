@@ -154,6 +154,7 @@ int *wid, *hgt;
 #endif
         TE = VS = VE = nullstr;
 #ifdef TEXTCOLOR
+        /* NLE: TODO(heiner): Re-enable and free these. */
         for (i = 0; i < CLR_MAX / 2; i++)
             if (i != CLR_BLACK) {
                 hilites[i | BRIGHT] = (char *) alloc(sizeof("\033[1;3%dm"));
@@ -179,20 +180,18 @@ int *wid, *hgt;
 #endif /* ANSI_DEFAULT */
 
 #ifdef TERMLIB
-    tptr = (char *) alloc(1024);
-
     tbufptr = tbuf;
     if (!strncmp(term, "5620", 4))
         flags.null = FALSE; /* this should be a termcap flag */
-    if (tgetent(tptr, term) < 1) {
-        char buf[BUFSZ];
-        (void) strncpy(buf, term,
-                       (BUFSZ - 1) - (sizeof("Unknown terminal type: .  ")));
-        buf[BUFSZ - 1] = '\0';
-        error("Unknown terminal type: %s.", term);
-    }
-    if ((pc = Tgetstr("pc")) != 0)
+
+    /*
+     *  NLE: Removed call to tgetent: nlecl.c calls tgetent once on startup.
+     *  The call leaks if we dlclose libnethack, which dlcloses ncurses as well.
+     */
+    if ((pc = Tgetstr("pc")) != 0) {
         PC = *pc;
+        free(pc);
+    }
 
     if (!(BC = Tgetstr("le"))) /* both termcap and terminfo use le */
 #ifdef TERMINFO
@@ -315,7 +314,6 @@ int *wid, *hgt;
         error("NetHack needs CL.");
     if ((int) (tbufptr - tbuf) > (int) (sizeof tbuf))
         error("TERMCAP entry too big...\n");
-    free((genericptr_t) tptr);
 #endif /* TERMLIB */
 }
 
@@ -737,52 +735,10 @@ static const short tmspc10[] = { /* from termcap */
 #endif
 #endif
 
-/* delay 50 ms */
+/* NLE: Don't delay ever. */
 void
 tty_delay_output()
 {
-#if defined(MICRO)
-    register int i;
-#endif
-    if (iflags.debug_fuzzer)
-        return;
-#ifdef TIMED_DELAY
-    if (flags.nap) {
-        (void) fflush(stdout);
-        msleep(50); /* sleep for 50 milliseconds */
-        return;
-    }
-#endif
-#if defined(MICRO)
-    /* simulate the delay with "cursor here" */
-    for (i = 0; i < 3; i++) {
-        cmov(ttyDisplay->curx, ttyDisplay->cury);
-        (void) fflush(stdout);
-    }
-#else /* MICRO */
-    /* BUG: if the padding character is visible, as it is on the 5620
-       then this looks terrible. */
-    if (flags.null) {
-        tputs(
-#ifdef TERMINFO
-              "$<50>",
-#else
-              "50",
-#endif
-              1, xputc);
-
-    } else if (ospeed > 0 && ospeed < SIZE(tmspc10) && nh_CM) {
-        /* delay by sending cm(here) an appropriate number of times */
-        register int cmlen =
-            (int) strlen(tgoto(nh_CM, ttyDisplay->curx, ttyDisplay->cury));
-        register int i = 500 + tmspc10[ospeed] / 2;
-
-        while (i > 0) {
-            cmov((int) ttyDisplay->curx, (int) ttyDisplay->cury);
-            i -= cmlen * tmspc10[ospeed];
-        }
-    }
-#endif /* MICRO */
 }
 
 /* must only be called with curx = 1 */
