@@ -27,6 +27,9 @@
 /* #define STUPID */ /* avoid some complicated expressions if
                         your C compiler chokes on them */
 /* #define MINIMAL_TERM */
+/* NLE TODO(heiner): Consider dropping TERMLIB this way. */
+/*#define ANSI_DEFAULT*/
+/*#undef TERMLIB*/
 /* if a terminal handles highlighting or tabs poorly,
    try this define, used in pager.c and termcap.c */
 /* #define ULTRIX_CC20 */
