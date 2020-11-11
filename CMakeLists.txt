@@ -101,7 +101,9 @@ target_link_libraries(nethack PUBLIC m fcontext bz2 ${NCURSES_LIB})
 # dlopen wrapper library
 add_library(nethackdl STATIC "sys/unix/nledl.c")
 target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(nethackdl PUBLIC dl ${NCURSES_LIB})
+target_link_libraries(nethackdl PUBLIC dl ncurses)
+# Would have liked to use ${NCURSES_LIB} in the last line, but CMake doesn't
+# include transitive dependencies when using absolute file names. :/
 
 # rlmain C++ (test) binary
 add_executable(rlmain "sys/unix/rlmain.cc")
