@@ -1,4 +1,5 @@
 import collections
+import sys
 import pprint
 
 Entry = collections.namedtuple("Entry", "size hash line file")
@@ -6,7 +7,7 @@ Entry = collections.namedtuple("Entry", "size hash line file")
 
 def main():
     allocs = {}
-    with open("heaplog.txt") as heaplog:
+    with open(sys.argv[1]) as heaplog:
         for line in heaplog:
             entries = line.split()
             if entries[0] == "+":
