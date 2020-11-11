@@ -154,7 +154,7 @@ int *wid, *hgt;
 #endif
         TE = VS = VE = nullstr;
 #ifdef TEXTCOLOR
-        /* NLE: TODO(heiner): Re-enable and free these. */
+        /* NLE: TODO(heiner): Fix using ANSI_DEFAULT, free these. */
         for (i = 0; i < CLR_MAX / 2; i++)
             if (i != CLR_BLACK) {
                 hilites[i | BRIGHT] = (char *) alloc(sizeof("\033[1;3%dm"));
