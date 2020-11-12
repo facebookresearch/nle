@@ -1,31 +1,24 @@
 # -*- mode: dockerfile -*-
 
-FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu16.04
+FROM ubuntu:16.04
 
 ARG PYTHON_VERSION=3.8
-ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -yq \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    wget \
-    git \
-    software-properties-common \
-    build-essential \
-    emacs \
-    vim \
-    python3-pip
+        apt-transport-https \
+        bison \
+        build-essential \
+        cmake \
+        curl \
+        flex \
+        git \
+        libbz2-dev \
+        ninja-build \
+        software-properties-common \
+        wget
 
-RUN apt-get update && apt-get install -yq \
-    ca-certificates \
-    curl \
-    make \
-    g++ \
-    clang \
-    bison \
-    flex \
-    libncurses-dev
+WORKDIR /opt/conda_setup
 
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
     | gpg -dearmor - \
@@ -33,8 +26,6 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
 
 RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
 RUN apt-get update && apt-get --allow-unauthenticated install -yq cmake
-
-WORKDIR /opt/conda_setup
 
 RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
      chmod +x miniconda.sh && \
@@ -45,10 +36,20 @@ ENV PATH /opt/conda/bin:$PATH
 
 RUN python -m pip install --upgrade pip ipython ipdb
 
+COPY . /opt/nle/
+
 WORKDIR /opt/nle
 
-COPY . .
+RUN pip install '.[all]'
 
-RUN pip install ".[all]"
+WORKDIR /workspace
 
-WORKDIR '/workspace'
+CMD ["/bin/bash"]
+
+
+# Docker commands:
+#   docker rm nle -v
+#   docker build -t nle -f docker/Dockerfile .
+#   docker run --rm --name nle nle
+# or
+#   docker run -it --entrypoint /bin/bash nle
