@@ -14,7 +14,7 @@ extern "C" {
 class ScopedTC
 {
   public:
-    ScopedTC()
+    ScopedTC() : old_{}
     {
         tcgetattr(STDIN_FILENO, &old_);
         struct termios tty = old_;

@@ -9,7 +9,9 @@
 #define TCAP_H
 
 #ifndef MICRO
+#ifndef RL_GRAPHICS
 #define TERMLIB /* include termcap code */
+#endif
 #endif
 
 /* might display need graphics code? */
