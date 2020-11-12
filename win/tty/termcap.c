@@ -339,6 +339,7 @@ tty_shutdown()
         if (i != CLR_BLACK) {
             free(hilites[i | BRIGHT]);
             if (i != CLR_GRAY)
+            /* Mirrors logic in tty_startup if ANSI_DEFAULT is set. */
 #ifdef MICRO
                 if (i != CLR_BLUE)
 #endif /* MICRO */
