@@ -20,8 +20,8 @@ on:
     types: [released]
 
 jobs:
-  bionic:
-    name: Build and publish bionic image
+  focal:
+    name: Build and publish focal image
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -31,7 +31,7 @@ jobs:
       uses: docker/build-push-action@v1
       with:
         repository: fairnle/nle
-        dockerfile: docker/Dockerfile
+        dockerfile: docker/Dockerfile-focal
         tags: dev
         tag_with_sha: true
         add_git_labels: true
@@ -43,7 +43,7 @@ jobs:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: fairnle/nle
-        dockerfile: docker/Dockerfile
+        dockerfile: docker/Dockerfile-focal
         tags: dev
         tag_with_sha: true
         add_git_labels: true
@@ -61,7 +61,53 @@ jobs:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: fairnle/nle
-        dockerfile: docker/Dockerfile
+        dockerfile: docker/Dockerfile-focal
+        tags: ${{ github.event.release.tag_name }},stable
+        add_git_labels: true
+        push: true
+
+  bionic:
+    name: Build and publish bionic image
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build image
+      uses: docker/build-push-action@v1
+      with:
+        repository: fairnle/nle
+        dockerfile: docker/Dockerfile-bionic
+        tags: dev
+        tag_with_sha: true
+        add_git_labels: true
+        push: false
+    - name: Push image
+      if: github.ref == 'master' || (github.event_name == 'release' && github.even.action == 'released')
+      uses: docker/build-push-action@v1
+      with:
+        username: edran
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: fairnle/nle
+        dockerfile: docker/Dockerfile-bionic
+        tags: dev
+        tag_with_sha: true
+        add_git_labels: true
+        push: true
+    - name: Check version matches release tag
+      if: github.event_name == 'release' && github.event.action == 'released'
+      run: |
+        echo "v$(cat version.txt)"
+        echo "${{ github.event.release.tag_name }}"
+        [[ "${{ github.event.release.tag_name }}" == "v$(cat version.txt)" ]]
+    - name: Push version tag
+      if: github.event_name == 'release' && github.event.action == 'released'
+      uses: docker/build-push-action@v1
+      with:
+        username: edran
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: fairnle/nle
+        dockerfile: docker/Dockerfile-bionic
         tags: ${{ github.event.release.tag_name }},stable
         add_git_labels: true
         push: true
@@ -77,7 +123,7 @@ jobs:
       uses: docker/build-push-action@v1
       with:
         repository: fairnle/nle-xenial
-        dockerfile: docker/Dockerfile
+        dockerfile: docker/Dockerfile-xenial
         tags: dev
         tag_with_sha: true
         add_git_labels: true
@@ -89,7 +135,7 @@ jobs:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: fairnle/nle-xenial
-        dockerfile: docker/Dockerfile
+        dockerfile: docker/Dockerfile-xenial
         tags: dev
         tag_with_sha: true
         add_git_labels: true
