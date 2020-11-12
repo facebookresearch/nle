@@ -94,19 +94,12 @@ target_link_directories(nethack PUBLIC /usr/local/lib)
 # Careful with -DMONITOR_HEAP: Ironically, it fails to fclose FILE* heaplog.
 # target_compile_definitions(nethack PUBLIC "$<$<CONFIG:DEBUG>:MONITOR_HEAP>")
 
-# On Ubuntu 20.04, libncurses6 seems to cause a SEGFAULT on tgetent?
-find_library(NCURSES_LIB NAMES libncurses.so.5 libncurses ncurses)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(TINFO_LIB "${NCURSES_LIB}")
-else()
-  find_library(TINFO_LIB NAMES libtinfo.so.5 libtinfo tinfo)
-endif()
-target_link_libraries(nethack PUBLIC m fcontext bz2 ${NCURSES_LIB})
+target_link_libraries(nethack PUBLIC m fcontext bz2 ncurses)
 
 # dlopen wrapper library
 add_library(nethackdl STATIC "sys/unix/nledl.c")
 target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(nethackdl PUBLIC dl ${TINFO_LIB})
+target_link_libraries(nethackdl PUBLIC dl ncurses)
 
 # rlmain C++ (test) binary
 add_executable(rlmain "sys/unix/rlmain.cc")
