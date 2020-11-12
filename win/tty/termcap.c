@@ -154,7 +154,6 @@ int *wid, *hgt;
 #endif /* MICRO */
         TE = VS = VE = nullstr;
 #ifdef TEXTCOLOR
-        /* NLE: TODO(heiner): Fix using ANSI_DEFAULT, free these. */
         for (i = 0; i < CLR_MAX / 2; i++)
             if (i != CLR_BLACK) {
                 hilites[i | BRIGHT] = (char *) alloc(sizeof("\033[1;3%dm"));
@@ -333,6 +332,22 @@ tty_shutdown()
         free((genericptr_t) nh_HE), nh_HE = (char *) 0;
         dynamic_HIHE = FALSE;
     }
+#else /* TERMLIB */
+#ifndef TOS
+#if defined(ANSI_DEFAULT) && defined(TEXTCOLOR)
+    for (int i = 0; i < CLR_MAX / 2; i++)
+        if (i != CLR_BLACK) {
+            free(hilites[i | BRIGHT]);
+            if (i != CLR_GRAY)
+#ifdef MICRO
+                if (i != CLR_BLUE)
+#endif /* MICRO */
+                {
+                    free(hilites[i]);
+                }
+        }
+#endif /* ANSI_DEFAULT) && TEXTCOLOR */
+#endif /* TOS */
 #endif /* TERMLIB */
     return;
 }
@@ -1106,8 +1121,8 @@ kill_hilite()
 #endif /* TOS */
     return;
 }
-#endif /* UNIX */
-#endif /* TEXTCOLOR */
+#endif /* UNIX && TERMINFO */
+#endif /* TEXTCOLOR && TERMLIB */
 
 static char nulstr[] = "";
 
