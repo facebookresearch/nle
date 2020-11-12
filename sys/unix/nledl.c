@@ -4,9 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <curses.h>
-#include <term.h>
-
 #include "nledl.h"
 
 void
@@ -60,16 +57,6 @@ nle_ctx_t *
 nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec,
           nle_seeds_init_t *seed_init)
 {
-    static bool tc_started = FALSE;
-    if (!tc_started) {
-        const char *term = getenv("TERM");
-        if (!term || tgetent(NULL, term) < 1) {
-            fprintf(stderr, "Couldn't get terminal\n");
-            exit(EXIT_FAILURE);
-        }
-        tc_started = TRUE;
-    }
-
     /* TODO: Consider getting ttyrec path from caller? */
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
     nledl->ttyrec = ttyrec;
