@@ -157,6 +157,11 @@ $ python -m nle.scripts.plot
                                        steps
 ```
 
+# Contributing
+
+We welcome contributions to NLE. If you are interested in contributing please 
+see [this document](./CONTRIBUTING.md) 
+
 
 # Related Environments
 - [gym\_nethack](http://campbelljc.com/research/gym_nethack/)
