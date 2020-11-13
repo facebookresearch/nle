@@ -30,7 +30,7 @@ jobs:
     - name: Build image
       uses: docker/build-push-action@v1
       with:
-        repository: fairnle/nle
+        repository: fairnle/nle-focal
         dockerfile: docker/Dockerfile-focal
         tags: dev
         tag_with_sha: true
@@ -42,7 +42,7 @@ jobs:
       with:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: fairnle/nle
+        repository: fairnle/nle-focal
         dockerfile: docker/Dockerfile-focal
         tags: dev
         tag_with_sha: true
@@ -60,7 +60,7 @@ jobs:
       with:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: fairnle/nle
+        repository: fairnle/nle-focal
         dockerfile: docker/Dockerfile-focal
         tags: ${{ github.event.release.tag_name }},stable
         add_git_labels: true
