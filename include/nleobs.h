@@ -31,8 +31,8 @@ typedef struct nle_observation {
     unsigned char *inv_letters;  /* Size NLE_INVENTORY_SIZE */
     unsigned char *inv_oclasses; /* Size NLE_INVENTORY_SIZE */
     unsigned char *screen_descriptions;  /* Size ROWNO * (COLNO - 1) * NLE_SCREEN_DESCRIPTION_LENGTH */
-    unsigned char *terminal_chars;       /* Size NLE_TERM_LI * NLE_TERM_CO */
-    short *terminal_fonts;   /* Size NLE_TERM_LI * NLE_TERM_CO */
+    unsigned char *tty_chars;       /* Size NLE_TERM_LI * NLE_TERM_CO */
+    short *tty_colors;   /* Size NLE_TERM_LI * NLE_TERM_CO */
 } nle_obs;
 
 typedef struct {

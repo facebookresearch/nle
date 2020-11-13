@@ -391,10 +391,10 @@ class TestNethackTerminalObservation:
         game = nethack.Nethack()
         game.reset()
 
-        terminal_chars = game._obs_buffers["terminal_chars"]
-        terminal_fonts = game._obs_buffers["terminal_fonts"]
-        assert terminal_fonts.shape == terminal_chars.shape
-        terminal_shape = terminal_chars.shape
+        tty_chars = game._obs_buffers["tty_chars"]
+        tty_colors = game._obs_buffers["tty_colors"]
+        assert tty_colors.shape == tty_chars.shape
+        terminal_shape = tty_chars.shape
         assert _pynethack.nethack.NLE_TERM_LI == terminal_shape[0]
         assert _pynethack.nethack.NLE_TERM_CO == terminal_shape[1]
 
@@ -402,19 +402,19 @@ class TestNethackTerminalObservation:
         game = nethack.Nethack()
         game.reset()
 
-        terminal_chars = game._obs_buffers["terminal_chars"]
-        terminal_fonts = game._obs_buffers["terminal_fonts"]
+        tty_chars = game._obs_buffers["tty_chars"]
+        tty_colors = game._obs_buffers["tty_colors"]
 
-        top_line = "".join(chr(c) for c in terminal_chars[0])
-        bottom_sub1_line = "".join(chr(c) for c in terminal_chars[-2])
-        bottom_line = "".join(chr(c) for c in terminal_chars[-1])
+        top_line = "".join(chr(c) for c in tty_chars[0])
+        bottom_sub1_line = "".join(chr(c) for c in tty_chars[-2])
+        bottom_line = "".join(chr(c) for c in tty_chars[-1])
         assert top_line.startswith(
             "Hello Agent, welcome to NetHack!  You are a neutral male human Monk."
         )
         assert bottom_sub1_line.startswith("Agent the Candidate")
         assert bottom_line.startswith("Dlvl:1")
 
-        for c, font in zip(terminal_chars.reshape(-1), terminal_fonts.reshape(-1)):
+        for c, font in zip(tty_chars.reshape(-1), tty_colors.reshape(-1)):
             if chr(c) == "@":
                 assert font == 8335  # 00 1 0 0 0 0 0 | 8 F
             if chr(c) == " ":

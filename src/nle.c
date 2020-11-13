@@ -3,6 +3,8 @@
 #include <string.h>
 #include <sys/time.h>
 
+#include <tmt.h>
+
 #define NEED_VARARGS
 #include "hack.h"
 
@@ -64,12 +66,12 @@ nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
                     size_t offset = (r * NLE_TERM_CO) + c;
                     TMTCHAR *tmt_c = &(s->lines[r]->chars[c]);
 
-                    if (nle->observation->terminal_chars) {
-                        nle->observation->terminal_chars[offset] = tmt_c->c;
+                    if (nle->observation->tty_chars) {
+                        nle->observation->tty_chars[offset] = tmt_c->c;
                     }
 
-                    if (nle->observation->terminal_fonts) {
-                        nle->observation->terminal_fonts[offset] =
+                    if (nle->observation->tty_colors) {
+                        nle->observation->tty_colors[offset] =
                             vt_font_attr_convert(tmt_c);
                     }
                 }

@@ -50,7 +50,7 @@ def rollout_env(env, max_rollout_len):
 
 
 def term_screen(obs):
-    return "\n".join("".join(chr(c) for c in row) for row in obs["terminal_chars"])
+    return "\n".join("".join(chr(c) for c in row) for row in obs["tty_chars"])
 
 
 def compare_rollouts(env0, env1, max_rollout_len):

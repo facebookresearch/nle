@@ -7,13 +7,13 @@
 
 #include <fcontext/fcontext.h>
 
-#include "tmt.h"
-
 #include "nleobs.h"
 
 /* TODO: Fix this. */
 #undef SIG_RET_TYPE
 #define SIG_RET_TYPE void (*)(int)
+
+typedef struct TMT TMT;
 
 typedef struct nle_globals {
     fcontext_stack_t stack;

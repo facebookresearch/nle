@@ -41,8 +41,8 @@ OBSERVATION_DESC = {
     "inv_oclasses": dict(shape=INV_SIZE, dtype=np.uint8),
     "inv_strs": dict(shape=INV_STRS_SHAPE, dtype=np.uint8),
     "screen_descriptions": dict(shape=SCREEN_DESCRIPTIONS_SHAPE, dtype=np.uint8),
-    "terminal_chars": dict(shape=TERMINAL_SHAPE, dtype=np.uint8),
-    "terminal_fonts": dict(shape=TERMINAL_SHAPE, dtype=np.int16),
+    "tty_chars": dict(shape=TERMINAL_SHAPE, dtype=np.uint8),
+    "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int16),
 }
 
 

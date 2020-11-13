@@ -107,8 +107,8 @@ class NLE(gym.Env):
             "inv_letters",
             "inv_oclasses",
             "screen_descriptions",
-            "terminal_chars",
-            "terminal_fonts",
+            "tty_chars",
+            "tty_colors",
         ),
         actions=None,
         options=None,
@@ -276,13 +276,13 @@ class NLE(gym.Env):
             "screen_descriptions": gym.spaces.Box(
                 low=0, high=127, **nethack.OBSERVATION_DESC["screen_descriptions"]
             ),
-            "terminal_chars": gym.spaces.Box(
-                low=0, high=127, **nethack.OBSERVATION_DESC["terminal_chars"]
+            "tty_chars": gym.spaces.Box(
+                low=0, high=127, **nethack.OBSERVATION_DESC["tty_chars"]
             ),
-            "terminal_fonts": gym.spaces.Box(
+            "tty_colors": gym.spaces.Box(
                 low=np.iinfo(np.int16).min,
                 high=np.iinfo(np.int16).max,
-                **nethack.OBSERVATION_DESC["terminal_fonts"],
+                **nethack.OBSERVATION_DESC["tty_colors"],
             ),
         }
 
