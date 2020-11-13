@@ -1,6 +1,6 @@
 # -*- mode: dockerfile -*-
 
-FROM ubuntu:20.04
+FROM nvidia/cuda:11.0-devel-ubuntu20.04
 
 ARG PYTHON_VERSION=3.8
 ENV DEBIAN_FRONTEND=noninteractive
