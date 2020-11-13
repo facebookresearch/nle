@@ -287,7 +287,7 @@ class NLE(gym.Env):
             ),
             "tty_cursor": gym.spaces.Box(
                 low=0, high=255, **nethack.OBSERVATION_DESC["tty_cursor"]
-            )
+            ),
         }
 
         self.observation_space = gym.spaces.Dict(

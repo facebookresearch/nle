@@ -31,47 +31,47 @@ extern int unixmain(int, char **);
 signed char
 vt_char_color_extract(TMTCHAR *c)
 {
-    /* We pick out the colors in the enum tmt_color_t. These match the order 
-     * found standard in IBM color graphics, and are the same order as those 
+    /* We pick out the colors in the enum tmt_color_t. These match the order
+     * found standard in IBM color graphics, and are the same order as those
      * found in src/color.h. We take the values from color.h, and choose
      * default to be bright black (NO_COLOR) as nethack does.
-     * 
-     * Finally we indicate whether the color is reverse, by indicating the sign
+     *
+     * Finally we indicate whether the color is reverse, by indicating the
+     * sign
      * of the final integer.
      */
     signed char color = 0;
-    switch (c->a.fg)
-    {
-      case (TMT_COLOR_DEFAULT):
-        color = NO_COLOR;  // color = 8
+    switch (c->a.fg) {
+    case (TMT_COLOR_DEFAULT):
+        color = NO_COLOR; // color = 8
         break;
-      case (TMT_COLOR_BLACK):
-        color = (c->a.bold)?NO_COLOR:CLR_BLACK;              // c = 8:0
+    case (TMT_COLOR_BLACK):
+        color = (c->a.bold) ? NO_COLOR : CLR_BLACK; // c = 8:0
         break;
-      case (TMT_COLOR_RED):
-        color = (c->a.bold)?CLR_ORANGE:CLR_RED;              // c = 9:1
+    case (TMT_COLOR_RED):
+        color = (c->a.bold) ? CLR_ORANGE : CLR_RED; // c = 9:1
         break;
-      case (TMT_COLOR_GREEN):
-        color = (c->a.bold)?CLR_BRIGHT_GREEN:CLR_GREEN;      // c = 10:2
+    case (TMT_COLOR_GREEN):
+        color = (c->a.bold) ? CLR_BRIGHT_GREEN : CLR_GREEN; // c = 10:2
         break;
-      case (TMT_COLOR_YELLOW):
-        color = (c->a.bold)?CLR_YELLOW:CLR_BROWN;            // c = 11:3
+    case (TMT_COLOR_YELLOW):
+        color = (c->a.bold) ? CLR_YELLOW : CLR_BROWN; // c = 11:3
         break;
-      case (TMT_COLOR_BLUE):
-        color = (c->a.bold)?CLR_BRIGHT_BLUE:CLR_BLUE;        // c = 12:4
+    case (TMT_COLOR_BLUE):
+        color = (c->a.bold) ? CLR_BRIGHT_BLUE : CLR_BLUE; // c = 12:4
         break;
-      case (TMT_COLOR_MAGENTA):
-        color = (c->a.bold)?CLR_BRIGHT_MAGENTA:CLR_MAGENTA;  // c = 13:5
+    case (TMT_COLOR_MAGENTA):
+        color = (c->a.bold) ? CLR_BRIGHT_MAGENTA : CLR_MAGENTA; // c = 13:5
         break;
-      case (TMT_COLOR_CYAN):
-        color = (c->a.bold)?CLR_BRIGHT_CYAN:CLR_CYAN;        // c = 14:6
+    case (TMT_COLOR_CYAN):
+        color = (c->a.bold) ? CLR_BRIGHT_CYAN : CLR_CYAN; // c = 14:6
         break;
-      case (TMT_COLOR_WHITE):
-        color = (c->a.bold)?CLR_WHITE:CLR_GRAY;              // c = 15:7
+    case (TMT_COLOR_WHITE):
+        color = (c->a.bold) ? CLR_WHITE : CLR_GRAY; // c = 15:7
         break;
     }
 
-    color |= (c->a.reverse << 7);  // Flip sign if reverse
+    color |= (c->a.reverse << 7); // Flip sign if reverse
     return color;
 }
 
@@ -115,7 +115,7 @@ nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
         break;
 
     case TMT_MSG_MOVED:
-        if (nle->observation->tty_cursor){
+        if (nle->observation->tty_cursor) {
             // cast from size_t is safe from overflow, since r,c < 256
             nle->observation->tty_cursor[0] = (unsigned char) cur->r;
             nle->observation->tty_cursor[1] = (unsigned char) cur->c;

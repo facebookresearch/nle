@@ -12,7 +12,6 @@
 #define NLE_TERM_CO 80
 #define NLE_TERM_LI 24
 
-
 typedef struct nle_observation {
     int action;
     int done;
@@ -28,12 +27,13 @@ typedef struct nle_observation {
     short *inv_glyphs;       /* Size NLE_INVENTORY_SIZE */
     unsigned char
         *inv_strs; /* Size NLE_INVENTORY_SIZE * NLE_INVENTORY_STR_LENGTH */
-    unsigned char *inv_letters;  /* Size NLE_INVENTORY_SIZE */
-    unsigned char *inv_oclasses; /* Size NLE_INVENTORY_SIZE */
-    unsigned char *screen_descriptions;  /* Size ROWNO * (COLNO - 1) * NLE_SCREEN_DESCRIPTION_LENGTH */
-    unsigned char *tty_chars;       /* Size NLE_TERM_LI * NLE_TERM_CO */
-    signed char *tty_colors;   /* Size NLE_TERM_LI * NLE_TERM_CO */
-    unsigned char *tty_cursor;  /* Size 2 */ 
+    unsigned char *inv_letters;         /* Size NLE_INVENTORY_SIZE */
+    unsigned char *inv_oclasses;        /* Size NLE_INVENTORY_SIZE */
+    unsigned char *screen_descriptions; /* Size ROWNO * (COLNO - 1) *
+                                           NLE_SCREEN_DESCRIPTION_LENGTH */
+    unsigned char *tty_chars;           /* Size NLE_TERM_LI * NLE_TERM_CO */
+    signed char *tty_colors;            /* Size NLE_TERM_LI * NLE_TERM_CO */
+    unsigned char *tty_cursor;          /* Size 2 */
 } nle_obs;
 
 typedef struct {

@@ -422,4 +422,3 @@ class TestNethackTerminalObservation:
                 assert font == 15  # BRIGHT_WHITE
             if chr(c) == " ":
                 assert font == 8  # NO_COLOR
-

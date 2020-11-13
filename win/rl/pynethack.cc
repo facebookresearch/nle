@@ -146,8 +146,7 @@ class Nethack
             tty_chars, { NLE_TERM_LI, NLE_TERM_CO });
         obs_.tty_colors = checked_conversion<int8_t>(
             tty_colors, { NLE_TERM_LI, NLE_TERM_CO });
-        obs_.tty_cursor = checked_conversion<uint8_t>(
-            tty_cursor, { 2 });
+        obs_.tty_cursor = checked_conversion<uint8_t>(tty_cursor, { 2 });
 
         py_buffers_ = { std::move(glyphs),
                         std::move(chars),
