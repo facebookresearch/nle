@@ -11,8 +11,7 @@ from nle import _pynethack
 
 DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 
-# TODO: Consider getting this from C++. @EH
-DUNGEON_SHAPE = (21, 79)
+DUNGEON_SHAPE = (_pynethack.nethack.ROWNO, _pynethack.nethack.COLNO - 1)
 BLSTATS_SHAPE = (_pynethack.nethack.NLE_BLSTATS_SIZE,)
 MESSAGE_SHAPE = (_pynethack.nethack.NLE_MESSAGE_SIZE,)
 PROGRAM_STATE_SHAPE = (_pynethack.nethack.NLE_PROGRAM_STATE_SIZE,)
@@ -43,6 +42,7 @@ OBSERVATION_DESC = {
     "screen_descriptions": dict(shape=SCREEN_DESCRIPTIONS_SHAPE, dtype=np.uint8),
     "tty_chars": dict(shape=TERMINAL_SHAPE, dtype=np.uint8),
     "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int8),
+    "tty_cursor": dict(shape=(2,), dtype=np.uint8),
 }
 
 

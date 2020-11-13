@@ -109,6 +109,7 @@ class NLE(gym.Env):
             "screen_descriptions",
             "tty_chars",
             "tty_colors",
+            "tty_cursor",
         ),
         actions=None,
         options=None,
@@ -284,6 +285,9 @@ class NLE(gym.Env):
                 high=15,
                 **nethack.OBSERVATION_DESC["tty_colors"],
             ),
+            "tty_cursor": gym.spaces.Box(
+                low=0, high=255, **nethack.OBSERVATION_DESC["tty_cursor"]
+            )
         }
 
         self.observation_space = gym.spaces.Dict(

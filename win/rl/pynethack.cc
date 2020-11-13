@@ -117,7 +117,7 @@ class Nethack
                 py::object inv_glyphs, py::object inv_letters,
                 py::object inv_oclasses, py::object inv_strs,
                 py::object screen_descriptions, py::object tty_chars,
-                py::object tty_colors)
+                py::object tty_colors, py::object tty_cursor)
     {
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
         obs_.glyphs = checked_conversion<int16_t>(glyphs, dungeon);
@@ -146,6 +146,8 @@ class Nethack
             tty_chars, { NLE_TERM_LI, NLE_TERM_CO });
         obs_.tty_colors = checked_conversion<int8_t>(
             tty_colors, { NLE_TERM_LI, NLE_TERM_CO });
+        obs_.tty_cursor = checked_conversion<uint8_t>(
+            tty_cursor, { 2 });
 
         py_buffers_ = { std::move(glyphs),
                         std::move(chars),
@@ -161,7 +163,8 @@ class Nethack
                         std::move(inv_strs),
                         std::move(screen_descriptions),
                         std::move(tty_chars),
-                        std::move(tty_colors) };
+                        std::move(tty_colors),
+                        std::move(tty_cursor) };
     }
 
     void
@@ -260,7 +263,8 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("inv_strs") = py::none(),
              py::arg("screen_descriptions") = py::none(),
              py::arg("tty_chars") = py::none(),
-             py::arg("tty_colors") = py::none())
+             py::arg("tty_colors") = py::none(),
+             py::arg("tty_cursor") = py::none())
         .def("close", &Nethack::close)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)

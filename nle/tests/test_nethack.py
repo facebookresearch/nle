@@ -393,7 +393,9 @@ class TestNethackTerminalObservation:
 
         tty_chars = game._obs_buffers["tty_chars"]
         tty_colors = game._obs_buffers["tty_colors"]
+        tty_cursor = game._obs_buffers["tty_cursor"]
         assert tty_colors.shape == tty_chars.shape
+        assert tty_cursor.shape == (2,)
         terminal_shape = tty_chars.shape
         assert _pynethack.nethack.NLE_TERM_LI == terminal_shape[0]
         assert _pynethack.nethack.NLE_TERM_CO == terminal_shape[1]
@@ -404,6 +406,7 @@ class TestNethackTerminalObservation:
 
         tty_chars = game._obs_buffers["tty_chars"]
         tty_colors = game._obs_buffers["tty_colors"]
+        tty_cursor = game._obs_buffers["tty_cursor"]
 
         top_line = "".join(chr(c) for c in tty_chars[0])
         bottom_sub1_line = "".join(chr(c) for c in tty_chars[-2])
@@ -419,3 +422,4 @@ class TestNethackTerminalObservation:
                 assert font == 15  # BRIGHT_WHITE
             if chr(c) == " ":
                 assert font == 8  # NO_COLOR
+

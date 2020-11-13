@@ -33,6 +33,7 @@ typedef struct nle_observation {
     unsigned char *screen_descriptions;  /* Size ROWNO * (COLNO - 1) * NLE_SCREEN_DESCRIPTION_LENGTH */
     unsigned char *tty_chars;       /* Size NLE_TERM_LI * NLE_TERM_CO */
     signed char *tty_colors;   /* Size NLE_TERM_LI * NLE_TERM_CO */
+    unsigned char *tty_cursor;  /* Size 2 */ 
 } nle_obs;
 
 typedef struct {

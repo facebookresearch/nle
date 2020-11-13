@@ -79,6 +79,7 @@ void
 nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
 {
     const TMTSCREEN *s = tmt_screen(vt);
+    const TMTPOINT *cur = tmt_cursor(vt);
 
     nle_ctx_t *nle = (nle_ctx_t *) p;
     if (!nle || !nle->observation) {
@@ -114,6 +115,11 @@ nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
         break;
 
     case TMT_MSG_MOVED:
+        if (nle->observation->tty_cursor){
+            // cast from size_t is safe from overflow, since r,c < 256
+            nle->observation->tty_cursor[0] = (unsigned char) cur->r;
+            nle->observation->tty_cursor[1] = (unsigned char) cur->c;
+        }
         break;
 
     case TMT_MSG_CURSOR:
