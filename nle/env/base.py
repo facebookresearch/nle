@@ -280,8 +280,8 @@ class NLE(gym.Env):
                 low=0, high=127, **nethack.OBSERVATION_DESC["tty_chars"]
             ),
             "tty_colors": gym.spaces.Box(
-                low=np.iinfo(np.int16).min,
-                high=np.iinfo(np.int16).max,
+                low=-15,
+                high=15,
                 **nethack.OBSERVATION_DESC["tty_colors"],
             ),
         }

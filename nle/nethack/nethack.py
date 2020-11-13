@@ -42,7 +42,7 @@ OBSERVATION_DESC = {
     "inv_strs": dict(shape=INV_STRS_SHAPE, dtype=np.uint8),
     "screen_descriptions": dict(shape=SCREEN_DESCRIPTIONS_SHAPE, dtype=np.uint8),
     "tty_chars": dict(shape=TERMINAL_SHAPE, dtype=np.uint8),
-    "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int16),
+    "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int8),
 }
 
 

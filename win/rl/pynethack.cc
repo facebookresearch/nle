@@ -144,7 +144,7 @@ class Nethack
             { ROWNO, COLNO - 1, NLE_SCREEN_DESCRIPTION_LENGTH });
         obs_.tty_chars = checked_conversion<uint8_t>(
             tty_chars, { NLE_TERM_LI, NLE_TERM_CO });
-        obs_.tty_colors = checked_conversion<int16_t>(
+        obs_.tty_colors = checked_conversion<int8_t>(
             tty_colors, { NLE_TERM_LI, NLE_TERM_CO });
 
         py_buffers_ = { std::move(glyphs),

@@ -28,21 +28,51 @@
 
 extern int unixmain(int, char **);
 
-short
-vt_font_attr_convert(TMTCHAR *c)
+signed char
+vt_char_color_extract(TMTCHAR *c)
 {
-    /* short = 2x 1bit pad, 6x 1bit for each bool, 2x 4bit for each enum (1-9)
+    /* We pick out the colors in the enum tmt_color_t. These match the order 
+     * found standard in IBM color graphics, and are the same order as those 
+     * found in src/color.h. We take the values from color.h, and choose
+     * default to be bright black (NO_COLOR) as nethack does.
+     * 
+     * Finally we indicate whether the color is reverse, by indicating the sign
+     * of the final integer.
      */
-    short font = 0;
-    font |= (c->a.bold << 13);
-    font |= (c->a.dim << 12);
-    font |= (c->a.underline << 11);
-    font |= (c->a.blink << 10);
-    font |= (c->a.reverse << 9);
-    font |= (c->a.invisible << 8);
-    font |= ((c->a.fg & 0xF) << 4);
-    font |= ((c->a.bg & 0XF) << 0);
-    return font;
+    signed char color = 0;
+    switch (c->a.fg)
+    {
+      case (TMT_COLOR_DEFAULT):
+        color = NO_COLOR;  // color = 8
+        break;
+      case (TMT_COLOR_BLACK):
+        color = (c->a.bold)?NO_COLOR:CLR_BLACK;              // c = 8:0
+        break;
+      case (TMT_COLOR_RED):
+        color = (c->a.bold)?CLR_ORANGE:CLR_RED;              // c = 9:1
+        break;
+      case (TMT_COLOR_GREEN):
+        color = (c->a.bold)?CLR_BRIGHT_GREEN:CLR_GREEN;      // c = 10:2
+        break;
+      case (TMT_COLOR_YELLOW):
+        color = (c->a.bold)?CLR_YELLOW:CLR_BROWN;            // c = 11:3
+        break;
+      case (TMT_COLOR_BLUE):
+        color = (c->a.bold)?CLR_BRIGHT_BLUE:CLR_BLUE;        // c = 12:4
+        break;
+      case (TMT_COLOR_MAGENTA):
+        color = (c->a.bold)?CLR_BRIGHT_MAGENTA:CLR_MAGENTA;  // c = 13:5
+        break;
+      case (TMT_COLOR_CYAN):
+        color = (c->a.bold)?CLR_BRIGHT_CYAN:CLR_CYAN;        // c = 14:6
+        break;
+      case (TMT_COLOR_WHITE):
+        color = (c->a.bold)?CLR_WHITE:CLR_GRAY;              // c = 15:7
+        break;
+    }
+
+    color |= (c->a.reverse << 7);  // Flip sign if reverse
+    return color;
 }
 
 void
@@ -72,7 +102,7 @@ nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
 
                     if (nle->observation->tty_colors) {
                         nle->observation->tty_colors[offset] =
-                            vt_font_attr_convert(tmt_c);
+                            vt_char_color_extract(tmt_c);
                     }
                 }
             }
@@ -84,6 +114,9 @@ nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
         break;
 
     case TMT_MSG_MOVED:
+        break;
+
+    case TMT_MSG_CURSOR:
         break;
     }
 }

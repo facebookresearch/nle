@@ -416,6 +416,6 @@ class TestNethackTerminalObservation:
 
         for c, font in zip(tty_chars.reshape(-1), tty_colors.reshape(-1)):
             if chr(c) == "@":
-                assert font == 8335  # 00 1 0 0 0 0 0 | 8 F
+                assert font == 15  # BRIGHT_WHITE
             if chr(c) == " ":
-                assert font == 255  # 00 0 0 0 0 0 0 | F F
+                assert font == 8  # NO_COLOR
