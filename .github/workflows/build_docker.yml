@@ -30,17 +30,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: ${{ format('Build {0} image', matrix.distro) }}
-      uses: docker/build-push-action@v1
-      with:
-        repository: ${{ format('fairnle/nle-{0}', matrix.distro) }}
-        dockerfile: ${{ format('docker/Dockerfile-{0}', matrix.distro) }}
-        tags: dev
-        tag_with_sha: true
-        add_git_labels: true
-        push: false
-    - name: ${{ format('Push {0} image', matrix.distro) }}
-      if: github.ref == 'master' || (github.event_name == 'release' && github.even.action == 'released')
+    - name: ${{ format('Build {0} image (& Publish - Release Only)', matrix.distro) }}
       uses: docker/build-push-action@v1
       with:
         username: edran
@@ -50,14 +40,14 @@ jobs:
         tags: dev
         tag_with_sha: true
         add_git_labels: true
-        push: true
-    - name: Check version matches release tag
+        push: ${{ github.ref == 'master' || ( github.event_name == 'release' && github.even.action == 'released' ) }} 
+    - name: Check Version Matches Release Tag (Release Only)
       if: github.event_name == 'release' && github.event.action == 'released'
       run: |
         echo "v$(cat version.txt)"
         echo "${{ github.event.release.tag_name }}"
         [[ "${{ github.event.release.tag_name }}" == "v$(cat version.txt)" ]]
-    - name: Push version tag
+    - name: Push Version Tag (Release Only)
       if: github.event_name == 'release' && github.event.action == 'released'
       uses: docker/build-push-action@v1
       with:
