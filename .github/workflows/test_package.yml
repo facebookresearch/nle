@@ -4,6 +4,9 @@ name: Test nle PyPI package
 on:
   schedule:
     - cron: "0 6,18 * * *"
+  push:
+    branches:
+      - eric/workflows
 
 jobs:
   test_install:
