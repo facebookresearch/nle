@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdio.h>
 #include <string>
+#include <cstring>
 #include <unistd.h>
 #include <vector>
 
@@ -414,14 +415,8 @@ NetHackRL::fill_obs(nle_obs *obs)
     if (obs->screen_descriptions) {
         int i = 0;
         for (const std::string &screen_description : screen_descriptions_) {
-            int j = 0;
-            for (int len = screen_description.length();
-                 j < len && j < NLE_SCREEN_DESCRIPTION_LENGTH; ++j) {
-                obs->screen_descriptions[i++] = screen_description[j];
-            }
-            for (; j < NLE_SCREEN_DESCRIPTION_LENGTH; ++j) {
-                obs->screen_descriptions[i++] = 0;
-            }
+            strncpy((char * ) obs->screen_descriptions + i, screen_description.c_str(), NLE_SCREEN_DESCRIPTION_LENGTH);
+            i += NLE_SCREEN_DESCRIPTION_LENGTH;
         }
     }
 }
@@ -885,7 +880,9 @@ NetHackRL::rl_print_glyph(winid wid, XCHAR_P x, XCHAR_P y, int glyph,
     if (wid == WIN_MAP) {
         instance->store_glyph(x, y, glyph);
         instance->store_mapped_glyph(ch, color, special, x, y);
-        instance->store_screen_description(x, y, glyph);
+        if (nle_get_obs()->screen_descriptions) {
+            instance->store_screen_description(x, y, glyph);
+        }
     } else {
         DEBUG_API("Window id is " << wid << ". This shouldn't happen."
                                   << std::endl);
