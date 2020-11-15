@@ -5,8 +5,6 @@
 import pytest
 
 import nle
-from nle.nethack import OBSERVATION_DESC
-import gym
 import numpy as np
 
 
