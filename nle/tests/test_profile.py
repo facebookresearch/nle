@@ -6,7 +6,7 @@ import pytest
 
 import nle
 import numpy as np
-
+import gym
 
 BASE_KEYS = ["glyphs", "message", "blstats"]
 MAPPED_GLYPH = ["chars", "colors", "specials"]
@@ -27,7 +27,7 @@ EXPERIMENTS = {
 )
 @pytest.mark.benchmark(disable_gc=True, warmup=False)
 def test_run_1k_steps(observation_keys, benchmark):
-    env = nle.env.base.NLE(savedir=None, observation_keys=observation_keys)
+    env = gym.make('NetHack-v0', savedir=None, observation_keys=observation_keys)
     seeds = [123456]
     steps = 1000
 
@@ -46,4 +46,4 @@ def test_run_1k_steps(observation_keys, benchmark):
                 seed()
                 env.reset()
 
-    benchmark.pedantic(play_1k_steps, setup=seed, rounds=1000, warmup_rounds=10)
+    benchmark.pedantic(play_1k_steps, setup=seed, rounds=100, warmup_rounds=10)
