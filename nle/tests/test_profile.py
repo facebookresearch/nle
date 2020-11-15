@@ -9,14 +9,23 @@ from nle.nethack import OBSERVATION_DESC
 import gym
 import numpy as np
 
-ACTIONS = [nle.nethack.MiscAction.MORE]
-ACTIONS += list(nle.nethack.CompassDirection)
-ACTIONS += list(nle.nethack.CompassDirectionLonger)
 
+BASE_KEYS = ['glyphs', 'message', 'blstats']
+MAPPED_GLYPH = ['chars', 'colors', 'specials']
+INV_GLYPH = ['inv_glyphs', 'inv_strs', 'inv_letters', 'inv_oclasses']
+SCREEN_DESC = ['screen_descriptions']
+
+OBS_KEYS = [
+    BASE_KEYS,
+    BASE_KEYS + MAPPED_GLYPH,
+    BASE_KEYS + MAPPED_GLYPH + INV_GLYPH,
+    BASE_KEYS + MAPPED_GLYPH + INV_GLYPH + SCREEN_DESC
+]
+
+@pytest.mark.parametrize('observation_keys', OBS_KEYS)
 @pytest.mark.benchmark(min_rounds=30, disable_gc=True, warmup=False)
-def test_1k_steps_performance(benchmark):
-    obs = [o for o in OBSERVATION_DESC.keys() if o not in ['screen_descriptions']]
-    env = nle.env.base.NLE(observation_keys=obs  )
+def test_1k_steps_performance(observation_keys, benchmark):
+    env = nle.env.base.NLE(observation_keys=observation_keys)
 
     steps = 1000
     actions = np.random.choice(len(env._actions), size=steps)
