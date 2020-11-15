@@ -226,7 +226,11 @@ nle_fflush(FILE *stream)
 
     write_header(length, 0);
     write_data(nle->outbuf, length);
-    tmt_write(nle->vterminal, nle->outbuf, length);
+    
+    nle_obs * obs = nle->observation;
+    if (obs->tty_chars || obs->tty_colors || obs->tty_cursor) {
+        tmt_write(nle->vterminal, nle->outbuf, length);
+    }
     nle->outbuf_write_ptr = nle->outbuf;
 
 #ifdef NLE_BZ2_TTYRECS
