@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdio.h>
 #include <string>
+#include <cstring>
 #include <unistd.h>
 #include <vector>
 
@@ -178,7 +179,7 @@ class NetHackRL
     std::array<uint8_t, (COLNO - 1) * ROWNO> colors_;
     std::array<uint8_t, (COLNO - 1) * ROWNO> specials_;
 
-    std::array<std::string, (COLNO - 1) * ROWNO> screen_descriptions_;
+    std::array<char, (COLNO - 1) * ROWNO * NLE_SCREEN_DESCRIPTION_LENGTH> screen_descriptions_;
 
     void store_glyph(XCHAR_P x, XCHAR_P y, int glyph);
     void store_mapped_glyph(int ch, int color, int special, XCHAR_P x,
@@ -279,8 +280,7 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->blstats, 0, sizeof(long) * NLE_BLSTATS_SIZE);
         if (obs->screen_descriptions)
             std::memset(obs->screen_descriptions, 0,
-                        screen_descriptions_.size()
-                            * NLE_SCREEN_DESCRIPTION_LENGTH);
+                        screen_descriptions_.size());
         return;
     }
     obs->in_normal_game = true;
@@ -412,17 +412,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         }
     }
     if (obs->screen_descriptions) {
-        int i = 0;
-        for (const std::string &screen_description : screen_descriptions_) {
-            int j = 0;
-            for (int len = screen_description.length();
-                 j < len && j < NLE_SCREEN_DESCRIPTION_LENGTH; ++j) {
-                obs->screen_descriptions[i++] = screen_description[j];
-            }
-            for (; j < NLE_SCREEN_DESCRIPTION_LENGTH; ++j) {
-                obs->screen_descriptions[i++] = 0;
-            }
-        }
+        memcpy(obs->screen_descriptions, &screen_descriptions_, screen_descriptions_.size());
     }
 }
 
@@ -499,6 +489,7 @@ NetHackRL::store_screen_description(XCHAR_P x, XCHAR_P y, int glyph)
     size_t i = (x - 1) % (COLNO - 1);
     size_t j = y % ROWNO;
     size_t offset = j * (COLNO - 1) + i;
+    size_t start = offset * NLE_SCREEN_DESCRIPTION_LENGTH;
 
     // see code in src/do_name.c:538 auto_describe
     coord cc;
@@ -511,9 +502,9 @@ NetHackRL::store_screen_description(XCHAR_P x, XCHAR_P y, int glyph)
 
     if (do_screen_description(cc, TRUE, sym, tmpbuf, &firstmatch,
                               (struct permonst **) 0)) {
-        screen_descriptions_[offset].assign(firstmatch);
+        strncpy((char *) &screen_descriptions_ + start, firstmatch, NLE_SCREEN_DESCRIPTION_LENGTH);
     } else {
-        screen_descriptions_[offset].clear();
+        strncpy((char *) &screen_descriptions_ + start, "", NLE_SCREEN_DESCRIPTION_LENGTH);
     }
 }
 
@@ -600,8 +591,8 @@ NetHackRL::clear_nhwindow_method(winid wid)
         chars_.fill(' ');
         colors_.fill(0);
         specials_.fill(0);
-        for (std::string &screen_description : screen_descriptions_) {
-            screen_description.clear();
+        if (nle_get_obs()->screen_descriptions) {
+            screen_descriptions_.fill(0);
         }
     }
 
@@ -885,7 +876,9 @@ NetHackRL::rl_print_glyph(winid wid, XCHAR_P x, XCHAR_P y, int glyph,
     if (wid == WIN_MAP) {
         instance->store_glyph(x, y, glyph);
         instance->store_mapped_glyph(ch, color, special, x, y);
-        instance->store_screen_description(x, y, glyph);
+        if (nle_get_obs()->screen_descriptions) {
+            instance->store_screen_description(x, y, glyph);
+        }
     } else {
         DEBUG_API("Window id is " << wid << ". This shouldn't happen."
                                   << std::endl);
