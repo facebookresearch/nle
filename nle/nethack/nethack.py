@@ -154,7 +154,7 @@ class Nethack:
         # TODO ideally we need to check the validity of the requested items
         with open(os.path.join(self._vardir, WIZKIT_FNAME), "w") as f:
             for item in wizkit_items:
-                f.write("{}\n".format(item))
+                f.write("%s\n" % item)
 
     def reset(self, new_ttyrec=None, wizkit_items=None):
         if wizkit_items is not None:
