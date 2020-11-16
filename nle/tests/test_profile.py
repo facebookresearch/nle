@@ -4,8 +4,8 @@
 
 import pytest
 
-import nle
 import numpy as np
+import nle  # noqa: F401
 import gym
 
 BASE_KEYS = ["glyphs", "message", "blstats"]
@@ -25,25 +25,32 @@ EXPERIMENTS = {
 @pytest.mark.parametrize(
     "observation_keys", EXPERIMENTS.values(), ids=EXPERIMENTS.keys()
 )
-@pytest.mark.benchmark(disable_gc=True, warmup=False)
-def test_run_1k_steps(observation_keys, benchmark):
-    env = gym.make('NetHack-v0', savedir=None, observation_keys=observation_keys)
-    seeds = [123456]
-    steps = 1000
+class TestProfile:
+    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    def make_cwd_tmp(self, tmpdir):
+        """Makes cwd point to the test's tmpdir."""
+        with tmpdir.as_cwd():
+            yield
 
-    np.random.seed(seeds[0])
-    actions = np.random.choice(len(env._actions), size=steps)
+    @pytest.mark.benchmark(disable_gc=True, warmup=False)
+    def test_run_1k_steps(self, observation_keys, make_cwd_tmp, benchmark):
+        env = gym.make("NetHack-v0", observation_keys=observation_keys)
+        seeds = [123456]
+        steps = 1000
 
-    def seed():
-        seeds[0] += 1
-        env.seed(seeds[0], 2 * seeds[0])
+        np.random.seed(seeds[0])
+        actions = np.random.choice(len(env._actions), size=steps)
 
-    def play_1k_steps():
-        env.reset()
-        for a in actions:
-            _, _, done, _ = env.step(a)
-            if done:
-                seed()
-                env.reset()
+        def seed():
+            seeds[0] += 1
+            env.seed(seeds[0], 2 * seeds[0])
 
-    benchmark.pedantic(play_1k_steps, setup=seed, rounds=100, warmup_rounds=10)
+        def play_1k_steps():
+            env.reset()
+            for a in actions:
+                _, _, done, _ = env.step(a)
+                if done:
+                    seed()
+                    env.reset()
+
+        benchmark.pedantic(play_1k_steps, setup=seed, rounds=100, warmup_rounds=10)
