@@ -1,12 +1,11 @@
 # -*- mode: dockerfile -*-
 
-FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu16.04
+FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
 
 ARG PYTHON_VERSION=3.8
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -yq \
-        apt-transport-https \
         bison \
         build-essential \
         cmake \
@@ -20,12 +19,12 @@ RUN apt-get update && apt-get install -yq \
 
 WORKDIR /opt/conda_setup
 
-RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
-    | gpg -dearmor - \
-    | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
 
-RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
-RUN apt-get update && apt-get --allow-unauthenticated install -yq cmake
+RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+RUN apt-get update && apt-get --allow-unauthenticated install -yq \
+    cmake \
+    kitware-archive-keyring
 
 RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
      chmod +x miniconda.sh && \
