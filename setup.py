@@ -97,6 +97,7 @@ extras_deps = {
         "flake8>=3.7",
         "flake8-bugbear>=20.1",
         "pytest>=5.3",
+        "pytest-benchmark>=3.1.0",
         "sphinx>=2.4.4",
         "sphinx-rtd-theme==0.4.3",
     ],
