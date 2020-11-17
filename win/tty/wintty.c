@@ -144,7 +144,9 @@ struct DisplayDesc *ttyDisplay; /* the tty display descriptor */
 extern void FDECL(cmov, (int, int));   /* from termcap.c */
 extern void FDECL(nocmov, (int, int)); /* from termcap.c */
 #if defined(UNIX) || defined(VMS)
+#ifndef RL_GRAPHICS
 static char obuf[BUFSIZ]; /* BUFSIZ is defined in stdio.h */
+#endif
 #endif
 
 static char winpanicstr[] = "Bad window id %d";
@@ -402,7 +404,9 @@ char **argv UNUSED;
      *    due to ordering of graphics settings
      */
 #if defined(UNIX) || defined(VMS)
+#ifndef RL_GRAPHICS
     setbuf(stdout, obuf);
+#endif
 #endif
     gettty();
 

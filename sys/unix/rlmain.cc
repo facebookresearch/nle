@@ -11,6 +11,27 @@ extern "C" {
 #include "nledl.h"
 }
 
+class ScopedTC
+{
+  public:
+    ScopedTC() : old_{}
+    {
+        tcgetattr(STDIN_FILENO, &old_);
+        struct termios tty = old_;
+        tty.c_lflag &= ~ICANON;
+        tty.c_lflag &= ~ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+    }
+
+    ~ScopedTC()
+    {
+        tcsetattr(STDIN_FILENO, TCSANOW, &old_);
+    }
+
+  private:
+    struct termios old_;
+};
+
 void
 play(nle_ctx_t *nle, nle_obs *obs)
 {
@@ -41,37 +62,29 @@ randplay(nle_ctx_t *nle, nle_obs *obs)
     };
     size_t n = sizeof(actions) / sizeof(actions[0]);
 
-    while (!obs->done) {
+    for (int i = 0; !obs->done && i < 10000; ++i) {
         obs->action = actions[rand() % n];
         nle = nle_step(nle, obs);
+    }
+    if (!obs->done) {
+        std::cerr << "Episode didn't end after 10000 steps, aborting."
+                  << std::endl;
     }
 }
 
 void
-randgame(nle_ctx_t *nle, nle_obs *obs)
+randgame(nle_ctx_t *nle, nle_obs *obs, const int no_episodes)
 {
-    obs->action = 'y';
-    nle_step(nle, obs);
-    nle_step(nle, obs);
-    obs->action = '\n';
-    nle_step(nle, obs);
-
-    for (int i = 0; i < 15; ++i) {
+    for (int i = 0; i < no_episodes; ++i) {
         randplay(nle, obs);
-        nle_reset(nle, obs, nullptr, nullptr);
+        if (i < no_episodes - 1)
+            nle_reset(nle, obs, nullptr, nullptr);
     }
 }
 
 int
 main(int argc, char **argv)
 {
-    struct termios old, tty;
-    tcgetattr((int) STDIN_FILENO, &old);
-    tty = old;
-    tty.c_lflag &= ~ICANON;
-    tty.c_lflag &= ~ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &tty);
-
     nle_obs obs{};
     constexpr int dungeon_size = ROWNO * (COLNO - 1);
     short glyphs[dungeon_size];
@@ -98,18 +111,17 @@ main(int argc, char **argv)
     int internal[NLE_INTERNAL_SIZE];
     obs.internal = &internal[0];
 
-    std::unique_ptr<FILE, int (*)(FILE *)> ttyrec(fopen("nle.ttyrec", "a"),
-                                                  fclose);
+    std::unique_ptr<FILE, int (*)(FILE *)> ttyrec(
+        fopen("nle.ttyrec.bz2", "a"), fclose);
 
+    ScopedTC tc;
     nle_ctx_t *nle = nle_start("libnethack.so", &obs, ttyrec.get(), nullptr);
     if (argc > 1 && argv[1][0] == 'r') {
-        randgame(nle, &obs);
+        randgame(nle, &obs, 3);
     } else {
         play(nle, &obs);
         nle_reset(nle, &obs, nullptr, nullptr);
         play(nle, &obs);
     }
     nle_end(nle);
-
-    tcsetattr(STDIN_FILENO, TCSANOW, &old);
 }

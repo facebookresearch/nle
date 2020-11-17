@@ -334,7 +334,15 @@ class TestNethackFunctionsAndConstants:
 
 
 class TestNethackGlanceObservation:
-    def test_new_observation_shapes(self):
+    @pytest.fixture
+    def game(self):  # Make sure we close even on test failure.
+        g = nethack.Nethack(playername="MonkBot-mon-hum-neu-mal")
+        try:
+            yield g
+        finally:
+            g.close()
+
+    def test_new_observation_shapes(self, game):
         game = nethack.Nethack()
         game.reset()
 
@@ -345,10 +353,7 @@ class TestNethackGlanceObservation:
         assert _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH == glance_shape[-1]
         assert len(glance_shape) == 3
 
-    def test_glance_descriptions(self):
-        game = nethack.Nethack(
-            playername="MonkBot-mon-hum-neu-mal",
-        )
+    def test_glance_descriptions(self, game):
         game.reset()
 
         # rather naughty - testing against private impl

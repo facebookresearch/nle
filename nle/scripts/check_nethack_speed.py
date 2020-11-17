@@ -28,7 +28,7 @@ def target(i, should_stop, queue):
 
 
 def play(should_stop, queue):
-    game = nethack.NetHack(archivefile=None)
+    game = nethack.Nethack()
 
     done = True
     steps = 0
@@ -39,12 +39,9 @@ def play(should_stop, queue):
             steps = 0
             observation = game.reset()
 
-        if observation.Internal() and observation.Internal().Xwaitforspace():
-            ch = nethack.MiscAction.MORE
-        else:
-            ch = random.choice(ACTIONS)
+        ch = random.choice(ACTIONS)
 
-        observation, done, _ = game.step(ch)
+        observation, done = game.step(ch)
         steps += 1
 
 

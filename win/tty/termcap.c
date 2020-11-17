@@ -12,7 +12,7 @@
 
 #ifdef MICROPORT_286_BUG
 #define Tgetstr(key) (tgetstr(key, tbuf))
-#else
+#else /* MICROPORT_286_BUG */
 #define Tgetstr(key) (tgetstr(key, &tbufptr))
 #endif /* MICROPORT_286_BUG **/
 
@@ -25,11 +25,11 @@ void FDECL(nocmov, (int, int));
 #if !defined(UNIX) || !defined(TERMINFO)
 #ifndef TOS
 static void FDECL(analyze_seq, (char *, int *, int *));
-#endif
-#endif
+#endif /* TOS */
+#endif /* !defined(UNIX) || !defined(TERMINFO) */
 static void NDECL(init_hilite);
 static void NDECL(kill_hilite);
-#endif
+#endif /* defined(TEXTCOLOR) && defined(TERMLIB) */
 
 /* (see tcap.h) -- nh_CM, nh_ND, nh_CD, nh_HI,nh_HE, nh_US,nh_UE, ul_hack */
 struct tc_lcl_data tc_lcl_data = { 0, 0, 0, 0, 0, 0, 0, FALSE };
@@ -48,25 +48,25 @@ STATIC_VAR char tbuf[512];
 #ifdef TEXTCOLOR
 #ifdef TOS
 const char *hilites[CLR_MAX]; /* terminal escapes for the various colors */
-#else
+#else /* TOS */
 char NEARDATA *hilites[CLR_MAX]; /* terminal escapes for the various colors */
-#endif
-#endif
+#endif /* TOS */
+#endif /* TEXTCOLOR */
 
 static char *KS = (char *) 0, *KE = (char *) 0; /* keypad sequences */
 static char nullstr[] = "";
 
 #if defined(ASCIIGRAPH) && !defined(NO_TERMS)
 extern boolean HE_resets_AS;
-#endif
+#endif /* defined(ASCIIGRAPH) && !defined(NO_TERMS) */
 
 #ifndef TERMLIB
 STATIC_VAR char tgotobuf[20];
 #ifdef TOS
 #define tgoto(fmt, x, y) (Sprintf(tgotobuf, fmt, y + ' ', x + ' '), tgotobuf)
-#else
+#else /* TOS */
 #define tgoto(fmt, x, y) (Sprintf(tgotobuf, fmt, y + 1, x + 1), tgotobuf)
-#endif
+#endif /* TOS */
 #endif /* TERMLIB */
 
 void
@@ -82,18 +82,18 @@ int *wid, *hgt;
 #ifdef VMS
     term = verify_termcap();
     if (!term)
-#endif
+#endif /* VMS */
         term = getenv("TERM");
 
 #if defined(TOS) && defined(__GNUC__)
     if (!term)
         term = "builtin"; /* library has a default */
-#endif
+#endif /* defined(TOS) && defined(__GNUC__) */
     if (!term)
-#endif
+#endif /* TERMLIB */
 #ifndef ANSI_DEFAULT
         error("Can't get TERM.");
-#else
+#else /* ANSI_DEFAULT */
 #ifdef TOS
     {
         CO = 80;
@@ -123,24 +123,24 @@ int *wid, *hgt;
 #ifdef CLIPPING
         if (CO < COLNO || LI < ROWNO + 3)
             setclipped();
-#endif
-#endif
+#endif /* CLIPPING */
+#endif /* MICRO */
         HO = "\033[H";
         /*              nh_CD = "\033[J"; */
         CE = "\033[K"; /* the ANSI termcap */
 #ifndef TERMLIB
         nh_CM = "\033[%d;%dH";
-#else
+#else /* TERMLIB */
         nh_CM = "\033[%i%d;%dH";
-#endif
+#endif /* TERMLIB */
         UP = "\033[A";
         nh_ND = "\033[C";
         XD = "\033[B";
 #ifdef MICRO /* backspaces are non-destructive */
         BC = "\b";
-#else
+#else /* MICRO  */
         BC = "\033[D";
-#endif
+#endif /* MICRO  */
         nh_HI = SO = "\033[1m";
         nh_US = "\033[4m";
         MR = "\033[7m";
@@ -151,7 +151,7 @@ int *wid, *hgt;
 #ifndef MICRO
         AS = "\016";
         AE = "\017";
-#endif
+#endif /* MICRO */
         TE = VS = VE = nullstr;
 #ifdef TEXTCOLOR
         for (i = 0; i < CLR_MAX / 2; i++)
@@ -163,7 +163,7 @@ int *wid, *hgt;
                     if (i == CLR_BLUE)
                         hilites[CLR_BLUE] = hilites[CLR_BLUE | BRIGHT];
                     else
-#endif
+#endif /* MICRO */
                     {
                         hilites[i] = (char *) alloc(sizeof("\033[0;3%dm"));
                         Sprintf(hilites[i], "\033[0;3%dm", i);
@@ -179,41 +179,39 @@ int *wid, *hgt;
 #endif /* ANSI_DEFAULT */
 
 #ifdef TERMLIB
-    tptr = (char *) alloc(1024);
-
     tbufptr = tbuf;
     if (!strncmp(term, "5620", 4))
         flags.null = FALSE; /* this should be a termcap flag */
-    if (tgetent(tptr, term) < 1) {
-        char buf[BUFSZ];
-        (void) strncpy(buf, term,
-                       (BUFSZ - 1) - (sizeof("Unknown terminal type: .  ")));
-        buf[BUFSZ - 1] = '\0';
-        error("Unknown terminal type: %s.", term);
-    }
-    if ((pc = Tgetstr("pc")) != 0)
+
+    /*
+     *  NLE: Removed call to tgetent: nlecl.c calls tgetent once on startup.
+     *  The call leaks if we dlclose libnethack, which dlcloses ncurses as well.
+     */
+    if ((pc = Tgetstr("pc")) != 0) {
         PC = *pc;
+        free(pc);
+    }
 
     if (!(BC = Tgetstr("le"))) /* both termcap and terminfo use le */
 #ifdef TERMINFO
         error("Terminal must backspace.");
-#else
+#else /* TERMINFO */
         if (!(BC = Tgetstr("bc"))) { /* termcap also uses bc/bs */
 #ifndef MINIMAL_TERM
             if (!tgetflag("bs"))
                 error("Terminal must backspace.");
-#endif
+#endif /* MINIMAL_TERM */
             BC = tbufptr;
             tbufptr += 2;
             *BC = '\b';
         }
-#endif
+#endif /* TERMINFO */
 
 #ifdef MINIMAL_TERM
     HO = (char *) 0;
-#else
+#else /* MINIMAL_TERM */
     HO = Tgetstr("ho");
-#endif
+#endif /* MINIMAL_TERM */
     /*
      * LI and CO are set in ioctl.c via a TIOCGWINSZ if available.  If
      * the kernel has values for either we should use them rather than
@@ -224,12 +222,12 @@ int *wid, *hgt;
         CO = tgetnum("co");
     if (!LI)
         LI = tgetnum("li");
-#else
+#else /* MICRO */
 #if defined(TOS) && defined(__GNUC__)
     if (!strcmp(term, "builtin")) {
         get_scr_size();
     } else
-#endif
+#endif /* defined(TOS) && defined(__GNUC__) */
     {
         CO = tgetnum("co");
         LI = tgetnum("li");
@@ -240,7 +238,7 @@ int *wid, *hgt;
 #ifdef CLIPPING
     if (CO < COLNO || LI < ROWNO + 3)
         setclipped();
-#endif
+#endif /* CLIPPING */
     nh_ND = Tgetstr("nd");
     if (tgetflag("os"))
         error("NetHack can't have OS.");
@@ -272,7 +270,7 @@ int *wid, *hgt;
     VS = VE = nullstr;
 #ifdef TERMINFO
     VS = Tgetstr("eA"); /* enable graphics */
-#endif
+#endif /* TERMINFO */
     KS = Tgetstr("ks"); /* keypad start (special mode) */
     KE = Tgetstr("ke"); /* keypad end (ordinary mode [ie, digits]) */
     MR = Tgetstr("mr"); /* reverse */
@@ -305,17 +303,16 @@ int *wid, *hgt;
         || !strcmp(term, "st52")) {
         init_hilite();
     }
-#else
+#else /* defined(TOS) && defined(__GNUC__) */
     init_hilite();
-#endif
-#endif
+#endif /* defined(TOS) && defined(__GNUC__) */
+#endif /* TEXTCOLOR */
     *wid = CO;
     *hgt = LI;
     if (!(CL = Tgetstr("cl"))) /* last thing set */
         error("NetHack needs CL.");
     if ((int) (tbufptr - tbuf) > (int) (sizeof tbuf))
         error("TERMCAP entry too big...\n");
-    free((genericptr_t) tptr);
 #endif /* TERMLIB */
 }
 
@@ -329,13 +326,30 @@ tty_shutdown()
 #ifdef TERMLIB
 #ifdef TEXTCOLOR
     kill_hilite();
-#endif
+#endif /* TEXTCOLOR */
     if (dynamic_HIHE) {
         free((genericptr_t) nh_HI), nh_HI = (char *) 0;
         free((genericptr_t) nh_HE), nh_HE = (char *) 0;
         dynamic_HIHE = FALSE;
     }
-#endif
+#else /* TERMLIB */
+#ifndef TOS
+#if defined(ANSI_DEFAULT) && defined(TEXTCOLOR)
+    for (int i = 0; i < CLR_MAX / 2; i++)
+        if (i != CLR_BLACK) {
+            free(hilites[i | BRIGHT]);
+            if (i != CLR_GRAY)
+            /* Mirrors logic in tty_startup if ANSI_DEFAULT is set. */
+#ifdef MICRO
+                if (i != CLR_BLUE)
+#endif /* MICRO */
+                {
+                    free(hilites[i]);
+                }
+        }
+#endif /* ANSI_DEFAULT) && TEXTCOLOR */
+#endif /* TOS */
+#endif /* TERMLIB */
     return;
 }
 
@@ -395,7 +409,7 @@ tty_decgraphics_termcap_fixup()
         xputs("\033)0");
 #ifdef PC9800
     init_hilite();
-#endif
+#endif /* PC9800 */
 
 #if defined(ASCIIGRAPH) && !defined(NO_TERMS)
     /* some termcaps suffer from the bizarre notion that resetting
@@ -427,13 +441,13 @@ tty_decgraphics_termcap_fixup()
             ++nh_he, --he_limit;
         }
     }
-#endif
+#endif /* defined(ASCIIGRAPH) && !defined(NO_TERMS) */
 }
 #endif /* TERMLIB */
 
 #if defined(ASCIIGRAPH) && defined(PC9800)
 extern void NDECL((*ibmgraphics_mode_callback)); /* defined in drawing.c */
-#endif
+#endif /* defined(ASCIIGRAPH) && defined(PC9800) */
 
 #ifdef PC9800
 extern void NDECL((*ascgraphics_mode_callback)); /* defined in drawing.c */
@@ -471,7 +485,7 @@ tty_start_screen()
         init_hilite();
     /* set up callback in case option is not set yet but toggled later */
     ibmgraphics_mode_callback = init_hilite;
-#endif
+#endif /* ASCIIGRAPH */
 #endif /* PC9800 */
 
 #ifdef TERMLIB
@@ -479,7 +493,7 @@ tty_start_screen()
         tty_decgraphics_termcap_fixup();
     /* set up callback in case option is not set yet but toggled later */
     decgraphics_mode_callback = tty_decgraphics_termcap_fixup;
-#endif
+#endif /* TERMLIB */
     if (Cmd.num_pad)
         tty_number_pad(1); /* make keypad send digits */
 }
@@ -588,12 +602,12 @@ const char *s;
 {
 #ifdef RL_GRAPHICS
     nle_xputs(s);
-#else
+#else /* RL_GRAPHICS */
 #ifndef TERMLIB
     (void) fputs(s, stdout);
-#else
+#else /* TERMLIB */
     tputs(s, 1, xputc);
-#endif
+#endif /* TERMLIB */
 #endif /*RL_GRAPHICS*/
 }
 
@@ -721,7 +735,7 @@ graph_off()
     if (AE)
         xputs(AE);
 }
-#endif
+#endif /* ASCIIGRAPH */
 
 #if !defined(MICRO)
 #ifdef VMS
@@ -729,60 +743,18 @@ static const short tmspc10[] = { /* from termcap */
                                  0, 2000, 1333, 909, 743, 666, 333, 166, 83,
                                  55, 50, 41, 27, 20, 13, 10, 5
 };
-#else
+#else /* VMS */
 static const short tmspc10[] = { /* from termcap */
                                  0, 2000, 1333, 909, 743, 666, 500, 333, 166,
                                  83, 55, 41, 20, 10, 5
 };
-#endif
-#endif
+#endif /* VMS */
+#endif /* !defined(MICRO) */
 
-/* delay 50 ms */
+/* NLE: Don't delay ever. */
 void
 tty_delay_output()
 {
-#if defined(MICRO)
-    register int i;
-#endif
-    if (iflags.debug_fuzzer)
-        return;
-#ifdef TIMED_DELAY
-    if (flags.nap) {
-        (void) fflush(stdout);
-        msleep(50); /* sleep for 50 milliseconds */
-        return;
-    }
-#endif
-#if defined(MICRO)
-    /* simulate the delay with "cursor here" */
-    for (i = 0; i < 3; i++) {
-        cmov(ttyDisplay->curx, ttyDisplay->cury);
-        (void) fflush(stdout);
-    }
-#else /* MICRO */
-    /* BUG: if the padding character is visible, as it is on the 5620
-       then this looks terrible. */
-    if (flags.null) {
-        tputs(
-#ifdef TERMINFO
-              "$<50>",
-#else
-              "50",
-#endif
-              1, xputc);
-
-    } else if (ospeed > 0 && ospeed < SIZE(tmspc10) && nh_CM) {
-        /* delay by sending cm(here) an appropriate number of times */
-        register int cmlen =
-            (int) strlen(tgoto(nh_CM, ttyDisplay->curx, ttyDisplay->cury));
-        register int i = 500 + tmspc10[ospeed] / 2;
-
-        while (i > 0) {
-            cmov((int) ttyDisplay->curx, (int) ttyDisplay->cury);
-            i -= cmlen * tmspc10[ospeed];
-        }
-    }
-#endif /* MICRO */
 }
 
 /* must only be called with curx = 1 */
@@ -844,7 +816,7 @@ cl_eos() /* free after Robert Viduya */
 
 #if !defined(LINUX) && !defined(__FreeBSD__) && !defined(NOTPARMDECL)
 extern char *tparm();
-#endif
+#endif /* !defined(LINUX) && !defined(__FreeBSD__) && !defined(NOTPARMDECL) */
 
 #ifndef COLOR_BLACK /* trust include file */
 #ifndef _M_UNIX     /* guess BGR */
@@ -865,8 +837,8 @@ extern char *tparm();
 #define COLOR_MAGENTA 5
 #define COLOR_CYAN 6
 #define COLOR_WHITE 7
-#endif
-#endif
+#endif /* _M_UNIX      */
+#endif /* COLOR_BLACK  */
 
 /* Mapping data for the six terminfo colors that resolve to pairs of nethack
  * colors.  Black and white are handled specially.
@@ -999,9 +971,9 @@ int *fg, *bg;
 #ifdef MICRO
     *fg = CLR_GRAY;
     *bg = CLR_BLACK;
-#else
+#else /* MICRO */
     *fg = *bg = NO_COLOR;
-#endif
+#endif /* MICRO */
 
     c = (str[0] == '\233') ? 1 : 2; /* index of char beyond esc prefix */
     len = strlen(str) - 1;          /* length excluding attrib suffix */
@@ -1015,9 +987,9 @@ int *fg, *bg;
 #ifdef MICRO
             *fg = CLR_GRAY;
             *bg = CLR_BLACK;
-#else
+#else /* MICRO */
             *fg = *bg = NO_COLOR;
-#endif
+#endif /* MICRO */
         } else if (code == 1) { /* bold */
             *fg |= BRIGHT;
 #if 0
@@ -1028,7 +1000,7 @@ int *fg, *bg;
             *fg |= BLINK;
         } else if (code == 25) { /* stop blinking */
             *fg &= ~BLINK;
-#endif
+#endif /* 0 */
         } else if (code == 7 || code == 27) { /* reverse */
             code = *fg & ~BRIGHT;
             *fg = *bg | (*fg & BRIGHT);
@@ -1043,7 +1015,7 @@ int *fg, *bg;
         c++;
     }
 }
-#endif
+#endif /* TOS */
 
 /*
  * Sets up highlighting sequences, using ANSI escape sequences (highlight code
@@ -1112,7 +1084,7 @@ init_hilite()
 #ifdef MICRO
             if (c == CLR_BLUE)
                 continue;
-#endif
+#endif /* MICRO */
             if (c == foreg)
                 hilites[c] = (char *) 0;
             else if (c != hi_foreg || backg != hi_backg) {
@@ -1129,7 +1101,7 @@ init_hilite()
 #ifdef MICRO
     /* brighten low-visibility colors */
     hilites[CLR_BLUE] = hilites[CLR_BLUE | BRIGHT];
-#endif
+#endif /* MICRO */
 #endif /* TOS */
 }
 
@@ -1147,11 +1119,11 @@ kill_hilite()
         if (hilites[c | BRIGHT] && (hilites[c | BRIGHT] != nh_HI))
             free((genericptr_t) hilites[c | BRIGHT]), hilites[c | BRIGHT] = 0;
     }
-#endif
+#endif /* TOS */
     return;
 }
-#endif /* UNIX */
-#endif /* TEXTCOLOR */
+#endif /* UNIX && TERMINFO */
+#endif /* TEXTCOLOR && TERMLIB */
 
 static char nulstr[] = "";
 

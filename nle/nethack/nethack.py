@@ -46,7 +46,7 @@ OBSERVATION_DESC = {
 }
 
 
-NETHACKOPTIONS = [
+NETHACKOPTIONS = (
     "color",
     "showexp",
     "autopickup",
@@ -61,7 +61,7 @@ NETHACKOPTIONS = [
     "nosparkle",
     "showexp",
     "showscore",
-]
+)
 
 HACKDIR = os.getenv("HACKDIR", pkg_resources.resource_filename("nle", "nethackdir"))
 WIZKIT_FNAME = "wizkit.txt"
@@ -103,7 +103,12 @@ class Nethack:
             )
 
         # Create a HACKDIR for us.
-        self._vardir = tempfile.mkdtemp(prefix="nle")
+        self._tempdir = tempfile.TemporaryDirectory(prefix="nle")
+        self._vardir = self._tempdir.name
+
+        # Save cwd and restore later. Currently libnethack changes
+        # directory on loading.
+        self._oldcwd = os.getcwd()
 
         # Symlink a few files.
         for fn in ["nhdat", "sysconf"]:
@@ -173,6 +178,11 @@ class Nethack:
 
     def close(self):
         self._pynethack.close()
+        try:
+            os.chdir(self._oldcwd)
+        except IOError:
+            os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        self._tempdir.cleanup()
 
     def set_initial_seeds(self, core, disp, reseed=False):
         self._pynethack.set_initial_seeds(core, disp, reseed)
