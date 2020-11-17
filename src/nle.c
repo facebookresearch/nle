@@ -46,7 +46,8 @@ vt_char_color_extract(TMTCHAR *c)
     signed char color = 0;
     switch (c->a.fg) {
     case (TMT_COLOR_DEFAULT):
-        color = NO_COLOR; // color = 8
+        color =
+            (c->c == 32) ? CLR_BLACK : CLR_GRAY; // ' ' is BLACK else WHITE
         break;
     case (TMT_COLOR_BLACK):
         color = (c->a.bold) ? NO_COLOR : CLR_BLACK; // c = 8:0
@@ -229,8 +230,8 @@ nle_fflush(FILE *stream)
 
     write_header(length, 0);
     write_data(nle->outbuf, length);
-    
-    nle_obs * obs = nle->observation;
+
+    nle_obs *obs = nle->observation;
     if (obs->tty_chars || obs->tty_colors || obs->tty_cursor) {
         tmt_write(nle->vterminal, nle->outbuf, length);
     }

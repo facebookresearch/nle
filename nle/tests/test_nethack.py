@@ -392,8 +392,15 @@ class TestNethackGlanceObservation:
 
 
 class TestNethackTerminalObservation:
-    def test_new_observation_shapes(self):
-        game = nethack.Nethack()
+    @pytest.fixture
+    def game(self):  # Make sure we close even on test failure.
+        g = nethack.Nethack(playername="MonkBot-mon-hum-neu-mal")
+        try:
+            yield g
+        finally:
+            g.close()
+
+    def test_new_observation_shapes(self, game):
         game.reset()
 
         tty_chars = game._obs_buffers["tty_chars"]
@@ -405,25 +412,37 @@ class TestNethackTerminalObservation:
         assert _pynethack.nethack.NLE_TERM_LI == terminal_shape[0]
         assert _pynethack.nethack.NLE_TERM_CO == terminal_shape[1]
 
-    def test_observations(self):
-        game = nethack.Nethack()
+    def test_observations(self, game):
         game.reset()
 
         tty_chars = game._obs_buffers["tty_chars"]
         tty_colors = game._obs_buffers["tty_colors"]
-        tty_cursor = game._obs_buffers["tty_cursor"]
 
         top_line = "".join(chr(c) for c in tty_chars[0])
         bottom_sub1_line = "".join(chr(c) for c in tty_chars[-2])
         bottom_line = "".join(chr(c) for c in tty_chars[-1])
         assert top_line.startswith(
-            "Hello Agent, welcome to NetHack!  You are a neutral male human Monk."
+            "Hello MonkBot, welcome to NetHack!  You are a neutral male human Monk."
         )
-        assert bottom_sub1_line.startswith("Agent the Candidate")
+        assert bottom_sub1_line.startswith("MonkBot the Candidate")
         assert bottom_line.startswith("Dlvl:1")
 
         for c, font in zip(tty_chars.reshape(-1), tty_colors.reshape(-1)):
             if chr(c) == "@":
                 assert font == 15  # BRIGHT_WHITE
             if chr(c) == " ":
-                assert font == 8  # NO_COLOR
+                assert font == 0  # NO_COLOR
+
+    def test_crop(self, game):
+        game.reset()
+
+        g_chars = game._obs_buffers["chars"].reshape(-1)
+        g_cols = game._obs_buffers["colors"].reshape(-1)
+
+        # DUNGEON is [21, 79], TTY is [24, 80]. Crop as follows  to get alignment.
+        t_chars = game._obs_buffers["tty_chars"][1:-2, :-1].reshape(-1)
+        t_cols = game._obs_buffers["tty_colors"][1:-2, :-1].reshape(-1)
+
+        for g_char, g_col, t_char, t_col in zip(g_chars, g_cols, t_chars, t_cols):
+            assert g_char == t_char
+            assert g_col == t_col
