@@ -163,6 +163,20 @@ We welcome contributions to NLE. If you are interested in contributing please
 see [this document](./CONTRIBUTING.md) 
 
 
+# Architecture
+
+NLE is direct fork of [NetHack](https://github.com/nethack/nethack) and 
+therefore contains code that operates on many different levels of abstraction.
+This ranges from low-level game logic, to the higher-level administration of 
+repeated nethack games, and finally to binding of these games to Python `gym`
+environment.
+
+If you want to learn more about the architecture of `nle` and how it works
+under the hood, checkout the [architecture document](./nle/doc/ARCHITECTURE.md). 
+This may be a useful starting point for anyone looking to contribute to the
+lower level elements of NLE.
+
+
 # Related Environments
 - [gym\_nethack](http://campbelljc.com/research/gym_nethack/)
 - [rogueinabox](https://github.com/rogueinabox/rogueinabox)

@@ -2,16 +2,6 @@
 We want to make contributing to this project as easy and transparent as
 possible.
 
-## Getting Started
-NLE is direct fork of [NetHack](https://github.com/nethack/nethack) and 
-therefore contains code that operates on many different levels of abstraction.
-This ranges from low-level game logic, to the higher-level administration of 
-repeated nethack games, and finally to binding of these games to Python `gym`
-environment.
-
-If you want to learn more about how the architecture of `nle` and how it works
-under the hood, checkout the [architecture document](./ARCHITECTURE.md). This 
-may be useful for anyone looking to contribute the lower level elements of NLE.
 
 ## Pull Requests
 We actively welcome your pull requests.
