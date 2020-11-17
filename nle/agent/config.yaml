@@ -131,7 +131,7 @@ ride:                     # Rewarding Impact-Driven Exploration
   hidden_dim: 128
 
 rnd:                      # Random Network Distillation
-  forward_cost: 0.01      # weight on modelling loss (ie convergence of predictor)
+  forward_cost: 0.1       # weight on modelling loss (ie convergence of predictor)
 
 msg:
   model: lt_cnn            # character model? none, lt_cnn*, cnn, gru, lstm
