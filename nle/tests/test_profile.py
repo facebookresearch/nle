@@ -18,7 +18,12 @@ EXPERIMENTS = {
     "(1): glyphs/msg/blstats": BASE_KEYS,
     "(2): (1)... + char/col/spec": BASE_KEYS + MAPPED_GLYPH,
     "(3): (2)... + inv_*": BASE_KEYS + MAPPED_GLYPH + INV_GLYPH,
-    "(4): (3)... + screen_desc": BASE_KEYS + MAPPED_GLYPH + INV_GLYPH + SCREEN_DESC,
+    "(4): (3)... + tty_*": BASE_KEYS + MAPPED_GLYPH + INV_GLYPH + TTY,
+    "(5): (4)... + screen_desc": BASE_KEYS
+    + MAPPED_GLYPH
+    + INV_GLYPH
+    + TTY
+    + SCREEN_DESC,
 }
 
 

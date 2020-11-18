@@ -13,12 +13,15 @@
 #undef SIG_RET_TYPE
 #define SIG_RET_TYPE void (*)(int)
 
+typedef struct TMT TMT;
+
 typedef struct nle_globals {
     fcontext_stack_t stack;
     fcontext_t returncontext;
     fcontext_t generatorcontext;
 
     FILE *ttyrec;
+    TMT *vterminal;
     char outbuf[BUFSIZ];
     char *outbuf_write_ptr;
     char *outbuf_write_end;

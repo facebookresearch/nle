@@ -11,8 +11,7 @@ from nle import _pynethack
 
 DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 
-# TODO: Consider getting this from C++.
-DUNGEON_SHAPE = (21, 79)
+DUNGEON_SHAPE = (_pynethack.nethack.ROWNO, _pynethack.nethack.COLNO - 1)
 BLSTATS_SHAPE = (_pynethack.nethack.NLE_BLSTATS_SIZE,)
 MESSAGE_SHAPE = (_pynethack.nethack.NLE_MESSAGE_SIZE,)
 PROGRAM_STATE_SHAPE = (_pynethack.nethack.NLE_PROGRAM_STATE_SIZE,)
@@ -25,6 +24,7 @@ INV_STRS_SHAPE = (
 SCREEN_DESCRIPTIONS_SHAPE = DUNGEON_SHAPE + (
     _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH,
 )
+TERMINAL_SHAPE = (_pynethack.nethack.NLE_TERM_LI, _pynethack.nethack.NLE_TERM_CO)
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
@@ -40,6 +40,9 @@ OBSERVATION_DESC = {
     "inv_oclasses": dict(shape=INV_SIZE, dtype=np.uint8),
     "inv_strs": dict(shape=INV_STRS_SHAPE, dtype=np.uint8),
     "screen_descriptions": dict(shape=SCREEN_DESCRIPTIONS_SHAPE, dtype=np.uint8),
+    "tty_chars": dict(shape=TERMINAL_SHAPE, dtype=np.uint8),
+    "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int8),
+    "tty_cursor": dict(shape=(2,), dtype=np.uint8),
 }
 
 
@@ -68,7 +71,7 @@ def _set_env_vars(options, hackdir, wizkit=None):
     # TODO: Investigate not using environment variables for this.
     os.environ["NETHACKOPTIONS"] = ",".join(options)
     os.environ["HACKDIR"] = hackdir
-    os.environ["TERM"] = os.environ.get("TERM", "screen")
+    os.environ["TERM"] = "ansi"
     if wizkit is not None:
         os.environ["WIZKIT"] = wizkit
 

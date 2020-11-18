@@ -3,6 +3,8 @@
 #include <string.h>
 #include <sys/time.h>
 
+#include <tmt.h>
+
 #define NEED_VARARGS
 #ifdef MONITOR_HEAP
 #undef MONITOR_HEAP
@@ -29,8 +31,108 @@
 
 extern int unixmain(int, char **);
 
+signed char
+vt_char_color_extract(TMTCHAR *c)
+{
+    /* We pick out the colors in the enum tmt_color_t. These match the order
+     * found standard in IBM color graphics, and are the same order as those
+     * found in src/color.h. We take the values from color.h, and choose
+     * default to be bright black (NO_COLOR) as nethack does.
+     *
+     * Finally we indicate whether the color is reverse, by indicating the
+     * sign
+     * of the final integer.
+     */
+    signed char color = 0;
+    switch (c->a.fg) {
+    case (TMT_COLOR_DEFAULT):
+        color =
+            (c->c == 32) ? CLR_BLACK : CLR_GRAY; // ' ' is BLACK else WHITE
+        break;
+    case (TMT_COLOR_BLACK):
+        color = (c->a.bold) ? NO_COLOR : CLR_BLACK; // c = 8:0
+        break;
+    case (TMT_COLOR_RED):
+        color = (c->a.bold) ? CLR_ORANGE : CLR_RED; // c = 9:1
+        break;
+    case (TMT_COLOR_GREEN):
+        color = (c->a.bold) ? CLR_BRIGHT_GREEN : CLR_GREEN; // c = 10:2
+        break;
+    case (TMT_COLOR_YELLOW):
+        color = (c->a.bold) ? CLR_YELLOW : CLR_BROWN; // c = 11:3
+        break;
+    case (TMT_COLOR_BLUE):
+        color = (c->a.bold) ? CLR_BRIGHT_BLUE : CLR_BLUE; // c = 12:4
+        break;
+    case (TMT_COLOR_MAGENTA):
+        color = (c->a.bold) ? CLR_BRIGHT_MAGENTA : CLR_MAGENTA; // c = 13:5
+        break;
+    case (TMT_COLOR_CYAN):
+        color = (c->a.bold) ? CLR_BRIGHT_CYAN : CLR_CYAN; // c = 14:6
+        break;
+    case (TMT_COLOR_WHITE):
+        color = (c->a.bold) ? CLR_WHITE : CLR_GRAY; // c = 15:7
+        break;
+    }
+
+    color |= (c->a.reverse << 7); // Flip sign if reverse
+    return color;
+}
+
+void
+nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
+{
+    const TMTSCREEN *s = tmt_screen(vt);
+    const TMTPOINT *cur = tmt_cursor(vt);
+
+    nle_ctx_t *nle = (nle_ctx_t *) p;
+    if (!nle || !nle->observation) {
+        return;
+    }
+
+    switch (m) {
+    case TMT_MSG_BELL:
+        break;
+
+    case TMT_MSG_UPDATE:
+        for (size_t r = 0; r < s->nline; r++) {
+            if (s->lines[r]->dirty) {
+                for (size_t c = 0; c < s->ncol; c++) {
+                    size_t offset = (r * NLE_TERM_CO) + c;
+                    TMTCHAR *tmt_c = &(s->lines[r]->chars[c]);
+
+                    if (nle->observation->tty_chars) {
+                        nle->observation->tty_chars[offset] = tmt_c->c;
+                    }
+
+                    if (nle->observation->tty_colors) {
+                        nle->observation->tty_colors[offset] =
+                            vt_char_color_extract(tmt_c);
+                    }
+                }
+            }
+        }
+        tmt_clean(vt);
+        break;
+
+    case TMT_MSG_ANSWER:
+        break;
+
+    case TMT_MSG_MOVED:
+        if (nle->observation->tty_cursor) {
+            // cast from size_t is safe from overflow, since r,c < 256
+            nle->observation->tty_cursor[0] = (unsigned char) cur->r;
+            nle->observation->tty_cursor[1] = (unsigned char) cur->c;
+        }
+        break;
+
+    case TMT_MSG_CURSOR:
+        break;
+    }
+}
+
 nle_ctx_t *
-init_nle(FILE *ttyrec)
+init_nle(FILE *ttyrec, nle_obs *obs)
 {
     nle_ctx_t *nle = malloc(sizeof(nle_ctx_t));
 
@@ -42,6 +144,12 @@ init_nle(FILE *ttyrec)
     nle->ttyrec_bz2 = BZ2_bzWriteOpen(&bzerror, ttyrec, 9, 0, 0);
     assert(bzerror == BZ_OK);
 #endif
+
+    nle->observation = obs;
+
+    TMT *vterminal = tmt_open(LI, CO, nle_vt_callback, nle, NULL);
+    assert(!vterminal);
+    nle->vterminal = vterminal;
 
     nle->outbuf_write_ptr = nle->outbuf;
     nle->outbuf_write_end = nle->outbuf + sizeof(nle->outbuf);
@@ -123,6 +231,10 @@ nle_fflush(FILE *stream)
     write_header(length, 0);
     write_data(nle->outbuf, length);
 
+    nle_obs *obs = nle->observation;
+    if (obs->tty_chars || obs->tty_colors || obs->tty_cursor) {
+        tmt_write(nle->vterminal, nle->outbuf, length);
+    }
     nle->outbuf_write_ptr = nle->outbuf;
 
 #ifdef NLE_BZ2_TTYRECS
@@ -245,11 +357,10 @@ nle_ctx_t *
 nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init)
 {
     /* Set CO and LI to control ttyrec output size. */
-    CO = 80;
-    LI = 24;
+    CO = NLE_TERM_CO;
+    LI = NLE_TERM_LI;
 
-    nle_ctx_t *nle = init_nle(ttyrec);
-    nle->observation = obs;
+    nle_ctx_t *nle = init_nle(ttyrec, obs);
     nle_seeds_init = seed_init;
 
     nle->stack = create_fcontext_stack(STACK_SIZE);
@@ -301,6 +412,8 @@ nle_end(nle_ctx_t *nle)
     assert(bzerror == BZ_OK);
 #endif
 
+    tmt_close(nle->vterminal);
+
     destroy_fcontext_stack(&nle->stack);
     free(nle);
 }
@@ -326,7 +439,7 @@ nle_get_seed(nle_ctx_t *nle, unsigned long *core, unsigned long *disp,
     *core = nle_seeds[0];
     *disp = nle_seeds[1];
     *reseed = has_strong_rngseed;
-};
+}
 
 /* From unixtty.c */
 /* fatal error */

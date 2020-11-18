@@ -116,7 +116,8 @@ class Nethack
                 py::object program_state, py::object internal,
                 py::object inv_glyphs, py::object inv_letters,
                 py::object inv_oclasses, py::object inv_strs,
-                py::object screen_descriptions)
+                py::object screen_descriptions, py::object tty_chars,
+                py::object tty_colors, py::object tty_cursor)
     {
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
         obs_.glyphs = checked_conversion<int16_t>(glyphs, dungeon);
@@ -141,6 +142,11 @@ class Nethack
         obs_.screen_descriptions = checked_conversion<uint8_t>(
             screen_descriptions,
             { ROWNO, COLNO - 1, NLE_SCREEN_DESCRIPTION_LENGTH });
+        obs_.tty_chars = checked_conversion<uint8_t>(
+            tty_chars, { NLE_TERM_LI, NLE_TERM_CO });
+        obs_.tty_colors = checked_conversion<int8_t>(
+            tty_colors, { NLE_TERM_LI, NLE_TERM_CO });
+        obs_.tty_cursor = checked_conversion<uint8_t>(tty_cursor, { 2 });
 
         py_buffers_ = { std::move(glyphs),
                         std::move(chars),
@@ -154,7 +160,10 @@ class Nethack
                         std::move(inv_letters),
                         std::move(inv_oclasses),
                         std::move(inv_strs),
-                        std::move(screen_descriptions) };
+                        std::move(screen_descriptions),
+                        std::move(tty_chars),
+                        std::move(tty_colors),
+                        std::move(tty_cursor) };
     }
 
     void
@@ -251,7 +260,10 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("inv_letters") = py::none(),
              py::arg("inv_oclasses") = py::none(),
              py::arg("inv_strs") = py::none(),
-             py::arg("screen_descriptions") = py::none())
+             py::arg("screen_descriptions") = py::none(),
+             py::arg("tty_chars") = py::none(),
+             py::arg("tty_colors") = py::none(),
+             py::arg("tty_cursor") = py::none())
         .def("close", &Nethack::close)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)
@@ -274,6 +286,8 @@ PYBIND11_MODULE(_pynethack, m)
     /* NetHack constants. */
     mn.attr("ROWNO") = py::int_(ROWNO);
     mn.attr("COLNO") = py::int_(COLNO);
+    mn.attr("NLE_TERM_LI") = py::int_(NLE_TERM_LI);
+    mn.attr("NLE_TERM_CO") = py::int_(NLE_TERM_CO);
 
     mn.attr("NHW_MESSAGE") = py::int_(NHW_MESSAGE);
     mn.attr("NHW_STATUS") = py::int_(NHW_STATUS);
