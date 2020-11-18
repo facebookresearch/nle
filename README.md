@@ -172,7 +172,7 @@ repeated nethack games, and finally to binding of these games to Python `gym`
 environment.
 
 If you want to learn more about the architecture of `nle` and how it works
-under the hood, checkout the [architecture document](./nle/doc/ARCHITECTURE.md). 
+under the hood, checkout the [architecture document](./doc/nle/ARCHITECTURE.md). 
 This may be a useful starting point for anyone looking to contribute to the
 lower level elements of NLE.
 
