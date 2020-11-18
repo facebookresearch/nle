@@ -23,9 +23,8 @@ jobs:
     - name: Install dependencies
       run: |
         brew install cmake
-    - name: Clone repo
-      uses: actions/checkout@v2
     - name: Install nle via pip
       run: "pip install nle"
     - name: Check nethack is installed
-      run: "python -c 'import nle; import gym; gym.make(\"NetHack-v0\")'"
+      run: |
+        python -c 'import nle, gym; e = gym.make("NetHack-v0"); e.reset(); e.step(0)' 
