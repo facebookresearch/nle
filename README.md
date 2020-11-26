@@ -104,7 +104,7 @@ $ python -m nle.scripts.play --mode random
 
 # Play the full game using directly the NetHack internal interface
 # (Useful for debugging outside of the gym environment)
-$ python -m nle.scripts.play --env nethack  # works with random agent too
+$ python -m nle.scripts.play --env NetHackScore-v0 # works with random agent too
 
 # See all the options
 $ python -m nle.scripts.play --help
