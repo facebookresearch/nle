@@ -28,14 +28,13 @@ with other gym / RL environments.
 
 ## Installation
 
-NLE requires `python>=3.7`, `cmake>=3.14` and some NetHack dependencies
-(e.g. `libncurses`) to be installed and available both when building the
+NLE requires `python>=3.5`, `cmake>=3.14` to be installed and available both when building the
 package, and at runtime.
 
 On **MacOS**, one can use `Homebrew` as follows:
 
 ``` bash
-$ brew install ncurses cmake
+$ brew install cmake
 ```
 
 On a plain **Ubuntu 18.04** distribution, `cmake` and other dependencies
@@ -44,7 +43,7 @@ can be installed by doing:
 ```bash
 # Python and most build deps
 $ sudo apt-get install -y build-essential autoconf libtool pkg-config \
-    python3-dev python3-pip python3-numpy git libncurses5-dev flex bison libbz2-dev
+    python3-dev python3-pip python3-numpy git flex bison libbz2-dev
 
 # recent cmake version
 $ wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
