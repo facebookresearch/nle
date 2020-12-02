@@ -117,7 +117,7 @@ no_extrinsic: false        # ignore extrinsic reward
 int:                       # intrinsic reward options
   twoheaded: true          # separate value heads for extrinsic & intrinsic, use True
   input: full              # what to model? full, crop_only, glyph_only (for RND, RIDE)
-  intrinsic_weight: 1      # this needs to be tuned per-model, each have different scale
+  intrinsic_weight: 0.1    # this needs to be tuned per-model, each have different scale
   discounting: 0.99
   baseline_cost: 0.5
   episodic: true

@@ -75,7 +75,6 @@ These models perform similarly to the paper.
 - increase embedding size from 32 to 64
 - add a "message model" which conditions on the in-game message, providing a fourth input to the policy (in addition to the full dungeon screen, the crop of the dungeon right around the agent, and the status bar). set msg.model=lt_cnn.
 - add different interpretations of the glyphs in the environment. see below for explanation. set glyph_type=all_cat.
-- int.intrinsic_weight set to 1 instead of 0.1 (receive more intrinsic reward for exploration)
 
 When msg.model=lt_cnn, and int.input=full (the default), we also add the message model to the target and predictor networks for RND. This should also improve RND network's performance, as seeing new messages in the game should be a particularly high-signal new experience to seek out (it could include taking new actions or seeing new monsters, new items, new environments or more) but we have not yet analyzed this in detail.
 
