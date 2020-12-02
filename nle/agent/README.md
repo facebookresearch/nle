@@ -8,16 +8,20 @@ We also introduced some additional modeling options, including conditioning the 
 
 ## Reproduced results
 
-We are still rerunning experiments using the below params and will be happy to report less variability as well as higher returns compared to the results reported in the paper.
+We are still rerunning experiments using the below params and expect to report less variability as well as higher returns compared to the results reported in the paper.
 
 ## Changed params from the paper (better performing!)
 
-- change the reward_win parameter from 100 to 1. this only affects the staircase, pet, and oracle tasks. this is a more appropriate ratio between the reward and the step penalty and results in more consistent performance. you can compare with the plots in the paper directly 
+- change the reward_win parameter from 100 to 1. this only affects the staircase, pet, and oracle tasks. this is a more appropriate ratio between the reward and the step penalty and results in more consistent performance. you can compare with the plots in the paper but consider the scale to be leading towards 1 rather than 100 for the agent to be reaching the goal on every episode.
+- decrease learning rate from 0.0002 to 0.0001
 - added reward_normalization parameter. set this reward_normalization=true, set reward_clipping=none (was "tim" before).
 - increase hidden_size from 128 to 256
 - increase embedding size from 32 to 64
 - add a "message model" which conditions on the in-game message, providing a fourth input to the policy (in addition to the full dungeon screen, the crop of the dungeon right around the agent, and the status bar). set msg.model=lt_cnn.
 - add different interpretations of the glyphs in the environment. see below for explanation. set glyph_type=all_cat.
+- int.intrinsic_weight set to 1 instead of 0.1 (receive more intrinsic reward for exploration)
+
+When msg.model=lt_cnn, and int.input=full (the default), we also add the message model to the target and predictor networks for RND. This should also improve RND network's performance, as seeing new messages in the game should be a particularly high-signal new experience to seek out (it could include taking new actions or seeing new monsters, new items, new environments or more) but we have not yet analyzed this in detail.
 
 ## Glyph Types
 
