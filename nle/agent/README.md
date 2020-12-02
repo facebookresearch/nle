@@ -8,7 +8,63 @@ We also introduced some additional modeling options, including conditioning the 
 
 ## Reproduced results
 
-We are still rerunning experiments using the below params and expect to report less variability as well as higher returns compared to the results reported in the paper.
+After 1e9 training steps, the average mean_episode_return achieved by the agents in their last 10k episodes are listed below, averaged over three runs.
+
+We give 1 reward for winning the staircase, pet, and oracle tasks. This gives a lower reward per completion than the original paper.
+We give 1 reward for every 1000 steps the agent stays alive on all tasks. This is absent in the original paper.
+
+**Staircase Task**
+The average steps per episode for all models was about 400, so mean_episode_return - 0.4 gives the approximate percentage success rate of the task (so getting close to 1.4 means the agent is reaching the goal every episode).
+These models perform better than the original paper result.
+- mon-hum-neu-mal: baseline 1.37, RND 1.00. 
+- val-dwa-law-fem: baseline 1.17, RND 1.14
+- wiz-elf-cha-mal: baseline 1.01, RND 0.97
+- tou-hum-neu-fem: baseline 0.94, RND 1.18
+
+**Pet Task**
+The average steps per episode for all models was about 400, so mean_episode_return - 0.4 gives the approximate percentage success rate of the task (so getting close to 1.4 means the agent is reaching the goal every episode).
+These models perform better than the original paper result.
+- mon-hum-neu-mal: baseline 1.26, RND 1.31
+- val-dwa-law-fem: baseline 1.08, RND 1.08
+- wiz-elf-cha-mal: baseline 0.86, RND 0.85
+- tou-hum-neu-fem: baseline 0.75, RND 0.79
+
+**Eat Task**
+The valkyrie baseline performed worse than in the original paper on this task; otherwise, every other model and character performed much better.
+- mon-hum-neu-mal: baseline 2282, RND 2193
+- val-dwa-law-fem: baseline 145,  RND 1240
+- wiz-elf-cha-mal: baseline 993,  RND 1066
+- tou-hum-neu-fem: baseline 1131, RND 1230
+
+**Gold Task**
+These models perform much better than the original paper result.
+- mon-hum-neu-mal: baseline 159, RND 116
+- val-dwa-law-fem: baseline 60,  RND 63
+- wiz-elf-cha-mal: baseline 37, RND 38
+- tou-hum-neu-fem: baseline 18, RND 19
+
+**Score Task**
+The RND models here perform slightly worse than in the paper.
+The baseline models here perform significantly better than in the paper.
+- mon-hum-neu-mal: baseline 971, RND 941
+- val-dwa-law-fem: baseline 653, RND 657
+- wiz-elf-cha-mal: baseline 343, RND 343
+- tou-hum-neu-fem: baseline 116, RND 202
+
+**Scout Task**
+These models perform significantly better than in the paper.
+- mon-hum-neu-mal: baseline 2491, RND 2452
+- val-dwa-law-fem: baseline 1978, RND 1982
+- wiz-elf-cha-mal: baseline 1411, RND 1397
+- tou-hum-neu-fem: baseline 1112, RND 1114
+
+**Oracle Task**
+These models perform similarly to the paper.
+- mon-hum-neu-mal: baseline -4.1, RND -4.8
+- val-dwa-law-fem: baseline -4.9, RND -6.0
+- wiz-elf-cha-mal: baseline -4.4, RND -4.3
+- tou-hum-neu-fem: baseline -3.4, RND -6.8
+
 
 ## Changed params from the paper (better performing!)
 
