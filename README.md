@@ -2,7 +2,8 @@
 
 --------------------------------------------------------------------------------
 
-[![Downloads](https://static.pepy.tech/personalized-badge/nle?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/nle)
+[![PyPI version](https://img.shields.io/pypi/v/nle.svg)](https://pypi.python.org/pypi/nle/)
+ [![Downloads](https://static.pepy.tech/personalized-badge/nle?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/nle)
 
 The NetHack Learning Environment (NLE) is a Reinforcement Learning environment presented at [NeurIPS 2020](https://neurips.cc/Conferences/2020).
 NLE is based on [NetHack 3.6.6](https://github.com/NetHack/NetHack/tree/NetHack-3.6.6_PostRelease) and designed to provide a standard RL interface to the game, and comes with tasks that function as a first step to evaluate agents on this new environment.
