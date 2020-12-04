@@ -319,7 +319,8 @@ class NLE(gym.Env):
         # -1 so that it's 0-based on first reset
         self._episode = -1
 
-        space_dict = dict(NLE_SPACE_ITEMS) if space_dict is None else space_dict
+        if space_dict is None:
+            space_dict = dict(NLE_SPACE_ITEMS)
         self.observation_space = gym.spaces.Dict(
             {key: space_dict[key] for key in observation_keys}
         )
