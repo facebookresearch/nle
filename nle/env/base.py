@@ -37,6 +37,99 @@ BLSTATS_SCORE_INDEX = 9
 
 SKIP_EXCEPTIONS = (b"eat", b"attack", b"direction?", b"pray")
 
+NLE_SPACE_ITEMS = (
+    (
+        "glyphs",
+        gym.spaces.Box(
+            low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["glyphs"]
+        ),
+    ),
+    ("chars", gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["chars"])),
+    ("colors", gym.spaces.Box(low=0, high=15, **nethack.OBSERVATION_DESC["colors"])),
+    (
+        "specials",
+        gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["specials"]),
+    ),
+    (
+        "blstats",
+        gym.spaces.Box(
+            low=np.iinfo(np.int32).min,
+            high=np.iinfo(np.int32).max,
+            **nethack.OBSERVATION_DESC["blstats"],
+        ),
+    ),
+    (
+        "message",
+        gym.spaces.Box(
+            low=np.iinfo(np.uint8).min,
+            high=np.iinfo(np.uint8).max,
+            **nethack.OBSERVATION_DESC["message"],
+        ),
+    ),
+    (
+        "program_state",
+        gym.spaces.Box(
+            low=np.iinfo(np.int32).min,
+            high=np.iinfo(np.int32).max,
+            **nethack.OBSERVATION_DESC["program_state"],
+        ),
+    ),
+    (
+        "internal",
+        gym.spaces.Box(
+            low=np.iinfo(np.int32).min,
+            high=np.iinfo(np.int32).max,
+            **nethack.OBSERVATION_DESC["internal"],
+        ),
+    ),
+    (
+        "inv_glyphs",
+        gym.spaces.Box(
+            low=0,
+            high=nethack.MAX_GLYPH,
+            **nethack.OBSERVATION_DESC["inv_glyphs"],
+        ),
+    ),
+    (
+        "inv_strs",
+        gym.spaces.Box(low=0, high=127, **nethack.OBSERVATION_DESC["inv_strs"]),
+    ),
+    (
+        "inv_letters",
+        gym.spaces.Box(low=0, high=127, **nethack.OBSERVATION_DESC["inv_letters"]),
+    ),
+    (
+        "inv_oclasses",
+        gym.spaces.Box(
+            low=0,
+            high=nethack.MAXOCLASSES,
+            **nethack.OBSERVATION_DESC["inv_oclasses"],
+        ),
+    ),
+    (
+        "screen_descriptions",
+        gym.spaces.Box(
+            low=0, high=127, **nethack.OBSERVATION_DESC["screen_descriptions"]
+        ),
+    ),
+    (
+        "tty_chars",
+        gym.spaces.Box(low=0, high=127, **nethack.OBSERVATION_DESC["tty_chars"]),
+    ),
+    (
+        "tty_colors",
+        gym.spaces.Box(
+            low=-15,
+            high=15,
+            **nethack.OBSERVATION_DESC["tty_colors"],
+        ),
+    ),
+    (
+        "tty_cursor",
+        gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["tty_cursor"]),
+    ),
+)
+
 
 class NLE(gym.Env):
     """Standard NetHack Learning Environment.
@@ -115,6 +208,7 @@ class NLE(gym.Env):
         options=None,
         wizard=False,
         allow_all_yn_questions=False,
+        space_dict=None,
     ):
         """Constructs a new NLE environment.
 
@@ -225,71 +319,7 @@ class NLE(gym.Env):
         # -1 so that it's 0-based on first reset
         self._episode = -1
 
-        space_dict = {
-            "glyphs": gym.spaces.Box(
-                low=0, high=nethack.MAX_GLYPH, **nethack.OBSERVATION_DESC["glyphs"]
-            ),
-            "chars": gym.spaces.Box(
-                low=0, high=255, **nethack.OBSERVATION_DESC["chars"]
-            ),
-            "colors": gym.spaces.Box(
-                low=0, high=15, **nethack.OBSERVATION_DESC["colors"]
-            ),
-            "specials": gym.spaces.Box(
-                low=0, high=255, **nethack.OBSERVATION_DESC["specials"]
-            ),
-            "blstats": gym.spaces.Box(
-                low=np.iinfo(np.int32).min,
-                high=np.iinfo(np.int32).max,
-                **nethack.OBSERVATION_DESC["blstats"],
-            ),
-            "message": gym.spaces.Box(
-                low=np.iinfo(np.uint8).min,
-                high=np.iinfo(np.uint8).max,
-                **nethack.OBSERVATION_DESC["message"],
-            ),
-            "program_state": gym.spaces.Box(
-                low=np.iinfo(np.int32).min,
-                high=np.iinfo(np.int32).max,
-                **nethack.OBSERVATION_DESC["program_state"],
-            ),
-            "internal": gym.spaces.Box(
-                low=np.iinfo(np.int32).min,
-                high=np.iinfo(np.int32).max,
-                **nethack.OBSERVATION_DESC["internal"],
-            ),
-            "inv_glyphs": gym.spaces.Box(
-                low=0,
-                high=nethack.MAX_GLYPH,
-                **nethack.OBSERVATION_DESC["inv_glyphs"],
-            ),
-            "inv_strs": gym.spaces.Box(
-                low=0, high=127, **nethack.OBSERVATION_DESC["inv_strs"]
-            ),
-            "inv_letters": gym.spaces.Box(
-                low=0, high=127, **nethack.OBSERVATION_DESC["inv_letters"]
-            ),
-            "inv_oclasses": gym.spaces.Box(
-                low=0,
-                high=nethack.MAXOCLASSES,
-                **nethack.OBSERVATION_DESC["inv_oclasses"],
-            ),
-            "screen_descriptions": gym.spaces.Box(
-                low=0, high=127, **nethack.OBSERVATION_DESC["screen_descriptions"]
-            ),
-            "tty_chars": gym.spaces.Box(
-                low=0, high=127, **nethack.OBSERVATION_DESC["tty_chars"]
-            ),
-            "tty_colors": gym.spaces.Box(
-                low=-15,
-                high=15,
-                **nethack.OBSERVATION_DESC["tty_colors"],
-            ),
-            "tty_cursor": gym.spaces.Box(
-                low=0, high=255, **nethack.OBSERVATION_DESC["tty_cursor"]
-            ),
-        }
-
+        space_dict = dict(NLE_SPACE_ITEMS) if space_dict is None else space_dict
         self.observation_space = gym.spaces.Dict(
             {key: space_dict[key] for key in observation_keys}
         )
