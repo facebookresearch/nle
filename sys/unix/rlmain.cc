@@ -115,7 +115,7 @@ main(int argc, char **argv)
         fopen("nle.ttyrec.bz2", "a"), fclose);
 
     ScopedTC tc;
-    nle_ctx_t *nle = nle_start("libnethack.so", &obs, ttyrec.get(), nullptr);
+    nle_ctx_t *nle = nle_start("libnethack.so", &obs, ttyrec.get(), nullptr, nle_supports_shared());
     if (argc > 1 && argv[1][0] == 'r') {
         randgame(nle, &obs, 3);
     } else {
