@@ -209,7 +209,6 @@ struct NHLoader {
           boundsCheck(dyn);
 
           switch (dyn->d_tag) {
-//          case DT_NEEDED:
           case DT_SYMTAB:
             symtab = base + dyn->d_un.d_ptr;
             break;
@@ -227,6 +226,26 @@ struct NHLoader {
             break;
           case DT_PLTRELSZ:
             pltrelsz = dyn->d_un.d_val;
+            break;
+          }
+
+          ++dyn;
+        }
+      }
+    });
+    forPh([&](Elf64_Phdr* ph) {
+
+      if (ph->p_type == PT_DYNAMIC) {
+        Elf64_Dyn* dyn = (Elf64_Dyn*)(data.data() + ph->p_offset);
+        Elf64_Dyn* dynEnd = (Elf64_Dyn*)(data.data() + ph->p_offset + ph->p_filesz);
+        while (dyn < dynEnd) {
+          boundsCheck(dyn);
+
+          switch (dyn->d_tag) {
+          case DT_NEEDED:
+            // TODO: respect RUNPATH
+            //       close this dl on dtor?
+            dlopen(strtab + dyn->d_un.d_val, RTLD_NOW | RTLD_GLOBAL);
             break;
           }
 
@@ -617,7 +636,7 @@ struct NLEShared {
       overrides[name] = (void*)f;
     };
 
-    ovr("has_colors", rep::has_colors);
+    ovr("has_colors", rep::has_colors); // Why is this necessary?
 
     // Functions that are not allowed and will end the game
     ovr("exit", rep::exit);
