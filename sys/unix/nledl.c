@@ -8,12 +8,12 @@
 
 #if defined(__linux__) && defined(__x86_64__)
 #define HASSHARED
+#endif
 
 void* nleshared_open(const char *dlpath);
 void nleshared_close(void* handle);
 void nleshared_reset(void* handle);
 void* nleshared_sym(void* handle, const char* symname);
-#endif
 
 typedef struct nledl_ctx {
     void* shared;

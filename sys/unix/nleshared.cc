@@ -1,4 +1,6 @@
 
+#if defined(__linux__) && defined(__x86_64__)
+
 #include <elf.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -662,3 +664,21 @@ extern "C" void* nleshared_sym(void* handle, const char* symname) {
   return (void*)env->instance.loader.symbol<void()>(symname).resolve(env->instance);
 }
 
+#else
+
+#include <cstdlib>
+#include <stdexcept>
+
+extern "C" void* nleshared_open(const char *dlpath) {
+  throw std::runtime_error("NLE shared not supported on this platform");
+}
+extern "C" void nleshared_close(void* handle) {
+  std::abort();
+}
+extern "C" void nleshared_reset(void* handle) {
+  std::abort();
+}
+extern "C" void* nleshared_sym(void* handle, const char* symname) {
+  std::abort();
+}
+#endif
