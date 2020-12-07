@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 
-[![PyPI version](https://img.shields.io/pypi/v/nle.svg)](https://pypi.python.org/pypi/nle/)
+[![CircleCI](https://circleci.com/gh/facebookresearch/nle.svg?style=shield)](https://circleci.com/gh/facebookresearch/nle) [![PyPI version](https://img.shields.io/pypi/v/nle.svg)](https://pypi.python.org/pypi/nle/)
  [![Downloads](https://static.pepy.tech/personalized-badge/nle?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/nle)
 
 The NetHack Learning Environment (NLE) is a Reinforcement Learning environment presented at [NeurIPS 2020](https://neurips.cc/Conferences/2020).
