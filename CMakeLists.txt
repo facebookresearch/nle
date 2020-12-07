@@ -104,8 +104,6 @@ add_library(nethackdl STATIC "sys/unix/nledl.c" "sys/unix/nleshared.cc")
 target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(nethackdl PUBLIC dl)
 
-#set_target_properties(nethackdl PROPERTIES CMAKE_CXX_STANDARD 17)
-
 # rlmain C++ (test) binary
 add_executable(rlmain "sys/unix/rlmain.cc")
 set_target_properties(rlmain PROPERTIES CXX_STANDARD 11)
