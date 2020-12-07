@@ -20,87 +20,173 @@
 #include <unordered_map>
 #include <mutex>
 
-struct NHLoader {
-  std::vector<std::byte> data;
+struct Fd {
+  int fd = -1;
+  Fd() = default;
+  Fd(int fd) noexcept : fd(fd) {}
+  Fd(const Fd&) = delete;
+  Fd(Fd&& n) noexcept {
+    fd = std::exchange(n.fd, -1);
+  }
+  Fd& operator=(const Fd&) = delete;
+  Fd& operator=(Fd&& n) noexcept {
+    std::swap(fd, n.fd);
+    return *this;
+  }
+  operator int() const noexcept {
+    return fd;
+  }
+  int release() noexcept {
+    return std::exchange(fd, -1);
+  }
+  ~Fd() {
+    if (fd != -1) {
+      ::close(fd);
+    }
+  }
+  size_t fileSize() const {
+    struct ::stat s;
+    if (::fstat(fd, &s)) {
+      throw std::system_error(errno, std::system_category(), "fstat");
+    }
+    return s.st_size;
+  }
+};
+
+struct Mmap {
+  std::byte* data_ = nullptr;
+  size_t size_ = 0;
+  Mmap() = default;
+  Mmap(std::byte* data, size_t size) noexcept : data_(data), size_(size) {}
+  Mmap(const Mmap&) = delete;
+  Mmap(Mmap&& n) noexcept {
+    data_ = std::exchange(n.data_, nullptr);
+    size_ = n.size_;
+  }
+  Mmap& operator=(const Mmap&) = delete;
+  Mmap& operator=(Mmap&& n) noexcept {
+    std::swap(data_, n.data_);
+    std::swap(size_, n.size_);
+    return *this;
+  }
+  ~Mmap() {
+    if (data_) {
+      ::munmap(data_, size_);
+    }
+  }
+  static Mmap make(const Fd& fd, size_t offset, size_t size, bool write, bool shared) {
+    errno = 0;
+    void* ptr = ::mmap(nullptr, size, write ? PROT_READ | PROT_WRITE : PROT_READ, shared ? MAP_SHARED : MAP_PRIVATE, (int)fd, offset);
+    if (!ptr || ptr == MAP_FAILED) {
+      throw std::system_error(errno, std::system_category(), "mmap");
+    }
+    return {(std::byte*)ptr, size};
+  }
+  static Mmap shared(const Fd& fd, size_t offset, size_t size, bool write) {
+    return make(fd, offset, size, write, true);
+  }
+  static Mmap private_(const Fd& fd, size_t offset, size_t size, bool write) {
+    return make(fd, offset, size, write, false);
+  }
+  operator bool() const noexcept {
+    return data_;
+  }
+  operator std::byte*() const noexcept {
+    return data_;
+  }
+  std::byte* data() noexcept {
+    return data_;
+  }
+  const std::byte* data() const noexcept {
+    return data_;
+  }
+  size_t size() const noexcept {
+    return size_;
+  }
+};
+
+struct RelativeRelocation {
+  uint64_t targetOffset;
+  uint64_t valueOffset;
+};
+
+struct Image {
+  Mmap mem;
+  std::byte* base = nullptr;
+
+  operator bool() const noexcept {
+    return mem;
+  }
+};
+
+class NHLoader {
+  // The raw file data is kept around as ELF headers are generally read from it,
+  // and there is no guarantee that the in-memory layout mirrors the file data.
+  Mmap fileMem;
   Elf64_Ehdr* hdr;
-  size_t baseaddr;
-  size_t endaddr;
-  size_t size;
-  int fd;
-  void* ptr;
-  std::byte* sharedbase;
-  std::vector<std::pair<uint64_t, uint64_t>> relocations;
-  std::vector<std::pair<uint64_t, uint64_t>> writableRelocations;
+  // The "base" form of the library, mapped into memory with all symbols resolved.
+  Fd sharedFd;
+  Image sharedImage;
+  // Relocations that must be performed at fork time
+  std::vector<RelativeRelocation> forkRelocations;
+  // Relocations that must be performed at reset time
+  std::vector<RelativeRelocation> resetRelocations;
+
   size_t initfunc;
   size_t finifunc;
   size_t initarray;
   size_t initarraysz;
   size_t finiarray;
   size_t finiarraysz;
-  NHLoader(std::string libPath, const std::unordered_map<std::string, void*>& overrides) {
-    FILE* f = fopen(libPath.c_str(), "rb");
-    if (!f) {
-      throw std::runtime_error("Failed to open '" + libPath + "' for reading");
-    }
-    fseek(f, 0, SEEK_END);
-    data.resize(ftell(f));
-    fseek(f, 0, SEEK_SET);
-    fread(data.data(), data.size(), 1, f);
-    fclose(f);
 
-    hdr = (Elf64_Ehdr*)data.data();
+  void load(std::string libPath, const std::unordered_map<std::string, void*>& overrides) {
+    Fd diskFd = open(libPath.c_str(), O_RDONLY);
+
+    fileMem = Mmap::shared(diskFd, 0, diskFd.fileSize(), false);
+
+    hdr = (Elf64_Ehdr*)fileMem.data();
     boundsCheck(hdr);
 
-    baseaddr = ~0;
-    endaddr = 0;
-    size = 0;
+    size_t baseaddr = ~0;
+    size_t endaddr = 0;
 
-    forPh([&](Elf64_Phdr* ph) {;
-
-      printf("ph type %#x at [%p, %p) (fs %#x)\n", ph->p_type, (void*)ph->p_vaddr, (void*)(ph->p_vaddr + ph->p_memsz), ph->p_filesz);
-
+    forPh([&](Elf64_Phdr* ph) {
       if (ph->p_type == PT_LOAD) {
         baseaddr = std::min(baseaddr, (size_t)ph->p_vaddr);
         endaddr = std::max(endaddr, (size_t)(ph->p_vaddr + ph->p_memsz));
       }
-
     });
 
     if (baseaddr == (size_t)~0) {
       throw std::runtime_error("No loadable program segments found");
     }
 
-    size = endaddr - baseaddr;
-
-    printf("memsize is %ldM\n", size / 1024 / 1024);
-
-    fd = memfd_create("nethack", 0);
-    if (fd < 0) {
+    sharedFd = memfd_create("nethack", 0);
+    if ((int)sharedFd < 0) {
       throw std::system_error(errno, std::system_category(), "memfd_create");
     }
-    if (ftruncate(fd, size)) {
+    size_t memsize = endaddr - baseaddr;
+    if (ftruncate(sharedFd, memsize)) {
       throw std::system_error(errno, std::system_category(), "ftruncate");
     }
 
-    ptr = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (!ptr || ptr == MAP_FAILED) {
-      throw std::runtime_error("Failed to allocate memory for binary image");
-    }
+    sharedImage.mem = Mmap::shared(sharedFd, 0, memsize, true);
+    sharedImage.base = sharedImage.mem.data() - baseaddr;
 
-    std::byte* base = (std::byte*)ptr - baseaddr;
-    sharedbase = base;
-
+    // Copy over all initialized data from the file to the base shared image.
     forPh([&](Elf64_Phdr* ph) {
       if (ph->p_type == PT_LOAD) {
-        std::memcpy(base + ph->p_vaddr, data.data() + ph->p_offset, ph->p_filesz);
+        std::memcpy(sharedImage.base + ph->p_vaddr, fileMem.data() + ph->p_offset, ph->p_filesz);
       }
     });
+    // And link it.
     link(overrides);
-    mprotect(ptr, size, PROT_READ);
+    // We should never write to the shared image again, so make it read-only
+    mprotect(sharedImage.mem.data(), sharedImage.mem.size(), PROT_READ);
   }
 
   void boundsCheck(std::byte* begin, std::byte* end) {
-    if (begin < data.data() || end > data.data() + data.size()) {
+    if (begin < fileMem.data() || end > fileMem.data() + fileMem.size()) {
       throw std::runtime_error("Out of bounds access parsing ELF (corrupt file?)");
     }
   }
@@ -114,81 +200,20 @@ struct NHLoader {
 
   template<typename F>
   void forPh(F&& f) {
-    auto phoff = hdr->e_phoff;
+    size_t phoff = hdr->e_phoff;
     for (size_t i = 0; i != hdr->e_phnum; ++i) {
-      Elf64_Phdr* ph = (Elf64_Phdr*)(data.data() + phoff);
+      Elf64_Phdr* ph = (Elf64_Phdr*)(fileMem.data() + phoff);
       boundsCheck(ph);
-
       f(ph);
-
       phoff += hdr->e_phentsize;
     }
   }
 
-  template<typename T>
-  struct Function;
-  template<typename R, typename... Args>
-  struct Function<R(Args...)> {
-    size_t offset;
-
-    template<typename Instance>
-    R operator()(Instance& i, Args... args) {
-      return i.call(*this, args...);
-    }
-
-    template<typename Instance>
-    auto* resolve(Instance& i) {
-      return (R(*)(Args...))(void*)(i.base + offset);
-    }
-  };
-
-  struct Instance {
-    NHLoader& loader;
-    void* ptr;
-    std::byte* base;
-    Instance(NHLoader& loader) : loader(loader) {}
-    Instance(const Instance&) = delete;
-    Instance(Instance&& n) : loader(n.loader) {
-      ptr = std::exchange(n.ptr, nullptr);
-      base = std::exchange(n.base, nullptr);
-    }
-    ~Instance() {
-      if (ptr) {
-        loader.free(*this);
-      }
-    }
-    void reset() {
-      loader.reset(*this);
-    }
-    void init() {
-      if (loader.initfunc) {
-        ((void(*)())(base + loader.initfunc))();
-      }
-      if (loader.initarray) {
-        for (size_t i = 0; i != loader.initarraysz / sizeof(void*); ++i) {
-          ((void(*)())((void**)(base + loader.initarray))[i])();
-        }
-      }
-    }
-    void fini() {
-      if (loader.finiarray) {
-        for (size_t i = 0; i != loader.finiarraysz / sizeof(void*); ++i) {
-          ((void(*)())((void**)(base + loader.finiarray))[i])();
-        }
-      }
-      if (loader.finifunc) {
-        ((void(*)())(base + loader.finifunc))();
-      }
-    }
-    template<typename Sig, typename... Args>
-    auto call(Function<Sig> func, Args&&... args) {
-      return ((Sig*)(void*)(base + func.offset))(std::forward<Args>(args)...);
-    }
-  };
-
+  // Dynamic linking. Loads required libraries, resolves symbols and performs
+  // relocations. Some relocations must also be performed at fork time.
   void link(const std::unordered_map<std::string, void*>& overrides) {
 
-    std::byte* base = sharedbase;
+    std::byte* base = sharedImage.base;
 
     printf("Loaded at base %p\n", base);
 
@@ -203,8 +228,8 @@ struct NHLoader {
     forPh([&](Elf64_Phdr* ph) {
 
       if (ph->p_type == PT_DYNAMIC) {
-        Elf64_Dyn* dyn = (Elf64_Dyn*)(data.data() + ph->p_offset);
-        Elf64_Dyn* dynEnd = (Elf64_Dyn*)(data.data() + ph->p_offset + ph->p_filesz);
+        Elf64_Dyn* dyn = (Elf64_Dyn*)(fileMem.data() + ph->p_offset);
+        Elf64_Dyn* dynEnd = (Elf64_Dyn*)(fileMem.data() + ph->p_offset + ph->p_filesz);
         while (dyn < dynEnd) {
           boundsCheck(dyn);
 
@@ -236,8 +261,8 @@ struct NHLoader {
     forPh([&](Elf64_Phdr* ph) {
 
       if (ph->p_type == PT_DYNAMIC) {
-        Elf64_Dyn* dyn = (Elf64_Dyn*)(data.data() + ph->p_offset);
-        Elf64_Dyn* dynEnd = (Elf64_Dyn*)(data.data() + ph->p_offset + ph->p_filesz);
+        Elf64_Dyn* dyn = (Elf64_Dyn*)(fileMem.data() + ph->p_offset);
+        Elf64_Dyn* dynEnd = (Elf64_Dyn*)(fileMem.data() + ph->p_offset + ph->p_filesz);
         while (dyn < dynEnd) {
           boundsCheck(dyn);
 
@@ -288,7 +313,7 @@ struct NHLoader {
 
     auto copy64 = [&](std::byte* dst, Address addr) {
       if (addr.isRelative) {
-        relocations.emplace_back(dst - base, addr.value);
+        forkRelocations.push_back({uint64_t(dst - base), addr.value});
       }
       std::byte* value = addr.isRelative ? base + addr.value : (std::byte*)addr.value;
       std::memcpy(dst, &value, sizeof(value));
@@ -328,8 +353,8 @@ struct NHLoader {
     forPh([&](Elf64_Phdr* ph) {
 
       if (ph->p_type == PT_DYNAMIC) {
-        Elf64_Dyn* dyn = (Elf64_Dyn*)(data.data() + ph->p_offset);
-        Elf64_Dyn* dynEnd = (Elf64_Dyn*)(data.data() + ph->p_offset + ph->p_filesz);
+        Elf64_Dyn* dyn = (Elf64_Dyn*)(fileMem.data() + ph->p_offset);
+        Elf64_Dyn* dynEnd = (Elf64_Dyn*)(fileMem.data() + ph->p_offset + ph->p_filesz);
         while (dyn < dynEnd) {
           boundsCheck(dyn);
 
@@ -392,9 +417,9 @@ struct NHLoader {
       if (ph->p_type == PT_LOAD && (ph->p_flags & PF_W)) {
         uint64_t begin = ph->p_vaddr;
         uint64_t end = ph->p_vaddr + ph->p_memsz;
-        for (auto [dst, offset] : relocations) {
+        for (auto [dst, offset] : forkRelocations) {
           if (dst >= begin && dst < end) {
-            writableRelocations.emplace_back(dst, offset);
+            resetRelocations.push_back({dst, offset});
           }
         }
       }
@@ -402,28 +427,93 @@ struct NHLoader {
 
   }
 
+public:
+
+  NHLoader(std::string libPath, const std::unordered_map<std::string, void*>& overrides) {
+    load(libPath, overrides);
+  }
+
+  // Convenience class for referencing symbols.
+  template<typename T>
+  struct Symbol;
+  template<typename R, typename... Args>
+  struct Symbol<R(Args...)> {
+    size_t offset;
+
+    template<typename Instance>
+    R operator()(Instance& i, Args... args) {
+      return i.call(*this, args...);
+    }
+
+    template<typename Instance>
+    auto* resolve(Instance& i) {
+      return (R(*)(Args...))(void*)(i.image.base + offset);
+    }
+  };
+
+  // One instance of the shared library, with its own address and data.
+  struct Instance {
+    NHLoader* loader = nullptr;
+    Image image;
+    Instance() = default;
+    Instance(NHLoader& loader) : loader(&loader) {}
+    Instance(Instance&&) = default;
+    Instance& operator=(Instance&&) = default;
+    // Resets the writable parts of the image to their initial values.
+    // Does not call finalization functions or clean up any other resources
+    void reset() {
+      loader->reset(*this);
+    }
+    // Call global initialization functions (eg global constructors)
+    void init() {
+      if (loader->initfunc) {
+        ((void(*)())(image.base + loader->initfunc))();
+      }
+      if (loader->initarray) {
+        for (size_t i = 0; i != loader->initarraysz / sizeof(void*); ++i) {
+          ((void(*)())((void**)(image.base + loader->initarray))[i])();
+        }
+      }
+    }
+    // Call global finalization functions (eg global destructors)
+    void fini() {
+      if (loader->finiarray) {
+        for (size_t i = 0; i != loader->finiarraysz / sizeof(void*); ++i) {
+          ((void(*)())((void**)(image.base + loader->finiarray))[i])();
+        }
+      }
+      if (loader->finifunc) {
+        ((void(*)())(image.base + loader->finifunc))();
+      }
+    }
+    template<typename Sig, typename... Args>
+    auto call(Symbol<Sig> func, Args&&... args) {
+      return ((Sig*)(void*)(image.base + func.offset))(std::forward<Args>(args)...);
+    }
+  };
+
   template<typename Sig>
-  Function<Sig> symbol(std::string name) {
+  Symbol<Sig> symbol(std::string name) {
     uint64_t offset = hdr->e_shoff;
     size_t n = hdr->e_shnum;
     offset = hdr->e_shoff;
     for (size_t i = 0; i != n; ++i) {
-      Elf64_Shdr* shdr = (Elf64_Shdr*)(data.data() + offset);
+      Elf64_Shdr* shdr = (Elf64_Shdr*)(fileMem.data() + offset);
       boundsCheck(shdr);
 
       if (shdr->sh_type == SHT_SYMTAB) {
 
-        size_t strtab = ((Elf64_Shdr*)(data.data() + hdr->e_shoff + hdr->e_shentsize * shdr->sh_link))->sh_offset;
+        size_t strtab = ((Elf64_Shdr*)(fileMem.data() + hdr->e_shoff + hdr->e_shentsize * shdr->sh_link))->sh_offset;
 
         auto begin = shdr->sh_offset;
         auto end = begin + shdr->sh_size;
         for (auto i = begin; i < end; i += shdr->sh_entsize) {
-          Elf64_Sym* sym = (Elf64_Sym*)(data.data() + i);
+          Elf64_Sym* sym = (Elf64_Sym*)(fileMem.data() + i);
           boundsCheck(sym);
 
           //printf("sym->st_name is %d\n", sym->st_name);
 
-          std::string_view sname = (const char*)(data.data() + strtab + sym->st_name);
+          std::string_view sname = (const char*)(fileMem.data() + strtab + sym->st_name);
           if (sname == name) {
             return {(size_t)sym->st_value};
             //printf("found symbol %s\n", std::string(sname).c_str());
@@ -437,22 +527,20 @@ struct NHLoader {
     throw std::runtime_error("Could not find symbol " + name);
   }
 
+  // Create a new instance of the shared library. Most memory will initially
+  // be memory mapped from the shared image with copy-on-write semantics.
   Instance fork() {
+    Mmap mem = Mmap::private_(sharedFd, 0, sharedImage.mem.size(), true);
 
-    void* ptr = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    if (!ptr || ptr == MAP_FAILED) {
-      throw std::runtime_error("Failed to allocate memory for binary image");
-    }
-
-    std::byte* base = (std::byte*)ptr - baseaddr;
+    std::byte* base = (std::byte*)mem.data() + (sharedImage.base - sharedImage.mem.data());
 
     std::unordered_map<size_t, bool> pagesTouched;
 
-    printf("There are %d relocations\n", relocations.size());
+    printf("There are %d relocations\n", forkRelocations.size());
 
-    for (auto& v : relocations) {
-      std::byte* dst = base + v.first;
-      std::byte* value = base + v.second;
+    for (auto& v : forkRelocations) {
+      std::byte* dst = base + v.targetOffset;
+      std::byte* value = base + v.valueOffset;
       pagesTouched[(size_t)dst / 0x1000] = true;
 
       std::memcpy(dst, &value, sizeof(value));
@@ -474,7 +562,7 @@ struct NHLoader {
       }
     });
 
-    printf("Touched %d/%d pages\n", pagesTouched.size(), size / 0x1000);
+    printf("Touched %d/%d pages\n", pagesTouched.size(), mem.size() / 0x1000);
 
     int nWritableTouched = 0;
     int nWritableTotal = 0;
@@ -497,26 +585,25 @@ struct NHLoader {
     printf("forked to base %p\n", base);
 
     Instance i(*this);
-    i.ptr = ptr;
-    i.base = base;
+    i.image.mem = std::move(mem);
+    i.image.base = base;
     return i;
   }
 
   void reset(Instance& i) {
+    // Reset memory in writable segments to initial values
     forPh([&](Elf64_Phdr* ph) {
       if (ph->p_type == PT_LOAD && (ph->p_flags & PF_W)) {
-        std::memcpy(i.base + ph->p_vaddr, sharedbase + ph->p_vaddr, ph->p_memsz);
+        std::memcpy(i.image.base + ph->p_vaddr, sharedImage.base + ph->p_vaddr, ph->p_memsz);
       }
     });
-    for (auto& v : writableRelocations) {
-      std::byte* dst = i.base + v.first;
-      std::byte* value = i.base + v.second;
+    // Perform any necessary relocations in the data we just copied to fit
+    // our base address.
+    for (auto& v : resetRelocations) {
+      std::byte* dst = i.image.base + v.targetOffset;
+      std::byte* value = i.image.base + v.valueOffset;
       std::memcpy(dst, &value, sizeof(value));
     }
-  }
-
-  void free(Instance& i) {
-    ::munmap(i.ptr, size);
   }
 
 };
@@ -541,7 +628,6 @@ struct Env {
 int has_colors() {
   return 1;
 }
-
 
 void exit(int exitcode) {
   printf("exit %d\n", exitcode);
@@ -684,7 +770,7 @@ extern "C" void nleshared_reset(void* handle) {
 }
 extern "C" void* nleshared_sym(void* handle, const char* symname) {
   rep::Env* env = (rep::Env*)handle;
-  return (void*)env->instance.loader.symbol<void()>(symname).resolve(env->instance);
+  return (void*)env->instance.loader->symbol<void()>(symname).resolve(env->instance);
 }
 
 #else
