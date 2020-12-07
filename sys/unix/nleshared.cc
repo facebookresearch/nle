@@ -576,12 +576,15 @@ int chdir(const char* path) {
   });
   return 0;
 }
-int rename(const char*, const char*) {
-  errno = EACCES;
+int rename(const char* src, const char* dst) {
+  errno = ENOENT;
+  return -1;
+}
+int unlink(const char* path) {
+  errno = ENOENT;
   return -1;
 }
 int creat(const char* path, int) {
-  errno = EPERM;
   //printf("creat %s\n", path);
   return memfd_create(path, 0);
 }
@@ -644,7 +647,6 @@ struct NLEShared {
     ovr("abort", rep::abort);
     ovr("popen", rep::popen);
     ovr("fork", rep::fork);
-    ovr("exit", rep::exit);
     ovr("sleep", rep::sleep);
     ovr("execl", rep::execl);
 
@@ -653,6 +655,8 @@ struct NLEShared {
     ovr("rename", rep::rename);
     ovr("creat", rep::creat);
     ovr("open", rep::open);
+    ovr("rename", rep::rename);
+    ovr("unlink", rep::unlink);
     ovr("fopen", rep::fopen);
     ovr("setuid", rep::setuid);
 //    ovr("getpwnam", rep::getpwnam);
