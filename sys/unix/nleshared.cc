@@ -147,10 +147,8 @@ struct NHLoader {
     Instance(NHLoader& loader) : loader(loader) {}
     Instance(const Instance&) = delete;
     Instance(Instance&& n) : loader(n.loader) {
-      printf("move assign %p\n", n.base);
       ptr = std::exchange(n.ptr, nullptr);
       base = std::exchange(n.base, nullptr);
-      printf("post base %p\n", base);
     }
     ~Instance() {
       if (ptr) {
@@ -161,11 +159,9 @@ struct NHLoader {
       loader.reset(*this);
     }
     void init() {
-      printf("calling init with base %p\n", base);
       if (loader.initfunc) {
         ((void(*)())(base + loader.initfunc))();
       }
-      printf("called init with base %p\n", base);
       if (loader.initarray) {
         for (size_t i = 0; i != loader.initarraysz / sizeof(void*); ++i) {
           ((void(*)())((void**)(base + loader.initarray))[i])();
@@ -319,26 +315,19 @@ struct NHLoader {
           switch (dyn->d_tag) {
           case DT_RELA: {
             if (relasz > 0 && relaent > 0) {
-              //printf("dyn->d_un.d_ptr is %#x\n", dyn->d_un.d_ptr);
               for (size_t i = 0; i != relasz / relaent; ++i) {
                 Elf64_Rela* rela = (Elf64_Rela*)(base + dyn->d_un.d_ptr + relaent * i);
                 doRela(rela);
-
-                Elf64_Sym* sym = (Elf64_Sym*)(symtab + syment * ELF64_R_SYM(rela->r_info));
-                if (sym->st_value == 0) {
-                  //printf("relocation type %#lx %#x\n", ELF64_R_TYPE(rela->r_info), ELF64_R_SYM(rela->r_info));
-                  //printf("sym %s val %#lx\n", strtab + sym->st_name, sym->st_value);
-                }
               }
             }
             break;
           }
           case DT_REL:
-            printf("has rel\n");
+            throw std::runtime_error("RELA not implemented");
             break;
           case DT_PLTREL: {
             if (dyn->d_un.d_val == DT_RELA) {
-              printf("plt rela\n");
+              //printf("plt rela\n");
             } else {
               throw std::runtime_error("Unsupported value for DT_PLTREL");
             }
@@ -346,15 +335,9 @@ struct NHLoader {
           }
           case DT_JMPREL: {
             if (relasz > 0 && relaent > 0) {
-              //printf("dyn->d_un.d_ptr is %#x\n", dyn->d_un.d_ptr);
               for (size_t i = 0; i != pltrelsz / relaent; ++i) {
                 Elf64_Rela* rela = (Elf64_Rela*)(base + dyn->d_un.d_ptr + relaent * i);
                 doRela(rela);
-                Elf64_Sym* sym = (Elf64_Sym*)(symtab + syment * ELF64_R_SYM(rela->r_info));
-                if (sym->st_value == 0) {
-                  //printf("relocation type %#lx %#x\n", ELF64_R_TYPE(rela->r_info), ELF64_R_SYM(rela->r_info));
-                  //printf("sym %s val %#lx\n", strtab + sym->st_name, sym->st_value);
-                }
               }
             }
             break;
@@ -402,21 +385,6 @@ struct NHLoader {
   Function<Sig> symbol(std::string name) {
     uint64_t offset = hdr->e_shoff;
     size_t n = hdr->e_shnum;
-//    size_t strtab = 0;
-//    for (size_t i = 0; i != n; ++i) {
-//      Elf64_Shdr* shdr = (Elf64_Shdr*)(data.data() + offset);
-//      boundsCheck(shdr);
-
-//      if (shdr->sh_type == SHT_STRTAB) {
-//        strtab = shdr->sh_offset;
-//        printf("strtab is %d bytes\n", shdr->sh_size);
-//      }
-
-//      offset += hdr->e_shentsize;
-//    }
-//    if (!strtab) {
-//      throw std::runtime_error("strtab section not found");
-//    }
     offset = hdr->e_shoff;
     for (size_t i = 0; i != n; ++i) {
       Elf64_Shdr* shdr = (Elf64_Shdr*)(data.data() + offset);
