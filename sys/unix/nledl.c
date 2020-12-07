@@ -48,8 +48,6 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init, int shar
   if (shared) {
 #ifdef HASSHARED
     nledl->shared = nleshared_open(nledl->dlpath);
-    nledl->start = nleshared_sym(nledl->shared, "nle_start");
-    nledl->step = nleshared_sym(nledl->shared, "nle_step");
 #else
     fprintf(stderr, "Shared mode not supported on this system!\n");
     exit(EXIT_FAILURE);
@@ -120,10 +118,12 @@ nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
           nle_seeds_init_t *seed_init)
 {
     if (nledl->shared) {
+      printf("doing reset\n");
       nledl->end(nledl->nle_ctx);
       nleshared_reset(nledl->shared);
       if (ttyrec)
           nledl->ttyrec = ttyrec;
+      printf("kay\n");
       nledl->nle_ctx = nledl->start(obs, ttyrec, seed_init);
     } else {
       nledl_close(nledl);

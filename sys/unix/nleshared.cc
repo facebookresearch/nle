@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <dlfcn.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <string_view>
 #include <string>
@@ -14,6 +16,7 @@
 #include <cstddef>
 #include <cstring>
 #include <unordered_map>
+#include <mutex>
 
 struct NHLoader {
   std::vector<std::byte> data;
@@ -130,6 +133,11 @@ struct NHLoader {
     R operator()(Instance& i, Args... args) {
       return i.call(*this, args...);
     }
+
+    template<typename Instance>
+    auto* resolve(Instance& i) {
+      return (R(*)(Args...))(void*)(i.base + offset);
+    }
   };
 
   struct Instance {
@@ -139,8 +147,10 @@ struct NHLoader {
     Instance(NHLoader& loader) : loader(loader) {}
     Instance(const Instance&) = delete;
     Instance(Instance&& n) : loader(n.loader) {
+      printf("move assign %p\n", n.base);
       ptr = std::exchange(n.ptr, nullptr);
       base = std::exchange(n.base, nullptr);
+      printf("post base %p\n", base);
     }
     ~Instance() {
       if (ptr) {
@@ -151,9 +161,11 @@ struct NHLoader {
       loader.reset(*this);
     }
     void init() {
+      printf("calling init with base %p\n", base);
       if (loader.initfunc) {
         ((void(*)())(base + loader.initfunc))();
       }
+      printf("called init with base %p\n", base);
       if (loader.initarray) {
         for (size_t i = 0; i != loader.initarraysz / sizeof(void*); ++i) {
           ((void(*)())((void**)(base + loader.initarray))[i])();
@@ -199,6 +211,7 @@ struct NHLoader {
           boundsCheck(dyn);
 
           switch (dyn->d_tag) {
+//          case DT_NEEDED:
           case DT_SYMTAB:
             symtab = base + dyn->d_un.d_ptr;
             break;
@@ -423,7 +436,7 @@ struct NHLoader {
 
           std::string_view sname = (const char*)(data.data() + strtab + sym->st_name);
           if (sname == name) {
-            return {sym->st_value};
+            return {(size_t)sym->st_value};
             //printf("found symbol %s\n", std::string(sname).c_str());
           }
         }
@@ -492,6 +505,8 @@ struct NHLoader {
 
     printf("success!\n");
 
+    printf("forked to base %p\n", base);
+
     Instance i(*this);
     i.ptr = ptr;
     i.base = base;
@@ -519,18 +534,102 @@ struct NHLoader {
 
 namespace rep {
 
+struct Env {
+  NHLoader::Instance instance;
+  Env(NHLoader::Instance instance) : instance(std::move(instance)) {
+    this->instance.init();
+  }
+  ~Env() {
+    instance.fini();
+  }
+  void reset() {
+    instance.fini();
+    instance.reset();
+    instance.init();
+  }
+};
+
 int has_colors() {
   return 1;
 }
 
-int chdir(const char* path) {
-  printf("chdir %s\n", path);
-  return 0;
-}
 
 void exit(int exitcode) {
   printf("exit %d\n", exitcode);
   throw std::runtime_error("Exit!?");
+}
+
+void abort() {
+  printf("abort called");
+  throw std::runtime_error("abort called");
+}
+
+void popen() {
+  throw std::runtime_error("popen called");
+}
+void fork() {
+  throw std::runtime_error("fork called");
+}
+void sleep() {
+  throw std::runtime_error("sleep called");
+}
+void execl() {
+  throw std::runtime_error("execl called");
+}
+
+std::string nethackdir;
+std::once_flag nethackdirflag;
+
+int chdir(const char* path) {
+  //printf("chdir %s\n", path);
+  std::call_once(nethackdirflag, [&]() {
+    nethackdir = path;
+  });
+  return 0;
+}
+int rename(const char*, const char*) {
+  errno = EACCES;
+  return -1;
+}
+int creat(const char* path, int) {
+  errno = EPERM;
+  //printf("creat %s\n", path);
+  return memfd_create(path, 0);
+}
+
+int open(const char* path, int flags, ...) {
+  //printf("open %s\n", path);
+  if (!strcmp(path, "sysconf") || !strcmp(path, "nhdat")) {
+    //printf("nethackdir is %s\n", nethackdir.c_str());
+    return ::open((nethackdir + "/" + path).c_str(), O_RDONLY);
+  }
+  if (flags & O_CREAT) {
+    return memfd_create(path, 0);
+  } else {
+    errno = ENOENT;
+    return -1;
+  }
+}
+FILE* fopen(const char* path, const char* mode) {
+  //printf("fopen %s\n", path);
+  if (!strcmp(path, "/dev/urandom")) {
+    return ::fopen(path, mode);
+  }
+  if (!strcmp(path, "sysconf") || !strcmp(path, "nhdat")) {
+    //printf("nethackdir is %s\n", nethackdir.c_str());
+    return ::fopen((nethackdir + "/" + path).c_str(), "rb");
+  }
+  for (const char* c = mode; *c; ++c) {
+    if (*c == 'w' || *c == 'a') {
+      return ::fdopen(memfd_create(path, 0), mode);
+    }
+  }
+  errno = ENOENT;
+  return nullptr;
+}
+int setuid(uid_t) {
+  errno = EPERM;
+  return -1;
 }
 
 }
@@ -550,8 +649,25 @@ struct NLEShared {
 
     ovr("has_colors", rep::has_colors);
 
-    ovr("chdir", rep::chdir);
+    // Functions that are not allowed and will end the game
     ovr("exit", rep::exit);
+    ovr("_exit", rep::exit);
+    ovr("abort", rep::abort);
+    ovr("popen", rep::popen);
+    ovr("fork", rep::fork);
+    ovr("exit", rep::exit);
+    ovr("sleep", rep::sleep);
+    ovr("execl", rep::execl);
+
+    // Functions that we replace
+    ovr("chdir", rep::chdir);
+    ovr("rename", rep::rename);
+    ovr("creat", rep::creat);
+    ovr("open", rep::open);
+    ovr("fopen", rep::fopen);
+    ovr("setuid", rep::setuid);
+//    ovr("getpwnam", rep::getpwnam);
+//    ovr("getpwuid", rep::getpwuid);
 
     return overrides;
   }
@@ -563,14 +679,18 @@ extern "C" void* nleshared_open(const char *dlpath) {
   if (shared.dlpath != dlpath) {
     throw std::runtime_error("nleshared only supports one dlpath at the moment");
   }
+  return new rep::Env{shared.loader.fork()};
 }
 extern "C" void nleshared_close(void* handle) {
-
+  rep::Env* env = (rep::Env*)handle;
+  delete env;
 }
 extern "C" void nleshared_reset(void* handle) {
-
+  rep::Env* env = (rep::Env*)handle;
+  env->reset();
 }
 extern "C" void* nleshared_sym(void* handle, const char* symname) {
-
+  rep::Env* env = (rep::Env*)handle;
+  return (void*)env->instance.loader.symbol<void()>(symname).resolve(env->instance);
 }
 
