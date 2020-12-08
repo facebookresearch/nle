@@ -19,6 +19,9 @@
 #include <cstring>
 #include <unordered_map>
 #include <mutex>
+#include <unordered_set>
+
+namespace nleshared {
 
 struct Fd {
   int fd = -1;
@@ -212,10 +215,7 @@ class NHLoader {
   // Dynamic linking. Loads required libraries, resolves symbols and performs
   // relocations. Some relocations must also be performed at fork time.
   void link(const std::unordered_map<std::string, void*>& overrides) {
-
     std::byte* base = sharedImage.base;
-
-    printf("Loaded at base %p\n", base);
 
     std::byte* symtab = nullptr;
     const char* strtab = nullptr;
@@ -297,7 +297,7 @@ class NHLoader {
         return Address{false, (uint64_t)r};
       }
       std::string name = strtab + sym->st_name;
-      printf("Looking up symbol %s\n", name.c_str());
+      //printf("Looking up symbol %s\n", name.c_str());
 
       auto oi = overrides.find(name);
       if (oi != overrides.end()) {
@@ -372,9 +372,7 @@ class NHLoader {
             throw std::runtime_error("RELA not implemented");
             break;
           case DT_PLTREL: {
-            if (dyn->d_un.d_val == DT_RELA) {
-              //printf("plt rela\n");
-            } else {
+            if (dyn->d_un.d_val != DT_RELA) {
               throw std::runtime_error("Unsupported value for DT_PLTREL");
             }
             break;
@@ -435,7 +433,14 @@ public:
 
   // Convenience class for referencing symbols.
   template<typename T>
-  struct Symbol;
+  struct Symbol {
+    size_t offset;
+
+    template<typename Instance>
+    auto* resolve(Instance& i) {
+      return (T*)(void*)(i.image.base + offset);
+    }
+  };
   template<typename R, typename... Args>
   struct Symbol<R(Args...)> {
     size_t offset;
@@ -493,7 +498,7 @@ public:
   };
 
   template<typename Sig>
-  Symbol<Sig> symbol(std::string name) {
+  Symbol<Sig> symbol(std::string_view name) {
     uint64_t offset = hdr->e_shoff;
     size_t n = hdr->e_shnum;
     offset = hdr->e_shoff;
@@ -511,12 +516,9 @@ public:
           Elf64_Sym* sym = (Elf64_Sym*)(fileMem.data() + i);
           boundsCheck(sym);
 
-          //printf("sym->st_name is %d\n", sym->st_name);
-
           std::string_view sname = (const char*)(fileMem.data() + strtab + sym->st_name);
           if (sname == name) {
             return {(size_t)sym->st_value};
-            //printf("found symbol %s\n", std::string(sname).c_str());
           }
         }
       }
@@ -524,7 +526,7 @@ public:
       offset += hdr->e_shentsize;
     }
 
-    throw std::runtime_error("Could not find symbol " + name);
+    throw std::runtime_error("Could not find symbol " + std::string(name));
   }
 
   // Create a new instance of the shared library. Most memory will initially
@@ -534,15 +536,9 @@ public:
 
     std::byte* base = (std::byte*)mem.data() + (sharedImage.base - sharedImage.mem.data());
 
-    std::unordered_map<size_t, bool> pagesTouched;
-
-    printf("There are %d relocations\n", forkRelocations.size());
-
     for (auto& v : forkRelocations) {
       std::byte* dst = base + v.targetOffset;
       std::byte* value = base + v.valueOffset;
-      pagesTouched[(size_t)dst / 0x1000] = true;
-
       std::memcpy(dst, &value, sizeof(value));
     }
 
@@ -561,28 +557,6 @@ public:
         mprotect(base + ph->p_vaddr, ph->p_memsz, flags);
       }
     });
-
-    printf("Touched %d/%d pages\n", pagesTouched.size(), mem.size() / 0x1000);
-
-    int nWritableTouched = 0;
-    int nWritableTotal = 0;
-
-    forPh([&](Elf64_Phdr* ph) {
-      if (ph->p_type == PT_LOAD && (ph->p_flags & PF_W)) {
-        for (std::byte* p = base + ph->p_vaddr; p < base + ph->p_vaddr + ph->p_memsz; p += 0x1000) {
-          if (pagesTouched[(size_t)p / 0x1000]) {
-            ++nWritableTouched;
-          }
-          ++nWritableTotal;
-        }
-      }
-    });
-
-    printf("Writable touched %d/%d pages\n", nWritableTouched, nWritableTotal);
-
-    printf("success!\n");
-
-    printf("forked to base %p\n", base);
 
     Instance i(*this);
     i.image.mem = std::move(mem);
@@ -608,12 +582,15 @@ public:
 
 };
 
-namespace rep {
+namespace env {
+
+void init(struct Env*);
 
 struct Env {
   NHLoader::Instance instance;
   Env(NHLoader::Instance instance) : instance(std::move(instance)) {
     this->instance.init();
+    init(this);
   }
   ~Env() {
     instance.fini();
@@ -623,63 +600,79 @@ struct Env {
     instance.reset();
     instance.init();
   }
+
+  std::string cwd;
+  NHLoader::Symbol<void(int)> nethack_exit;
 };
+
+thread_local Env* current = nullptr;
+
+void init(Env* env) {
+  current = env;
+
+  env->nethack_exit = env->instance.loader->symbol<void(int)>("nethack_exit");
+}
+
+void nethack_exit(int status) {
+  current->nethack_exit(current->instance, status);
+  std::abort();
+}
 
 int has_colors() {
   return 1;
 }
 
-void exit(int exitcode) {
-  printf("exit %d\n", exitcode);
-  throw std::runtime_error("Exit!?");
+void exit(int status) {
+  nethack_exit(status);
 }
-
 void abort() {
-  printf("abort called");
-  throw std::runtime_error("abort called");
+  nethack_exit(-1);
 }
-
 void popen() {
-  throw std::runtime_error("popen called");
+  nethack_exit(-1);
 }
 void fork() {
-  throw std::runtime_error("fork called");
+  nethack_exit(-1);
 }
 void sleep() {
-  throw std::runtime_error("sleep called");
+  nethack_exit(-1);
 }
 void execl() {
-  throw std::runtime_error("execl called");
+  nethack_exit(-1);
 }
-
-std::string nethackdir;
-std::once_flag nethackdirflag;
 
 int chdir(const char* path) {
-  //printf("chdir %s\n", path);
-  std::call_once(nethackdirflag, [&]() {
-    nethackdir = path;
-  });
+  current->cwd = path;
   return 0;
 }
-int rename(const char* src, const char* dst) {
+int rename(const char*, const char*) {
   errno = ENOENT;
   return -1;
 }
-int unlink(const char* path) {
+int unlink(const char*) {
   errno = ENOENT;
   return -1;
-}
-int creat(const char* path, int) {
-  //printf("creat %s\n", path);
-  return memfd_create(path, 0);
 }
 
+// List of files that we allow read-only access to
+const std::unordered_set<std::string_view> allowedFiles = {
+  "/dev/urandom"
+};
+
+// List of files in nethackdir that we allow read-only access to
+const std::unordered_set<std::string_view> nethackdirFiles = {
+  "sysconf", "nhdat"
+};
+
+int creat(const char* path, int) {
+  return memfd_create(path, 0);
+}
 int open(const char* path, int flags, ...) {
-  //printf("open %s\n", path);
-  if (!strcmp(path, "sysconf") || !strcmp(path, "nhdat")) {
-    //printf("nethackdir is %s\n", nethackdir.c_str());
-    return ::open((nethackdir + "/" + path).c_str(), O_RDONLY);
+  if (allowedFiles.find(path) != allowedFiles.end()) {
+    return open(path, O_RDONLY);
+  }
+  if (nethackdirFiles.find(path) != nethackdirFiles.end()) {
+    return ::open((current->cwd + "/" + path).c_str(), O_RDONLY);
   }
   if (flags & O_CREAT) {
     return memfd_create(path, 0);
@@ -689,13 +682,11 @@ int open(const char* path, int flags, ...) {
   }
 }
 FILE* fopen(const char* path, const char* mode) {
-  //printf("fopen %s\n", path);
-  if (!strcmp(path, "/dev/urandom")) {
-    return ::fopen(path, mode);
+  if (allowedFiles.find(path) != allowedFiles.end()) {
+    return ::fopen(path, "rb");
   }
-  if (!strcmp(path, "sysconf") || !strcmp(path, "nhdat")) {
-    //printf("nethackdir is %s\n", nethackdir.c_str());
-    return ::fopen((nethackdir + "/" + path).c_str(), "rb");
+  if (nethackdirFiles.find(path) != nethackdirFiles.end()) {
+    return ::fopen((current->cwd + "/" + path).c_str(), "rb");
   }
   for (const char* c = mode; *c; ++c) {
     if (*c == 'w' || *c == 'a') {
@@ -710,67 +701,75 @@ int setuid(uid_t) {
   return -1;
 }
 
-}
 
-struct NLEShared {
-  std::string dlpath;
-  NHLoader loader;
+std::unordered_map<std::string, void*> makeOverrides() {
+  std::unordered_map<std::string, void*> overrides;
 
-  NLEShared(std::string dlpath) : dlpath(dlpath), loader(dlpath, makeOverrides()) {}
+  auto ovr = [&](std::string name, auto* f) {
+    overrides[name] = (void*)f;
+  };
 
-  std::unordered_map<std::string, void*> makeOverrides() {
-    std::unordered_map<std::string, void*> overrides;
+  ovr("has_colors", env::has_colors); // Why is this necessary?
 
-    auto ovr = [&](std::string name, auto* f) {
-      overrides[name] = (void*)f;
-    };
+  // Functions that are not allowed and will end the game
+  ovr("exit", env::exit);
+  ovr("_exit", env::exit);
+  ovr("abort", env::abort);
+  ovr("popen", env::popen);
+  ovr("fork", env::fork);
+  ovr("sleep", env::sleep);
+  ovr("execl", env::execl);
 
-    ovr("has_colors", rep::has_colors); // Why is this necessary?
-
-    // Functions that are not allowed and will end the game
-    ovr("exit", rep::exit);
-    ovr("_exit", rep::exit);
-    ovr("abort", rep::abort);
-    ovr("popen", rep::popen);
-    ovr("fork", rep::fork);
-    ovr("sleep", rep::sleep);
-    ovr("execl", rep::execl);
-
-    // Functions that we replace
-    ovr("chdir", rep::chdir);
-    ovr("rename", rep::rename);
-    ovr("creat", rep::creat);
-    ovr("open", rep::open);
-    ovr("rename", rep::rename);
-    ovr("unlink", rep::unlink);
-    ovr("fopen", rep::fopen);
-    ovr("setuid", rep::setuid);
+  // Functions that we replace
+  ovr("chdir", env::chdir);
+  ovr("rename", env::rename);
+  ovr("creat", env::creat);
+  ovr("open", env::open);
+  ovr("rename", env::rename);
+  ovr("unlink", env::unlink);
+  ovr("fopen", env::fopen);
+  ovr("setuid", env::setuid);
 //    ovr("getpwnam", rep::getpwnam);
 //    ovr("getpwuid", rep::getpwuid);
 
-    return overrides;
-  }
+  return overrides;
+}
 
-};
+std::mutex loaderMutex;
+std::unordered_map<std::string, std::optional<NHLoader>> loaderMap;
+NHLoader& getLoader(const char* dlpath) {
+  std::lock_guard l(loaderMutex);
+  auto& loader = loaderMap[dlpath];
+  if (!loader) {
+    loader.emplace(dlpath, makeOverrides());
+  }
+  return *loader;
+}
+
+}
 
 extern "C" void* nleshared_open(const char *dlpath) {
-  static NLEShared shared(dlpath);
-  if (shared.dlpath != dlpath) {
-    throw std::runtime_error("nleshared only supports one dlpath at the moment");
-  }
-  return new rep::Env{shared.loader.fork()};
+  return new env::Env{env::getLoader(dlpath).fork()};
 }
 extern "C" void nleshared_close(void* handle) {
-  rep::Env* env = (rep::Env*)handle;
+  env::Env* env = (env::Env*)handle;
   delete env;
 }
 extern "C" void nleshared_reset(void* handle) {
-  rep::Env* env = (rep::Env*)handle;
+  env::Env* env = (env::Env*)handle;
   env->reset();
 }
 extern "C" void* nleshared_sym(void* handle, const char* symname) {
-  rep::Env* env = (rep::Env*)handle;
+  env::Env* env = (env::Env*)handle;
   return (void*)env->instance.loader->symbol<void()>(symname).resolve(env->instance);
+}
+extern "C" void nleshared_set_current(void* handle) {
+  env::current = (env::Env*)handle;
+}
+extern "C" int nleshared_supported() {
+  return true;
+}
+
 }
 
 #else
@@ -789,5 +788,11 @@ extern "C" void nleshared_reset(void* handle) {
 }
 extern "C" void* nleshared_sym(void* handle, const char* symname) {
   std::abort();
+}
+extern "C" void nleshared_set_current(void*) {
+  std::abort();
+}
+extern "C" int nleshared_supported() {
+  return false;
 }
 #endif

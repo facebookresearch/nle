@@ -6,14 +6,12 @@
 
 #include "nledl.h"
 
-#if defined(__linux__) && defined(__x86_64__)
-#define HASSHARED
-#endif
-
 void* nleshared_open(const char *dlpath);
 void nleshared_close(void* handle);
 void nleshared_reset(void* handle);
 void* nleshared_sym(void* handle, const char* symname);
+void nleshared_set_current(void* handle);
+int nleshared_supported(void);
 
 typedef struct nledl_ctx {
     void* shared;
@@ -46,12 +44,13 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init, int shar
 { 
   nledl->shared = NULL;
   if (shared) {
-#ifdef HASSHARED
-    nledl->shared = nleshared_open(nledl->dlpath);
-#else
-    fprintf(stderr, "Shared mode not supported on this system!\n");
-    exit(EXIT_FAILURE);
-#endif
+    if (nleshared_supported()) {
+      nledl->shared = nleshared_open(nledl->dlpath);
+      nleshared_set_current(nledl->shared);
+    } else {
+      fprintf(stderr, "Shared mode not supported on this system!\n");
+      exit(EXIT_FAILURE);
+    }
   } else {
     nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
     if (!nledl->dlhandle) {
@@ -59,7 +58,6 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init, int shar
         exit(EXIT_FAILURE);
     }
   }
-
 
   nledl->start = sym(nledl, "nle_start");
   nledl->step = sym(nledl, "nle_step");
@@ -71,6 +69,9 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init, int shar
 void
 nledl_close(nle_ctx_t *nledl)
 {
+    if (nledl->shared) {
+      nleshared_set_current(nledl->shared);
+    }
     nledl->end(nledl->nle_ctx);
 
     if (nledl->shared) {
@@ -106,6 +107,9 @@ nle_step(nle_ctx_t *nledl, nle_obs *obs)
         exit(EXIT_FAILURE);
     }
 
+    if (nledl->shared) {
+      nleshared_set_current(nledl->shared);
+    }
     nledl->step(nledl->nle_ctx, obs);
 
     return nledl;
@@ -118,6 +122,9 @@ nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
           nle_seeds_init_t *seed_init)
 {
     if (nledl->shared) {
+      if (nledl->shared) {
+        nleshared_set_current(nledl->shared);
+      }
       nledl->end(nledl->nle_ctx);
       nleshared_reset(nledl->shared);
       if (ttyrec)
@@ -169,9 +176,5 @@ nle_get_seed(nle_ctx_t *nledl, unsigned long *core, unsigned long *disp,
 
 int
 nle_supports_shared(void) {
-#ifdef HASSHARED
-  return 1;
-#else
-  return 0;
-#endif
+  return nleshared_supported();
 }
