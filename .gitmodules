@@ -6,4 +6,4 @@
 	url = https://github.com/pybind/pybind11.git
 [submodule "third_party/libtmt"]
 	path = third_party/libtmt
-	url = git@github.com:deadpixi/libtmt.git
+	url = https://github.com/deadpixi/libtmt.git
