@@ -6,15 +6,15 @@
 
 #include "nledl.h"
 
-void* nleshared_open(const char *dlpath);
-void nleshared_close(void* handle);
-void nleshared_reset(void* handle);
-void* nleshared_sym(void* handle, const char* symname);
-void nleshared_set_current(void* handle);
+void *nleshared_open(const char *dlpath);
+void nleshared_close(void *handle);
+void nleshared_reset(void *handle);
+void *nleshared_sym(void *handle, const char *symname);
+void nleshared_set_current(void *handle);
 int nleshared_supported(void);
 
 typedef struct nledl_ctx {
-    void* shared;
+    void *shared;
     char dlpath[1024];
     void *dlhandle;
     void *nle_ctx;
@@ -24,65 +24,68 @@ typedef struct nledl_ctx {
     FILE *ttyrec;
 } nle_ctx_t;
 
-static void* sym(nle_ctx_t *nledl, const char* name) {
-  if (nledl->shared) {
-    return nleshared_sym(nledl->shared, name);
-  } else {
-    dlerror(); /* Clear any existing error */
-    void* r = dlsym(nledl->dlhandle, name);
-    char *error = dlerror();
-    if (error != NULL) {
-        fprintf(stderr, "%s\n", error);
-        exit(EXIT_FAILURE);
+static void *
+sym(nle_ctx_t *nledl, const char *name)
+{
+    if (nledl->shared) {
+        return nleshared_sym(nledl->shared, name);
+    } else {
+        dlerror(); /* Clear any existing error */
+        void *r = dlsym(nledl->dlhandle, name);
+        char *error = dlerror();
+        if (error != NULL) {
+            fprintf(stderr, "%s\n", error);
+            exit(EXIT_FAILURE);
+        }
+        return r;
     }
-    return r;
-  }
 }
 
 void
-nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init, int shared)
-{ 
-  nledl->shared = NULL;
-  if (shared) {
-    if (nleshared_supported()) {
-      nledl->shared = nleshared_open(nledl->dlpath);
-      nleshared_set_current(nledl->shared);
+nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
+           int shared)
+{
+    nledl->shared = NULL;
+    if (shared) {
+        if (nleshared_supported()) {
+            nledl->shared = nleshared_open(nledl->dlpath);
+            nleshared_set_current(nledl->shared);
+        } else {
+            fprintf(stderr, "Shared mode not supported on this system!\n");
+            exit(EXIT_FAILURE);
+        }
     } else {
-      fprintf(stderr, "Shared mode not supported on this system!\n");
-      exit(EXIT_FAILURE);
+        nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
+        if (!nledl->dlhandle) {
+            fprintf(stderr, "%s\n", dlerror());
+            exit(EXIT_FAILURE);
+        }
     }
-  } else {
-    nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
-    if (!nledl->dlhandle) {
-        fprintf(stderr, "%s\n", dlerror());
-        exit(EXIT_FAILURE);
-    }
-  }
 
-  nledl->start = sym(nledl, "nle_start");
-  nledl->step = sym(nledl, "nle_step");
-  nledl->end = sym(nledl, "nle_end");
+    nledl->start = sym(nledl, "nle_start");
+    nledl->step = sym(nledl, "nle_step");
+    nledl->end = sym(nledl, "nle_end");
 
-  nledl->nle_ctx = nledl->start(obs, nledl->ttyrec, seed_init);
+    nledl->nle_ctx = nledl->start(obs, nledl->ttyrec, seed_init);
 }
 
 void
 nledl_close(nle_ctx_t *nledl)
 {
     if (nledl->shared) {
-      nleshared_set_current(nledl->shared);
+        nleshared_set_current(nledl->shared);
     }
     nledl->end(nledl->nle_ctx);
 
     if (nledl->shared) {
-      nleshared_close(nledl->shared);
+        nleshared_close(nledl->shared);
     } else {
-      if (dlclose(nledl->dlhandle)) {
-          fprintf(stderr, "Error in dlclose: %s\n", dlerror());
-          exit(EXIT_FAILURE);
-      }
+        if (dlclose(nledl->dlhandle)) {
+            fprintf(stderr, "Error in dlclose: %s\n", dlerror());
+            exit(EXIT_FAILURE);
+        }
 
-      dlerror();
+        dlerror();
     }
 }
 
@@ -108,7 +111,7 @@ nle_step(nle_ctx_t *nledl, nle_obs *obs)
     }
 
     if (nledl->shared) {
-      nleshared_set_current(nledl->shared);
+        nleshared_set_current(nledl->shared);
     }
     nledl->step(nledl->nle_ctx, obs);
 
@@ -122,23 +125,23 @@ nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
           nle_seeds_init_t *seed_init)
 {
     if (nledl->shared) {
-      if (nledl->shared) {
-        nleshared_set_current(nledl->shared);
-      }
-      nledl->end(nledl->nle_ctx);
-      nleshared_reset(nledl->shared);
-      if (ttyrec)
-          nledl->ttyrec = ttyrec;
-      nledl->nle_ctx = nledl->start(obs, ttyrec, seed_init);
+        if (nledl->shared) {
+            nleshared_set_current(nledl->shared);
+        }
+        nledl->end(nledl->nle_ctx);
+        nleshared_reset(nledl->shared);
+        if (ttyrec)
+            nledl->ttyrec = ttyrec;
+        nledl->nle_ctx = nledl->start(obs, ttyrec, seed_init);
     } else {
-      nledl_close(nledl);
-      /* Reset file only if not-NULL. */
-      if (ttyrec)
-          nledl->ttyrec = ttyrec;
+        nledl_close(nledl);
+        /* Reset file only if not-NULL. */
+        if (ttyrec)
+            nledl->ttyrec = ttyrec;
 
-      // TODO: Consider refactoring nledl.h such that we expose this init
-      // function but drop reset.
-      nledl_init(nledl, obs, seed_init, 0);
+        // TODO: Consider refactoring nledl.h such that we expose this init
+        // function but drop reset.
+        nledl_init(nledl, obs, seed_init, 0);
     }
 }
 
@@ -175,6 +178,7 @@ nle_get_seed(nle_ctx_t *nledl, unsigned long *core, unsigned long *disp,
 }
 
 int
-nle_supports_shared(void) {
-  return nleshared_supported();
+nle_supports_shared(void)
+{
+    return nleshared_supported();
 }
