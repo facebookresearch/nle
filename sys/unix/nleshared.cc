@@ -144,6 +144,9 @@ class NHLoader {
 
   void load(std::string libPath, const std::unordered_map<std::string, void*>& overrides) {
     Fd diskFd = open(libPath.c_str(), O_RDONLY);
+    if (!diskFd) {
+      throw std::system_error(errno, std::system_category(), libPath);
+    }
 
     fileMem = Mmap::shared(diskFd, 0, diskFd.fileSize(), false);
 
