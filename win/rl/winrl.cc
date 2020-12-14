@@ -424,13 +424,15 @@ NetHackRL::getch_method()
 
     /* NOT calling tty_nhgetch() but instead getting the input from
        the context switch. No stdin required. The following code is from
-       tty_nhgetch. We don't copy the conditional ttyDisplay->toplin = 2
-       as it this seems to relate to something happening with stdin. */
+       tty_nhgetch. */
+    if (WIN_MESSAGE != WIN_ERR && wins[WIN_MESSAGE])
+        wins[WIN_MESSAGE]->flags &= ~WIN_STOP;
     if (!i)
         i = '\033'; /* map NUL to ESC since nethack doesn't expect NUL */
     else if (i == EOF)
         i = '\033'; /* same for EOF */
-
+    if (ttyDisplay && ttyDisplay->toplin == 1)
+        ttyDisplay->toplin = 2;
     DEBUG_API("getch_method: action=" << i << ", xwaitingforspace="
                                       << xwaitingforspace << std::endl);
     return i;
