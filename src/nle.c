@@ -75,7 +75,9 @@ vt_char_color_extract(TMTCHAR *c)
         break;
     }
 
-    color |= (c->a.reverse << 7); // Flip sign if reverse
+    if (c->a.reverse) {
+        color += CLR_MAX;
+    }
     return color;
 }
 
