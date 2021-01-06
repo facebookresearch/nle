@@ -278,3 +278,240 @@ class NetHackScout(NetHackScore):
         self.dungeon_explored[key] = explored
         time_penalty = self._get_time_penalty(last_observation, observation)
         return reward + time_penalty
+    
+   
+NLE_LEVEL_OBS_KEYS = ("episode_goal_str", "episode_goal_glyph")
+# different OS might have different messages, that's why values are lists here check eat.c for more inspiration
+# TODO This is most likely to fail somewhere, need to keep an eye on rollouts at the beginning
+delicious = lambda x: f"This {x} is delicious"
+EDIBLE_GOALS = {
+    item: [delicious(item)]
+    for item in [
+        "orange",
+        "meatball",
+        "meat ring",
+        "meat stick",
+        "kelp frond",
+        "eucalyptus leaf",
+        "clove of garlic",
+        "sprig of wolfsbane",
+        "carrot",
+        "egg",
+        "banana",
+        "melon",
+        "candy bar",
+        "lump of royal jelly",
+    ]
+}
+
+EDIBLE_GOALS.update(
+    {
+        "apple": ["Delicious!  Must be a Macintosh!", "Core dumped."],
+        "pear": ["Core dumped."],
+    }
+)
+
+
+class NetHackScoreFullKeyboard(NetHackScore):
+    def __init__(self, *args, **kwargs):
+        actions = kwargs.pop("actions", FULL_ACTIONS)
+        super().__init__(*args, actions=actions, allow_all_yn_questions=True, **kwargs)
+
+
+def get_object(name):
+    for index in range(nethack.NUM_OBJECTS):
+        obj = nethack.objclass(index)
+        if nethack.OBJ_NAME(obj) == name:
+            return obj
+    else:
+        raise ValueError("'%s' not found!" % name)
+
+
+class NetHackInventoryManagement(NetHackScoreFullKeyboard):
+    """Environment for "eat object" task.
+    This task requires the agent to eat a specific item in the inventory.
+    The inventory and the goal object can be randomised at each reset.
+    The environment stops as soon as the agent eats a specified object.
+    See `NetHackStaircase` for the reward function.
+    """
+
+    class StepStatus(enum.IntEnum):
+        ABORTED = -1
+        RUNNING = 0
+        DEATH = 1
+        TASK_SUCCESSFUL = 2
+
+    def __init__(self, *args, **kwargs):
+        self._randomise_goal = kwargs.pop("randomise_goal", True)
+        self._randomise_inventory_order = kwargs.pop("randomise_inventory_order", True)
+        self._wizkit_list_size = kwargs.pop("wizkit_list_size", 12)
+        self._randomise_inventory_selection = False
+
+        self._episode_goal_str = None
+
+        # this will work in wizard mode only because we need to use wizkit
+        kwargs["wizard"] = True
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 10)
+        actions = kwargs.pop("actions", FULL_ACTIONS)
+
+        super().__init__(*args, actions=actions, **kwargs)
+
+        # update observation space with the goal, we need that to not insert goal_related observations
+        # to the base NLE class.
+        # In the future, when we can change nle, we can define self._set_obs_space() method
+        # and overload it in this class adding goal-related observations.
+        space_dict = dict(NLE_SPACE_ITEMS)
+        obs_dict = {key: space_dict[key] for key in self._original_observation_keys}
+
+        obs_dict["episode_goal_str"] = gym.spaces.Box(
+            low=0,
+            high=128,
+            shape=(nethack.OBSERVATION_DESC["inv_strs"]["shape"][1],),
+            dtype=nethack.OBSERVATION_DESC["inv_strs"]["dtype"],
+        )
+        obs_dict["episode_goal_glyph"] = gym.spaces.Box(
+            low=0,
+            high=nethack.MAX_GLYPH,
+            shape=(1,),
+            dtype=nethack.OBSERVATION_DESC["inv_glyphs"]["dtype"],
+        )
+        self.observation_space = gym.spaces.Dict(obs_dict)
+
+    def step(self, action: int):
+        obs, reward, done, info = super().step(action)
+        self._add_goal_to_obs(obs)
+        return obs, reward, done, info
+
+    def render(self):
+        print(f"Current goal: {self._episode_goal_str}")
+        super().render()
+
+    def reset(self, wizkit_items: list = None, episode_goal: str = None):
+        """Sets up the inventory and the goal which will terminate the episode when eaten."""
+        if wizkit_items is None:
+            wizkit_items = list(EDIBLE_GOALS.keys())
+        wizkit_items = wizkit_items[: self._wizkit_list_size]
+
+        self._episode_goal_str = episode_goal
+        if episode_goal is None:
+            self._episode_goal_str = (
+                np.random.choice(wizkit_items)
+                if self._randomise_goal
+                else wizkit_items[0]
+            )
+
+        if self._randomise_inventory_order:
+            np.random.shuffle(wizkit_items)
+
+        if self._randomise_inventory_selection:
+            # TODO Implement me
+            raise NotImplementedError
+
+        obs = super().reset(wizkit_items=wizkit_items)
+        self._add_goal_to_obs(obs)
+        return obs
+
+    def _add_goal_to_obs(self, obs):
+
+        key = "episode_goal_str"
+        cval = np.zeros(self.observation_space.spaces[key].shape, dtype=np.uint8)
+        cvalbytes = bytearray(self._episode_goal_str, "utf-8")
+        cval[: len(cvalbytes)] = cvalbytes
+        obs.update({key: cval})
+
+        goal_glyph = (
+            nethack.GLYPH_OBJ_OFF + get_object(self._episode_goal_str).oc_name_idx
+        )
+        obs.update({"episode_goal_glyph": np.array([goal_glyph])})
+        return obs
+
+    def _is_episode_end(self, observation):
+        """if the message contains the target message (e.g. Delicious, must be macintosh) for apple, then finish"""
+        possible_goal_msgs = EDIBLE_GOALS[self._episode_goal_str]
+        curr_msg = (
+            observation[self._original_observation_keys.index("message")]
+            .tobytes()
+            .decode("utf-8")
+        )
+
+        for msg in possible_goal_msgs:
+            if msg in curr_msg:
+                # TODO Check the key and encoding of the message. Check that it really stops.
+                # Write a test which presses e and then apple in the inventory to see that it stops.
+                return self.StepStatus.TASK_SUCCESSFUL
+        return self.StepStatus.RUNNING
+
+    def _reward_fn(self, last_response, response, end_status):
+        if end_status == self.StepStatus.TASK_SUCCESSFUL:
+            reward = 100
+        elif end_status == self.StepStatus.RUNNING:
+            reward = self._get_time_penalty(last_response, response)
+        else:  # death or aborted
+            reward = -100
+        return reward
+
+
+class NetHackPickAndEat(NetHackInventoryManagement):
+    """Environment for "eat object" task.
+    This task requires the agent to eat a specific item in the inventory.
+    The inventory and the goal object can be randomised at each reset.
+    The environment stops as soon as the agent eats a specified object.
+    See `NetHackStaircase` for the reward function.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # TODO item positions in a room are not randomised atm, we should probably walk around the room and drop stuff
+        # agent is spawning randomly, so, probably it's not that important at least for now
+        # implement this at the reset level
+        kwargs["randomise_goal"] = kwargs.pop("randomise_goal", True)
+        kwargs["randomise_inventory_order"] = kwargs.pop(
+            "randomise_inventory_order", True
+        )
+
+        kwargs["wizkit_list_size"] = kwargs.pop("wizkit_list_size", 1)
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_step", 1000)
+        # the next line will remove constraints on autopickup types and make the agent collect everything automatically
+        kwargs["options"] = [
+            el
+            for el in kwargs.pop("options", list(nethack.NETHACKOPTIONS))
+            if not el.startswith("pickup_types")
+        ]
+        kwargs["options"].extend(["role:cav", "race:hum", "align:neu", "gender:mal"])
+        kwargs["options"].append("pettype:none")
+
+        self.n_distractors = kwargs.pop("inventory_distractors", 0)
+        self.randomise_n_distractors = kwargs.pop("randomise_num_distractors", True)
+        super().__init__(*args, **kwargs)
+
+    def reset(self, wizkit_items: list = None, episode_goal: str = None):
+        """Sets up the inventory and the goal which will terminate the episode when eaten."""
+        if wizkit_items is None:
+            wizkit_items = list(EDIBLE_GOALS.keys())
+        wizkit_items = wizkit_items[: self._wizkit_list_size]
+        if episode_goal is not None:
+            print(
+                "Be careful, if you provide a goal for an item which is not in the inventory or on the map, you will not finish a game."
+            )
+        self._episode_goal_str = episode_goal
+        if episode_goal is None:
+            self._episode_goal_str = (
+                np.random.choice(wizkit_items)
+                if self._randomise_goal
+                else wizkit_items[0]
+            )
+
+        n_distractors = self.n_distractors
+        if self.randomise_n_distractors:
+            n_distractors = np.random.randint(n_distractors + 1)
+        distractors = [
+            el for el in list(EDIBLE_GOALS.keys()) if el != self._episode_goal_str
+        ][:n_distractors]
+
+        if self._randomise_inventory_order:
+            np.random.shuffle(distractors)
+
+        # not providing wizkit_list as the argument here, otherwise it will just be InventoryManagement task
+        # call reset from the Score task, not to put stuff to the wizkit
+        obs = super(NetHackScoreFullKeyboard, self).reset(wizkit_items=distractors)
+        self._add_goal_to_obs(obs)
+        return obs
