@@ -3,7 +3,7 @@ repos:
     rev: stable
     hooks:
     - id: black
-      language_version: python3.7
+      language_version: python3.8
       exclude: scripts/plotting/*
 -   repo: https://gitlab.com/pycqa/flake8
     rev: '3.7.9'
