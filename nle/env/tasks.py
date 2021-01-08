@@ -1,10 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import enum
+import gym
 
 import numpy as np
 
 from nle.env import base
 from nle import nethack
+from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
 
 
 TASK_ACTIONS = tuple(
@@ -278,11 +280,13 @@ class NetHackScout(NetHackScore):
         self.dungeon_explored[key] = explored
         time_penalty = self._get_time_penalty(last_observation, observation)
         return reward + time_penalty
-    
-   
+
+
 NLE_LEVEL_OBS_KEYS = ("episode_goal_str", "episode_goal_glyph")
-# different OS might have different messages, that's why values are lists here check eat.c for more inspiration
-# TODO This is most likely to fail somewhere, need to keep an eye on rollouts at the beginning
+# different OS might have different messages,
+# that's why values are lists here check eat.c for more inspiration
+# TODO This is most likely to fail somewhere, need to keep an eye
+# on rollouts at the beginning
 delicious = lambda x: f"This {x} is delicious"
 EDIBLE_GOALS = {
     item: [delicious(item)]
@@ -356,9 +360,11 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
 
         super().__init__(*args, actions=actions, **kwargs)
 
-        # update observation space with the goal, we need that to not insert goal_related observations
+        # update observation space with the goal, we need that to not insert
+        # goal_related observations
         # to the base NLE class.
-        # In the future, when we can change nle, we can define self._set_obs_space() method
+        # In the future, when we can change nle, we can define
+        # self._set_obs_space() method
         # and overload it in this class adding goal-related observations.
         space_dict = dict(NLE_SPACE_ITEMS)
         obs_dict = {key: space_dict[key] for key in self._original_observation_keys}
@@ -387,7 +393,9 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
         super().render()
 
     def reset(self, wizkit_items: list = None, episode_goal: str = None):
-        """Sets up the inventory and the goal which will terminate the episode when eaten."""
+        """Sets up the inventory and the goal which will terminate the episode
+        when eaten.
+        """
         if wizkit_items is None:
             wizkit_items = list(EDIBLE_GOALS.keys())
         wizkit_items = wizkit_items[: self._wizkit_list_size]
@@ -426,7 +434,9 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
         return obs
 
     def _is_episode_end(self, observation):
-        """if the message contains the target message (e.g. Delicious, must be macintosh) for apple, then finish"""
+        """if the message contains the target message (e.g. Delicious, must be
+        macintosh) for apple, then finish
+        """
         possible_goal_msgs = EDIBLE_GOALS[self._episode_goal_str]
         curr_msg = (
             observation[self._original_observation_keys.index("message")]
@@ -436,8 +446,10 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
 
         for msg in possible_goal_msgs:
             if msg in curr_msg:
-                # TODO Check the key and encoding of the message. Check that it really stops.
-                # Write a test which presses e and then apple in the inventory to see that it stops.
+                # TODO Check the key and encoding of the message.
+                # Check that it really stops.
+                # Write a test which presses e and then apple in the inventory
+                # to see that it stops.
                 return self.StepStatus.TASK_SUCCESSFUL
         return self.StepStatus.RUNNING
 
@@ -460,8 +472,10 @@ class NetHackPickAndEat(NetHackInventoryManagement):
     """
 
     def __init__(self, *args, **kwargs):
-        # TODO item positions in a room are not randomised atm, we should probably walk around the room and drop stuff
-        # agent is spawning randomly, so, probably it's not that important at least for now
+        # TODO item positions in a room are not randomised atm, we should
+        # probably walk around the room and drop stuff
+        # agent is spawning randomly, so, probably it's not that important
+        # at least for now
         # implement this at the reset level
         kwargs["randomise_goal"] = kwargs.pop("randomise_goal", True)
         kwargs["randomise_inventory_order"] = kwargs.pop(
@@ -470,7 +484,8 @@ class NetHackPickAndEat(NetHackInventoryManagement):
 
         kwargs["wizkit_list_size"] = kwargs.pop("wizkit_list_size", 1)
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_step", 1000)
-        # the next line will remove constraints on autopickup types and make the agent collect everything automatically
+        # the next line will remove constraints on autopickup types and make
+        # the agent collect everything automatically
         kwargs["options"] = [
             el
             for el in kwargs.pop("options", list(nethack.NETHACKOPTIONS))
@@ -484,13 +499,17 @@ class NetHackPickAndEat(NetHackInventoryManagement):
         super().__init__(*args, **kwargs)
 
     def reset(self, wizkit_items: list = None, episode_goal: str = None):
-        """Sets up the inventory and the goal which will terminate the episode when eaten."""
+        """Sets up the inventory and the goal which will terminate the episode
+        when eaten.
+        """
         if wizkit_items is None:
             wizkit_items = list(EDIBLE_GOALS.keys())
         wizkit_items = wizkit_items[: self._wizkit_list_size]
         if episode_goal is not None:
             print(
-                "Be careful, if you provide a goal for an item which is not in the inventory or on the map, you will not finish a game."
+                "Be careful, if you provide a goal for an item which is not in \
+                        the inventory or on the map, you will not finish a \
+                        game."
             )
         self._episode_goal_str = episode_goal
         if episode_goal is None:
@@ -510,7 +529,8 @@ class NetHackPickAndEat(NetHackInventoryManagement):
         if self._randomise_inventory_order:
             np.random.shuffle(distractors)
 
-        # not providing wizkit_list as the argument here, otherwise it will just be InventoryManagement task
+        # not providing wizkit_list as the argument here, otherwise it will
+        # just be InventoryManagement task
         # call reset from the Score task, not to put stuff to the wizkit
         obs = super(NetHackScoreFullKeyboard, self).reset(wizkit_items=distractors)
         self._add_goal_to_obs(obs)
