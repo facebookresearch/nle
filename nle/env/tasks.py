@@ -8,6 +8,8 @@ from nle.env import base
 from nle import nethack
 from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
 
+import subprocess
+import os
 
 TASK_ACTIONS = tuple(
     [nethack.MiscAction.MORE]
@@ -496,6 +498,32 @@ class NetHackPickAndEat(NetHackInventoryManagement):
 
         self.n_distractors = kwargs.pop("inventory_distractors", 0)
         self.randomise_n_distractors = kwargs.pop("randomise_num_distractors", True)
+
+        # TODO this is automated now, but still hardcoded, stay tuned
+        level_description = """# NetHack 3.6	oracle.des	
+#
+
+LEVEL: \"oracle\"
+
+ROOM: \"ordinary\" , lit, (3,3), (center,center), (5,5) {
+    OBJECT:('%',\"orange\"),random
+    OBJECT:('%',\"meatball\"),random
+    OBJECT:('%',\"meat ring\"),random
+    OBJECT:('%',\"meat stick\"),random
+    OBJECT:('%',\"kelp frond\"),random
+    }
+"""  # noqa
+
+        fname = "./mylevel.des"
+        try:
+            with open(fname, "w") as f:
+                f.writelines(level_description)
+            _ = subprocess.call("nle/scripts/patch_nhdat.sh")
+        except Exception as e:
+            print("Something went wrong at level generation", e.args[0])
+        finally:
+            os.remove(fname)
+
         super().__init__(*args, **kwargs)
 
     def reset(self, wizkit_items: list = None, episode_goal: str = None):
