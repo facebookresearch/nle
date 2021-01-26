@@ -69,7 +69,7 @@ $ pip install nle
 NOTE: If you want to extend / develop NLE, please install the package as follows:
 
 ``` bash
-$ git clone https://github.com/facebookresearch/nle --recursive
+$ git clone https://github.com/ucl-dark/nle --recursive
 $ pip install -e ".[dev]"
 $ pre-commit install
 ```
