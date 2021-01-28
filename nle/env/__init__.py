@@ -27,4 +27,10 @@ registration.register(
     entry_point="nle.env.tasks:NetHackPickAndEat",
 )
 
+# MiniHac
+registration.register(
+    id="MiniHackEmpty-v0",
+    entry_point="nle.env.minihack:MiniHackEmpty",
+)
+
 __all__ = ["NLE", "DUNGEON_SHAPE"]
