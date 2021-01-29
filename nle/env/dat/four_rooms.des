@@ -1,20 +1,24 @@
 # NetHack 3.6	mylevel.des
 #
 
-LEVEL: "mylevel"
-
-ROOM: "ordinary" , lit, random, random, random {
-    STAIR: random, up
-    }
-
-ROOM: "ordinary" , lit, random, random, random {
-    STAIR: random, down
-    }
-
-ROOM: "ordinary" , lit, random, random, random {
-    }
-
-ROOM: "ordinary" , lit, random, random, random {
-    }
-
-RANDOM_CORRIDORS
+MAZE: "mylevel",' '
+INIT_MAP:solidfill,' '
+GEOMETRY:center,center
+MAP
+-------------
+|.....|.....|
+|.....|.....|
+|...........|
+|.....|.....|
+|.....|.....|
+|--.--|--.--|
+|.....|.....|
+|.....|.....|
+|...........|
+|.....|.....|
+|.....|.....|
+-------------
+ENDMAP
+REGION:(0,0,11,11),lit,"ordinary"
+STAIR:random,up
+STAIR:random,down
