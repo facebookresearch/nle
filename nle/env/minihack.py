@@ -18,6 +18,8 @@ import subprocess
 import os
 from shutil import copyfile
 
+PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
+
 
 def patch_nhdat(level_des):
     fname = "./mylevel.des"
@@ -31,8 +33,9 @@ def patch_nhdat(level_des):
         os.remove(fname)
 
 
-def patch_nhdat_existing(des_path):
+def patch_nhdat_existing(des_name):
     try:
+        des_path = os.path.join(PATH_DAT_DIR, des_name)
         if not os.path.exists(des_path):
             print(
                 "{} file doesn't exist. Please provide a path to a valid .des \
@@ -72,8 +75,7 @@ class MiniHackEmpty(NetHackStaircase):
         # No pet
         kwargs["options"].append("pettype:none")
 
-        des_path = "nle/env/des/empty.des"
-        patch_nhdat_existing(des_path)
+        patch_nhdat_existing("empty.des")
 
         super().__init__(*args, **kwargs)
 
@@ -100,7 +102,6 @@ class MiniHackFourRooms(NetHackStaircase):
         # No pet
         kwargs["options"].append("pettype:none")
 
-        des_path = "nle/env/des/four_rooms.des"
-        patch_nhdat_existing(des_path)
+        patch_nhdat_existing("four_rooms.des")
 
         super().__init__(*args, **kwargs)
