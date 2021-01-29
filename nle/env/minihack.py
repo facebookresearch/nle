@@ -16,13 +16,32 @@ from nle.env.tasks import NetHackStaircase
 
 import subprocess
 import os
+from shutil import copyfile
 
 
-def replace_nhdat(ascii_descr):
+def patch_nhdat(level_des):
     fname = "./mylevel.des"
     try:
         with open(fname, "w") as f:
-            f.writelines(ascii_descr)
+            f.writelines(level_des)
+        _ = subprocess.call("nle/scripts/patch_nhdat.sh")
+    except Exception as e:
+        print("Something went wrong at level generation", e.args[0])
+    finally:
+        os.remove(fname)
+
+
+def patch_nhdat_existing(des_path):
+    try:
+        if not os.path.exists(des_path):
+            print(
+                "{} file doesn't exist. Please provide a path to a valid .des \
+                    file".format(
+                    des_path
+                )
+            )
+        fname = "./mylevel.des"
+        copyfile(des_path, fname)
         _ = subprocess.call("nle/scripts/patch_nhdat.sh")
     except Exception as e:
         print("Something went wrong at level generation", e.args[0])
@@ -53,16 +72,8 @@ class MiniHackEmpty(NetHackStaircase):
         # No pet
         kwargs["options"].append("pettype:none")
 
-        level_description = """# NetHack 3.6	oracle.des
-#
-
-LEVEL: \"oracle\"
-
-ROOM: \"ordinary\" , lit, (3,3), (center,center), (5,5) {
-    STAIR: random, down
-    }
-"""  # noqa
-        replace_nhdat(level_description)
+        des_path = "nle/env/des/empty.des"
+        patch_nhdat_existing(des_path)
 
         super().__init__(*args, **kwargs)
 
@@ -89,27 +100,7 @@ class MiniHackFourRooms(NetHackStaircase):
         # No pet
         kwargs["options"].append("pettype:none")
 
-        level_description = """# NetHack 3.6	oracle.des
-#
-
-LEVEL: \"oracle\"
-
-ROOM: \"ordinary\" , lit, random, random, random {
-    STAIR: random, up
-    }
-    
-ROOM: \"ordinary\" , lit, random, random, random {
-    STAIR: random, down
-    }
-    
-ROOM: \"ordinary\" , lit, random, random, random {
-    }
-    
-ROOM: \"ordinary\" , lit, random, random, random {
-    }
-    
-    RANDOM_CORRIDORS
-"""  # noqa
-        replace_nhdat(level_description)
+        des_path = "nle/env/des/four_rooms.des"
+        patch_nhdat_existing(des_path)
 
         super().__init__(*args, **kwargs)
