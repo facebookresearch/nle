@@ -11,6 +11,7 @@ from nle.env.tasks import NetHackStaircase
 
 # from nle.env import base
 # from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
+# from nle.env.base import TASK_ACTIONS
 # from nle.env.tasks import NetHackScore
 # from nle.env.tasks import NetHackScoreFullKeyboard
 
@@ -102,6 +103,16 @@ class MiniHackFourRooms(NetHackStaircase):
         # No pet
         kwargs["options"].append("pettype:none")
 
+        # Enter Wizard mode
+        kwargs["wizard"] = True
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 10)
+
         patch_nhdat_existing("four_rooms.des")
 
         super().__init__(*args, **kwargs)
+
+    def reset(self, *args, **kwargs):
+        _ = super().reset(*args, **kwargs)
+        for c in "#wizmap\r":
+            self.env.step(ord(c))
+        return self.env._step_return()
