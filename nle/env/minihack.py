@@ -1,21 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-# import enum
-#
-# import gym
-#
-# import numpy as np
 
-
-from nle import nethack
 from nle.env.tasks import NetHackStaircase
-
-# from nle.env import base
-# from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
-# from nle.env.base import TASK_ACTIONS
 from nle.nethack import CompassDirection
 
-# from nle.env.tasks import NetHackScore
-# from nle.env.tasks import NetHackScoreFullKeyboard
 
 import subprocess
 import os
@@ -56,7 +43,33 @@ def patch_nhdat_existing(des_name):
         os.remove(fname)
 
 
-class MiniHackEmpty(NetHackStaircase):
+class MiniHackMaze(NetHackStaircase):
+    """Base environment for maze-type task. """
+
+    def __init__(self, *args, des_file: str = None, **kwargs):
+        # No pet
+        kwargs["options"] = kwargs.pop("options", [])
+        kwargs["options"].append("pettype:none")
+        # Actions space - move only
+        kwargs["actions"] = MOVE_ACTIONS
+        # Enter Wizard mode
+        kwargs["wizard"] = True
+        # Override episode limit
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+
+        # Patch the nhddat library by compling the given .des file
+        if des_file is None:
+            raise ValueError("Description filename is not provided.")
+
+        if des_file.endswith(".des"):
+            patch_nhdat_existing(des_file)
+        else:
+            patch_nhdat_existing(des_file)
+
+        super().__init__(*args, **kwargs)
+
+
+class MiniHackEmpty(MiniHackMaze):
     """Environment for "empty" task.
 
     This environment is an empty room, and the goal of the agent is to reach
@@ -68,25 +81,11 @@ class MiniHackEmpty(NetHackStaircase):
     """
 
     def __init__(self, *args, **kwargs):
-        kwargs["options"] = [
-            el
-            for el in kwargs.pop("options", list(nethack.NETHACKOPTIONS))
-            if not el.startswith("pickup_types")
-        ]
-
-        # Select Race and alignment
-        kwargs["options"].extend(["role:cav", "race:hum", "align:neu", "gender:mal"])
-        # No pet
-        kwargs["options"].append("pettype:none")
-        # Actions space - move only
-        kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
-
-        patch_nhdat_existing("empty.des")
-
-        super().__init__(*args, **kwargs)
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 50)
+        super().__init__(*args, des_file="empty.des", **kwargs)
 
 
-class MiniHackFourRooms(NetHackStaircase):
+class MiniHackFourRooms(MiniHackMaze):
     """Environment for "four rooms" task.
 
     Classic four room reinforcement learning environment. The agent must navigate
@@ -96,37 +95,18 @@ class MiniHackFourRooms(NetHackStaircase):
     """
 
     def __init__(self, *args, **kwargs):
-
-        kwargs["options"] = [
-            el
-            for el in kwargs.pop("options", list(nethack.NETHACKOPTIONS))
-            if not el.startswith("pickup_types")
-        ]
-
-        # Select Race and alignment
-        kwargs["options"].extend(["role:cav", "race:hum", "align:neu", "gender:mal"])
-        # No pet
-        kwargs["options"].append("pettype:none")
-        # Actions space - move only
-        kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
-
-        # Enter Wizard mode
-        kwargs["wizard"] = True
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+        super().__init__(*args, des_file="four_rooms.des", **kwargs)
 
-        patch_nhdat_existing("four_rooms.des")
-
-        super().__init__(*args, **kwargs)
-
-    def reset(self):
-        wizkit_items = []
-        _ = super().reset(wizkit_items)
-        for c in "#wizmap\r":
-            self.env.step(ord(c))
-        return self.env._step_return()
+    # def reset(self):
+    #     wizkit_items = []
+    #     _ = super().reset(wizkit_items)
+    #     for c in "#wizmap\r":
+    #         self.env.step(ord(c))
+    #     return self.env._step_return()
 
 
-class MiniHackLavaCrossing(NetHackStaircase):
+class MiniHackLavaCrossing(MiniHackMaze):
     """Environment for "lava crossing" task.
 
     The agent has to reach the green goal square on the other corner of the room
@@ -138,31 +118,5 @@ class MiniHackLavaCrossing(NetHackStaircase):
     """
 
     def __init__(self, *args, **kwargs):
-
-        kwargs["options"] = [
-            el
-            for el in kwargs.pop("options", list(nethack.NETHACKOPTIONS))
-            if not el.startswith("pickup_types")
-        ]
-
-        # Select Race and alignment
-        kwargs["options"].extend(["role:cav", "race:hum", "align:neu", "gender:mal"])
-        # No pet
-        kwargs["options"].append("pettype:none")
-        # Actions space - move only
-        kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
-
-        # Enter Wizard mode
-        kwargs["wizard"] = True
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
-
-        patch_nhdat_existing("lava_crossing.des")
-
-        super().__init__(*args, **kwargs)
-
-    def reset(self):
-        wizkit_items = []
-        _ = super().reset(wizkit_items)
-        for c in "#wizmap\r":
-            self.env.step(ord(c))
-        return self.env._step_return()
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
+        super().__init__(*args, des_file="lava_crossing.des", **kwargs)
