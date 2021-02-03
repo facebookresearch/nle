@@ -12,6 +12,8 @@ from nle.env.tasks import NetHackStaircase
 # from nle.env import base
 # from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
 # from nle.env.base import TASK_ACTIONS
+from nle.nethack import CompassDirection
+
 # from nle.env.tasks import NetHackScore
 # from nle.env.tasks import NetHackScoreFullKeyboard
 
@@ -20,6 +22,7 @@ import os
 from shutil import copyfile
 
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
+MOVE_ACTIONS = tuple(CompassDirection)
 
 
 def patch_nhdat(level_des):
@@ -75,6 +78,8 @@ class MiniHackEmpty(NetHackStaircase):
         kwargs["options"].extend(["role:cav", "race:hum", "align:neu", "gender:mal"])
         # No pet
         kwargs["options"].append("pettype:none")
+        # Actions space - move only
+        kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
 
         patch_nhdat_existing("empty.des")
 
@@ -102,17 +107,62 @@ class MiniHackFourRooms(NetHackStaircase):
         kwargs["options"].extend(["role:cav", "race:hum", "align:neu", "gender:mal"])
         # No pet
         kwargs["options"].append("pettype:none")
+        # Actions space - move only
+        kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
 
         # Enter Wizard mode
         kwargs["wizard"] = True
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 10)
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
 
         patch_nhdat_existing("four_rooms.des")
 
         super().__init__(*args, **kwargs)
 
-    def reset(self, *args, **kwargs):
-        _ = super().reset(*args, **kwargs)
+    def reset(self):
+        wizkit_items = []
+        _ = super().reset(wizkit_items)
+        for c in "#wizmap\r":
+            self.env.step(ord(c))
+        return self.env._step_return()
+
+
+class MiniHackLavaCrossing(NetHackStaircase):
+    """Environment for "lava crossing" task.
+
+    The agent has to reach the green goal square on the other corner of the room
+    while avoiding rivers of deadly lava which terminate the episode in failure.
+    Each lava stream runs across the room either horizontally or vertically, and
+    has a single crossing point which can be safely used; Luckily, a path to the
+    goal is guaranteed to exist. This environment is useful for studying safety
+    and safe exploration.
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        kwargs["options"] = [
+            el
+            for el in kwargs.pop("options", list(nethack.NETHACKOPTIONS))
+            if not el.startswith("pickup_types")
+        ]
+
+        # Select Race and alignment
+        kwargs["options"].extend(["role:cav", "race:hum", "align:neu", "gender:mal"])
+        # No pet
+        kwargs["options"].append("pettype:none")
+        # Actions space - move only
+        kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
+
+        # Enter Wizard mode
+        kwargs["wizard"] = True
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+
+        patch_nhdat_existing("lava_crossing.des")
+
+        super().__init__(*args, **kwargs)
+
+    def reset(self):
+        wizkit_items = []
+        _ = super().reset(wizkit_items)
         for c in "#wizmap\r":
             self.env.step(ord(c))
         return self.env._step_return()
