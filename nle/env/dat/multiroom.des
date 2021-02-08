@@ -1,0 +1,18 @@
+# NetHack 3.6	mylevel.des
+#
+
+MAZE: "mylevel",' '
+INIT_MAP:solidfill,' '
+GEOMETRY:center,center
+MAP
+-------------
+|.....|.....|
+|.....|.....|
+|.....+.....|
+|.....|.....|
+|.....|.....|
+-------------
+ENDMAP
+REGION:(0,0,11,11),lit,"ordinary"
+STAIR:random,down
+DOOR:closed,(06,03)

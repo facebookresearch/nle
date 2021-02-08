@@ -2,6 +2,7 @@
 
 from nle.env.tasks import NetHackStaircase
 from nle.nethack import CompassDirection
+from nle.nethack import Command
 
 
 import subprocess
@@ -51,7 +52,7 @@ class MiniHackMaze(NetHackStaircase):
         kwargs["options"] = kwargs.pop("options", [])
         kwargs["options"].append("pettype:none")
         # Actions space - move only
-        kwargs["actions"] = MOVE_ACTIONS
+        kwargs["actions"] = kwargs.get("actions", MOVE_ACTIONS)
         # Enter Wizard mode
         kwargs["wizard"] = True
         # Override episode limit
@@ -104,6 +105,24 @@ class MiniHackFourRooms(MiniHackMaze):
     #     for c in "#wizmap\r":
     #         self.env.step(ord(c))
     #     return self.env._step_return()
+
+
+class MiniHackMultiRoom(MiniHackMaze):
+    """Environment for "multi rooms" task.
+
+    # The agent has to come through multiple rooms with closed (but not locked!)
+    # doors to get to the goal: standing on the stairs upwards.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+        # Multiroom has doors, need Coomand.OPEN here.
+        kwargs["actions"] = (*MOVE_ACTIONS, Command.OPEN)
+        super().__init__(*args, des_file="multiroom.des", **kwargs)
+
+    # TODO implement logic so that agent always ends up
+    #  in a room different from the one with the stairs.
+    #  most likely we will need rndcoord for this
 
 
 class MiniHackLavaCrossing(MiniHackMaze):
