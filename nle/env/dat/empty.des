@@ -1,0 +1,8 @@
+# NetHack 3.6	mylevel.des
+#
+
+LEVEL: "mylevel"
+
+ROOM: "ordinary" , lit, (3,3), (center,center), (5,5) {
+    STAIR: random, down
+    }

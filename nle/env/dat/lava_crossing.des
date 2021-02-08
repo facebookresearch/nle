@@ -1,0 +1,77 @@
+# NetHack 3.6	mylevel.des
+#
+
+MAZE: "mylevel",' '
+INIT_MAP:solidfill,' '
+GEOMETRY:center,center
+MAP
+-------------
+|...........|
+|...........|
+|...........|
+|...........|
+|...........|
+|...........|
+|...........|
+|...........|
+|...........|
+|...........|
+|...........|
+-------------
+ENDMAP
+REGION:(0,0,11,11),lit,"ordinary"
+IF [50%] {
+    $line = selection:line (2,1),(2,11)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (4,1),(4,11)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (6,1),(6,11)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (8,1),(8,11)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (10,1),(10,11)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    IF [50%] {
+        $line_stair = selection:line (1,1),(1,11)
+    } ELSE {
+        $line_stair = selection:line (11,1),(11,11)
+    }
+} ELSE {
+    $line = selection:line (1,2),(11,2)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (1,4),(11,4)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (1,6),(11,6)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (1,8),(11,8)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    $line = selection:line (1,10),(11,10)
+    TERRAIN:$line, 'L'
+    TERRAIN:rndcoord($line), '.'
+
+    IF [50%] {
+        $line_stair = selection:line (1,1),(11,1)
+    } ELSE {
+        $line_stair = selection:line (1,11),(11,11)
+    }
+}
+STAIR:random,up
+STAIR:rndcoord($line_stair), down
