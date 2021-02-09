@@ -53,7 +53,7 @@ class MiniHackMaze(NetHackStaircase):
         # Actions space - move only
         kwargs["actions"] = MOVE_ACTIONS
         # Enter Wizard mode
-        kwargs["wizard"] = True
+        kwargs["wizard"] = kwargs.pop("wizard", True)
         # Override episode limit
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
 
@@ -119,4 +119,5 @@ class MiniHackLavaCrossing(MiniHackMaze):
 
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
+        kwargs["wizard"] = False
         super().__init__(*args, des_file="lava_crossing.des", **kwargs)
