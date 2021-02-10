@@ -54,7 +54,7 @@ class MiniHackMaze(NetHackStaircase):
         # Actions space - move only
         kwargs["actions"] = kwargs.get("actions", MOVE_ACTIONS)
         # Enter Wizard mode
-        kwargs["wizard"] = True
+        kwargs["wizard"] = kwargs.pop("wizard", True)
         # Override episode limit
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
 
@@ -138,4 +138,19 @@ class MiniHackLavaCrossing(MiniHackMaze):
 
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
+        kwargs["wizard"] = False
         super().__init__(*args, des_file="lava_crossing.des", **kwargs)
+
+
+class MiniHackSimpleCrossing(MiniHackMaze):
+    """Environment for "lava crossing" task.
+
+    Similar to the LavaCrossing environment, the agent has to reach the green
+    goal square on the other corner of the room, however lava is replaced by
+    walls. This MDP is therefore much easier and and maybe useful for quickly
+    testing your algorithms.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
+        super().__init__(*args, des_file="simple_crossing.des", **kwargs)
