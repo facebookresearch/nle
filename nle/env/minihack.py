@@ -65,8 +65,8 @@ class MiniHackCustom(NetHackStaircase):
     - Use this class if you want to experiment with different description files
     and require rich (full) action space.
     - Use a MiniHackMaze class for maze-type environments where there is no pet,
-    action space is severely ristricted and no one-letter questions are required.
-    - Inherit from this class if you require a different reward function and i
+    action space is severely restricted and no one-letter questions are required.
+    - Inherit from this class if you require a different reward function and
     dynamics. You might need to override the following methods
         - self._is_episode_end()
         - self._reward_fn()
@@ -124,7 +124,7 @@ class MiniHackMaze(MiniHackCustom):
     - Restricted action space (move only by default)
     - No pet
     - One-letter menu questions are NOT allowed by default
-    - Restricted observataions, only glyphs by default
+    - Restricted observations, only glyphs by default
     - No random monster generation
 
     The goal is to reach the staircase.
