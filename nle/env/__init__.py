@@ -28,20 +28,21 @@ registration.register(
 )
 
 registration.register(
-    id="MiniHackEmpty-v0",
+    id="MiniHack-Empty-v0",
     entry_point="nle.env.minihack:MiniHackEmpty",
 )
 registration.register(
-    id="MiniHackFourRooms-v0",
+    id="MiniHack-FourRooms-v0",
     entry_point="nle.env.minihack:MiniHackFourRooms",
 )
 registration.register(
-    id="MiniHackLavaCrossing-v0",
+    id="MiniHack-LavaCrossing-v0",
     entry_point="nle.env.minihack:MiniHackLavaCrossing",
 )
 registration.register(
-    id="MiniHackSimpleCrossing-v0",
+    id="MiniHack-SimpleCrossing-v0",
     entry_point="nle.env.minihack:MiniHackSimpleCrossing",
 )
+
 
 __all__ = ["NLE", "DUNGEON_SHAPE"]

@@ -1,15 +1,19 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 from nle.env.tasks import NetHackStaircase
-from nle.nethack import CompassDirection
-
+from nle.nethack import CompassDirection, NETHACKOPTIONS
+from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
 
 import subprocess
 import os
+import gym
+
+# import numpy as np
 from shutil import copyfile
 
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
 MOVE_ACTIONS = tuple(CompassDirection)
+# APPLY_ACTIONS = tuple(list(MOVE_ACTIONS) + [Command.PICKUP, Command.APPLY])
 
 
 def patch_nhdat(level_des):
@@ -43,19 +47,51 @@ def patch_nhdat_existing(des_name):
         os.remove(fname)
 
 
-class MiniHackMaze(NetHackStaircase):
-    """Base environment for maze-type task. """
+class MiniHackCustom(NetHackStaircase):
+    """Base class for custom MiniHack environments.
+
+    Features:
+    - Default nethack options
+    - Full action space by default
+    - Wizard mode is turned off by default
+    - One-letter menu questions are allowed by default
+    - Includes all NLE observations
+
+    The goal is to reach the staircase.
+
+    Use cases:
+    - Use this class if you want to experiment with different description files
+    and require rich (full) action space.
+    - Use a MiniHackMaze class for maze-type environments where there is no pet,
+    action space is severely ristricted and no one-letter questions are required.
+    - Inherit from this class if you require a different reward function and i
+    dynamics. You might need to override the following methods
+        - self._is_episode_end()
+        - self._reward_fn()
+        - self.step()
+        - self.reset()
+    """
 
     def __init__(self, *args, des_file: str = None, **kwargs):
         # No pet
-        kwargs["options"] = kwargs.pop("options", [])
-        kwargs["options"].append("pettype:none")
+        kwargs["options"] = kwargs.pop("options", list(NETHACKOPTIONS))
         # Actions space - move only
-        kwargs["actions"] = MOVE_ACTIONS
-        # Enter Wizard mode
-        kwargs["wizard"] = kwargs.pop("wizard", True)
-        # Override episode limit
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+        kwargs["actions"] = kwargs.pop("actions", FULL_ACTIONS)
+        # Enter Wizard mode - turned off by default
+        kwargs["wizard"] = kwargs.pop("wizard", False)
+        # Allowing one-letter menu questions
+        kwargs["allow_all_yn_questions"] = kwargs.pop("allow_all_yn_questions", True)
+        # Episode limit
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
+        # Using all NLE observations by default
+        space_dict = dict(NLE_SPACE_ITEMS)
+        # Not currently passing the observation keys to the base class
+        # because they are used in render(), which is used when developing
+        # new environments. Instead, we filter the observations in the
+        # _get_observation() method we override.
+        self._minihack_obs_keys = kwargs.pop(
+            "observation_keys", list(space_dict.keys())
+        )
 
         # Patch the nhddat library by compling the given .des file
         if des_file is None:
@@ -64,9 +100,51 @@ class MiniHackMaze(NetHackStaircase):
         if des_file.endswith(".des"):
             patch_nhdat_existing(des_file)
         else:
-            patch_nhdat_existing(des_file)
+            patch_nhdat(des_file)
 
         super().__init__(*args, **kwargs)
+
+        self.observation_space = gym.spaces.Dict(
+            {key: space_dict[key] for key in self._minihack_obs_keys}
+        )
+
+    def _get_observation(self, observation):
+        # Filter out observations that we don't need
+        observation = super()._get_observation(observation)
+        return {
+            key: val
+            for key, val in observation.items()
+            if key in self._minihack_obs_keys
+        }
+
+
+class MiniHackMaze(MiniHackCustom):
+    """Base class for maze-type task.
+
+    Maze environments have
+    - Restricted action space (move only by default)
+    - No pet
+    - One-letter menu questions are NOT allowed by default
+    - Restricted observataions, only glyphs by default
+    - No random monster generation
+
+    The goal is to reach the staircase.
+    """
+
+    def __init__(self, *args, des_file: str = None, **kwargs):
+        # No pet
+        kwargs["options"] = kwargs.pop("options", list(NETHACKOPTIONS))
+        kwargs["options"].append("pettype:none")
+        # Actions space - move only
+        kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
+        # Disallowing one-letter menu questions
+        kwargs["allow_all_yn_questions"] = kwargs.pop("allow_all_yn_questions", False)
+        # Override episode limit
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+        # Restrict the observation space to glyphs only
+        kwargs["observation_keys"] = kwargs.pop("observation_keys", ["glyphs"])
+
+        super().__init__(*args, des_file=des_file, **kwargs)
 
 
 class MiniHackEmpty(MiniHackMaze):
