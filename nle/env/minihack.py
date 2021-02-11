@@ -16,21 +16,23 @@ MOVE_ACTIONS = tuple(CompassDirection)
 # APPLY_ACTIONS = tuple(list(MOVE_ACTIONS) + [Command.PICKUP, Command.APPLY])
 
 
-def patch_nhdat(level_des):
+def patch_nhdat(des_file):
     fname = "./mylevel.des"
-    try:
-        with open(fname, "w") as f:
-            f.writelines(level_des)
-        _ = subprocess.call("nle/scripts/patch_nhdat.sh")
-    except Exception as e:
-        print("Something went wrong at level generation", e.args[0])
-    finally:
-        os.remove(fname)
-
-
-def patch_nhdat_existing(des_name):
-    try:
-        des_path = os.path.join(PATH_DAT_DIR, des_name)
+    if not des_file.endswith(".des"):
+        # If the des-file is passed as a string
+        try:
+            with open(fname, "w") as f:
+                f.writelines(des_file)
+            _ = subprocess.call("nle/scripts/patch_nhdat.sh")
+        except Exception as e:
+            print("Something went wrong at level generation", e.args[0])
+        finally:
+            os.remove(fname)
+    else:
+        # Use the .des file if exists, otherwise search in minihack directory
+        des_path = os.path.abspath(des_file)
+        if not os.path.exists(des_path):
+            des_path = os.path.join(PATH_DAT_DIR, des_file)
         if not os.path.exists(des_path):
             print(
                 "{} file doesn't exist. Please provide a path to a valid .des \
@@ -38,13 +40,13 @@ def patch_nhdat_existing(des_name):
                     des_path
                 )
             )
-        fname = "./mylevel.des"
-        copyfile(des_path, fname)
-        _ = subprocess.call("nle/scripts/patch_nhdat.sh")
-    except Exception as e:
-        print("Something went wrong at level generation", e.args[0])
-    finally:
-        os.remove(fname)
+        try:
+            copyfile(des_path, fname)
+            _ = subprocess.call("nle/scripts/patch_nhdat.sh")
+        except Exception as e:
+            print("Something went wrong at level generation", e.args[0])
+        finally:
+            os.remove(fname)
 
 
 class MiniHackCustom(NetHackStaircase):
@@ -95,12 +97,9 @@ class MiniHackCustom(NetHackStaircase):
 
         # Patch the nhddat library by compling the given .des file
         if des_file is None:
-            raise ValueError("Description filename is not provided.")
+            raise ValueError("Description file is not provided.")
 
-        if des_file.endswith(".des"):
-            patch_nhdat_existing(des_file)
-        else:
-            patch_nhdat(des_file)
+        patch_nhdat(des_file)
 
         super().__init__(*args, **kwargs)
 
