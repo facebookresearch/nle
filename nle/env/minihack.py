@@ -135,6 +135,9 @@ class MiniHackMaze(MiniHackCustom):
         # No pet
         kwargs["options"] = kwargs.pop("options", list(NETHACKOPTIONS))
         kwargs["options"].append("pettype:none")
+        # No random monster generation after every timestep
+        # As a workaround to a current issue, we are utilizing the nudist option instead
+        kwargs["options"].append("nudist")
         # Actions space - move only
         kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
         # Disallowing one-letter menu questions
