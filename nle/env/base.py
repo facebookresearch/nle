@@ -131,6 +131,27 @@ NLE_SPACE_ITEMS = (
 )
 
 
+# TODO: can probably be imported from somewhere?
+COLORS = [
+    '\033[30m',
+    '\033[31m',
+    '\033[32m',
+    '\033[33m',
+    '\033[34m',
+    '\033[35m',
+    '\033[36m',
+    '\033[37m',
+    "\x1b[90m",
+    "\x1b[91m",
+    "\x1b[92m",
+    "\x1b[93m",
+    "\x1b[94m",
+    "\x1b[95m",
+    "\x1b[96m",
+    "\x1b[97m"
+]
+
+
 class NLE(gym.Env):
     """Standard NetHack Learning Environment.
 
@@ -511,6 +532,32 @@ class NLE(gym.Env):
         """
         return self.env.get_current_seeds()
 
+    def tty_render(self, obs, keys=('tty_chars', 'tty_colors'), print_guides=True):
+        tty_chars_index = self._observation_keys.index(keys[0])
+        tty_colors_index = self._observation_keys.index(keys[1])
+        tty_chars = obs[tty_chars_index]
+        tty_colors = obs[tty_colors_index]
+        H, W = tty_chars.shape
+        rendering = ""
+        col_index_str = " " + COLORS[1] + "".join([str(i % 10) for i in range(W)])
+        if print_guides:
+            rendering += col_index_str + "\n"
+        for i in range(H):
+            line = []
+            for j in range(W):
+                char = tty_chars[i, j]
+                color = tty_colors[i, j]
+                line.append(COLORS[color] + chr(char))
+            row_index_str = COLORS[1]+str(i % 10)
+            if print_guides:
+                rendering += row_index_str + "".join(line) + row_index_str + "\n"
+            else:
+                rendering += "".join(line) + "\n"
+        if print_guides:
+            rendering += col_index_str + "\n"
+        print(rendering + COLORS[7])
+        return rendering
+
     def render(self, mode="human"):
         """Renders the state of environment.
 
@@ -521,39 +568,8 @@ class NLE(gym.Env):
         """
         chars_index = self._observation_keys.index("chars")
         if mode == "human":
-            message_index = self._observation_keys.index("message")
-            message = bytes(self.last_observation[message_index])
-            print(message[: message.index(b"\0")])
-            try:
-                inv_strs_index = self._observation_keys.index("inv_strs")
-                inv_letters_index = self._observation_keys.index("inv_letters")
-
-                inv_strs = self.last_observation[inv_strs_index]
-                inv_letters = self.last_observation[inv_letters_index]
-                for letter, line in zip(inv_letters, inv_strs):
-                    if np.all(line == 0):
-                        break
-                    print(
-                        letter.tobytes().decode("utf-8"), line.tobytes().decode("utf-8")
-                    )
-            except ValueError:  # inv_strs/letters not used.
-                pass
-            colors_index = self._observation_keys.index("colors")
-            chars = self.last_observation[chars_index]
-            colors = self.last_observation[colors_index]
-            rows, cols = chars.shape
-            nh_HE = "\033[0m"
-            BRIGHT = 8
-            for r in range(rows):
-                for c in range(cols):
-                    # cf. termcap.c.
-                    start_color = "\033[%d" % bool(colors[r][c] & BRIGHT)
-                    start_color += ";3%d" % (colors[r][c] & ~BRIGHT)
-                    start_color += "m"
-
-                    print(start_color + chr(chars[r][c]), end=nh_HE)
-                print("")
-            return
+            obs = self.last_observation
+            return self.tty_render(obs, print_guides=False)
         elif mode == "ansi":
             chars = self.last_observation[chars_index]
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
