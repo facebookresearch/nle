@@ -43,6 +43,10 @@ registration.register(
     id="MiniHack-SimpleCrossing-v0",
     entry_point="nle.env.minihack:MiniHackSimpleCrossing",
 )
+registration.register(
+    id="MiniHack-KeyDoor-v0",
+    entry_point="nle.env.minihack:MiniHackKeyDoor",
+)
 
 
 __all__ = ["NLE", "DUNGEON_SHAPE"]

@@ -1,19 +1,21 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 from nle.env.tasks import NetHackStaircase
-from nle.nethack import CompassDirection, NETHACKOPTIONS
-from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
+from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS, ASCII_y
+from nle import nethack
 
+from shutil import copyfile
+import numpy as np
 import subprocess
 import os
 import gym
 
-# import numpy as np
-from shutil import copyfile
 
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
-MOVE_ACTIONS = tuple(CompassDirection)
-# APPLY_ACTIONS = tuple(list(MOVE_ACTIONS) + [Command.PICKUP, Command.APPLY])
+MOVE_ACTIONS = tuple(nethack.CompassDirection)
+APPLY_ACTIONS = tuple(
+    list(MOVE_ACTIONS) + [nethack.Command.PICKUP, nethack.Command.APPLY]
+)
 
 
 def patch_nhdat(des_file):
@@ -76,7 +78,7 @@ class MiniHackCustom(NetHackStaircase):
 
     def __init__(self, *args, des_file: str = None, **kwargs):
         # No pet
-        kwargs["options"] = kwargs.pop("options", list(NETHACKOPTIONS))
+        kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
         # Actions space - move only
         kwargs["actions"] = kwargs.pop("actions", FULL_ACTIONS)
         # Enter Wizard mode - turned off by default
@@ -116,6 +118,51 @@ class MiniHackCustom(NetHackStaircase):
             if key in self._minihack_obs_keys
         }
 
+    def key_in_inventory(self, name):
+        """Returns key of the object in the inventory.
+
+        Arguments:
+            name [str]: name of the object
+        Returns:
+            the key of the first item in the inventory that includes the
+            argument name as a substring
+        """
+        assert "inv_strs" in self._observation_keys
+        assert "inv_letters" in self._observation_keys
+
+        inv_strs_index = self._observation_keys.index("inv_strs")
+        inv_letters_index = self._observation_keys.index("inv_letters")
+
+        inv_strs = self.last_observation[inv_strs_index]
+        inv_letters = self.last_observation[inv_letters_index]
+
+        for letter, line in zip(inv_letters, inv_strs):
+            if np.all(line == 0):
+                break
+            if name in line.tobytes().decode("utf-8"):
+                return letter.tobytes().decode("utf-8")
+
+        return None
+
+    def index_to_dir_action(self, index):
+        """Returns the ASCII code for direction corresponding to given
+        index in reshaped vector of adjacent 9 tiles (None for agent's
+        position).
+        """
+        assert 0 <= index < 9
+        index_to_dir_dict = {
+            0: ord("y"),
+            1: ord("k"),
+            2: ord("u"),
+            3: ord("h"),
+            4: None,
+            5: ord("l"),
+            6: ord("b"),
+            7: ord("j"),
+            8: ord("n"),
+        }
+        return index_to_dir_dict[index]
+
 
 class MiniHackMaze(MiniHackCustom):
     """Base class for maze-type task.
@@ -132,7 +179,7 @@ class MiniHackMaze(MiniHackCustom):
 
     def __init__(self, *args, des_file: str = None, **kwargs):
         # No pet
-        kwargs["options"] = kwargs.pop("options", list(NETHACKOPTIONS))
+        kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
         kwargs["options"].append("pettype:none")
         # No random monster generation after every timestep
         # As a workaround to a current issue, we are utilizing the nudist option instead
@@ -215,3 +262,52 @@ class MiniHackSimpleCrossing(MiniHackMaze):
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
         super().__init__(*args, des_file="simple_crossing.des", **kwargs)
+
+
+class MiniHackKeyDoor(MiniHackMaze):
+    """Environment for "key and door" task.
+
+    This environment has a key that the agent must pick up in order to
+    unlock a goal and then get to the green goal square. This environment
+    is difficult, because of the sparse reward, to solve using classical
+    RL algorithms. It is useful to experiment with curiosity or curriculum
+    learning.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
+        kwargs["options"].append("!autopickup")
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
+        kwargs["actions"] = APPLY_ACTIONS
+        super().__init__(*args, des_file="key_and_door.des", **kwargs)
+
+        self.closed_door_glyph_ids = [2375, 2374]  # this is probably not the best way
+
+    def step(self, action: int):
+        # If apply action is chosen
+        if self._actions[action] == nethack.Command.APPLY:
+            key_key = self.key_in_inventory("key")
+            # if key is in the inventory
+            if key_key is not None:
+                # Get information about adjacent glyphs
+                glyphs = self.last_observation[self._glyph_index]
+                blstats = self.last_observation[self._blstats_index]
+                x, y = blstats[:2]
+                neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
+                # Check if there is a closed door nearby
+                for index in range(len(neighbors)):
+                    if neighbors[index] in self.closed_door_glyph_ids:
+                        dir_key = self.index_to_dir_action(index)
+                        # Perform the following NetHack steps
+                        self.env.step(nethack.Command.APPLY)  # press apply
+                        self.env.step(ord(key_key))  # choose key from the inv
+                        self.env.step(dir_key)  # select the door's direction
+                        self.env.step(ASCII_y)  # press y
+                        # TODO the door opens with < 100% probability. We might want to
+                        # try this a few times (check if not successfull)
+                        dir_action = self._actions.index(dir_key)
+                        obs, reward, done, info = super().step(dir_action)
+                        return obs, reward, done, info
+
+        obs, reward, done, info = super().step(action)
+        return obs, reward, done, info

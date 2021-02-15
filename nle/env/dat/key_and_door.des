@@ -1,0 +1,13 @@
+# NetHack 3.6	mylevel.des
+#
+
+LEVEL: "mylevel"
+
+ROOM: "ordinary" , lit, (3,3), (center,center), (10,10) {
+    #NAME: "main"
+    SUBROOM:"ordinary",lit,random,(4,4) {
+        STAIR: random, down
+        ROOMDOOR: false , locked , random, random
+        }
+    OBJECT:('(',"skeleton key"), random
+    }
