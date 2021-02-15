@@ -1,18 +1,23 @@
-# NetHack 3.6	mylevel.des
+# NetHack 3.6	oracle.des	$NHDT-Date: 1524689580 2018/04/25 20:53:00 $  $NHDT-Branch: NetHack-3.6.0 $:$NHDT-Revision: 1.10 $
+# Copyright (c) 2015 by Pasi Kallinen
+# NetHack may be freely redistributed.  See license for details.
+#
+# Oracle level
 #
 
-MAZE: "mylevel",' '
-INIT_MAP:solidfill,' '
-GEOMETRY:center,center
-MAP
--------------
-|.....|.....|
-|.....|.....|
-|.....+.....|
-|.....|.....|
-|.....|.....|
--------------
-ENDMAP
-REGION:(0,0,11,11),lit,"ordinary"
-STAIR:random,down
-DOOR:closed,(06,03)
+LEVEL: "mylevel"
+
+FLAGS:premapped,noteleport
+
+ROOM: "ordinary" , lit, random, random, random {
+  ROOMDOOR: false , closed , random, random
+}
+ROOM: "ordinary" , lit, random, random, random {
+  STAIR: random, down
+  ROOMDOOR: false , closed , random, random
+}
+ROOM: "ordinary" , lit, random, random, random {
+  ROOMDOOR: false , closed , random, random
+}
+
+RANDOM_CORRIDORS
