@@ -277,6 +277,7 @@ class MiniHackKeyDoor(MiniHackMaze):
     def __init__(self, *args, **kwargs):
         kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
         kwargs["options"].append("!autopickup")
+        kwargs["character"] = kwargs.pop("charachter", "rog-hum-cha-mal")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
         kwargs["actions"] = APPLY_ACTIONS
         super().__init__(*args, des_file="key_and_door.des", **kwargs)
