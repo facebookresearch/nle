@@ -245,7 +245,7 @@ class MiniHackMultiRoom(MiniHackMaze):
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
         # Multiroom has doors, need Coomand.OPEN here.
-        kwargs["actions"] = (*MOVE_ACTIONS, Command.OPEN)
+        kwargs["actions"] = (*MOVE_ACTIONS, Command.OPEN, Command.KICK)
         super().__init__(*args, des_file="multiroom.des", **kwargs)
 
     # TODO implement logic so that agent always ends up
