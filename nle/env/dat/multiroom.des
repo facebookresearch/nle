@@ -3,6 +3,7 @@ LEVEL: "mylevel"
 FLAGS:premapped,noteleport
 
 ROOM: "ordinary" , lit, random, random, random {
+  STAIR: random, up
   ROOMDOOR: false , closed , random, random
 }
 ROOM: "ordinary" , lit, random, random, random {

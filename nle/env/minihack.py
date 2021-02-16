@@ -1,10 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 from nle.env.tasks import NetHackStaircase
-from nle.nethack import Command
-
 from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS, ASCII_y
 from nle import nethack
+from nle.nethack import Command
 
 from shutil import copyfile
 import numpy as np
@@ -247,10 +246,6 @@ class MiniHackMultiRoom(MiniHackMaze):
         # Multiroom has doors, need Coomand.OPEN here.
         kwargs["actions"] = (*MOVE_ACTIONS, Command.OPEN, Command.KICK)
         super().__init__(*args, des_file="multiroom.des", **kwargs)
-
-    # TODO implement logic so that agent always ends up
-    #  in a room different from the one with the stairs.
-    #  most likely we will need rndcoord for this
 
 
 class MiniHackLavaCrossing(MiniHackMaze):
