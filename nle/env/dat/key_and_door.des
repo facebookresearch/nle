@@ -9,5 +9,5 @@ ROOM: "ordinary" , lit, (3,3), (center,center), (10,10) {
         STAIR: random, down
         ROOMDOOR: false , locked , random, random
         }
-    OBJECT:('(',"skeleton key"), random
+    OBJECT:('(',"skeleton key"),random,blessed,0,name:"The Master Key of Thievery"
     }
