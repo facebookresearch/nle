@@ -297,7 +297,20 @@ class MiniHackKeyDoor(MiniHackMaze):
         kwargs["actions"] = APPLY_ACTIONS
         super().__init__(*args, des_file="key_and_door.des", **kwargs)
 
-        self.closed_door_glyph_ids = [2375, 2374]  # this is probably not the best way
+        self.closed_door_glyph_ids = [2375, 2374]  # probably not the best way
+
+    def find_closed_door(self, observation=None):
+        """Returs the direction of the closed/locked door"""
+        if observation is None:
+            observation = self.last_observation
+        glyphs = observation[self._glyph_index]
+        blstats = observation[self._blstats_index]
+        x, y = blstats[:2]
+        glyphs = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
+        for index in range(len(glyphs)):
+            if glyphs[index] in self.closed_door_glyph_ids:
+                return self.index_to_dir_action(index)
+        return None
 
     def step(self, action: int):
         # If apply action is chosen
@@ -305,25 +318,23 @@ class MiniHackKeyDoor(MiniHackMaze):
             key_key = self.key_in_inventory("key")
             # if key is in the inventory
             if key_key is not None:
-                # Get information about adjacent glyphs
-                glyphs = self.last_observation[self._glyph_index]
-                blstats = self.last_observation[self._blstats_index]
-                x, y = blstats[:2]
-                neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
                 # Check if there is a closed door nearby
-                for index in range(len(neighbors)):
-                    if neighbors[index] in self.closed_door_glyph_ids:
-                        dir_key = self.index_to_dir_action(index)
-                        # Perform the following NetHack steps
-                        self.env.step(nethack.Command.APPLY)  # press apply
-                        self.env.step(ord(key_key))  # choose key from the inv
-                        self.env.step(dir_key)  # select the door's direction
-                        self.env.step(ASCII_y)  # press y
-                        # TODO the door opens with < 100% probability. We might want to
-                        # try this a few times (check if not successfull)
-                        dir_action = self._actions.index(dir_key)
-                        obs, reward, done, info = super().step(dir_action)
-                        return obs, reward, done, info
+                dir_key = self.find_closed_door()
+                if dir_key is not None:
+                    # Perform the following NetHack steps
+                    self.env.step(nethack.Command.APPLY)  # press apply
+                    self.env.step(ord(key_key))  # choose key from the inv
+                    self.env.step(dir_key)  # select the door's direction
+                    obs, done = self.env.step(ASCII_y)  # press y
+                    obs, done = self._perform_known_steps(obs, done, exceptions=True)
+                    # Make sure the door is open
+                    while True:
+                        obs, done = self.env.step(dir_key)
+                        obs, done = self._perform_known_steps(
+                            obs, done, exceptions=True
+                        )
+                        if self.find_closed_door(obs) is None:
+                            break
 
         obs, reward, done, info = super().step(action)
         return obs, reward, done, info
