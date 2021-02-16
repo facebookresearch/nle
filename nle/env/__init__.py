@@ -36,8 +36,8 @@ registration.register(
     entry_point="nle.env.minihack:MiniHackFourRooms",
 )
 registration.register(
-    id="MiniHack-MultiRoom-v0",
-    entry_point="nle.env.minihack:MiniHackMultiRoom",
+    id="MiniHack-Corridor-v0",
+    entry_point="nle.env.minihack:MiniHackCorridor",
 )
 registration.register(
     id="MiniHack-LavaCrossing-v0",

@@ -14,8 +14,9 @@ import gym
 
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
 MOVE_ACTIONS = tuple(nethack.CompassDirection)
-APPLY_ACTIONS = tuple(
-    list(MOVE_ACTIONS) + [nethack.Command.PICKUP, nethack.Command.APPLY]
+APPLY_ACTIONS = tuple(list(MOVE_ACTIONS) + [Command.PICKUP, Command.APPLY])
+NAVIGATE_ACTIONS = tuple(
+    list(MOVE_ACTIONS) + [Command.OPEN, Command.KICK, Command.SEARCH]
 )
 
 
@@ -234,18 +235,17 @@ class MiniHackFourRooms(MiniHackMaze):
     #     return self.env._step_return()
 
 
-class MiniHackMultiRoom(MiniHackMaze):
-    """Environment for "multi rooms" task.
+class MiniHackCorridor(MiniHackMaze):
+    """Environment for "corridor" task.
 
-    # The agent has to come through multiple rooms with closed (but not locked!)
-    # doors to get to the goal: standing on the stairs upwards.
+    # The agent has to navigate itself through a randomely generated corridors to
+    # find the goal which is randomly located in one of the several rooms.
     """
 
     def __init__(self, *args, **kwargs):
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
-        # Multiroom has doors, need Coomand.OPEN here.
-        kwargs["actions"] = (*MOVE_ACTIONS, Command.OPEN, Command.KICK)
-        super().__init__(*args, des_file="multiroom.des", **kwargs)
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
+        kwargs["actions"] = NAVIGATE_ACTIONS
+        super().__init__(*args, des_file="corridor.des", **kwargs)
 
 
 class MiniHackLavaCrossing(MiniHackMaze):
@@ -314,7 +314,7 @@ class MiniHackKeyDoor(MiniHackMaze):
 
     def step(self, action: int):
         # If apply action is chosen
-        if self._actions[action] == nethack.Command.APPLY:
+        if self._actions[action] == Command.APPLY:
             key_key = self.key_in_inventory("key")
             # if key is in the inventory
             if key_key is not None:
@@ -322,7 +322,7 @@ class MiniHackKeyDoor(MiniHackMaze):
                 dir_key = self.find_closed_door()
                 if dir_key is not None:
                     # Perform the following NetHack steps
-                    self.env.step(nethack.Command.APPLY)  # press apply
+                    self.env.step(Command.APPLY)  # press apply
                     self.env.step(ord(key_key))  # choose key from the inv
                     self.env.step(dir_key)  # select the door's direction
                     obs, done = self.env.step(ASCII_y)  # press y
