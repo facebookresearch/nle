@@ -238,8 +238,8 @@ class MiniHackFourRooms(MiniHackMaze):
 class MiniHackCorridor(MiniHackMaze):
     """Environment for "corridor" task.
 
-    # The agent has to navigate itself through a randomely generated corridors to
-    # find the goal which is randomly located in one of the several rooms.
+    The agent has to navigate itself through randomely generated corridors that
+    connect several rooms and find the goal.
     """
 
     def __init__(self, *args, **kwargs):
