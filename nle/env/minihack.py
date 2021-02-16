@@ -3,6 +3,7 @@
 from nle.env.tasks import NetHackStaircase
 from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS, ASCII_y
 from nle import nethack
+from nle.nethack import Command
 
 from shutil import copyfile
 import numpy as np
@@ -13,8 +14,9 @@ import gym
 
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
 MOVE_ACTIONS = tuple(nethack.CompassDirection)
-APPLY_ACTIONS = tuple(
-    list(MOVE_ACTIONS) + [nethack.Command.PICKUP, nethack.Command.APPLY]
+APPLY_ACTIONS = tuple(list(MOVE_ACTIONS) + [Command.PICKUP, Command.APPLY])
+NAVIGATE_ACTIONS = tuple(
+    list(MOVE_ACTIONS) + [Command.OPEN, Command.KICK, Command.SEARCH]
 )
 
 
@@ -233,6 +235,19 @@ class MiniHackFourRooms(MiniHackMaze):
     #     return self.env._step_return()
 
 
+class MiniHackCorridor(MiniHackMaze):
+    """Environment for "corridor" task.
+
+    The agent has to navigate itself through randomely generated corridors that
+    connect several rooms and find the goal.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
+        kwargs["actions"] = NAVIGATE_ACTIONS
+        super().__init__(*args, des_file="corridor.des", **kwargs)
+
+
 class MiniHackLavaCrossing(MiniHackMaze):
     """Environment for "lava crossing" task.
 
@@ -299,7 +314,7 @@ class MiniHackKeyDoor(MiniHackMaze):
 
     def step(self, action: int):
         # If apply action is chosen
-        if self._actions[action] == nethack.Command.APPLY:
+        if self._actions[action] == Command.APPLY:
             key_key = self.key_in_inventory("key")
             # if key is in the inventory
             if key_key is not None:
@@ -307,7 +322,7 @@ class MiniHackKeyDoor(MiniHackMaze):
                 dir_key = self.find_closed_door()
                 if dir_key is not None:
                     # Perform the following NetHack steps
-                    self.env.step(nethack.Command.APPLY)  # press apply
+                    self.env.step(Command.APPLY)  # press apply
                     self.env.step(ord(key_key))  # choose key from the inv
                     self.env.step(dir_key)  # select the door's direction
                     obs, done = self.env.step(ASCII_y)  # press y
