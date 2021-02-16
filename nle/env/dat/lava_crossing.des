@@ -1,6 +1,3 @@
-# NetHack 3.6	mylevel.des
-#
-
 MAZE: "mylevel",' '
 INIT_MAP:solidfill,' '
 GEOMETRY:center,center
