@@ -542,10 +542,11 @@ class NLE(gym.Env):
         tty_colors = colors
 
         H, W = tty_chars.shape
-        rendering = ""
-        col_index_str = " " + COLORS[1] + "".join([str(i % 10) for i in range(W)])
+        rendering = []
+        col_index_str = " " + COLORS[1] + \
+            "".join([str(i % 10) for i in range(W)])
         if print_guides:
-            rendering += col_index_str + "\n"
+            rendering.append(col_index_str)
         for i in range(H):
             line = []
             for j in range(W):
@@ -554,12 +555,14 @@ class NLE(gym.Env):
                 line.append(COLORS[color] + chr(char))
             row_index_str = COLORS[1] + str(i % 10)
             if print_guides:
-                rendering += row_index_str + "".join(line) + row_index_str + "\n"
+                rendering.append(row_index_str + "".join(line) + row_index_str)
             else:
-                rendering += "".join(line) + "\n"
+                rendering.append("".join(line))
         if print_guides:
-            rendering += col_index_str + "\n"
-        print(rendering + COLORS[7])
+            rendering.append(col_index_str)
+        rendering.append(COLORS[7])
+        rendering = "\n".join(rendering)
+        print(rendering)
         return rendering
 
     def render(self, mode="human"):
