@@ -543,8 +543,7 @@ class NLE(gym.Env):
 
         H, W = tty_chars.shape
         rendering = []
-        col_index_str = " " + COLORS[1] + \
-            "".join([str(i % 10) for i in range(W)])
+        col_index_str = " " + COLORS[1] + "".join([str(i % 10) for i in range(W)])
         if print_guides:
             rendering.append(col_index_str)
         for i in range(H):
