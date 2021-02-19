@@ -532,14 +532,7 @@ class NLE(gym.Env):
         """
         return self.env.get_current_seeds()
 
-    def tty_render(self, chars, colors, print_guides=False):
-        # tty_chars_index = self._observation_keys.index(keys[0])
-        # tty_colors_index = self._observation_keys.index(keys[1])
-        # tty_chars = obs[tty_chars_index]
-        # tty_colors = obs[tty_colors_index]
-
-        tty_chars = chars
-        tty_colors = colors
+    def get_tty_rendering(self, tty_chars, tty_colors, print_guides=False):
 
         H, W = tty_chars.shape
         rendering = []
