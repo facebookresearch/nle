@@ -143,21 +143,6 @@ class MiniHackKeyDoor(MiniHackMaze):
         kwargs["actions"] = APPLY_ACTIONS
         super().__init__(*args, des_file="key_and_door.des", **kwargs)
 
-        self.closed_door_glyph_ids = [2375, 2374]  # probably not the best way
-
-    def find_closed_door(self, observation=None):
-        """Returs the direction of the closed/locked door"""
-        if observation is None:
-            observation = self.last_observation
-        glyphs = observation[self._glyph_index]
-        blstats = observation[self._blstats_index]
-        x, y = blstats[:2]
-        glyphs = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
-        for index in range(len(glyphs)):
-            if glyphs[index] in self.closed_door_glyph_ids:
-                return self.index_to_dir_action(index)
-        return None
-
     def step(self, action: int):
         # If apply action is chosen
         if self._actions[action] == Command.APPLY:
@@ -165,7 +150,7 @@ class MiniHackKeyDoor(MiniHackMaze):
             # if key is in the inventory
             if key_key is not None:
                 # Check if there is a closed door nearby
-                dir_key = self.find_closed_door()
+                dir_key = self.get_direction_obj("closed door")
                 if dir_key is not None:
                     # Perform the following NetHack steps
                     self.env.step(Command.APPLY)  # press apply
@@ -179,7 +164,7 @@ class MiniHackKeyDoor(MiniHackMaze):
                         obs, done = self._perform_known_steps(
                             obs, done, exceptions=True
                         )
-                        if self.find_closed_door(obs) is None:
+                        if self.get_direction_obj("closed door", obs) is None:
                             break
 
         obs, reward, done, info = super().step(action)

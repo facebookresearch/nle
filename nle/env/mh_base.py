@@ -62,7 +62,6 @@ class MiniHack(NetHackStaircase):
         self._minihack_obs_keys = kwargs.pop(
             "observation_keys", list(space_dict.keys())
         )
-
         if des_file is None:
             raise ValueError("Description file is not provided.")
 
@@ -71,6 +70,7 @@ class MiniHack(NetHackStaircase):
         # Patch the nhdat library by compling the given .des file
         self._patch_nhdat(des_file)
 
+        self._scr_descr_index = self._observation_keys.index("screen_descriptions")
         self.observation_space = gym.spaces.Dict(
             {key: space_dict[key] for key in self._minihack_obs_keys}
         )
@@ -169,3 +169,41 @@ class MiniHack(NetHackStaircase):
             8: ord("n"),
         }
         return index_to_dir_dict[index]
+
+    def get_direction_obj(self, name, observation=None):
+        """Find the game direction of the (first) object in neighboring nine
+        tiles that contains given name in its description.
+        Return None if not found.
+        """
+        if observation is None:
+            observation = self.last_observation
+
+        neighbors = self.get_neighbor_descriptions(observation)
+        for i, tile_description in enumerate(neighbors):
+            if name in tile_description:
+                return self.index_to_dir_action(i)
+        return None
+
+    def get_neighbor_descriptions(self, observation=None):
+        """Returns the description of nine neighboring glyphs of the agent."""
+        if observation is None:
+            observation = self.last_observation
+        blstats = observation[self._blstats_index]
+        x, y = blstats[:2]
+
+        neighbors = [
+            self.get_screen_description(i, j, observation)
+            for j in range(y - 1, y + 2)
+            for i in range(x - 1, x + 2)
+        ]
+        return neighbors
+
+    def get_screen_description(self, x, y, observation=None):
+        """Returns the description of the screen on (x,y) coordinates."""
+        if observation is None:
+            observation = self.last_observation
+
+        des_arr = observation[self._scr_descr_index][y, x]
+        symb_len = np.where(des_arr == 0)[0][0]
+
+        return des_arr[:symb_len].tobytes().decode("utf-8")
