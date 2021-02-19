@@ -5,6 +5,7 @@ recursive-include doc *
 recursive-include dat *
 recursive-include DEVEL *
 recursive-include include *
+recursive-include lib *
 recursive-include src *
 recursive-include sys *
 recursive-include util *
