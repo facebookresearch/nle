@@ -561,7 +561,6 @@ class NLE(gym.Env):
             rendering.append(col_index_str)
         rendering.append(COLORS[7])
         rendering = "\n".join(rendering)
-        print(rendering)
         return rendering
 
     def render(self, mode="human"):
