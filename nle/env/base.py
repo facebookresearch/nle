@@ -579,7 +579,8 @@ class NLE(gym.Env):
             tty_colors_index = self._observation_keys.index("tty_colors")
             tty_chars = obs[tty_chars_index]
             tty_colors = obs[tty_colors_index]
-            self.tty_render(tty_chars, tty_colors)
+            rendering = self.get_tty_rendering(tty_chars, tty_colors)
+            print(rendering)
             return
         elif mode == "full":
             message_index = self._observation_keys.index("message")
