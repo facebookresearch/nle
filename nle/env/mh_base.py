@@ -93,8 +93,8 @@ class MiniHack(NetHackStaircase):
                 _ = subprocess.call(
                     [PATCH_SCRIPT, self.env._vardir, nethack.HACKDIR, LIB_DIR]
                 )
-            except Exception as e:
-                print("Something went wrong at level generation", e.args[0])
+            except subprocess.CalledProcessError as e:
+                print(e)
             finally:
                 os.remove(fname)
         else:
@@ -113,8 +113,8 @@ class MiniHack(NetHackStaircase):
                 _ = subprocess.call(
                     [PATCH_SCRIPT, self.env._vardir, nethack.HACKDIR, LIB_DIR, des_path]
                 )
-            except Exception as e:
-                print("Something went wrong at level generation", e.args[0])
+            except subprocess.CalledProcessError as e:
+                print(e)
 
     def _get_observation(self, observation):
         # Filter out observations that we don't need

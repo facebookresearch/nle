@@ -13,6 +13,7 @@ recursive-include win/tty *
 recursive-include third_party *
 recursive-include nle/env/dat *
 recursive-include nle/env/lib *
+include nle/scripts/mh_patch_nhdat.sh
 
 recursive-exclude build *
 exclude nle/dashboard
