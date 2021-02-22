@@ -170,4 +170,5 @@ if __name__ == "__main__":
             "Topic :: Games/Entertainment",
         ],
         zip_safe=False,
+        include_package_data=True,
     )

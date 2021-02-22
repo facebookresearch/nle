@@ -5,13 +5,14 @@ recursive-include doc *
 recursive-include dat *
 recursive-include DEVEL *
 recursive-include include *
-recursive-include lib *
 recursive-include src *
 recursive-include sys *
 recursive-include util *
 recursive-include win/rl *
 recursive-include win/tty *
 recursive-include third_party *
+recursive-include nle/env/dat *
+recursive-include nle/env/lib *
 
 recursive-exclude build *
 exclude nle/dashboard
