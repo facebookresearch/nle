@@ -1,5 +1,4 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-
 from nle.env import MiniHack
 from nle import nethack
 from nle.nethack import Command

@@ -57,5 +57,10 @@ registration.register(
     entry_point="nle.env.mh_tasks:MiniHackMazeWalk",
 )
 
+registration.register(
+    id="MiniHack-Eat-v0",
+    entry_point="nle.env.mh_skills:MiniHackEat",
+)
+
 
 __all__ = ["NLE", "DUNGEON_SHAPE", "MiniHack"]
