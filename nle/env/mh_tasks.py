@@ -94,6 +94,20 @@ class MiniHackCorridor(MiniHackMaze):
         super().__init__(*args, des_file="corridor.des", **kwargs)
 
 
+class MiniHackMazeWalk(MiniHack):
+    """Environment for "mazewalk" task.
+
+    TODO understand how can remove monsters and objects from the maze
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
+        kwargs["options"].append("pettype:none")
+        kwargs["options"].append("nudist")
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
+        super().__init__(*args, des_file="skills_lava.des", **kwargs)
+
+
 class MiniHackLavaCrossing(MiniHackMaze):
     """Environment for "lava crossing" task.
 
