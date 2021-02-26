@@ -1,0 +1,8 @@
+LEVEL: "mylevel"
+
+ROOM: "ordinary" , lit, (3,3), (center,center), (8,8) {
+    SUBROOM:"ordinary",lit,random,(4,4) {
+        STAIR: random, down
+        ROOMDOOR: false , closed , random, random
+        }
+    }

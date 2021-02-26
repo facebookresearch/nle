@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from nle.env import MiniHack
-from nle import nethack
+
+# from nle import nethack
 
 COMESTIBLES = [
     "orange",
@@ -27,6 +28,16 @@ EDIBLE_GOALS.update(
         "pear": ["Core dumped."],
     }
 )
+
+# POTIONS = [
+#     "water",
+#     "acid",
+# ]
+#
+# QUAFF_GOALS = {
+#     "water": ["This tastes like water"],
+#     "acid": ["This tastes like acid"],
+# }
 
 
 class LevelGenerator:
@@ -75,31 +86,80 @@ GEOMETRY:center,center
         return self.des
 
 
-class MiniHackEat(MiniHack):
-    """Environment for "eat" task."""
+class MiniHackSingleSkill(MiniHack):
+    """Base environment for single skill acquisition tasks."""
 
-    def __init__(self, *args, **kwargs):
-        kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
+    def __init__(self, *args, des_file, goal_msgs=None, **kwargs):
+        """If goal_msgs == None, the goal is to reach the staircase."""
+        kwargs["options"] = kwargs.pop("options", [])
         kwargs["options"].append("pettype:none")
         kwargs["options"].append("nudist")
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
+        kwargs["options"].append("!autopickup")
+        kwargs["character"] = kwargs.pop("charachter", "cav-hum-new-mal")
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
 
-        lvl_gen = LevelGenerator(x=8, y=8, lit=True)
-        lvl_gen.add_object("apple", "%")
+        self.goal_msgs = goal_msgs
 
-        self.goal_msgs = EDIBLE_GOALS["apple"]
-
-        super().__init__(*args, des_file=lvl_gen.get_des(), **kwargs)
+        super().__init__(*args, des_file=des_file, **kwargs)
 
     def _is_episode_end(self, observation):
         """Finish if the message contains the target message. """
-        curr_msg = (
-            observation[self._original_observation_keys.index("message")]
-            .tobytes()
-            .decode("utf-8")
+        if self.goal_msgs is not None:
+            curr_msg = (
+                observation[self._original_observation_keys.index("message")]
+                .tobytes()
+                .decode("utf-8")
+            )
+
+            for msg in self.goal_msgs:
+                if msg in curr_msg:
+                    return self.StepStatus.TASK_SUCCESSFUL
+            return self.StepStatus.RUNNING
+        else:
+            internal = observation[self._internal_index]
+            stairs_down = internal[4]
+            if stairs_down:
+                return self.StepStatus.TASK_SUCCESSFUL
+            return self.StepStatus.RUNNING
+
+
+class MiniHackEat(MiniHackSingleSkill):
+    """Environment for "eat" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=8, y=8, lit=True)
+        lvl_gen.add_object("apple", "%")
+
+        goal_msgs = EDIBLE_GOALS["apple"]
+
+        super().__init__(
+            *args, des_file=lvl_gen.get_des(), goal_msgs=goal_msgs, **kwargs
         )
 
-        for msg in self.goal_msgs:
-            if msg in curr_msg:
-                return self.StepStatus.TASK_SUCCESSFUL
-        return self.StepStatus.RUNNING
+
+# class MiniHackQuaff(MiniHackSingleSkill):
+#     """Environment for "quaff" task."""
+#
+#     def __init__(self, *args, **kwargs):
+#         lvl_gen = LevelGenerator(x=8, y=8, lit=True)
+#         lvl_gen.add_object("water", "!")
+#
+#         goal_msgs = QUAFF_GOALS["water"]
+#
+#         super().__init__(
+#           *args, des_file=lvl_gen.get_des(), goal_msgs=goal_msgs, **kwargs)
+#
+
+
+class MiniHackClosedDoor(MiniHackSingleSkill):
+    """Environment for "open" task."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, des_file="closed_door.des", **kwargs)
+
+
+class MiniHackLockedDoor(MiniHackSingleSkill):
+    """Environment for "open" task."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, des_file="locked_door.des", **kwargs)
