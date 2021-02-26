@@ -61,6 +61,10 @@ registration.register(
     id="MiniHack-Eat-v0",
     entry_point="nle.env.mh_skills:MiniHackEat",
 )
+registration.register(
+    id="MiniHack-Pray-v0",
+    entry_point="nle.env.mh_skills:MiniHackPray",
+)
 # registration.register(
 #     id="MiniHack-Quaff-v0",
 #     entry_point="nle.env.mh_skills:MiniHackQuaff",

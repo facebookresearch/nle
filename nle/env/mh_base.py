@@ -207,3 +207,19 @@ class MiniHack(NetHackStaircase):
         symb_len = np.where(des_arr == 0)[0][0]
 
         return des_arr[:symb_len].tobytes().decode("utf-8")
+
+    def screen_contains(self, name, observation=None):
+        """Whether the given name is included in screen descriptions of
+        the observations.
+        """
+        if observation is None:
+            observation = self.last_observation
+
+        y, x = nethack.SCREEN_DESCRIPTIONS_SHAPE[0:2]
+        for j in range(y):
+            for i in range(x):
+                des_arr = observation[self._scr_descr_index][j, i]
+                symb_len = np.where(des_arr == 0)[0][0]
+                if name in des_arr[:symb_len].tobytes().decode("utf-8"):
+                    return True
+        return False
