@@ -67,7 +67,7 @@ def get_action(env, action_mode, is_raw_env):
     return action
 
 
-def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
+def play(env, mode, ngames, max_steps, seeds, savedir, no_render, render_mode, debug):
     env_name = env
     is_raw_env = env_name == "raw"
 
@@ -103,7 +103,7 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, debug):
                 print("Previous reward:", reward)
                 if action is not None:
                     print("Previous action: %s" % repr(env._actions[action]))
-                env.render()
+                env.render(render_mode)
             else:
                 print("Previous action:", action)
                 _, chars, _, _, blstats, message, *_ = obs
@@ -209,9 +209,15 @@ def main():
         help="Directory path where data will be saved. "
         "Defaults to 'nle_data/play_data'.",
     )
-
     parser.add_argument(
         "--no-render", action="store_true", help="Disables env.render()."
+    )
+    parser.add_argument(
+        "--render_mode",
+        type=str,
+        default="human",
+        choices=["human", "full", "ansi"],
+        help="Render mode. Defaults to 'human'.",
     )
     flags = parser.parse_args()
 
