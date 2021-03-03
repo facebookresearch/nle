@@ -1,4 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import os
+from tempfile import NamedTemporaryFile
 
 from nle.env import MiniHack
 from nle import nethack
@@ -169,3 +171,70 @@ class MiniHackKeyDoor(MiniHackMaze):
 
         obs, reward, done, info = super().step(action)
         return obs, reward, done, info
+
+
+class MiniGridHackMultiroom(MiniHackMaze):
+    def __init__(self, *args, **kwargs):
+        import gym
+        import gym_minigrid  # noqa: F401
+
+        # MiniGrid-MultiRoom-N2-S4-v0
+        # MiniGrid-MultiRoom-N4-S5-v0
+        # MiniGrid-MultiRoom-N6-v0
+        env = gym.make("MiniGrid-MultiRoom-N2-S4-v0")
+        _ = env.reset()
+        # print(env.__str__())
+
+        env_desc = [
+            "MAZE: \"mylevel\", ' '",
+            "FLAGS: premapped",
+            "INIT_MAP: solidfill, ' '",
+            "GEOMETRY: center, center",
+        ]
+
+        env_desc.append("MAP")
+        mg_level = env.__str__().split("\n")
+        mg_level = [el.strip() for el in mg_level if el.strip() != ""]
+
+        mg_level[0] = mg_level[0].replace("WG", "-")
+        mg_level[-1] = mg_level[-1].replace("WG", "-")
+
+        for i in range(1, len(mg_level) - 1):
+            if ">>" in mg_level[i]:
+                player_str = (
+                    f"BRANCH:"
+                    f"{(mg_level[i].index('>>'))//2, i, (mg_level[i].index('>'))//2, i}"
+                    f",(0,0,0,0)"
+                )
+            if "<<" in mg_level[i]:
+                player_str = (
+                    f"BRANCH:"
+                    f"{(mg_level[i].index('<<'))//2, i, (mg_level[i].index('>'))//2, i}"
+                    f",(0,0,0,0)"
+                )
+            if "GG" in mg_level[i]:
+                stair_str = f"STAIR: {(mg_level[i].index('GG')//2, i)}, down"
+            if "DP" in mg_level[i]:
+                door_str = f"DOOR: closed, {mg_level[i].index('DP')//2, i}"
+            if "DG" in mg_level[i]:
+                door_str = f"DOOR: closed, {mg_level[i].index('DG')//2, i}"
+            mg_level[i] = mg_level[i].replace(">>", ".")
+            mg_level[i] = mg_level[i].replace("  ", ".")
+            mg_level[i] = mg_level[i].replace("WG", "|")
+            mg_level[i] = mg_level[i].replace("DP", "+")
+            mg_level[i] = mg_level[i].replace("DG", "+")
+
+            mg_level[i] = mg_level[i].replace("GG", ".")
+
+        env_desc.extend(mg_level)
+        env_desc.append("ENDMAP")
+        env_desc.append(door_str)
+        env_desc.append(stair_str)
+        env_desc.append(player_str)
+        print("\n".join(env_desc))
+        f = NamedTemporaryFile(delete=False, suffix=".des")
+        with open(f.name, "w") as tmp:
+            tmp.write("\n".join(env_desc))
+        f.close()
+        super().__init__(des_file=f.name)
+        os.unlink(f.name)

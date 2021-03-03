@@ -41,6 +41,10 @@ registration.register(
     entry_point="nle.env.mh_tasks:MiniHackCorridor",
 )
 registration.register(
+    id="MiniHack-Multiroom-v0",
+    entry_point="nle.env.mh_tasks:MiniGridHackMultiroom",
+)
+registration.register(
     id="MiniHack-LavaCrossing-v0",
     entry_point="nle.env.mh_tasks:MiniHackLavaCrossing",
 )
