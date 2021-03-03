@@ -131,6 +131,27 @@ NLE_SPACE_ITEMS = (
 )
 
 
+# TODO: can probably be imported from somewhere?
+COLORS = [
+    "\033[30m",
+    "\033[31m",
+    "\033[32m",
+    "\033[33m",
+    "\033[34m",
+    "\033[35m",
+    "\033[36m",
+    "\033[37m",
+    "\x1b[90m",
+    "\x1b[91m",
+    "\x1b[92m",
+    "\x1b[93m",
+    "\x1b[94m",
+    "\x1b[95m",
+    "\x1b[96m",
+    "\x1b[97m",
+]
+
+
 class NLE(gym.Env):
     """Standard NetHack Learning Environment.
 
@@ -511,6 +532,30 @@ class NLE(gym.Env):
         """
         return self.env.get_current_seeds()
 
+    def get_tty_rendering(self, tty_chars, tty_colors, print_guides=False):
+
+        H, W = tty_chars.shape
+        rendering = []
+        col_index_str = " " + COLORS[1] + "".join([str(i % 10) for i in range(W)])
+        if print_guides:
+            rendering.append(col_index_str)
+        for i in range(H):
+            line = []
+            for j in range(W):
+                char = tty_chars[i, j]
+                color = tty_colors[i, j]
+                line.append(COLORS[color] + chr(char))
+            row_index_str = COLORS[1] + str(i % 10)
+            if print_guides:
+                rendering.append(row_index_str + "".join(line) + row_index_str)
+            else:
+                rendering.append("".join(line))
+        if print_guides:
+            rendering.append(col_index_str)
+        rendering.append(COLORS[7])
+        rendering = "\n".join(rendering)
+        return rendering
+
     def render(self, mode="human"):
         """Renders the state of environment.
 
@@ -521,6 +566,15 @@ class NLE(gym.Env):
         """
         chars_index = self._observation_keys.index("chars")
         if mode == "human":
+            obs = self.last_observation
+            tty_chars_index = self._observation_keys.index("tty_chars")
+            tty_colors_index = self._observation_keys.index("tty_colors")
+            tty_chars = obs[tty_chars_index]
+            tty_colors = obs[tty_colors_index]
+            rendering = self.get_tty_rendering(tty_chars, tty_colors)
+            print(rendering)
+            return
+        elif mode == "full":
             message_index = self._observation_keys.index("message")
             message = bytes(self.last_observation[message_index])
             print(message[: message.index(b"\0")])
