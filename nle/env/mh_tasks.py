@@ -181,9 +181,9 @@ class MiniGridHackMultiroom(MiniHackMaze):
         # MiniGrid-MultiRoom-N2-S4-v0
         # MiniGrid-MultiRoom-N4-S5-v0
         # MiniGrid-MultiRoom-N6-v0
-        env = gym.make("MiniGrid-MultiRoom-N2-S4-v0")
+        env = gym.make("MiniGrid-MultiRoom-N6-v0")
         _ = env.reset()
-        # print(env.__str__())
+        print(env.__str__())
 
         env_desc = [
             "MAZE: \"mylevel\", ' '",
@@ -194,41 +194,42 @@ class MiniGridHackMultiroom(MiniHackMaze):
 
         env_desc.append("MAP")
         mg_level = env.__str__().split("\n")
-        mg_level = [el.strip() for el in mg_level if el.strip() != ""]
+        mg_level = [el for el in mg_level if el.strip() != ""]
 
-        mg_level[0] = mg_level[0].replace("WG", "-")
-        mg_level[-1] = mg_level[-1].replace("WG", "-")
+        mg_level[0] = mg_level[0].replace("WG", "|")
+        mg_level[-1] = mg_level[-1].replace("WG", "|")
+        mg_level[0] = mg_level[0].replace(" ", "|")
+        mg_level[-1] = mg_level[-1].replace(" ", "|")
 
+        player_chars = [">>", "<<", "VV", "^^"]
+        door_chars = ["DP", "DG", "DR"]
+
+        door_strs = []
         for i in range(1, len(mg_level) - 1):
-            if ">>" in mg_level[i]:
-                player_str = (
-                    f"BRANCH:"
-                    f"{(mg_level[i].index('>>'))//2, i, (mg_level[i].index('>'))//2, i}"
-                    f",(0,0,0,0)"
-                )
-            if "<<" in mg_level[i]:
-                player_str = (
-                    f"BRANCH:"
-                    f"{(mg_level[i].index('<<'))//2, i, (mg_level[i].index('>'))//2, i}"
-                    f",(0,0,0,0)"
-                )
+            for pc in player_chars:
+                if pc in mg_level[i]:
+                    pcx = (mg_level[i].index(pc) + 1) // 2
+                    player_str = f"BRANCH:{pcx, i, pcx, i},(0,0,0,0)"
+                    break
+
             if "GG" in mg_level[i]:
-                stair_str = f"STAIR: {(mg_level[i].index('GG')//2, i)}, down"
-            if "DP" in mg_level[i]:
-                door_str = f"DOOR: closed, {mg_level[i].index('DP')//2, i}"
-            if "DG" in mg_level[i]:
-                door_str = f"DOOR: closed, {mg_level[i].index('DG')//2, i}"
-            mg_level[i] = mg_level[i].replace(">>", ".")
+                stair_str = f"STAIR: {((mg_level[i].index('GG')+1)//2, i)}, down"
+            for dc in door_chars:
+                if dc in mg_level[i]:
+                    door_strs.append(f"DOOR: closed, {(mg_level[i].index(dc)+1)//2, i}")
+
+            for pc in player_chars:
+                mg_level[i] = mg_level[i].replace(pc, ".")
+            for dc in door_chars:
+                mg_level[i] = mg_level[i].replace(dc, "+")
+
             mg_level[i] = mg_level[i].replace("  ", ".")
             mg_level[i] = mg_level[i].replace("WG", "|")
-            mg_level[i] = mg_level[i].replace("DP", "+")
-            mg_level[i] = mg_level[i].replace("DG", "+")
-
             mg_level[i] = mg_level[i].replace("GG", ".")
 
         env_desc.extend(mg_level)
         env_desc.append("ENDMAP")
-        env_desc.append(door_str)
+        env_desc.extend(door_strs)
         env_desc.append(stair_str)
         env_desc.append(player_str)
         print("\n".join(env_desc))
