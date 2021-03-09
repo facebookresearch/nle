@@ -22,6 +22,11 @@ README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 
 ![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/master/dat/nle/example_run.gif)
 
+# Papers using the NetHack Learning Environment
+- Zhang et al. [BeBold: Exploration Beyond the Boundary of Explored Regions](https://arxiv.org/abs/2012.08621) (Berkley, FAIR, Dec 2020)
+- Küttler et al. [The NetHack Learning Environment](https://arxiv.org/abs/2006.13760) (FAIR, Oxford, NYU, UCL, NeurIPS 2020)
+
+Open a [pull request](https://github.com/facebookresearch/nle/edit/master/README.md) to add papers
 
 # Getting started
 
@@ -190,6 +195,10 @@ lower level elements of NLE.
 - [OpenAI Procgen Benchmark](https://openai.com/blog/procgen-benchmark/)
 - [Obstacle Tower](https://github.com/Unity-Technologies/obstacle-tower-env)
 
+# Interview about the environment with Weights&Biases
+[Facebook AI Research’s Tim & Heinrich on democratizing reinforcement learning research](https://www.youtube.com/watch?v=oYSNXTkeCtw)
+
+[![Interview with Weigths&Biases](https://img.youtube.com/vi/oYSNXTkeCtw/0.jpg)](https://www.youtube.com/watch?v=oYSNXTkeCtw)
 
 # Citation
 
