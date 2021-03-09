@@ -104,7 +104,7 @@ class MiniHackMazeWalk(MiniHack):
         kwargs["options"].append("pettype:none")
         kwargs["options"].append("nudist")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
-        super().__init__(*args, des_file="skills_lava.des", **kwargs)
+        super().__init__(*args, des_file="mazewalk.des", **kwargs)
 
 
 class MiniHackLavaCrossing(MiniHackMaze):
