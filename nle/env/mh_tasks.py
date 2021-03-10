@@ -192,10 +192,7 @@ class MiniGridHackMultiroom(MiniHackMaze):
         import gym
         import gym_minigrid  # noqa: F401
 
-        # MiniGrid-MultiRoom-N2-S4-v0
-        # MiniGrid-MultiRoom-N4-S5-v0
-        # MiniGrid-MultiRoom-N6-v0
-        self._minigrid_env = gym.make("MiniGrid-MultiRoom-N2-S4-v0")
+        self._minigrid_env = gym.make(kwargs["env_name"])
 
         env_desc = self.get_env_desc()
         f = NamedTemporaryFile(delete=False, suffix=".des")
