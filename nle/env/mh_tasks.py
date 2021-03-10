@@ -209,16 +209,16 @@ class MiniGridHackMultiroom(MiniHackMaze):
 
         self._minigrid_env.reset()
         env = self._minigrid_env
-        print(env.__str__())
+        # print(env.__str__())
 
         env_desc = [
             "MAZE: \"mylevel\", ' '",
             "FLAGS: premapped",
             "INIT_MAP: solidfill, ' '",
             "GEOMETRY: center, center",
+            "MAP",
         ]
 
-        env_desc.append("MAP")
         mg_level = env.__str__().split("\n")
         mg_level = [el for el in mg_level if el.strip() != ""]
 
@@ -254,13 +254,16 @@ class MiniGridHackMultiroom(MiniHackMaze):
             mg_level[i] = mg_level[i].replace("  ", ".")
             mg_level[i] = mg_level[i].replace("WG", "|")
             mg_level[i] = mg_level[i].replace("GG", ".")
+            mg_level[i] = mg_level[i].replace(".", " ", mg_level[i].index("|"))
+            inv = mg_level[i][::-1]
+            mg_level[i] = inv.replace(".", " ", inv.index("|"))[::-1]
 
         env_desc.extend(mg_level)
         env_desc.append("ENDMAP")
         env_desc.extend(door_strs)
         env_desc.append(stair_str)
         env_desc.append(player_str)
-        print("\n".join(env_desc))
+        # print("\n".join(env_desc))
         return env_desc
 
     def reset(self):
