@@ -195,8 +195,20 @@ class MiniGridHackMultiroom(MiniHackMaze):
         # MiniGrid-MultiRoom-N2-S4-v0
         # MiniGrid-MultiRoom-N4-S5-v0
         # MiniGrid-MultiRoom-N6-v0
-        env = gym.make("MiniGrid-MultiRoom-N6-v0")
-        _ = env.reset()
+        self._minigrid_env = gym.make("MiniGrid-MultiRoom-N2-S4-v0")
+
+        env_desc = self.get_env_desc()
+        f = NamedTemporaryFile(delete=False, suffix=".des")
+        with open(f.name, "w") as tmp:
+            tmp.write("\n".join(env_desc))
+        f.close()
+        super().__init__(des_file=f.name)
+        os.unlink(f.name)
+
+    def get_env_desc(self):
+
+        self._minigrid_env.reset()
+        env = self._minigrid_env
         print(env.__str__())
 
         env_desc = [
@@ -227,10 +239,12 @@ class MiniGridHackMultiroom(MiniHackMaze):
                     break
 
             if "GG" in mg_level[i]:
-                stair_str = f"STAIR: {((mg_level[i].index('GG')+1)//2, i)}, down"
+                stair_str = f"STAIR: {((mg_level[i].index('GG') + 1) // 2, i)}, down"
             for dc in door_chars:
                 if dc in mg_level[i]:
-                    door_strs.append(f"DOOR: closed, {(mg_level[i].index(dc)+1)//2, i}")
+                    door_strs.append(
+                        f"DOOR: closed, {(mg_level[i].index(dc) + 1) // 2, i}"
+                    )
 
             for pc in player_chars:
                 mg_level[i] = mg_level[i].replace(pc, ".")
@@ -247,9 +261,14 @@ class MiniGridHackMultiroom(MiniHackMaze):
         env_desc.append(stair_str)
         env_desc.append(player_str)
         print("\n".join(env_desc))
+        return env_desc
+
+    def reset(self):
+        env_desc = self.get_env_desc()
         f = NamedTemporaryFile(delete=False, suffix=".des")
         with open(f.name, "w") as tmp:
             tmp.write("\n".join(env_desc))
         f.close()
-        super().__init__(des_file=f.name)
+        self.update(f.name)
         os.unlink(f.name)
+        return super().reset()
