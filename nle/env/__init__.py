@@ -56,6 +56,31 @@ registration.register(
     id="MiniHack-KeyDoor-v0",
     entry_point="nle.env.mh_tasks:MiniHackKeyDoor",
 )
+registration.register(
+    id="MiniHack-MazeWalk-v0",
+    entry_point="nle.env.mh_tasks:MiniHackMazeWalk",
+)
+
+registration.register(
+    id="MiniHack-Eat-v0",
+    entry_point="nle.env.mh_skills:MiniHackEat",
+)
+registration.register(
+    id="MiniHack-Pray-v0",
+    entry_point="nle.env.mh_skills:MiniHackPray",
+)
+# registration.register(
+#     id="MiniHack-Quaff-v0",
+#     entry_point="nle.env.mh_skills:MiniHackQuaff",
+# )
+registration.register(
+    id="MiniHack-ClosedDoor-v0",
+    entry_point="nle.env.mh_skills:MiniHackClosedDoor",
+)
+registration.register(
+    id="MiniHack-LockedDoor-v0",
+    entry_point="nle.env.mh_skills:MiniHackLockedDoor",
+)
 
 
 __all__ = ["NLE", "DUNGEON_SHAPE", "MiniHack"]

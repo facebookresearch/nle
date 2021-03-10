@@ -1,0 +1,9 @@
+MAZE: "mylevel", ' '
+FLAGS: premapped,hardfloor,solidify
+ROOM: "ordinary" , lit, (3,3), (center,center), (13,13) {
+  TERRAIN:fillrect (0,0,12,12),'T'
+  TERRAIN:fillrect (1,1,11,11),' '
+  MAZEWALK:(1,1),east
+  STAIR:random,up
+  STAIR:random,down
+}

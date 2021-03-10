@@ -4784,7 +4784,7 @@ struct sp_coder *coder;
     }
 
     walkfrom(x, y, OV_i(ftyp));
-    if (OV_i(fstocked))
+    if (OV_i(fstocked) && !iflags.no_rand_mon)
         fill_empty_maze();
 
     opvar_free(mcoord);
