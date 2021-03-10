@@ -48,12 +48,12 @@ registration.register(
 registration.register(
     id="MiniHack-Multiroom-N4-S5-v0",
     entry_point="nle.env.mh_tasks:MiniGridHackMultiroom",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0"},
+    kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0"},
 )
 registration.register(
     id="MiniHack-Multiroom-N6-v0",
     entry_point="nle.env.mh_tasks:MiniGridHackMultiroom",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0"},
+    kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0"},
 )
 
 registration.register(
