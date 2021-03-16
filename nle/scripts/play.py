@@ -49,7 +49,7 @@ def get_action(env, action_mode, is_raw_env):
         while True:
             with no_echo():
                 ch = ord(os.read(0, 1))
-            if ch in [nethack.C("c"), ord(b"q")]:
+            if ch == nethack.C("c"):
                 print("Received exit code {}. Aborting.".format(ch))
                 return None
             try:
