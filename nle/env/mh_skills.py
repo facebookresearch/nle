@@ -247,7 +247,7 @@ class MiniHackClosedDoor(MiniHackSingleSkill):
 
 
 class MiniHackLockedDoor(MiniHackSingleSkill):
-    """Environment for "open" task."""
+    """Environment for "kick" task."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, des_file="locked_door.des", **kwargs)
