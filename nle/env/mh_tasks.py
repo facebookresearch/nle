@@ -203,6 +203,65 @@ class MiniGridHackMultiroom(MiniHackMaze):
         os.unlink(f.name)
 
     def get_env_desc(self):
+        self._minigrid_env.reset()
+        env = self._minigrid_env
+
+        env_desc = [
+            "MAZE: \"mylevel\", ' '",
+            "FLAGS: premapped",
+            "INIT_MAP: solidfill, ' '",
+            "GEOMETRY: center, center",
+            "MAP",
+        ]
+
+        door_positions = []
+        player_pos = (env.agent_pos[0], env.agent_pos[1])
+        goal_position = None
+        empty_strs = 0
+        empty_str = True
+        for j in range(env.grid.height):
+            str = ""
+            for i in range(env.width):
+                c = env.grid.get(i, j)
+                if c is None:
+                    str += "."
+                    continue
+                empty_str = False
+                if c.type == "wall":
+                    str += "|"
+                if c.type == "door":
+                    str += "+"
+                    door_positions.append((i, j - empty_strs))
+                    continue
+                if c.type == "floor":
+                    str += "."
+                    continue
+                if c.type == "goal":
+                    goal_position = (i, j - empty_strs)
+                    str += "."
+                    continue
+                if c.type == "player":
+                    str += "."
+                    continue
+            if not empty_str and j < env.grid.height - 1:
+                if set(str) != {"."}:
+                    str = str.replace(".", " ", str.index("|"))
+                    inv = str[::-1]
+                    str = inv.replace(".", " ", inv.index("|"))[::-1]
+                    env_desc.append(str)
+            elif empty_str:
+                empty_strs += 1
+        env_desc.append("ENDMAP")
+        env_desc.extend([f"DOOR: closed, {d}" for d in door_positions])
+        env_desc.append(f"STAIR: {goal_position}, down")
+        ppx = player_pos[0]
+        ppy = player_pos[1]
+        env_desc.append(
+            f"BRANCH:" f"{ppx, ppy-empty_strs, ppx, ppy-empty_strs}" f",(0,0,0,0)"
+        )
+        return env_desc
+
+    def get_env_desc_slow(self):
 
         self._minigrid_env.reset()
         env = self._minigrid_env
@@ -217,7 +276,6 @@ class MiniGridHackMultiroom(MiniHackMaze):
 
         mg_level = env.__str__().split("\n")
         mg_level = [el for el in mg_level if el.strip() != ""]
-
         mg_level[0] = mg_level[0].replace("WG", "|")
         mg_level[-1] = mg_level[-1].replace("WG", "|")
         mg_level[0] = mg_level[0].replace(" ", "|")
