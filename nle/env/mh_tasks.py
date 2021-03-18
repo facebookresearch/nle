@@ -259,6 +259,7 @@ class MiniGridHackMultiroom(MiniHackMaze):
         env_desc.append(
             f"BRANCH:" f"{ppx, ppy-empty_strs, ppx, ppy-empty_strs}" f",(0,0,0,0)"
         )
+        env_desc.append("WALLIFY")
         return env_desc
 
     def get_env_desc_slow(self):
