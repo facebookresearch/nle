@@ -1,10 +1,11 @@
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.utils import set_random_seed
 
-
 # pip install stable_baselines3
+
+
 import gym
-from nle.env import NLE
+import nle.env  # noqa: F401
 import os
 import numpy as np
 import time
@@ -17,11 +18,11 @@ parser.add_argument(
 )
 parser.add_argument("--num_env", type=int, default=4, help="Number of environments.")
 parser.add_argument(
-    "--num_steps", type=int, default=100000, help="Number of environments."
+    "--num_steps", type=int, default=10000, help="Number of environments."
 )
-parser.add_argument(
-    "--subproc", type=bool, default=False, help="Whether to use subprocesses or not"
-)
+parser.add_argument("--subproc", dest="subproc", action="store_true")
+parser.add_argument("--no-subproc", dest="subproc", action="store_false")
+parser.set_defaults(subproc=True)
 
 
 class NLE_VecEnv_Wrapper:
@@ -100,10 +101,11 @@ def main(args):
     total_time_multi = time.time() - start_time
 
     print(
-        "Took {:.2f}s with subproc={} on {} steps- {:.2f} FPS".format(
+        "Took {:.2f}s with subproc={} on {} steps on {} envs - {:.2f} FPS".format(
             total_time_multi,
             args.subproc,
             args.num_steps,
+            args.num_env,
             args.num_steps / total_time_multi,
         )
     )
@@ -112,5 +114,3 @@ def main(args):
 if __name__ == "__main__":
     args = parser.parse_args()
     main(args)
-
-    x = NLE()  # to make flake8 happy
