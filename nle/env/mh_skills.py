@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from nle.env import MiniHack
 from nle.nethack import Command, CompassIntercardinalDirection
+import enum
 
 COMESTIBLES = [
     "orange",
@@ -19,7 +20,11 @@ COMESTIBLES = [
     "lump of royal jelly",
 ]
 
-delicious = lambda x: f"This {x} is delicious"
+
+def delicious(x):
+    return f"This {x} is delicious"
+
+
 EDIBLE_GOALS = {item: [delicious(item)] for item in COMESTIBLES}
 EDIBLE_GOALS.update(
     {
@@ -28,15 +33,11 @@ EDIBLE_GOALS.update(
     }
 )
 
-# POTIONS = [
-#     "water",
-#     "acid",
-# ]
-#
-# QUAFF_GOALS = {
-#     "water": ["This tastes like water"],
-#     "acid": ["This tastes like acid"],
-# }
+
+class GoalEvent(enum.IntEnum):
+    MESSAGE = 0
+    LOC_ACTION = 1
+    NAVIGATION = 2
 
 
 class LevelGenerator:
@@ -66,7 +67,11 @@ GEOMETRY:center,center
             litness = "lit" if lit else "unlit"
             self.des += 'REGION:(0,0,{},{}),{},"ordinary"\n'.format(x, y, litness)
 
-    def add_object(self, name, symbol="%", loc=None):
+    def get_des(self):
+        return self.des
+
+    @staticmethod
+    def check_loc(loc):
         if loc is None:
             loc = "random"
         elif isinstance(loc, tuple) and len(loc) == 2:
@@ -75,6 +80,11 @@ GEOMETRY:center,center
             pass
         else:
             raise ValueError("Invalid location provided.")
+
+        return loc
+
+    def add_object(self, name, symbol="%", loc=None):
+        loc = self.check_loc(loc)
 
         assert isinstance(symbol, str) and len(symbol) == 1
         assert isinstance(name, str)  # TODO maybe check object exists in NetHack
@@ -82,25 +92,18 @@ GEOMETRY:center,center
         self.des += "OBJECT:('{}',\"{}\"),{}\n".format(symbol, name, loc)
 
     def add_altar(self, loc=None):
-        if loc is None:
-            loc = "random"
-        elif isinstance(loc, tuple) and len(loc) == 2:
-            loc = "({},{})".format(loc[0], loc[1])
-        elif isinstance(loc, str):
-            pass
-        else:
-            raise ValueError("Invalid location provided.")
-
+        loc = self.check_loc(loc)
         self.des += "ALTAR:{},neutral,altar".format(loc)
 
-    def get_des(self):
-        return self.des
+    def add_sink(self, loc=None):
+        loc = self.check_loc(loc)
+        self.des += "SINK:{}".format(loc)
 
 
 class MiniHackSingleSkill(MiniHack):
     """Base environment for single skill acquisition tasks."""
 
-    def __init__(self, *args, des_file, goal_msgs=None, **kwargs):
+    def __init__(self, *args, des_file, goal_msgs=None, goal_loc_action=None, **kwargs):
         """If goal_msgs == None, the goal is to reach the staircase."""
         kwargs["options"] = kwargs.pop("options", [])
         kwargs["options"].append("pettype:none")
@@ -109,13 +112,56 @@ class MiniHackSingleSkill(MiniHack):
         kwargs["character"] = kwargs.pop("charachter", "cav-hum-new-mal")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
 
-        self.goal_msgs = goal_msgs
+        if goal_msgs is not None:
+            self.goal_msgs = goal_msgs
+            self.goal_event = GoalEvent.MESSAGE
+        elif goal_loc_action is not None:
+            if not isinstance(goal_loc_action, tuple) or len(goal_loc_action) != 2:
+                raise AttributeError("goal_loc_action must be a tuple of strings")
+            try:
+                self.goal_action = Command[goal_loc_action[1].upper()]
+            except KeyError:
+                raise KeyError(
+                    "Action {} is not in the action space.".format(
+                        goal_loc_action[0].upper()
+                    )
+                )
+
+            self.goal_loc = goal_loc_action = goal_loc_action[0].lower()
+            self.goal_event = GoalEvent.LOC_ACTION
+        else:
+            self.goal_event = GoalEvent.NAVIGATION
 
         super().__init__(*args, des_file=des_file, **kwargs)
 
+        # TODO check if goal_loc is there in the begining
+
+    def reset(self, *args, **kwargs):
+        if self.goal_event == GoalEvent.LOC_ACTION:
+            self.loc_action_check = False
+            self.action_confirmed = False
+        return super().reset(*args, **kwargs)
+
+    def step(self, action: int):
+        if self.goal_event == GoalEvent.LOC_ACTION:
+            if self._actions[action] == self.goal_action and self._standing_on_top(
+                self.goal_loc
+            ):
+                self.loc_action_check = True
+            elif (
+                self.loc_action_check
+                and self._actions[action] == CompassIntercardinalDirection.NW
+            ):
+                self.action_confirmed = True
+            else:
+                self.loc_action_check = False
+
+        obs, reward, done, info = super().step(action)
+        return obs, reward, done, info
+
     def _is_episode_end(self, observation):
         """Finish if the message contains the target message. """
-        if self.goal_msgs is not None:
+        if self.goal_event == GoalEvent.MESSAGE:
             curr_msg = (
                 observation[self._original_observation_keys.index("message")]
                 .tobytes()
@@ -126,6 +172,12 @@ class MiniHackSingleSkill(MiniHack):
                 if msg in curr_msg:
                     return self.StepStatus.TASK_SUCCESSFUL
             return self.StepStatus.RUNNING
+
+        elif self.goal_event == GoalEvent.LOC_ACTION:
+            if self.action_confirmed:
+                return self.StepStatus.TASK_SUCCESSFUL
+            return self.StepStatus.RUNNING
+
         else:
             internal = observation[self._internal_index]
             stairs_down = internal[4]
@@ -164,45 +216,27 @@ class MiniHackPray(MiniHackSingleSkill):
         lvl_gen = LevelGenerator(x=5, y=5, lit=True)
         lvl_gen.add_altar()
 
-        super().__init__(*args, des_file=lvl_gen.get_des(), **kwargs)
-
-    def reset(self, *args, **kwargs):
-        self.just_prayed_on_altar = False
-        self.confirmed_pray_on_altar = False
-        return super().reset(*args, **kwargs)
-
-    def step(self, action: int):
-        if self._actions[action] == Command.PRAY and self._standing_on_top("altar"):
-            self.just_prayed_on_altar = True
-        elif (
-            self.just_prayed_on_altar
-            and self._actions[action] == CompassIntercardinalDirection.NW
-        ):
-            self.confirmed_pray_on_altar = True
-        else:
-            self.just_prayed_on_altar = False
-
-        obs, reward, done, info = super().step(action)
-        return obs, reward, done, info
-
-    def _is_episode_end(self, observation):
-        if self.confirmed_pray_on_altar:
-            return self.StepStatus.TASK_SUCCESSFUL
-        return self.StepStatus.RUNNING
+        super().__init__(
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_loc_action=("altar", "pray"),
+            **kwargs,
+        )
 
 
-# class MiniHackQuaff(MiniHackSingleSkill):
-#     """Environment for "quaff" task."""
-#
-#     def __init__(self, *args, **kwargs):
-#         lvl_gen = LevelGenerator(x=8, y=8, lit=True)
-#         lvl_gen.add_object("water", "!")
-#
-#         goal_msgs = QUAFF_GOALS["water"]
-#
-#         super().__init__(
-#           *args, des_file=lvl_gen.get_des(), goal_msgs=goal_msgs, **kwargs)
-#
+class MiniHackQuaff(MiniHackSingleSkill):
+    """Environment for "quaff" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=8, y=8, lit=True)
+        lvl_gen.add_sink()
+
+        super().__init__(
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_loc_action=("sink", "quaff"),
+            **kwargs,
+        )
 
 
 class MiniHackClosedDoor(MiniHackSingleSkill):
@@ -213,7 +247,7 @@ class MiniHackClosedDoor(MiniHackSingleSkill):
 
 
 class MiniHackLockedDoor(MiniHackSingleSkill):
-    """Environment for "open" task."""
+    """Environment for "kick" task."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, des_file="locked_door.des", **kwargs)
