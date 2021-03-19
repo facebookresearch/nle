@@ -61,7 +61,6 @@ GEOMETRY:center,center
 
         mapify = lambda x: "MAP\n" + x + "ENDMAP\n"
         if map is not None:
-
             self.des += mapify(map)
             self.x = map.count("\n")
             self.y = max([len(line) for line in map.split("\n")])
@@ -75,15 +74,18 @@ GEOMETRY:center,center
             litness = "lit" if lit else "unlit"
             self.des += 'REGION:(0,0,{},{}),{},"ordinary"\n'.format(x, y, litness)
 
+        self.stair_up_exist = False
+
     def get_des(self):
         return self.des
 
     @staticmethod
-    def check_place(place):
+    def validate_place(place):
         if place is None:
             place = "random"
-        elif isinstance(place, tuple) and len(place) == 2:
-            place = "({},{})".format(place[0], place[1])
+        elif isinstance(place, tuple):
+            place = LevelGenerator.validate_coord(place)
+            place = str(place)
         elif isinstance(place, str):
             pass
         else:
@@ -91,12 +93,22 @@ GEOMETRY:center,center
 
         return place
 
+    @staticmethod
+    def validate_coord(coord):
+        assert (
+            isinstance(coord, tuple)
+            and len(coord) == 2
+            and isinstance(coord[0], int)
+            and isinstance(coord[1], int)
+        )
+        return coord
+
     def add_object(self, name, symbol="%", place=None, cursestate=None):
-        place = self.check_place(place)
+        place = self.validate_place(place)
         assert isinstance(symbol, str) and len(symbol) == 1
         assert isinstance(name, str)  # TODO maybe check object exists in NetHack
 
-        self.des += "OBJECT:('{}',\"{}\"), {}".format(symbol, name, place)
+        self.des += f"OBJECT:('{symbol}',\"{name}\"), {place}"
 
         if cursestate is not None:
             assert cursestate in ["blessed", "uncursed", "cursed", "random"]
@@ -106,23 +118,29 @@ GEOMETRY:center,center
         self.des += "\n"
 
     def add_terrain(self, coord, flag):
-        assert (
-            isinstance(coord, tuple)
-            and len(coord) == 2
-            and isinstance(coord[0], int)
-            and isinstance(coord[1], int)
-        )
+        coord = str(self.validate_coord(coord))
         assert flag in ["-", "F", "L", "T", "C"]
 
-        self.des += "TERRAIN: {}, '{}'".format(str(coord), flag)
+        self.des += f"TERRAIN: {coord}, '{flag}'\n"
+
+    def add_stair_down(self, place=None):
+        place = self.validate_place(place)
+        self.des += f"STAIR:{place},down\n"
+
+    def add_stair_up(self, coord):
+        if self.stair_up_exist:
+            return
+        x, y = self.validate_coord(coord)
+        self.des += f"BRANCH:{x, y, x, y},(0,0,0,0)\n"
+        self.stair_up_exist = True
 
     def add_altar(self, place=None):
-        place = self.check_place(place)
-        self.des += "ALTAR:{},neutral,altar".format(place)
+        place = self.validate_place(place)
+        self.des += f"ALTAR:{place},neutral,altar\n"
 
     def add_sink(self, place=None):
-        place = self.check_place(place)
-        self.des += "SINK:{}".format(place)
+        place = self.validate_place(place)
+        self.des += f"SINK:{place}\n"
 
 
 class MiniHackSingleSkill(MiniHack):
