@@ -105,6 +105,17 @@ GEOMETRY:center,center
 
         self.des += "\n"
 
+    def add_terrain(self, coord, flag):
+        assert (
+            isinstance(coord, tuple)
+            and len(coord) == 2
+            and isinstance(coord[0], int)
+            and isinstance(coord[1], int)
+        )
+        assert flag in ["-", "F", "L", "T", "C"]
+
+        self.des += "TERRAIN: {}, '{}'".format(str(coord), flag)
+
     def add_altar(self, place=None):
         place = self.check_place(place)
         self.des += "ALTAR:{},neutral,altar".format(place)
