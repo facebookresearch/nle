@@ -66,6 +66,10 @@ registration.register(
     entry_point="nle.env.mh_skills:MiniHackPray",
 )
 registration.register(
+    id="MiniHack-Sink-v0",
+    entry_point="nle.env.mh_skills:MiniHackSink",
+)
+registration.register(
     id="MiniHack-Quaff-v0",
     entry_point="nle.env.mh_skills:MiniHackQuaff",
 )
@@ -76,6 +80,30 @@ registration.register(
 registration.register(
     id="MiniHack-LockedDoor-v0",
     entry_point="nle.env.mh_skills:MiniHackLockedDoor",
+)
+registration.register(
+    id="MiniHack-Wield-v0",
+    entry_point="nle.env.mh_skills:MiniHackWield",
+)
+registration.register(
+    id="MiniHack-Wear-v0",
+    entry_point="nle.env.mh_skills:MiniHackWear",
+)
+registration.register(
+    id="MiniHack-TakeOff-v0",
+    entry_point="nle.env.mh_skills:MiniHackTakeOff",
+)
+registration.register(
+    id="MiniHack-PutOn-v0",
+    entry_point="nle.env.mh_skills:MiniHackPutOn",
+)
+registration.register(
+    id="MiniHack-Zap-v0",
+    entry_point="nle.env.mh_skills:MiniHackZap",
+)
+registration.register(
+    id="MiniHack-Read-v0",
+    entry_point="nle.env.mh_skills:MiniHackRead",
 )
 
 

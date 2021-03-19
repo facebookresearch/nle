@@ -34,6 +34,14 @@ EDIBLE_GOALS.update(
 )
 
 
+def wielded(x):
+    return [f"{x} welds itself to your hand!", f"{x} (weapon in hand)"]
+
+
+def wearing(x):
+    return [f"You are now wearing a {x}"]
+
+
 class GoalEvent(enum.IntEnum):
     MESSAGE = 0
     LOC_ACTION = 1
@@ -71,33 +79,39 @@ GEOMETRY:center,center
         return self.des
 
     @staticmethod
-    def check_loc(loc):
-        if loc is None:
-            loc = "random"
-        elif isinstance(loc, tuple) and len(loc) == 2:
-            loc = "({},{})".format(loc[0], loc[1])
-        elif isinstance(loc, str):
+    def check_place(place):
+        if place is None:
+            place = "random"
+        elif isinstance(place, tuple) and len(place) == 2:
+            place = "({},{})".format(place[0], place[1])
+        elif isinstance(place, str):
             pass
         else:
-            raise ValueError("Invalid location provided.")
+            raise ValueError("Invalid place provided.")
 
-        return loc
+        return place
 
-    def add_object(self, name, symbol="%", loc=None):
-        loc = self.check_loc(loc)
-
+    def add_object(self, name, symbol="%", place=None, cursestate=None):
+        place = self.check_place(place)
         assert isinstance(symbol, str) and len(symbol) == 1
         assert isinstance(name, str)  # TODO maybe check object exists in NetHack
 
-        self.des += "OBJECT:('{}',\"{}\"),{}\n".format(symbol, name, loc)
+        self.des += "OBJECT:('{}',\"{}\"), {}".format(symbol, name, place)
 
-    def add_altar(self, loc=None):
-        loc = self.check_loc(loc)
-        self.des += "ALTAR:{},neutral,altar".format(loc)
+        if cursestate is not None:
+            assert cursestate in ["blessed", "uncursed", "cursed", "random"]
+            if cursestate != "random":
+                self.des += f", {cursestate}"
 
-    def add_sink(self, loc=None):
-        loc = self.check_loc(loc)
-        self.des += "SINK:{}".format(loc)
+        self.des += "\n"
+
+    def add_altar(self, place=None):
+        place = self.check_place(place)
+        self.des += "ALTAR:{},neutral,altar".format(place)
+
+    def add_sink(self, place=None):
+        place = self.check_place(place)
+        self.des += "SINK:{}".format(place)
 
 
 class MiniHackSingleSkill(MiniHack):
@@ -224,8 +238,8 @@ class MiniHackPray(MiniHackSingleSkill):
         )
 
 
-class MiniHackQuaff(MiniHackSingleSkill):
-    """Environment for "quaff" task."""
+class MiniHackSink(MiniHackSingleSkill):
+    """Environment for "sink" task."""
 
     def __init__(self, *args, **kwargs):
         lvl_gen = LevelGenerator(x=8, y=8, lit=True)
@@ -237,6 +251,21 @@ class MiniHackQuaff(MiniHackSingleSkill):
             goal_loc_action=("sink", "quaff"),
             **kwargs,
         )
+
+
+# class MiniHackQuaff(MiniHackSingleSkill):
+#     """Environment for "quaff" task."""
+
+#     def __init__(self, *args, **kwargs):
+#         lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+#         lvl_gen.add_object("gain level", "!", cursestate="cursed")
+
+#         super().__init__(
+#             *args,
+#             des_file=lvl_gen.get_des(),
+#             goal_msgs=["This seems like acid."],
+#             **kwargs
+#         )
 
 
 class MiniHackClosedDoor(MiniHackSingleSkill):
@@ -251,3 +280,87 @@ class MiniHackLockedDoor(MiniHackSingleSkill):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, des_file="locked_door.des", **kwargs)
+
+
+class MiniHackWield(MiniHackSingleSkill):
+    """Environment for "wield" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen.add_object("dagger", ")")
+
+        super().__init__(
+            *args, des_file=lvl_gen.get_des(), goal_msgs=wielded("dagger"), **kwargs
+        )
+
+
+class MiniHackWear(MiniHackSingleSkill):
+    """Environment for "wear" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen.add_object("robe", "[")
+
+        super().__init__(
+            *args, des_file=lvl_gen.get_des(), goal_msgs=wearing("robe"), **kwargs
+        )
+
+
+class MiniHackTakeOff(MiniHackSingleSkill):
+    """Environment for "take off" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen.add_object("leather jacket", "[")
+
+        super().__init__(
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_msgs=wearing("leather jacket"),
+            **kwargs,
+        )
+
+
+class MiniHackPutOn(MiniHackSingleSkill):
+    """Environment for "put on" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen.add_object("amulet of life saving", '"')
+
+        super().__init__(
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_msgs=["amulet (being worn)."],
+            **kwargs,
+        )
+
+
+class MiniHackZap(MiniHackSingleSkill):
+    """Environment for "zap" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen.add_object("enlightenment", "/")
+
+        super().__init__(
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_msgs=["The feeling subsides."],
+            **kwargs,
+        )
+
+
+class MiniHackRead(MiniHackSingleSkill):
+    """Environment for "read" task."""
+
+    def __init__(self, *args, **kwargs):
+        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen.add_object("blank paper", "?")
+
+        super().__init__(
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_msgs=["This scroll seems to be blank."],
+            **kwargs,
+        )
