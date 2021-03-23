@@ -2,7 +2,7 @@
 
 from nle.env.base import FULL_ACTIONS, NLE_SPACE_ITEMS
 from nle.env.tasks import NetHackStaircase
-from nle import nethack
+from nle import nethack, _pynethack
 
 import pkg_resources
 import numpy as np
@@ -15,6 +15,21 @@ LIB_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
 PATCH_SCRIPT = os.path.join(
     pkg_resources.resource_filename("nle", "scripts"), "mh_patch_nhdat.sh"
 )
+
+MINIHACK_SPACE_FUNCS = {
+    "tty_chars_crop": lambda x, y: gym.spaces.Box(
+        low=0, high=127, shape=(x, y), dtype=np.uint8
+    ),
+    "tty_colors_crop": lambda x, y: gym.spaces.Box(
+        low=0, high=127, shape=(x, y), dtype=np.uint8
+    ),
+    "screen_descriptions_crop": lambda x, y: gym.spaces.Box(
+        low=0,
+        high=127,
+        shape=(x, y, _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH),
+        dtype=np.uint8,
+    ),
+}
 
 
 class MiniHack(NetHackStaircase):
@@ -42,7 +57,15 @@ class MiniHack(NetHackStaircase):
         - self.reset()
     """
 
-    def __init__(self, *args, des_file: str = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        des_file: str = None,
+        obs_crop_h=5,
+        obs_crop_w=5,
+        obs_crop_pad=0,
+        **kwargs,
+    ):
         # No pet
         kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
         # Actions space - move only
@@ -62,18 +85,36 @@ class MiniHack(NetHackStaircase):
         self._minihack_obs_keys = kwargs.pop(
             "observation_keys", list(space_dict.keys())
         )
+
         if des_file is None:
             raise ValueError("Description file is not provided.")
 
         super().__init__(*args, **kwargs)
 
         # Patch the nhdat library by compling the given .des file
-        self._patch_nhdat(des_file)
+        self.update(des_file)
+
+        self.obs_crop_h = obs_crop_h
+        self.obs_crop_w = obs_crop_w
+        self.obs_crop_pad = obs_crop_pad
+        assert self.obs_crop_h % 2 == 1
+        assert self.obs_crop_w % 2 == 1
 
         self._scr_descr_index = self._observation_keys.index("screen_descriptions")
-        self.observation_space = gym.spaces.Dict(
-            {key: space_dict[key] for key in self._minihack_obs_keys}
-        )
+        self.observation_space = gym.spaces.Dict(self.get_obs_space_dict(space_dict))
+
+    def get_obs_space_dict(self, space_dict):
+        obs_space_dict = {}
+        for key in self._minihack_obs_keys:
+            if key in space_dict.keys():
+                obs_space_dict[key] = space_dict[key]
+            elif key in MINIHACK_SPACE_FUNCS.keys():
+                space_func = MINIHACK_SPACE_FUNCS[key]
+                obs_space_dict[key] = space_func(self.obs_crop_h, self.obs_crop_w)
+            else:
+                raise ValueError(f'Observation key "{key}" is not supported')
+
+        return obs_space_dict
 
     def update(self, des_file):
         """Update the current environment by replacing its description file """
@@ -119,11 +160,30 @@ class MiniHack(NetHackStaircase):
     def _get_observation(self, observation):
         # Filter out observations that we don't need
         observation = super()._get_observation(observation)
-        return {
-            key: val
-            for key, val in observation.items()
-            if key in self._minihack_obs_keys
-        }
+        obs_dict = {}
+        for key in self._minihack_obs_keys:
+            if key in self._observation_keys:
+                obs_dict[key] = observation[key]
+            elif key in MINIHACK_SPACE_FUNCS.keys():
+                orig_key = key.replace("_crop", "")
+                obs_dict[key] = self._crop_observation(
+                    observation[orig_key], observation["tty_cursor"]
+                )
+
+        return obs_dict
+
+    def _crop_observation(self, obs, loc):
+        dh = self.obs_crop_h // 2
+        dw = self.obs_crop_w // 2
+
+        (y, x) = loc
+        x += dw
+        y += dh
+
+        obs = np.pad(
+            obs, pad_width=(dw, dh), mode="constant", constant_values=self.obs_crop_pad
+        )
+        return obs[y - dh : y + dh + 1, x - dw : x + dw + 1]
 
     def key_in_inventory(self, name):
         """Returns key of the object in the inventory.
