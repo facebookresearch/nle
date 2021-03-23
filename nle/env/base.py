@@ -333,7 +333,7 @@ class NLE(gym.Env):
             ttyrec=ttyrec,
             wizard=wizard,
         )
-        self._close_env = weakref.finalize(self, lambda e: e.close(), self.env)
+        self._close_env = weakref.finalize(self, self.env.close)
 
         self._random = random.SystemRandom()
 

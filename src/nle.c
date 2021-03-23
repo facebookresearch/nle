@@ -150,7 +150,7 @@ init_nle(FILE *ttyrec, nle_obs *obs)
     nle->observation = obs;
 
     TMT *vterminal = tmt_open(LI, CO, nle_vt_callback, nle, NULL);
-    assert(!vterminal);
+    assert(vterminal);
     nle->vterminal = vterminal;
 
     nle->outbuf_write_ptr = nle->outbuf;
