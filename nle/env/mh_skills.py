@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from nle.env import MiniHack
+from nle.env.mh_lvl_gen import LevelGenerator
 from nle.nethack import Command, CompassIntercardinalDirection
 import enum
 
@@ -48,102 +49,7 @@ class GoalEvent(enum.IntEnum):
     NAVIGATION = 2
 
 
-class LevelGenerator:
-    def __init__(self, map=None, x=8, y=8, lit=True):
-
-        self.header = """
-MAZE: "mylevel", ' '
-INIT_MAP:solidfill,' '
-GEOMETRY:center,center
-"""
-        # TODO add more flag options?
-        self.des = self.header
-
-        mapify = lambda x: "MAP\n" + x + "ENDMAP\n"
-        if map is not None:
-            self.des += mapify(map)
-            self.x = map.count("\n")
-            self.y = max([len(line) for line in map.split("\n")])
-        else:
-            self.x = x
-            self.y = y
-            # Creating empty area
-            row = "." * y + "\n"
-            maze = row * x
-            self.des += mapify(maze)
-            litness = "lit" if lit else "unlit"
-            self.des += 'REGION:(0,0,{},{}),{},"ordinary"\n'.format(x, y, litness)
-
-        self.stair_up_exist = False
-
-    def get_des(self):
-        return self.des
-
-    @staticmethod
-    def validate_place(place):
-        if place is None:
-            place = "random"
-        elif isinstance(place, tuple):
-            place = LevelGenerator.validate_coord(place)
-            place = str(place)
-        elif isinstance(place, str):
-            pass
-        else:
-            raise ValueError("Invalid place provided.")
-
-        return place
-
-    @staticmethod
-    def validate_coord(coord):
-        assert (
-            isinstance(coord, tuple)
-            and len(coord) == 2
-            and isinstance(coord[0], int)
-            and isinstance(coord[1], int)
-        )
-        return coord
-
-    def add_object(self, name, symbol="%", place=None, cursestate=None):
-        place = self.validate_place(place)
-        assert isinstance(symbol, str) and len(symbol) == 1
-        assert isinstance(name, str)  # TODO maybe check object exists in NetHack
-
-        self.des += f"OBJECT:('{symbol}',\"{name}\"), {place}"
-
-        if cursestate is not None:
-            assert cursestate in ["blessed", "uncursed", "cursed", "random"]
-            if cursestate != "random":
-                self.des += f", {cursestate}"
-
-        self.des += "\n"
-
-    def add_terrain(self, coord, flag):
-        coord = str(self.validate_coord(coord))
-        assert flag in ["-", "F", "L", "T", "C"]
-
-        self.des += f"TERRAIN: {coord}, '{flag}'\n"
-
-    def add_stair_down(self, place=None):
-        place = self.validate_place(place)
-        self.des += f"STAIR:{place},down\n"
-
-    def add_stair_up(self, coord):
-        if self.stair_up_exist:
-            return
-        x, y = self.validate_coord(coord)
-        self.des += f"BRANCH:{x, y, x, y},(0,0,0,0)\n"
-        self.stair_up_exist = True
-
-    def add_altar(self, place=None):
-        place = self.validate_place(place)
-        self.des += f"ALTAR:{place},neutral,altar\n"
-
-    def add_sink(self, place=None):
-        place = self.validate_place(place)
-        self.des += f"SINK:{place}\n"
-
-
-class MiniHackSingleSkill(MiniHack):
+class MiniHackSkill(MiniHack):
     """Base environment for single skill acquisition tasks."""
 
     def __init__(self, *args, des_file, goal_msgs=None, goal_loc_action=None, **kwargs):
@@ -171,13 +77,20 @@ class MiniHackSingleSkill(MiniHack):
                 )
 
             self.goal_loc = goal_loc_action = goal_loc_action[0].lower()
+            # TODO check if goal_loc is there in the begining
             self.goal_event = GoalEvent.LOC_ACTION
         else:
             self.goal_event = GoalEvent.NAVIGATION
 
+        default_keys = [
+            "tty_chars_crop",
+            "tty_colors_crop",
+            "screen_descriptions_crop",
+            "inv_strs",
+            "inv_letters",
+        ]
+        kwargs["observation_keys"] = kwargs.pop("observation_keys", default_keys)
         super().__init__(*args, des_file=des_file, **kwargs)
-
-        # TODO check if goal_loc is there in the begining
 
     def reset(self, *args, **kwargs):
         if self.goal_event == GoalEvent.LOC_ACTION:
@@ -238,7 +151,7 @@ class MiniHackSingleSkill(MiniHack):
         return not self.screen_contains(name)
 
 
-class MiniHackEat(MiniHackSingleSkill):
+class MiniHackEat(MiniHackSkill):
     """Environment for "eat" task."""
 
     def __init__(self, *args, **kwargs):
@@ -252,7 +165,7 @@ class MiniHackEat(MiniHackSingleSkill):
         )
 
 
-class MiniHackPray(MiniHackSingleSkill):
+class MiniHackPray(MiniHackSkill):
     """Environment for "pray" task."""
 
     def __init__(self, *args, **kwargs):
@@ -267,7 +180,7 @@ class MiniHackPray(MiniHackSingleSkill):
         )
 
 
-class MiniHackSink(MiniHackSingleSkill):
+class MiniHackSink(MiniHackSkill):
     """Environment for "sink" task."""
 
     def __init__(self, *args, **kwargs):
@@ -282,7 +195,7 @@ class MiniHackSink(MiniHackSingleSkill):
         )
 
 
-# class MiniHackQuaff(MiniHackSingleSkill):
+# class MiniHackQuaff(MiniHackSkill):
 #     """Environment for "quaff" task."""
 
 #     def __init__(self, *args, **kwargs):
@@ -297,21 +210,21 @@ class MiniHackSink(MiniHackSingleSkill):
 #         )
 
 
-class MiniHackClosedDoor(MiniHackSingleSkill):
+class MiniHackClosedDoor(MiniHackSkill):
     """Environment for "open" task."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, des_file="closed_door.des", **kwargs)
 
 
-class MiniHackLockedDoor(MiniHackSingleSkill):
+class MiniHackLockedDoor(MiniHackSkill):
     """Environment for "kick" task."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, des_file="locked_door.des", **kwargs)
 
 
-class MiniHackWield(MiniHackSingleSkill):
+class MiniHackWield(MiniHackSkill):
     """Environment for "wield" task."""
 
     def __init__(self, *args, **kwargs):
@@ -323,7 +236,7 @@ class MiniHackWield(MiniHackSingleSkill):
         )
 
 
-class MiniHackWear(MiniHackSingleSkill):
+class MiniHackWear(MiniHackSkill):
     """Environment for "wear" task."""
 
     def __init__(self, *args, **kwargs):
@@ -335,7 +248,7 @@ class MiniHackWear(MiniHackSingleSkill):
         )
 
 
-class MiniHackTakeOff(MiniHackSingleSkill):
+class MiniHackTakeOff(MiniHackSkill):
     """Environment for "take off" task."""
 
     def __init__(self, *args, **kwargs):
@@ -350,7 +263,7 @@ class MiniHackTakeOff(MiniHackSingleSkill):
         )
 
 
-class MiniHackPutOn(MiniHackSingleSkill):
+class MiniHackPutOn(MiniHackSkill):
     """Environment for "put on" task."""
 
     def __init__(self, *args, **kwargs):
@@ -365,7 +278,7 @@ class MiniHackPutOn(MiniHackSingleSkill):
         )
 
 
-class MiniHackZap(MiniHackSingleSkill):
+class MiniHackZap(MiniHackSkill):
     """Environment for "zap" task."""
 
     def __init__(self, *args, **kwargs):
@@ -380,7 +293,7 @@ class MiniHackZap(MiniHackSingleSkill):
         )
 
 
-class MiniHackRead(MiniHackSingleSkill):
+class MiniHackRead(MiniHackSkill):
     """Environment for "read" task."""
 
     def __init__(self, *args, **kwargs):
