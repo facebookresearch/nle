@@ -21,8 +21,9 @@ GEOMETRY:center,center
             row = "." * y + "\n"
             maze = row * x
             self.des += mapify(maze)
-            litness = "lit" if lit else "unlit"
-            self.des += 'REGION:(0,0,{},{}),{},"ordinary"\n'.format(x, y, litness)
+
+        litness = "lit" if lit else "unlit"
+        self.des += 'REGION:(0,0,{},{}),{},"ordinary"\n'.format(x, y, litness)
 
         self.stair_up_exist = False
 
