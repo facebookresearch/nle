@@ -1,6 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-from nle.env import MiniHack
-from nle.env.mh_lvl_gen import LevelGenerator
+from nle.minihack import MiniHack, LevelGenerator
 from nle.nethack import Command, CompassIntercardinalDirection
 import enum
 

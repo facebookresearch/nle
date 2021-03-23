@@ -11,9 +11,9 @@ recursive-include util *
 recursive-include win/rl *
 recursive-include win/tty *
 recursive-include third_party *
-recursive-include nle/env/dat *
-recursive-include nle/env/lib *
-include nle/scripts/mh_patch_nhdat.sh
+recursive-include nle/minihack/dat *
+recursive-include nle/minihack/lib *
+recursive-include nle/minihack/scripts *
 
 recursive-exclude build *
 exclude nle/dashboard

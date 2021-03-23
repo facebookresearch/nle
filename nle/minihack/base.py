@@ -13,7 +13,7 @@ import gym
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
 LIB_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
 PATCH_SCRIPT = os.path.join(
-    pkg_resources.resource_filename("nle", "scripts"), "mh_patch_nhdat.sh"
+    pkg_resources.resource_filename("nle", "minihack"), "scripts", "mh_patch_nhdat.sh"
 )
 
 MINIHACK_SPACE_FUNCS = {

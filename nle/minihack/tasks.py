@@ -2,7 +2,7 @@
 import os
 from tempfile import NamedTemporaryFile
 
-from nle.env import MiniHack
+from nle.minihack import MiniHack
 from nle import nethack
 from nle.nethack import Command
 

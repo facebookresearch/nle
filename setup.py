@@ -78,6 +78,7 @@ packages = [
     "nle.agent",
     "nle.scripts",
     "nle.tests",
+    "nle.minihack",
 ]
 
 entry_points = {
