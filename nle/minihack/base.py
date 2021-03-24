@@ -17,6 +17,15 @@ PATCH_SCRIPT = os.path.join(
 )
 
 MINIHACK_SPACE_FUNCS = {
+    "glyphs_crop": lambda x, y: gym.spaces.Box(
+        low=0, high=nethack.MAX_GLYPH, shape=(x, y), dtype=np.uint16
+    ),
+    "chars_crop": lambda x, y: gym.spaces.Box(
+        low=0, high=255, shape=(x, y), dtype=np.uint8
+    ),
+    "colors_crop": lambda x, y: gym.spaces.Box(
+        low=0, high=15, shape=(x, y), dtype=np.uint8
+    ),
     "tty_chars_crop": lambda x, y: gym.spaces.Box(
         low=0, high=127, shape=(x, y), dtype=np.uint8
     ),
@@ -166,9 +175,11 @@ class MiniHack(NetHackStaircase):
                 obs_dict[key] = observation[key]
             elif key in MINIHACK_SPACE_FUNCS.keys():
                 orig_key = key.replace("_crop", "")
-                obs_dict[key] = self._crop_observation(
-                    observation[orig_key], observation["tty_cursor"]
-                )
+                if "tty" in orig_key:
+                    loc = observation["tty_cursor"][::-1]
+                else:
+                    loc = observation["blstats"][:2]
+                obs_dict[key] = self._crop_observation(observation[orig_key], loc)
 
         return obs_dict
 
@@ -176,7 +187,7 @@ class MiniHack(NetHackStaircase):
         dh = self.obs_crop_h // 2
         dw = self.obs_crop_w // 2
 
-        (y, x) = loc
+        (x, y) = loc
         x += dw
         y += dh
 

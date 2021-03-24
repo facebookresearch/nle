@@ -82,8 +82,8 @@ class MiniHackSkill(MiniHack):
             self.goal_event = GoalEvent.NAVIGATION
 
         default_keys = [
-            "tty_chars_crop",
-            "tty_colors_crop",
+            "chars_crop",
+            "colors_crop",
             "screen_descriptions_crop",
             "inv_strs",
             "inv_letters",

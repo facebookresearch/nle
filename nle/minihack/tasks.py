@@ -41,7 +41,7 @@ class MiniHackMaze(MiniHack):
         # Override episode limit
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
         # Restrict the observation space to glyphs only
-        kwargs["observation_keys"] = kwargs.pop("observation_keys", ["tty_chars_crop"])
+        kwargs["observation_keys"] = kwargs.pop("observation_keys", ["chars_crop"])
 
         super().__init__(*args, des_file=des_file, **kwargs)
 
