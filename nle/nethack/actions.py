@@ -186,6 +186,7 @@ NON_RL_ACTIONS = (
     Command.SEEALL,  # Could potentially be useful.
     Command.TRAVEL,  # Could potentially be useful.
     Command.VERSION,
+    Command.VERSIONSHORT,
     Command.WHATDOES,
     Command.WHATIS,
 )
