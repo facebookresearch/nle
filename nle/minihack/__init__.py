@@ -3,6 +3,7 @@ from gym.envs import registration
 
 from nle.minihack.base import MiniHack
 from nle.minihack.level_gen import LevelGenerator
+from nle.minihack.actions import action_to_str
 
 registration.register(
     id="MiniHack-Empty-v0",
@@ -99,4 +100,4 @@ registration.register(
 )
 
 
-__all__ = ["MiniHack", "LevelGenerator"]
+__all__ = ["MiniHack", "LevelGenerator", "action_to_str"]

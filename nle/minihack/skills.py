@@ -1,5 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-from nle.minihack import MiniHack, LevelGenerator
+from nle.minihack import MiniHack, LevelGenerator, action_to_str
 from nle.nethack import Command, CompassIntercardinalDirection
 import enum
 
@@ -148,6 +148,9 @@ class MiniHackSkill(MiniHack):
         tile rather than the object).
         """
         return not self.screen_contains(name)
+
+    def get_action_names(self):
+        return [action_to_str(a) for a in self._actions]
 
 
 class MiniHackEat(MiniHackSkill):
