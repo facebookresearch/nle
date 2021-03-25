@@ -1,17 +1,45 @@
-class LevelGenerator:
-    def __init__(self, map=None, x=8, y=8, lit=True):
+MAZE_FLAGS = (
+    "noteleport",
+    "hardfloor",
+    "nommap",
+    "arboreal",
+    "shortsighted",
+    "mazelevel",
+    "premapped",
+    "shroud",
+    "graveyard",
+    "icedpools",
+    "solidify",
+    "corrmaze",
+    "inaccessibles",
+)
 
-        self.header = """
+
+class LevelGenerator:
+    def __init__(
+        self,
+        map=None,
+        x=8,
+        y=8,
+        lit=True,
+        message="Welcome to MiniHack!",
+        flags=("noteleport", "hardfloor"),
+    ):
+        assert all(
+            f in MAZE_FLAGS for f in flags
+        ), "One of the provided maze flags is incorrect"
+        flags_str = ",".join(flags)
+        self.header = f"""
 MAZE: "mylevel", ' '
-INIT_MAP:solidfill,' '
+FLAGS:{flags_str}
+MESSAGE: \"{message}\"
 GEOMETRY:center,center
 """
-        # TODO add more flag options?
         self.des = self.header
 
-        mapify = lambda x: "MAP\n" + x + "ENDMAP\n"
+        self.mapify = lambda x: "MAP\n" + x + "ENDMAP\n"
         if map is not None:
-            self.des += mapify(map)
+            self.des += self.mapify(map)
             self.x = map.count("\n")
             self.y = max([len(line) for line in map.split("\n")])
         else:
@@ -20,7 +48,7 @@ GEOMETRY:center,center
             # Creating empty area
             row = "." * y + "\n"
             maze = row * x
-            self.des += mapify(maze)
+            self.des += self.mapify(maze)
 
         litness = "lit" if lit else "unlit"
         self.des += 'REGION:(0,0,{},{}),{},"ordinary"\n'.format(x, y, litness)
@@ -28,6 +56,7 @@ GEOMETRY:center,center
         self.stair_up_exist = False
 
     def get_des(self):
+        print(self.des)
         return self.des
 
     @staticmethod
