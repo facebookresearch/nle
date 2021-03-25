@@ -6,7 +6,6 @@ FROM ubuntu:20.04
 ARG PYTHON_VERSION=3.8
 ENV DEBIAN_FRONTEND=noninteractive
 
-# TODO(heiner): NLE breaks with libncurses6. Fix.
 RUN apt-get update && apt-get install -yq \
         bison \
         build-essential \
@@ -57,7 +56,7 @@ CMD ["/bin/sh", "-c", "valgrind --leak-check=yes --leak-check=full --show-leak-k
 
 # Docker commands:
 #   docker rm nle -v
-#   docker build -t nle -f docker/Dockerfile .
+#   docker build -t nle -f docker/Dockerfile.valgrind .
 #   docker run --rm --name nle nle
 # or
 #   docker run -it --entrypoint /bin/bash nle
