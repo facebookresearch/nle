@@ -1,3 +1,6 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+import numpy as np
+
 MAZE_FLAGS = (
     "noteleport",
     "hardfloor",
@@ -29,35 +32,47 @@ class LevelGenerator:
             f in MAZE_FLAGS for f in flags
         ), "One of the provided maze flags is incorrect"
         flags_str = ",".join(flags)
+
         self.header = f"""
 MAZE: "mylevel", ' '
 FLAGS:{flags_str}
 MESSAGE: \"{message}\"
 GEOMETRY:center,center
 """
-        self.des = self.header
 
         self.mapify = lambda x: "MAP\n" + x + "ENDMAP\n"
-        if map is not None:
-            self.des += self.mapify(map)
-            self.x = map.count("\n")
-            self.y = max([len(line) for line in map.split("\n")])
-        else:
-            self.x = x
-            self.y = y
-            # Creating empty area
-            row = "." * y + "\n"
-            maze = row * x
-            self.des += self.mapify(maze)
+        self.init_map(map, x, y)
 
         litness = "lit" if lit else "unlit"
-        self.des += 'REGION:(0,0,{},{}),{},"ordinary"\n'.format(x, y, litness)
+        self.footer = f'REGION:(0,0,{self.x},{self.y}),{litness},"ordinary"\n'
 
         self.stair_up_exist = False
 
+    def init_map(self, map=None, x=8, y=8):
+        if map is None:
+            # Creating empty area
+            self.x = x
+            self.y = y
+            self.map = np.array([["."] * x] * y, dtype=str)
+        else:
+            lines = [list(line) for line in map.split("\n") if len(line) > 0]
+            self.y = len(lines)
+            self.x = max(len(line) for line in lines)
+            new_lines = [line + [" "] * (self.x - len(line)) for line in lines]
+            self.map = np.array(new_lines)
+
+    def get_map_str(self):
+        """Returns the map as a string."""
+        map_list = ["".join(self.map[i]) + "\n" for i in range(self.map.shape[0])]
+        return "".join(map_list)
+
+    def get_map_array(self):
+        """Returns the map as as np array."""
+        return self.map
+
     def get_des(self):
-        print(self.des)
-        return self.des
+        """Returns the description file."""
+        return self.header + self.mapify(self.get_map_str()) + self.footer
 
     @staticmethod
     def validate_place(place):
@@ -88,36 +103,40 @@ GEOMETRY:center,center
         assert isinstance(symbol, str) and len(symbol) == 1
         assert isinstance(name, str)  # TODO maybe check object exists in NetHack
 
-        self.des += f"OBJECT:('{symbol}',\"{name}\"), {place}"
+        self.footer += f"OBJECT:('{symbol}',\"{name}\"), {place}"
 
         if cursestate is not None:
             assert cursestate in ["blessed", "uncursed", "cursed", "random"]
             if cursestate != "random":
-                self.des += f", {cursestate}"
+                self.footer += f", {cursestate}"
 
-        self.des += "\n"
+        self.footer += "\n"
 
-    def add_terrain(self, coord, flag):
-        coord = str(self.validate_coord(coord))
+    def add_terrain(self, coord, flag, in_footer=False):
+        coord = self.validate_coord(coord)
         assert flag in ["-", "F", "L", "T", "C"]
 
-        self.des += f"TERRAIN: {coord}, '{flag}'\n"
+        if in_footer:
+            self.footer += f"TERRAIN: {str(coord)}, '{flag}'\n"
+        else:
+            x, y = coord
+            self.map[x, y] = flag
 
     def add_stair_down(self, place=None):
         place = self.validate_place(place)
-        self.des += f"STAIR:{place},down\n"
+        self.footer += f"STAIR:{place},down\n"
 
     def add_stair_up(self, coord):
         if self.stair_up_exist:
             return
         x, y = self.validate_coord(coord)
-        self.des += f"BRANCH:{x, y, x, y},(0,0,0,0)\n"
+        self.footer += f"BRANCH:{x, y, x, y},(0,0,0,0)\n"
         self.stair_up_exist = True
 
     def add_altar(self, place=None):
         place = self.validate_place(place)
-        self.des += f"ALTAR:{place},neutral,altar\n"
+        self.footer += f"ALTAR:{place},neutral,altar\n"
 
     def add_sink(self, place=None):
         place = self.validate_place(place)
-        self.des += f"SINK:{place}\n"
+        self.footer += f"SINK:{place}\n"
