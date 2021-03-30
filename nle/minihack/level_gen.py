@@ -114,13 +114,14 @@ GEOMETRY:center,center
 
     def add_terrain(self, coord, flag, in_footer=False):
         coord = self.validate_coord(coord)
-        assert flag in ["-", "F", "L", "T", "C"]
 
         if in_footer:
+            assert flag in ["-", "F", "L", "T", "C"]
             self.footer += f"TERRAIN: {str(coord)}, '{flag}'\n"
         else:
+            assert flag in [".", " ", "-", "F", "L", "T", "C"]
             x, y = coord
-            self.map[x, y] = flag
+            self.map[y, x] = flag
 
     def add_stair_down(self, place=None):
         place = self.validate_place(place)
