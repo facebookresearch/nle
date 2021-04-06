@@ -6,13 +6,7 @@ ORIGDIR=$(pwd)
 VARDIR=$1
 HACKDIR=$2
 LIBDIR=$3
-
-if [ -z "$4" ]
-then
-    des_file="$ORIGDIR/mylevel.des"
-else
-    des_file=$4
-fi
+DESFILE=$4
 
 if [ ! -d $VARDIR/lib ]
 then
@@ -21,7 +15,7 @@ fi
 
 cd $VARDIR/lib
 
-cp $des_file mylevel.des
+cp $DESFILE mylevel.des
 $HACKDIR/lev_comp mylevel.des
 rm -rf mylevel.des
 

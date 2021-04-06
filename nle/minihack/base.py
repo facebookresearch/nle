@@ -135,36 +135,29 @@ class MiniHack(NetHackStaircase):
         hackdir directory of the environment.
         """
         if not des_file.endswith(".des"):
-            fname = "./mylevel.des"
+            fpath = os.path.join(self.env._vardir, "mylevel.des")
             # If the des-file is passed as a string
-            try:
-                with open(fname, "w") as f:
-                    f.writelines(des_file)
-                _ = subprocess.call(
-                    [PATCH_SCRIPT, self.env._vardir, nethack.HACKDIR, LIB_DIR]
+            with open(fpath, "w") as f:
+                f.writelines(des_file)
+            des_file = fpath
+
+        # Use the .des file if exists, otherwise search in minihack directory
+        des_path = os.path.abspath(des_file)
+        if not os.path.exists(des_path):
+            des_path = os.path.abspath(os.path.join(PATH_DAT_DIR, des_file))
+        if not os.path.exists(des_path):
+            print(
+                "{} file doesn't exist. Please provide a path to a valid .des \
+                    file".format(
+                    des_path
                 )
-            except subprocess.CalledProcessError as e:
-                print(e)
-            finally:
-                os.remove(fname)
-        else:
-            # Use the .des file if exists, otherwise search in minihack directory
-            des_path = os.path.abspath(des_file)
-            if not os.path.exists(des_path):
-                des_path = os.path.abspath(os.path.join(PATH_DAT_DIR, des_file))
-            if not os.path.exists(des_path):
-                print(
-                    "{} file doesn't exist. Please provide a path to a valid .des \
-                        file".format(
-                        des_path
-                    )
-                )
-            try:
-                _ = subprocess.call(
-                    [PATCH_SCRIPT, self.env._vardir, nethack.HACKDIR, LIB_DIR, des_path]
-                )
-            except subprocess.CalledProcessError as e:
-                print(e)
+            )
+        try:
+            _ = subprocess.call(
+                [PATCH_SCRIPT, self.env._vardir, nethack.HACKDIR, LIB_DIR, des_path]
+            )
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Couldn't patch the nhdat file.\n{e}")
 
     def _get_observation(self, observation):
         # Filter out observations that we don't need
