@@ -172,6 +172,7 @@ class MiniHackSkill(MiniHack):
         # Add language-related observations
         observation = super()._get_observation(observation)
         self._update_inventory()
+        return observation
 
     def _update_inventory(self):
         """Updates the inventory map."""
