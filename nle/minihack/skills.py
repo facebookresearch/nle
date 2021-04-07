@@ -186,7 +186,7 @@ class MiniHackSink(MiniHackSkill):
     """Environment for "sink" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=8, y=8, lit=True)
+        lvl_gen = LevelGenerator(x=5, y=5=True)
         lvl_gen.add_sink()
 
         super().__init__(
