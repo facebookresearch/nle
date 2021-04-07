@@ -1,5 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
+import string
+import enum
+
 ACTION_STR_DICT = {
     "N": "move north",
     "E": "move east",
@@ -94,7 +97,16 @@ ACTION_STR_DICT = {
 }
 
 
-def action_to_str(action):
+InventorySelection = enum.IntEnum(
+    "InventorySelection",
+    {k: ord(k) for k in string.ascii_letters},
+)
+
+
+def action_to_str(action, inventory=None):
+    if isinstance(action, InventorySelection) and inventory is not None:
+        return inventory[action.name]
+
     assert (
         action.name in ACTION_STR_DICT
     ), f"Action {action} cannot be mapped to a string"

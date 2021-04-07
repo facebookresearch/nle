@@ -1,7 +1,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+from nle.env.base import FULL_ACTIONS
 from nle.minihack import MiniHack, LevelGenerator, action_to_str
+from nle.minihack.actions import InventorySelection
 from nle.nethack import Command, CompassIntercardinalDirection
 import enum
+import string
+import numpy as np
+
+FULL_ACTIONS_INV = tuple(list(FULL_ACTIONS) + list(InventorySelection))
 
 COMESTIBLES = [
     "orange",
@@ -51,7 +57,15 @@ class GoalEvent(enum.IntEnum):
 class MiniHackSkill(MiniHack):
     """Base environment for single skill acquisition tasks."""
 
-    def __init__(self, *args, des_file, goal_msgs=None, goal_loc_action=None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        des_file,
+        goal_msgs=None,
+        goal_loc_action=None,
+        inv_actions=False,
+        **kwargs,
+    ):
         """If goal_msgs == None, the goal is to reach the staircase."""
         kwargs["options"] = kwargs.pop("options", [])
         kwargs["options"].append("pettype:none")
@@ -59,6 +73,11 @@ class MiniHackSkill(MiniHack):
         kwargs["options"].append("!autopickup")
         kwargs["character"] = kwargs.pop("charachter", "cav-hum-new-mal")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+
+        if inv_actions:
+            kwargs["actions"] = kwargs.pop("actions", FULL_ACTIONS_INV)
+
+        self._inventory = {}
 
         if goal_msgs is not None:
             self.goal_msgs = goal_msgs
@@ -149,8 +168,35 @@ class MiniHackSkill(MiniHack):
         """
         return not self.screen_contains(name)
 
+    def _get_observation(self, observation):
+        # Add language-related observations
+        observation = super()._get_observation(observation)
+        self._update_inventory()
+
+    def _update_inventory(self):
+        """Updates the inventory map."""
+        inv_strs_index = self._observation_keys.index("inv_strs")
+        inv_letters_index = self._observation_keys.index("inv_letters")
+
+        inv_strs = self.last_observation[inv_strs_index]
+        inv_letters = self.last_observation[inv_letters_index]
+
+        letters = [letter.tobytes().decode("utf-8") for letter in inv_letters]
+
+        for char in string.ascii_letters:
+            if char not in letters:
+                self._inventory[char] = ""
+            else:
+                ind = letters.index(char)
+                line = inv_strs[ind]
+                if np.all(line == 0):
+                    self._inventory[char] = ""
+
+                line = bytes(line)
+                self._inventory[char] = line[: line.index(b"\0")].decode("utf-8")
+
     def get_action_names(self):
-        return [action_to_str(a) for a in self._actions]
+        return [action_to_str(a, self._inventory) for a in self._actions]
 
 
 class MiniHackEat(MiniHackSkill):
