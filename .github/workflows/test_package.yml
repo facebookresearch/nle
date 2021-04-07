@@ -23,6 +23,8 @@ jobs:
     - name: Install dependencies
       run: |
         brew install cmake
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Install nle via pip
       run: "pip install nle"
     - name: Check nethack is installed
