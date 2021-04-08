@@ -13,6 +13,7 @@ import gym
 import nle
 import nle.env
 from nle import nethack
+from nle.env.tasks import NetHackInventoryManagement  # for test_default_wizard_mode
 
 
 def get_nethack_env_ids():
@@ -126,7 +127,12 @@ class TestGymEnv:
         else:
             # do not send a parameter to test a default
             env = gym.make(env_name)
-            assert "playmode:debug" not in env.env._options
+            if isinstance(env, NetHackInventoryManagement):
+                # inventory management works only with wizard mode,
+                # we have it there by default
+                assert "playmode:debug" in env.env._options
+            else:
+                assert "playmode:debug" not in env.env._options
 
 
 class TestWizkit:
