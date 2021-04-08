@@ -330,3 +330,61 @@ class MiniGridHackMultiroom(MiniHackMaze):
         self.update(f.name)
         os.unlink(f.name)
         return super().reset()
+
+
+class BoxoHack(MiniHackMaze):
+    def __init__(self, *args, **kwargs):
+
+        level = (
+            "##########\n##########\n#######  #\n### .# #.#\n#     .  #\n"
+            "# #  $ $ #\n# #####  #\n##### $$.#\n### @    #\n##########"
+        )
+        print(level)
+        level = level.split("\n")
+        object_strs = []
+
+        for row in range(len(level)):
+            level[row] = level[row].replace("#", " ")
+            for col in range(len(level[row])):
+                if level[row][col] == "$":
+                    object_strs.append(f'TRAP: "pit", ({row}, {col})')
+                if level[row][col] == ".":
+                    object_strs.append(f'OBJECT: "boulder", ({row}, {col})')
+            if "@" in level[row]:
+                py = level[row].index("@")
+                level[row] = level[row].replace("@", ".")
+                player_str = f"BRANCH:{py, row, py, row},(0,0,0,0)"
+
+            level[row] = level[row].replace(" ", ".")
+            level[row] = level[row].replace("$", ".")
+
+        env_desc = [
+            "MAZE: \"mylevel\", ' '",
+            "FLAGS: premapped",
+            "INIT_MAP: solidfill, ' '",
+            "GEOMETRY: center, center",
+            "MAP",
+        ]
+        env_desc.extend(level)
+
+        env_desc.append("ENDMAP")
+        env_desc.append(player_str)
+        env_desc.extend(object_strs)
+
+        f = NamedTemporaryFile(delete=False, suffix=".des")
+        with open(f.name, "w") as tmp:
+            print("\n".join(env_desc))
+            tmp.write("\n".join(env_desc))
+        f.close()
+        super().__init__(des_file=f.name)
+        os.unlink(f.name)
+
+    def _is_episode_end(self, observation):
+        # 96 is for ` (boulder).
+        # If no boulders in the observation, all of them are in the pits.
+        if 96 not in observation[self._original_observation_keys.index("chars")]:
+            return self.StepStatus.TASK_SUCCESSFUL
+        else:
+            return self.StepStatus.RUNNING
+
+        # TODO define a reward

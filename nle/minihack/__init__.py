@@ -98,6 +98,9 @@ registration.register(
     id="MiniHack-Read-v0",
     entry_point="nle.minihack.skills:MiniHackRead",
 )
+registration.register(
+    id="MiniHack-Boxoban-v0", entry_point="nle.minihack.tasks:BoxoHack"
+)
 
 
 __all__ = ["MiniHack", "LevelGenerator", "action_to_str"]
