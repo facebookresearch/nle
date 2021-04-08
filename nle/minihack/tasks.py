@@ -333,7 +333,7 @@ class MiniGridHackMultiroom(MiniHackMaze):
 
 
 class BoxoHack(MiniHackMaze):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, max_episode_steps=1000, **kwargs):
 
         level = (
             "##########\n##########\n#######  #\n### .# #.#\n#     .  #\n"
@@ -341,27 +341,48 @@ class BoxoHack(MiniHackMaze):
         )
         print(level)
         level = level.split("\n")
+        # nethack does not like when there are two rows of the walls
+        # using # for solidfill gets rid of this issue
+        # consequtive_walls_st = 0
+        # for el in level:
+        #     if set(el) == {'#'}:
+        #         consequtive_walls_st+=1
+        #     else:
+        #         break
+        # if consequtive_walls_st > 1:
+        #     level = level[consequtive_walls_st-1:]
+        # consequtive_walls = 0
+        # for el in level[::-1]:
+        #     if set(el) == {'#'}:
+        #         consequtive_walls += 1
+        #     else:
+        #         break
+        # if consequtive_walls > 1:
+        #     level = level[:1-consequtive_walls:]
         object_strs = []
 
-        for row in range(len(level)):
-            level[row] = level[row].replace("#", " ")
+        level[0] = "-" * len(level[0])
+        level[-1] = "-" * len(level[-1])
+        for row in range(1, len(level) - 1):
+            level[row] = f"|{level[row][1:-1]}|"
             for col in range(len(level[row])):
                 if level[row][col] == "$":
-                    object_strs.append(f'TRAP: "pit", ({row}, {col})')
+                    object_strs.append(f'OBJECT: "boulder", ({col}, {row})')
                 if level[row][col] == ".":
-                    object_strs.append(f'OBJECT: "boulder", ({row}, {col})')
+                    object_strs.append(f'TRAP: "pit", ({col}, {row})')
             if "@" in level[row]:
                 py = level[row].index("@")
                 level[row] = level[row].replace("@", ".")
                 player_str = f"BRANCH:{py, row, py, row},(0,0,0,0)"
 
             level[row] = level[row].replace(" ", ".")
+            level[row] = level[row].replace("#", " ")
             level[row] = level[row].replace("$", ".")
 
         env_desc = [
             "MAZE: \"mylevel\", ' '",
-            "FLAGS: premapped",
-            "INIT_MAP: solidfill, ' '",
+            "FLAGS: noteleport, hardfloor, premapped",
+            "INIT_MAP: solidfill,'#'",
             "GEOMETRY: center, center",
             "MAP",
         ]
@@ -370,13 +391,11 @@ class BoxoHack(MiniHackMaze):
         env_desc.append("ENDMAP")
         env_desc.append(player_str)
         env_desc.extend(object_strs)
-
         f = NamedTemporaryFile(delete=False, suffix=".des")
         with open(f.name, "w") as tmp:
-            print("\n".join(env_desc))
             tmp.write("\n".join(env_desc))
         f.close()
-        super().__init__(des_file=f.name)
+        super().__init__(des_file=f.name, max_episode_steps=max_episode_steps)
         os.unlink(f.name)
 
     def _is_episode_end(self, observation):
