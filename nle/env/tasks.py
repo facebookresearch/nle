@@ -390,7 +390,7 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
         self._add_goal_to_obs(obs)
         return obs, reward, done, info
 
-    def render(self):
+    def render(self, mode="human"):
         print(f"Current goal: {self._episode_goal_str}")
         super().render()
 
