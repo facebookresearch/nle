@@ -392,7 +392,7 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
 
     def render(self, mode="human"):
         print(f"Current goal: {self._episode_goal_str}")
-        super().render()
+        return super().render(mode)
 
     def reset(self, wizkit_items: list = None, episode_goal: str = None):
         """Sets up the inventory and the goal which will terminate the episode
