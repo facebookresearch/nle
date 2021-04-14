@@ -173,8 +173,7 @@ static struct Bool_Opt {
 #else
     { "news", (boolean *) 0, FALSE, SET_IN_FILE },
 #endif
-    { "no_rand_mon", &iflags.no_rand_mon, FALSE, DISP_IN_GAME },
-    { "nudist", &iflags.no_rand_mon, FALSE, DISP_IN_GAME },
+    { "nudist", &u.uroleplay.nudist, FALSE, DISP_IN_GAME },
     { "null", &flags.null, TRUE, SET_IN_GAME },
 #if defined(SYSFLAGS) && defined(MAC)
     { "page_wait", &sysflags.page_wait, TRUE, SET_IN_GAME },

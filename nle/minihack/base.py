@@ -13,7 +13,9 @@ import gym
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
 LIB_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
 PATCH_SCRIPT = os.path.join(
-    pkg_resources.resource_filename("nle", "minihack"), "scripts", "mh_patch_nhdat.sh"
+    pkg_resources.resource_filename("nle", "minihack"),
+    "scripts",
+    "mh_patch_nhdat.sh",
 )
 
 MINIHACK_SPACE_FUNCS = {
@@ -154,7 +156,13 @@ class MiniHack(NetHackStaircase):
             )
         try:
             _ = subprocess.call(
-                [PATCH_SCRIPT, self.env._vardir, nethack.HACKDIR, LIB_DIR, des_path]
+                [
+                    PATCH_SCRIPT,
+                    self.env._vardir,
+                    nethack.HACKDIR,
+                    LIB_DIR,
+                    des_path,
+                ]
             )
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Couldn't patch the nhdat file.\n{e}")
@@ -185,9 +193,15 @@ class MiniHack(NetHackStaircase):
         y += dh
 
         obs = np.pad(
-            obs, pad_width=(dw, dh), mode="constant", constant_values=self.obs_crop_pad
+            obs,
+            pad_width=(dw, dh),
+            mode="constant",
+            constant_values=self.obs_crop_pad,
         )
         return obs[y - dh : y + dh + 1, x - dw : x + dw + 1]
+
+    def _no_rand_mon(self):
+        os.environ["NH_NO_RAND_MON"] = "1"
 
     def key_in_inventory(self, name):
         """Returns key of the object in the inventory.

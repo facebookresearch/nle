@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+from nle.nethack.actions import MiscDirection
 from nle.env.base import FULL_ACTIONS
-from nle.minihack import MiniHack, LevelGenerator, action_to_str
+from nle.minihack import MiniHack, LevelGenerator, action_to_str, action_to_name
 from nle.minihack.actions import InventorySelection
 from nle.nethack import Command, CompassIntercardinalDirection
 import enum
@@ -69,12 +70,13 @@ class MiniHackSkill(MiniHack):
         """If goal_msgs == None, the goal is to reach the staircase."""
         kwargs["options"] = kwargs.pop("options", [])
         kwargs["options"].append("pettype:none")
-        kwargs["options"].append("nudist")
         kwargs["options"].append("!autopickup")
         kwargs["character"] = kwargs.pop("charachter", "cav-hum-new-mal")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
+        self._no_rand_mon()
 
-        if inv_actions:
+        self.inv_actions = inv_actions
+        if self.inv_actions:
             kwargs["actions"] = kwargs.pop("actions", FULL_ACTIONS_INV)
 
         self._inventory = {}
@@ -117,6 +119,17 @@ class MiniHackSkill(MiniHack):
         return super().reset(*args, **kwargs)
 
     def step(self, action: int):
+        if self.inv_actions:
+            internal = self.last_observation[self._internal_index]
+            in_yn_function = internal[1]
+
+            # Check if action not allowed and replace with WAIT
+            nle_action = self._actions[action]
+            if (in_yn_function and not isinstance(nle_action, InventorySelection)) or (
+                not in_yn_function and isinstance(nle_action, InventorySelection)
+            ):
+                action = self._actions.index(MiscDirection.WAIT)
+
         if self.goal_event == GoalEvent.LOC_ACTION:
             if self._actions[action] == self.goal_action and self._standing_on_top(
                 self.goal_loc
@@ -196,8 +209,11 @@ class MiniHackSkill(MiniHack):
                 line = bytes(line)
                 self._inventory[char] = line[: line.index(b"\0")].decode("utf-8")
 
-    def get_action_names(self):
-        return [action_to_str(a, self._inventory) for a in self._actions]
+    def get_action_names(self, name=False):
+        if name:
+            return [action_to_name(a, self._inventory) for a in self._actions]
+        else:
+            return [action_to_str(a, self._inventory) for a in self._actions]
 
 
 class MiniHackEat(MiniHackSkill):
@@ -281,7 +297,10 @@ class MiniHackWield(MiniHackSkill):
         lvl_gen.add_object("dagger", ")")
 
         super().__init__(
-            *args, des_file=lvl_gen.get_des(), goal_msgs=wielded("dagger"), **kwargs
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_msgs=wielded("dagger"),
+            **kwargs,
         )
 
 
@@ -293,7 +312,10 @@ class MiniHackWear(MiniHackSkill):
         lvl_gen.add_object("robe", "[")
 
         super().__init__(
-            *args, des_file=lvl_gen.get_des(), goal_msgs=wearing("robe"), **kwargs
+            *args,
+            des_file=lvl_gen.get_des(),
+            goal_msgs=wearing("robe"),
+            **kwargs,
         )
 
 

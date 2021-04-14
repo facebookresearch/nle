@@ -31,9 +31,6 @@ class MiniHackMaze(MiniHack):
         # No pet
         kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
         kwargs["options"].append("pettype:none")
-        # No random monster generation after every timestep
-        # As a workaround to a current issue, we are utilizing the nudist option instead
-        kwargs["options"].append("nudist")
         # Actions space - move only
         kwargs["actions"] = kwargs.pop("actions", MOVE_ACTIONS)
         # Disallowing one-letter menu questions
@@ -42,6 +39,8 @@ class MiniHackMaze(MiniHack):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
         # Restrict the observation space to glyphs only
         kwargs["observation_keys"] = kwargs.pop("observation_keys", ["chars_crop"])
+        # No random monster generation after every timestep
+        self._no_rand_mon()
 
         super().__init__(*args, des_file=des_file, **kwargs)
 
@@ -96,17 +95,14 @@ class MiniHackCorridor(MiniHackMaze):
         super().__init__(*args, des_file="corridor.des", **kwargs)
 
 
-class MiniHackMazeWalk(MiniHack):
-    """Environment for "mazewalk" task.
-
-    TODO understand how can remove monsters and objects from the maze
-    """
+class MiniHackMazeWalk(MiniHackMaze):
+    """Environment for "mazewalk" task."""
 
     def __init__(self, *args, **kwargs):
         kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
         kwargs["options"].append("pettype:none")
-        kwargs["options"].append("nudist")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
+        self._no_rand_mon()
         super().__init__(*args, des_file="mazewalk.des", **kwargs)
 
 

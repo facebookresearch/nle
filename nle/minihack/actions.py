@@ -2,6 +2,7 @@
 
 import string
 import enum
+from nle.nethack import CompassDirection, CompassDirectionLonger
 
 ACTION_STR_DICT = {
     "N": "move north",
@@ -12,8 +13,8 @@ ACTION_STR_DICT = {
     "SE": "move southeast",
     "SW": "move southwest",
     "NW": "move northwest",
-    "UP": "go up",
-    "DOWN": "go down",
+    "UP": "up",
+    "DOWN": "down",
     "WAIT": "wait",
     "MORE": "more",
     "EXTCMD": "extended command",  # NON RL
@@ -111,3 +112,15 @@ def action_to_str(action, inventory=None):
         action.name in ACTION_STR_DICT
     ), f"Action {action} cannot be mapped to a string"
     return ACTION_STR_DICT[action.name]
+
+
+def action_to_name(action, inventory=None):
+    if isinstance(action, InventorySelection) and inventory is not None:
+        return inventory[action.name]
+
+    if isinstance(action, CompassDirection) or isinstance(
+        action, CompassDirectionLonger
+    ):
+        return ACTION_STR_DICT[action.name]
+
+    return action.name.lower()
