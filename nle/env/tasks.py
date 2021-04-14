@@ -353,6 +353,8 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
         self._wizkit_list_size = kwargs.pop("wizkit_list_size", 12)
         self._randomise_inventory_selection = False
 
+        self._inv_rng = np.random.default_rng()
+
         self._episode_goal_str = None
 
         # this will work in wizard mode only because we need to use wizkit
@@ -385,14 +387,18 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
         )
         self.observation_space = gym.spaces.Dict(obs_dict)
 
+    def seed(self, core=None, disp=None, reseed=False):
+        self._inv_rng = np.random.default_rng(core)
+        return super().seed(core, disp, reseed)
+
     def step(self, action: int):
         obs, reward, done, info = super().step(action)
         self._add_goal_to_obs(obs)
         return obs, reward, done, info
 
-    def render(self):
+    def render(self, mode="human"):
         print(f"Current goal: {self._episode_goal_str}")
-        super().render()
+        return super().render(mode)
 
     def reset(self, wizkit_items: list = None, episode_goal: str = None):
         """Sets up the inventory and the goal which will terminate the episode
@@ -405,13 +411,13 @@ class NetHackInventoryManagement(NetHackScoreFullKeyboard):
         self._episode_goal_str = episode_goal
         if episode_goal is None:
             self._episode_goal_str = (
-                np.random.choice(wizkit_items)
+                self._inv_rng.choice(wizkit_items)
                 if self._randomise_goal
                 else wizkit_items[0]
             )
 
         if self._randomise_inventory_order:
-            np.random.shuffle(wizkit_items)
+            self._inv_rng.shuffle(wizkit_items)
 
         if self._randomise_inventory_selection:
             # TODO Implement me
@@ -542,20 +548,20 @@ ROOM: \"ordinary\" , lit, (3,3), (center,center), (5,5) {
         self._episode_goal_str = episode_goal
         if episode_goal is None:
             self._episode_goal_str = (
-                np.random.choice(wizkit_items)
+                self._inv_rng.choice(wizkit_items)
                 if self._randomise_goal
                 else wizkit_items[0]
             )
 
         n_distractors = self.n_distractors
         if self.randomise_n_distractors:
-            n_distractors = np.random.randint(n_distractors + 1)
+            n_distractors = self._inv_rng.integers(n_distractors + 1)
         distractors = [
             el for el in list(EDIBLE_GOALS.keys()) if el != self._episode_goal_str
         ][:n_distractors]
 
         if self._randomise_inventory_order:
-            np.random.shuffle(distractors)
+            self._inv_rng.shuffle(distractors)
 
         # not providing wizkit_list as the argument here, otherwise it will
         # just be InventoryManagement task
