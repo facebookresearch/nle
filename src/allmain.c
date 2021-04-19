@@ -122,7 +122,7 @@ boolean resuming;
                        place after movement has been allotted, the new
                        monster effectively loses its first turn, unless
                        random monster generation is turned off */
-                    if (!iflags.no_rand_mon) {
+                    if (!getenv("NH_NO_RAND_MON")) {
                         if (!rn2(u.uevent.udemigod ? 25
                                  : (depth(&u.uz) > depth(&stronghold_level))
                                      ? 50
