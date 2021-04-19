@@ -586,7 +586,7 @@ class NLE(gym.Env):
                 inv_letters = self.last_observation[inv_letters_index]
                 for letter, line in zip(inv_letters, inv_strs):
                     if np.all(line == 0):
-                        continue
+                        break
                     print(
                         letter.tobytes().decode("utf-8"), line.tobytes().decode("utf-8")
                     )
