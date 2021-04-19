@@ -105,10 +105,12 @@ class MiniHackSkill(MiniHack):
             "chars_crop",
             "colors_crop",
             "screen_descriptions_crop",
-            "inv_strs",
-            "inv_letters",
             "message",
+            "inv_strs",
         ]
+        if not self.inv_actions:
+            default_keys.add("inv_letters")
+
         kwargs["observation_keys"] = kwargs.pop("observation_keys", default_keys)
         super().__init__(*args, des_file=des_file, **kwargs)
 
@@ -192,12 +194,11 @@ class MiniHackSkill(MiniHack):
 
     def _update_inventory(self, observation):
         """Updates the inventory map."""
-        inv_letters = observation["inv_letters"]
-        inv_strs = observation["inv_strs"]
+        inv_strs_index = self._observation_keys.index("inv_strs")
+        inv_letters_index = self._observation_keys.index("inv_letters")
 
-        # Remove from obs
-        observation.pop("inv_strs")
-        observation.pop("inv_letters")
+        inv_strs = self.last_observation[inv_strs_index]
+        inv_letters = self.last_observation[inv_letters_index]
 
         letters = [letter.tobytes().decode("utf-8") for letter in inv_letters]
 
@@ -212,7 +213,10 @@ class MiniHackSkill(MiniHack):
             else:
                 self._inventory_map[char] = -1
 
+        # Remove old inv_strs from obs and add the new one
+        observation.pop("inv_strs")
         observation["inv_strs"] = inv_strs_new
+
         return observation
 
     def get_action_names(self, observation):
