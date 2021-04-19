@@ -1,8 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-from nle.nethack.actions import MiscDirection
+from nle.nethack.actions import MiscDirection, CompassDirection, CompassDirectionLonger
 from nle.env.base import FULL_ACTIONS
-from nle.minihack import MiniHack, LevelGenerator, action_to_str, action_to_name
-from nle.minihack.actions import InventorySelection
+from nle.minihack import MiniHack, LevelGenerator
+from nle.minihack.actions import InventorySelection, ACTION_STR_DICT
 from nle.nethack import Command, CompassIntercardinalDirection
 import enum
 import string
@@ -64,7 +64,7 @@ class MiniHackSkill(MiniHack):
         des_file,
         goal_msgs=None,
         goal_loc_action=None,
-        inv_actions=False,
+        inv_actions=True,
         **kwargs,
     ):
         """If goal_msgs == None, the goal is to reach the staircase."""
@@ -78,8 +78,7 @@ class MiniHackSkill(MiniHack):
         self.inv_actions = inv_actions
         if self.inv_actions:
             kwargs["actions"] = kwargs.pop("actions", FULL_ACTIONS_INV)
-
-        self._inventory = {}
+            self._inventory_map = {}
 
         if goal_msgs is not None:
             self.goal_msgs = goal_msgs
@@ -108,6 +107,7 @@ class MiniHackSkill(MiniHack):
             "screen_descriptions_crop",
             "inv_strs",
             "inv_letters",
+            "message",
         ]
         kwargs["observation_keys"] = kwargs.pop("observation_keys", default_keys)
         super().__init__(*args, des_file=des_file, **kwargs)
@@ -184,36 +184,81 @@ class MiniHackSkill(MiniHack):
     def _get_observation(self, observation):
         # Add language-related observations
         observation = super()._get_observation(observation)
-        self._update_inventory()
+
+        if self.inv_actions:
+            observation = self._update_inventory(observation)
+
         return observation
 
-    def _update_inventory(self):
+    def _update_inventory(self, observation):
         """Updates the inventory map."""
-        inv_strs_index = self._observation_keys.index("inv_strs")
-        inv_letters_index = self._observation_keys.index("inv_letters")
+        inv_letters = observation["inv_letters"]
+        inv_strs = observation["inv_strs"]
 
-        inv_strs = self.last_observation[inv_strs_index]
-        inv_letters = self.last_observation[inv_letters_index]
+        # Remove from obs
+        observation.pop("inv_strs")
+        observation.pop("inv_letters")
 
         letters = [letter.tobytes().decode("utf-8") for letter in inv_letters]
 
-        for char in string.ascii_letters:
-            if char not in letters:
-                self._inventory[char] = ""
+        # This new vector will be used as inventory observation
+        inv_strs_new = np.zeros(inv_strs.shape, dtype=inv_strs.dtype)
+
+        for i, char in enumerate(["$"] + list(string.ascii_letters)):
+            if char in letters:
+                self._inventory_map[char] = i
+                old_i = letters.index(char)
+                inv_strs_new[i] = inv_strs[old_i]
             else:
-                ind = letters.index(char)
-                line = inv_strs[ind]
-                if np.all(line == 0):
-                    self._inventory[char] = ""
+                self._inventory_map[char] = -1
 
-                line = bytes(line)
-                self._inventory[char] = line[: line.index(b"\0")].decode("utf-8")
+        observation["inv_strs"] = inv_strs_new
+        return observation
 
-    def get_action_names(self, name=False):
-        if name:
-            return [action_to_name(a, self._inventory) for a in self._actions]
-        else:
-            return [action_to_str(a, self._inventory) for a in self._actions]
+    def get_action_names(self, observation):
+        return [self.action_to_name(a, observation) for a in range(len(self._actions))]
+
+    def print_action_names(self, observation):
+        names = self.get_action_names(observation)
+        str_val = ""
+        for number, letter in enumerate(names):
+            str_val += " " + str((number, letter))
+        print(str_val)
+
+    @staticmethod
+    def arr_to_str(arr):
+        arr = arr[np.where(arr != 0)]
+        arr = bytes(arr).decode("utf-8")
+        return arr
+
+    def action_to_name(self, action, observation):
+        # TODO add a flag to also use longer description of action names
+        if self.inv_actions:
+            in_yn_function = self.last_observation[self._internal_index][1]
+            # If in YN_function
+            if in_yn_function:
+                if isinstance(self._actions[action], InventorySelection):
+                    # If inventory action: corresponding items descriptions are returned
+                    inv_map_index = action - len(FULL_ACTIONS) + 1
+                    key = list(self._inventory_map.keys())[inv_map_index]
+                    inv_item_index = self._inventory_map[key]
+                    description = observation["inv_strs"][inv_item_index]
+                    description_str = self.arr_to_str(description)
+                    return description_str
+                else:
+                    # For regular actions, an empty string is returned
+                    return ""
+            else:
+                # if NOT in YN-function
+                if isinstance(self._actions[action], InventorySelection):
+                    return ""
+
+        if isinstance(self._actions[action], CompassDirection) or isinstance(
+            self._actions[action], CompassDirectionLonger
+        ):
+            return ACTION_STR_DICT[self._actions[action].name]
+
+        return self._actions[action].name.lower()
 
 
 class MiniHackEat(MiniHackSkill):
