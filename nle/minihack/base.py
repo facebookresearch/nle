@@ -71,7 +71,7 @@ class MiniHack(NetHackStaircase):
     def __init__(
         self,
         *args,
-        des_file: str = None,
+        des_file: str,
         obs_crop_h=5,
         obs_crop_w=5,
         obs_crop_pad=0,
@@ -96,9 +96,6 @@ class MiniHack(NetHackStaircase):
         self._minihack_obs_keys = kwargs.pop(
             "observation_keys", list(space_dict.keys())
         )
-
-        if des_file is None:
-            raise ValueError("Description file is not provided.")
 
         super().__init__(*args, **kwargs)
 
