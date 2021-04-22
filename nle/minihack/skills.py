@@ -109,7 +109,7 @@ class MiniHackSkill(MiniHack):
             "inv_strs",
         ]
         if not self.inv_actions:
-            default_keys.add("inv_letters")
+            default_keys.append("inv_letters")
 
         kwargs["observation_keys"] = kwargs.pop("observation_keys", default_keys)
         super().__init__(*args, des_file=des_file, **kwargs)
