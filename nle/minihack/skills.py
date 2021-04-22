@@ -95,7 +95,7 @@ class MiniHackSkill(MiniHack):
                     )
                 )
 
-            self.goal_loc = goal_loc_action = goal_loc_action[0].lower()
+            self.goal_loc = goal_loc_action[0].lower()
             # TODO check if goal_loc is there in the begining
             self.goal_event = GoalEvent.LOC_ACTION
         else:
@@ -190,6 +190,31 @@ class MiniHackSkill(MiniHack):
         if self.inv_actions:
             observation = self._update_inventory(observation)
 
+        if self.goal_event == GoalEvent.LOC_ACTION and self._standing_on_top(
+            self.goal_loc
+        ):
+            observation = self._update_screen_description(observation)
+
+        return observation
+
+    def _update_screen_description(self, observation):
+        if "screen_descriptions_crop" in self._minihack_obs_keys:
+            # Chaning only the middle description (agent's location)
+            x = self.obs_crop_w // 2
+            y = self.obs_crop_h // 2
+            length = len(observation["screen_descriptions_crop"][x, y])
+            observation["screen_descriptions_crop"][x, y] = self.str_to_arr(
+                self.goal_loc, length
+            )
+        if "screen_descriptions" in self._minihack_obs_keys:
+            # TODO check this is correct
+            blstats = self.last_observation[self._blstats_index]
+            x, y = blstats[:2]
+            length = len(observation["screen_descriptions_crop"][x, y])
+            observation["screen_descriptions"][x, y] = self.str_to_arr(
+                self.goal_loc, length
+            )
+
         return observation
 
     def _update_inventory(self, observation):
@@ -234,6 +259,14 @@ class MiniHackSkill(MiniHack):
         arr = arr[np.where(arr != 0)]
         arr = bytes(arr).decode("utf-8")
         return arr
+
+    @staticmethod
+    def str_to_arr(name, length):
+        pad_len = length - len(name)
+        byte_arr = bytearray()
+        byte_arr.extend(map(ord, name))
+        byte_arr += bytearray(pad_len)
+        return np.array(byte_arr, dtype=np.uint8)
 
     def action_to_name(self, action, observation):
         # TODO add a flag to also use longer description of action names
