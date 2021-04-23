@@ -64,7 +64,7 @@ class MiniHackSkill(MiniHack):
         des_file,
         goal_msgs=None,
         goal_loc_action=None,
-        inv_actions=True,
+        inv_actions=False,
         **kwargs,
     ):
         """If goal_msgs == None, the goal is to reach the staircase."""
