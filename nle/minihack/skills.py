@@ -244,7 +244,7 @@ class MiniHackSkill(MiniHack):
 
         return observation
 
-    def get_action_names(self, observation):
+    def get_action_names(self, observation=None):
         return [self.action_to_name(a, observation) for a in range(len(self._actions))]
 
     def print_action_names(self, observation):
@@ -268,9 +268,10 @@ class MiniHackSkill(MiniHack):
         byte_arr += bytearray(pad_len)
         return np.array(byte_arr, dtype=np.uint8)
 
-    def action_to_name(self, action, observation):
+    def action_to_name(self, action, observation=None):
         # TODO add a flag to also use longer description of action names
         if self.inv_actions:
+            assert observation is not None
             in_yn_function = self.last_observation[self._internal_index][1]
             # If in YN_function
             if in_yn_function:
