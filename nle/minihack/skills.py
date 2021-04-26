@@ -79,6 +79,7 @@ class MiniHackSkill(MiniHack):
         if self.inv_actions:
             kwargs["actions"] = kwargs.pop("actions", FULL_ACTIONS_INV)
             self._inventory_map = {}
+            self.action_names = None
 
         if goal_msgs is not None:
             self.goal_msgs = goal_msgs
@@ -244,8 +245,27 @@ class MiniHackSkill(MiniHack):
 
         return observation
 
+    # TODO Rewrite get_action_names completely
     def get_action_names(self, observation=None):
-        return [self.action_to_name(a, observation) for a in range(len(self._actions))]
+        if self.inv_actions:
+            return self.get_action_names_fixed()
+
+        # return np.array([self.action_to_name(a, observation) for a in range(len(self._actions))])
+        ret_val = np.ndarray((len(self._actions), 20), dtype=np.int8)
+        for i in range(len(self._actions)):
+            ret_val[i, :] = self.str_to_arr(self.action_to_name(i, observation), 20)
+
+        return ret_val
+
+    def get_action_names_fixed(self, observation=None):
+        if self.action_names is None:
+            # return np.array([self.action_to_name(a, observation) for a in range(len(self._actions))])
+            self.action_names = np.ndarray((len(self._actions), 20), dtype=np.int8)
+            for i in range(len(self._actions)):
+                self.action_names[i, :] = self.str_to_arr(self.action_to_name(i, observation), 20)
+
+        return self.action_names
+
 
     def print_action_names(self, observation):
         names = self.get_action_names(observation)
