@@ -1,0 +1,139 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+defaults:
+- hydra/job_logging: colorlog
+- hydra/hydra_logging: colorlog
+- hydra/launcher: submitit_slurm
+
+# pip install hydra-core hydra_colorlog
+# can set these on the commandline too, e.g. `hydra.launcher.partition=dev`
+hydra:
+  launcher:
+    timeout_min: 4300
+    cpus_per_task: 20
+    gpus_per_node: 2
+    tasks_per_node: 1
+    mem_gb: 20
+    nodes: 1
+    partition: dev
+    comment: null
+    max_num_timeout: 5  # will requeue on timeout or preemption
+
+
+name: null  # can use this to have multiple runs with same params, eg name=1,2,3,4,5
+
+## WandB settings
+wandb: false  # enable wandb logging
+project: neurips2020    # specifies the project name to log to
+entity: nethack  # the team to log to
+group: default  # defines a group name for the experiment
+
+# Polybeast settings
+mock: false
+single_ttyrec: true
+num_seeds: 0
+
+write_profiler_trace: false
+relative_reward: false
+fn_penalty_step: constant
+penalty_time: 0.0
+penalty_step: -0.001
+reward_lose: 0
+reward_win: 1
+character: mon-hum-neu-mal
+## typical characters we use
+# mon-hum-neu-mal
+# val-dwa-law-fem
+# wiz-elf-cha-mal
+# tou-hum-neu-fem
+
+# Run settings.
+mode: train
+env: score
+## env (task) names
+# staircase
+# pet
+# eat
+# gold
+# score
+# scout
+# oracle
+
+# Training settings.
+num_actors: 256           # should be at least batch_size
+total_steps: 1e9          # 1e9 used in paper
+batch_size: 32            # 32 is standard, can use 128 with small model variants
+unroll_length: 80         # 80 is standard
+num_learner_threads: 1
+num_inference_threads: 1
+disable_cuda: false
+learner_device: cuda:1
+actor_device: cuda:0
+
+# Model settings.
+model: baseline    # random, baseline, rnd, ride
+use_lstm: true
+hidden_dim: 256    # use at least 128, 256 is stronger
+embedding_dim: 64  # use at least 32, 64 is stronger
+glyph_type: all_cat   # full, group_id, color_char, all, all_cat* (all_cat best, full fastest)
+equalize_input_dim: false  # project inputs to same dim (*false unless doing dynamics)
+equalize_factor: 2    # multiplies hdim by this when equalize is enabled (2 > 1)
+layers: 5          # number of cnn layers for crop/glyph model
+crop_model: cnn
+crop_dim: 9        # size of crop
+use_index_select: true    # use index select instead of normal embedding lookup
+
+
+# Loss settings.
+entropy_cost: 0.001      # 0.001 is better than 0.0001
+baseline_cost: 0.5
+discounting: 0.999       # probably a bit better at 0.999, esp with intrinsic reward
+reward_clipping: none    # use none with normalize_reward, else use tim
+normalize_reward: true   # true is reliable across tasks, but false & tim-clip is best on score
+
+# Optimizer settings.
+learning_rate: 0.0002
+grad_norm_clipping: 40
+# rmsprop settings
+alpha: 0.99        # 0.99 vs 0.9 vs 0.5 seems to make no difference
+momentum: 0        # keep at 0
+epsilon: 0.000001  # do not use 0.01, 1e-6 seems same as 1e-8
+
+# Experimental settings.
+state_counter: none        # none, coordinates
+no_extrinsic: false        # ignore extrinsic reward
+
+int:                       # intrinsic reward options
+  twoheaded: true          # separate value heads for extrinsic & intrinsic, use True
+  input: full              # what to model? full, crop_only, glyph_only (for RND, RIDE)
+  intrinsic_weight: 0.1    # this needs to be tuned per-model, each have different scale
+  discounting: 0.99
+  baseline_cost: 0.5
+  episodic: true
+  reward_clipping: none   # none is best with normalize enabled
+  normalize_reward: true  # whether to use reward normalization for intrinsic reward
+
+ride:                     # Rewarding Impact-Driven Exploration
+  count_norm: true        # normalise reward by the number of visits to a state
+  forward_cost: 1
+  inverse_cost: 0.1
+  hidden_dim: 128
+
+rnd:                      # Random Network Distillation
+  forward_cost: 0.01      # weight on modelling loss (ie convergence of predictor)
+
+msg:
+  model: lt_cnn            # character model? none, lt_cnn*, cnn, gru, lstm
+  hidden_dim: 64           # recommend 256
+  embedding_dim: 32        # recommend 64

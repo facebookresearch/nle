@@ -49,8 +49,8 @@ VTraceReturns = collections.namedtuple("VTraceReturns", "vs pg_advantages")
 
 def action_log_probs(policy_logits, actions):
     return -F.nll_loss(
-        F.log_softmax(torch.flatten(policy_logits, 0, -2), dim=-1),
-        torch.flatten(actions),
+        F.log_softmax(torch.flatten(policy_logits, 0, 1), dim=-1),
+        torch.flatten(actions, 0, 1),
         reduction="none",
     ).view_as(actions)
 
@@ -125,10 +125,7 @@ def from_importance_weights(
         vs = torch.add(vs_minus_v_xs, values)
 
         # Advantage for policy gradient.
-        broadcasted_bootstrap_values = torch.ones_like(vs[0]) * bootstrap_value
-        vs_t_plus_1 = torch.cat(
-            [vs[1:], broadcasted_bootstrap_values.unsqueeze(0)], dim=0
-        )
+        vs_t_plus_1 = torch.cat([vs[1:], torch.unsqueeze(bootstrap_value, 0)], dim=0)
         if clip_pg_rho_threshold is not None:
             clipped_pg_rhos = torch.clamp(rhos, max=clip_pg_rho_threshold)
         else:
