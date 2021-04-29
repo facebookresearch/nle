@@ -40,6 +40,7 @@ registration.register(
     kwargs={"size": 15, "random": True},
 )
 
+
 registration.register(
     id="MiniHack-FourRooms-v0",
     entry_point="nle.minihack.navigation:MiniHackFourRooms",
@@ -174,4 +175,26 @@ registration.register(
     id="MiniHack-LavaCrossingS11N5-v0",
     entry_point="nle.minihack.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-LavaCrossingS11N5-v0"},
+)
+
+# MiniGrid: Simple Crossing
+registration.register(
+    id="MiniHack-SimpleCrossingS9N1-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-SimpleCrossingS9N1-v0"},
+)
+registration.register(
+    id="MiniHack-SimpleCrossingS9N2-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-SimpleCrossingS9N2-v0"},
+)
+registration.register(
+    id="MiniHack-SimpleCrossingS9N3-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-SimpleCrossingS9N3-v0"},
+)
+registration.register(
+    id="MiniHack-SimpleCrossingS11N5-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-SimpleCrossingS11N5-v0"},
 )

@@ -66,10 +66,7 @@ class MiniGridHack(MiniHackNavigation):
         lev_gen.add_stair_up(start_pos)
         for d in door_pos:
             lev_gen.add_door("closed", d)
-
         lev_gen.wallify()
-
-        print(lev_gen.get_des())
 
         return lev_gen.get_des()
 
