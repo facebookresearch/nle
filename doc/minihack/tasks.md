@@ -20,7 +20,9 @@ Existing configurations:
 - `MiniHack-Empty-Random-5x5-v0`
 - `MiniHack-Empty-10x10-v0`
 - `MiniHack-Empty-Random-10x10-v0`
-- `MiniHack-Empty-10x10-v0`
-- `MiniHack-Empty-Random-10x10-v0`
+- `MiniHack-Empty-15x15-v0`
+- `MiniHack-Empty-Random-15x15-v0`
 
 In this environment, the agent is placed in an empty room. In the randomised versions of this task, the starting point of the agent are randomly sample for each episode. In the fixed version of the task, the agent always starts from the top-left corder and the goal is in the bottum-right corner. A small penalty is subtracted for the number of steps to reach the goal.
+
+The small version of this environment can be used to verify/debug implementations of RL algorithms, whereas the bigger versions can be used for initial experimentations methods designed for of sparse rewards settings. 
