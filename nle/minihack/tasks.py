@@ -352,7 +352,7 @@ def load_boxoban_levels(cur_levels_path):
                     cur_level.append(el)
                 else:
                     # 0th element is a level number, we don't need it
-                    levels.append("\n".join(cur_level[1:]))
+                    levels.append("".join(cur_level[1:]))
                     cur_level = []
     return levels
 
@@ -387,7 +387,6 @@ class BoxoHack(MiniHackMaze):
         import random
 
         level = random.choice(self._levels)
-
         level = level.split("\n")
         # nethack does not like when there are two rows of the walls
         # using # for solidfill gets rid of this issue
