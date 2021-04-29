@@ -95,7 +95,7 @@ Existing configurations:
 
 ### LavaCrossing
 
-```css
+```
                                   -----------
                                   |@....}.}.|
                                   |}}}.}}}}}|
