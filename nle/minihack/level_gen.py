@@ -22,8 +22,8 @@ class LevelGenerator:
     def __init__(
         self,
         map=None,
-        x=8,
-        y=8,
+        w=8,
+        h=8,
         lit=True,
         message="Welcome to MiniHack!",
         flags=("noteleport", "hardfloor"),
@@ -41,7 +41,7 @@ GEOMETRY:center,center
 """
 
         self.mapify = lambda x: "MAP\n" + x + "ENDMAP\n"
-        self.init_map(map, x, y)
+        self.init_map(map, w, h)
 
         litness = "lit" if lit else "unlit"
         self.footer = f'REGION:(0,0,{self.x},{self.y}),{litness},"ordinary"\n'
@@ -131,7 +131,8 @@ GEOMETRY:center,center
         if self.stair_up_exist:
             return
         x, y = self.validate_coord(coord)
-        self.footer += f"BRANCH:{x, y, x, y},(0,0,0,0)\n"
+        _x, _y = abs(x - 1), abs(y - 1)
+        self.footer += f"BRANCH:({x},{y},{x},{y}),({_x},{_y},{_x},{_y})\n"
         self.stair_up_exist = True
 
     def add_altar(self, place=None):

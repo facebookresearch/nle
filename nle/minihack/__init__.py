@@ -6,10 +6,40 @@ from nle.minihack.base import MiniHack
 from nle.minihack.navigation import MiniHackNavigation
 from nle.minihack.skills import MiniHackSkill
 
+__all__ = ["MiniHack", "MiniHackNavigation", "MiniHackSkill", "LevelGenerator"]
+
+# Empty
 registration.register(
-    id="MiniHack-Empty-v0",
+    id="MiniHack-Empty-5x5-v0",
     entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 5, "random": False},
 )
+registration.register(
+    id="MiniHack-Empty-Random-5x5-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 5, "random": True},
+)
+registration.register(
+    id="MiniHack-Empty-10x10-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 10, "random": False},
+)
+registration.register(
+    id="MiniHack-Empty-Random-10x10-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 10, "random": True},
+)
+registration.register(
+    id="MiniHack-Empty-15x15-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 15, "random": False},
+)
+registration.register(
+    id="MiniHack-Empty-Random-15x15-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 15, "random": True},
+)
+
 registration.register(
     id="MiniHack-FourRooms-v0",
     entry_point="nle.minihack.navigation:MiniHackFourRooms",
@@ -97,6 +127,3 @@ registration.register(
     entry_point="nle.minihack.minigrid:MiniGridHackMultiroom",
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0"},
 )
-
-
-__all__ = ["MiniHack", "MiniHackNavigation", "MiniHackSkill", "LevelGenerator"]

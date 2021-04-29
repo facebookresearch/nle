@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
-from nle.minihack import MiniHack
+from nle.minihack import MiniHack, LevelGenerator
 from nle import nethack
 from nle.nethack import Command
 
@@ -48,7 +48,17 @@ class MiniHackEmpty(MiniHackNavigation):
 
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 50)
-        super().__init__(*args, des_file="empty.des", **kwargs)
+        size = kwargs.pop("size", 5)
+        random = kwargs.pop("random", True)
+
+        lvl_gen = LevelGenerator(w=size, h=size, lit=True)
+        if random:
+            lvl_gen.add_stair_down()
+        else:
+            lvl_gen.add_stair_down((size - 1, size - 1))
+            lvl_gen.add_stair_up((0, 0))
+
+        super().__init__(*args, des_file=lvl_gen.get_des(), **kwargs)
 
 
 class MiniHackFourRooms(MiniHackNavigation):

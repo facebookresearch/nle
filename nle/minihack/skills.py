@@ -250,7 +250,6 @@ class MiniHackSkill(MiniHack):
         if self.inv_actions:
             return self.get_action_names_fixed()
 
-        # return np.array([self.action_to_name(a, observation) for a in range(len(self._actions))])
         ret_val = np.ndarray((len(self._actions), 20), dtype=np.int8)
         for i in range(len(self._actions)):
             ret_val[i, :] = self.str_to_arr(self.action_to_name(i, observation), 20)
@@ -259,13 +258,13 @@ class MiniHackSkill(MiniHack):
 
     def get_action_names_fixed(self, observation=None):
         if self.action_names is None:
-            # return np.array([self.action_to_name(a, observation) for a in range(len(self._actions))])
             self.action_names = np.ndarray((len(self._actions), 20), dtype=np.int8)
             for i in range(len(self._actions)):
-                self.action_names[i, :] = self.str_to_arr(self.action_to_name(i, observation), 20)
+                self.action_names[i, :] = self.str_to_arr(
+                    self.action_to_name(i, observation), 20
+                )
 
         return self.action_names
-
 
     def print_action_names(self, observation):
         names = self.get_action_names(observation)
@@ -323,7 +322,7 @@ class MiniHackEat(MiniHackSkill):
     """Environment for "eat" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_object("apple", "%")
 
         goal_msgs = EDIBLE_GOALS["apple"]
@@ -337,7 +336,7 @@ class MiniHackPray(MiniHackSkill):
     """Environment for "pray" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_altar()
 
         super().__init__(
@@ -352,7 +351,7 @@ class MiniHackSink(MiniHackSkill):
     """Environment for "sink" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_sink()
 
         super().__init__(
@@ -396,7 +395,7 @@ class MiniHackWield(MiniHackSkill):
     """Environment for "wield" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_object("dagger", ")")
 
         super().__init__(
@@ -411,7 +410,7 @@ class MiniHackWear(MiniHackSkill):
     """Environment for "wear" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_object("robe", "[")
 
         super().__init__(
@@ -426,7 +425,7 @@ class MiniHackTakeOff(MiniHackSkill):
     """Environment for "take off" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_object("leather jacket", "[")
 
         super().__init__(
@@ -441,7 +440,7 @@ class MiniHackPutOn(MiniHackSkill):
     """Environment for "put on" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_object("amulet of life saving", '"')
 
         super().__init__(
@@ -456,7 +455,7 @@ class MiniHackZap(MiniHackSkill):
     """Environment for "zap" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_object("enlightenment", "/")
 
         super().__init__(
@@ -471,7 +470,7 @@ class MiniHackRead(MiniHackSkill):
     """Environment for "read" task."""
 
     def __init__(self, *args, **kwargs):
-        lvl_gen = LevelGenerator(x=5, y=5, lit=True)
+        lvl_gen = LevelGenerator(w=5, h=5, lit=True)
         lvl_gen.add_object("blank paper", "?")
 
         super().__init__(
