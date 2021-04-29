@@ -63,6 +63,8 @@ TODO
 
 ## MiniGrid Tasks
 
+These tasks are ported from [MiniGrid](https://github.com/maximecb/gym-minigrid). If you use them in your experiments, please cite the original work.
+
 ### MultiRoom
 
 ```
@@ -116,7 +118,7 @@ Existing configurations:
 - `MiniHack-LavaCrossingS11N5-v0`
 
 
-### SimpleCorssing
+### SimpleCrossing
 
 ```
                                   ---------
