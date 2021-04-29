@@ -74,13 +74,6 @@ class MiniHackFourRooms(MiniHackNavigation):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
         super().__init__(*args, des_file="four_rooms.des", **kwargs)
 
-    # def reset(self):
-    #     wizkit_items = []
-    #     _ = super().reset(wizkit_items)
-    #     for c in "#wizmap\r":
-    #         self.env.step(ord(c))
-    #     return self.env._step_return()
-
 
 class MiniHackCorridor(MiniHackNavigation):
     """Environment for "corridor" task.
@@ -97,7 +90,7 @@ class MiniHackCorridor(MiniHackNavigation):
         super().__init__(*args, des_file=f"corridor{rooms}.des", **kwargs)
 
 
-class MiniHackNavigationWalk(MiniHackNavigation):
+class MiniHackMazeWalk(MiniHackNavigation):
     """Environment for "mazewalk" task."""
 
     def __init__(self, *args, **kwargs):
@@ -106,37 +99,6 @@ class MiniHackNavigationWalk(MiniHackNavigation):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
         self._no_rand_mon()
         super().__init__(*args, des_file="mazewalk.des", **kwargs)
-
-
-class MiniHackLavaCrossing(MiniHackNavigation):
-    """Environment for "lava crossing" task.
-
-    The agent has to reach the green goal square on the other corner of the room
-    while avoiding rivers of deadly lava which terminate the episode in failure.
-    Each lava stream runs across the room either horizontally or vertically, and
-    has a single crossing point which can be safely used; Luckily, a path to the
-    goal is guaranteed to exist. This environment is useful for studying safety
-    and safe exploration.
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
-        kwargs["wizard"] = False
-        super().__init__(*args, des_file="lava_crossing.des", **kwargs)
-
-
-class MiniHackSimpleCrossing(MiniHackNavigation):
-    """Environment for "lava crossing" task.
-
-    Similar to the LavaCrossing environment, the agent has to reach the green
-    goal square on the other corner of the room, however lava is replaced by
-    walls. This MDP is therefore much easier and and maybe useful for quickly
-    testing your algorithms.
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
-        super().__init__(*args, des_file="simple_crossing.des", **kwargs)
 
 
 class MiniHackKeyDoor(MiniHackNavigation):

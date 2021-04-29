@@ -135,6 +135,11 @@ GEOMETRY:center,center
         self.footer += f"BRANCH:({x},{y},{x},{y}),({_x},{_y},{_x},{_y})\n"
         self.stair_up_exist = True
 
+    def add_door(self, state, place=None):
+        place = self.validate_place(place)
+        assert state in ["nodoor", "locked", "closed", "open", "random"]
+        self.footer += f"DOOR:{state},{place}\n"
+
     def add_altar(self, place=None):
         place = self.validate_place(place)
         self.footer += f"ALTAR:{place},neutral,altar\n"
@@ -142,3 +147,6 @@ GEOMETRY:center,center
     def add_sink(self, place=None):
         place = self.validate_place(place)
         self.footer += f"SINK:{place}\n"
+
+    def wallify(self):
+        self.footer += "WALLIFY"
