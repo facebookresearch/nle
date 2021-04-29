@@ -98,17 +98,46 @@ GEOMETRY:center,center
         )
         return coord
 
-    def add_object(self, name, symbol="%", place=None, cursestate=None):
+    def add_object(self, name="random", symbol="%", place=None, cursestate=None):
         place = self.validate_place(place)
         assert isinstance(symbol, str) and len(symbol) == 1
         assert isinstance(name, str)  # TODO maybe check object exists in NetHack
 
-        self.footer += f"OBJECT:('{symbol}',\"{name}\"), {place}"
+        if name != "random":
+            name = f'"{name}"'
+
+        self.footer += f"OBJECT:('{symbol}',{name}),{place}"
 
         if cursestate is not None:
             assert cursestate in ["blessed", "uncursed", "cursed", "random"]
             if cursestate != "random":
                 self.footer += f", {cursestate}"
+
+        self.footer += "\n"
+
+    def add_monster(self, name="random", symbol=None, place="random", args=()):
+        place = self.validate_place(place)
+        assert (
+            symbol == "random"
+            or symbol is None
+            or (isinstance(symbol, str) and len(symbol) == 1)
+        )
+        assert isinstance(name, str)  # TODO maybe check object exists in NetHac
+
+        if name != "random":
+            name = f'"{name}"'
+
+        if symbol is not None:
+            name = f"('{symbol}',{name})"
+
+        self.footer += f"MONSTER:{name},{place}"
+
+        if len(args) > 0:
+            assert any(
+                arg in ["hostile", "peaceful", "asleep", "awake"] for arg in args
+            )
+            for arg in args:
+                self.footer += f",{arg}"
 
         self.footer += "\n"
 
@@ -123,7 +152,7 @@ GEOMETRY:center,center
             x, y = coord
             self.map[y, x] = flag
 
-    def add_stair_down(self, place=None):
+    def add_stair_down(self, place="random"):
         place = self.validate_place(place)
         self.footer += f"STAIR:{place},down\n"
 
@@ -135,16 +164,16 @@ GEOMETRY:center,center
         self.footer += f"BRANCH:({x},{y},{x},{y}),({_x},{_y},{_x},{_y})\n"
         self.stair_up_exist = True
 
-    def add_door(self, state, place=None):
+    def add_door(self, state, place="random"):
         place = self.validate_place(place)
         assert state in ["nodoor", "locked", "closed", "open", "random"]
         self.footer += f"DOOR:{state},{place}\n"
 
-    def add_altar(self, place=None):
+    def add_altar(self, place="random"):
         place = self.validate_place(place)
         self.footer += f"ALTAR:{place},neutral,altar\n"
 
-    def add_sink(self, place=None):
+    def add_sink(self, place="random"):
         place = self.validate_place(place)
         self.footer += f"SINK:{place}\n"
 
