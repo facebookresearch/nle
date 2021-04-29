@@ -8,6 +8,7 @@ from nle.minihack.skills import MiniHackSkill
 
 __all__ = ["MiniHack", "MiniHackNavigation", "MiniHackSkill", "LevelGenerator"]
 
+
 # Empty
 registration.register(
     id="MiniHack-Empty-5x5-v0",
@@ -40,12 +41,6 @@ registration.register(
     kwargs={"size": 15, "random": True},
 )
 
-
-registration.register(
-    id="MiniHack-FourRooms-v0",
-    entry_point="nle.minihack.navigation:MiniHackFourRooms",
-)
-
 # Corridor
 registration.register(
     id="MiniHack-Corridor-R2-v0",
@@ -73,14 +68,7 @@ registration.register(
     kwargs={"rooms": 10},
 )
 
-registration.register(
-    id="MiniHack-LavaCrossing-v0",
-    entry_point="nle.minihack.navigation:MiniHackLavaCrossing",
-)
-registration.register(
-    id="MiniHack-SimpleCrossing-v0",
-    entry_point="nle.minihack.navigation:MiniHackSimpleCrossing",
-)
+# Skill Tasks
 registration.register(
     id="MiniHack-KeyDoor-v0",
     entry_point="nle.minihack.navigation:MiniHackKeyDoor",
