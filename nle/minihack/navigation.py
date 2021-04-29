@@ -61,20 +61,6 @@ class MiniHackEmpty(MiniHackNavigation):
         super().__init__(*args, des_file=lvl_gen.get_des(), **kwargs)
 
 
-class MiniHackFourRooms(MiniHackNavigation):
-    """Environment for "four rooms" task.
-
-    Classic four room reinforcement learning environment. The agent must navigate
-    in a maze composed of four rooms interconnected by 4 gaps in the walls.
-    To obtain a reward, the agent must reach the green goal square. Both the agent
-    and the goal square are randomly placed in any of the four rooms.
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 100)
-        super().__init__(*args, des_file="four_rooms.des", **kwargs)
-
-
 class MiniHackCorridor(MiniHackNavigation):
     """Environment for "corridor" task.
 
@@ -94,8 +80,6 @@ class MiniHackMazeWalk(MiniHackNavigation):
     """Environment for "mazewalk" task."""
 
     def __init__(self, *args, **kwargs):
-        kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
-        kwargs["options"].append("pettype:none")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
         self._no_rand_mon()
         super().__init__(*args, des_file="mazewalk.des", **kwargs)
