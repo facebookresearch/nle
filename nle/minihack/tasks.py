@@ -332,6 +332,10 @@ class MiniGridHackMultiroom(MiniHackMaze):
         return super().reset()
 
 
+# use fountain as a goal for boulders
+BOXOBAN_GOAL_CHAR_ORD = ord("{")
+
+
 class BoxoHack(MiniHackMaze):
     def __init__(self, *args, max_episode_steps=1000, **kwargs):
 
@@ -369,7 +373,7 @@ class BoxoHack(MiniHackMaze):
                 if level[row][col] == "$":
                     object_strs.append(f'OBJECT: "boulder", ({col}, {row})')
                 if level[row][col] == ".":
-                    object_strs.append(f'TRAP: "pit", ({col}, {row})')
+                    object_strs.append(f"FOUNTAIN:({col}, {row})")
             if "@" in level[row]:
                 py = level[row].index("@")
                 level[row] = level[row].replace("@", ".")
@@ -399,11 +403,11 @@ class BoxoHack(MiniHackMaze):
         os.unlink(f.name)
 
     def _is_episode_end(self, observation):
-        # 96 is for ` (boulder).
-        # If no boulders in the observation, all of them are in the pits.
-        if 96 not in observation[self._original_observation_keys.index("chars")]:
+        # If no goals in the observation, all of them are covered with boulders.
+        if (
+            BOXOBAN_GOAL_CHAR_ORD
+            not in observation[self._original_observation_keys.index("chars")]
+        ):
             return self.StepStatus.TASK_SUCCESSFUL
         else:
             return self.StepStatus.RUNNING
-
-        # TODO define a reward
