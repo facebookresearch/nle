@@ -119,7 +119,7 @@ GEOMETRY:center,center
             assert flag in ["-", "F", "L", "T", "C"]
             self.footer += f"TERRAIN: {str(coord)}, '{flag}'\n"
         else:
-            assert flag in [".", " ", "-", "F", "L", "T", "C"]
+            assert flag in [".", " ", "-", "F", "L", "T", "C", "}"]
             x, y = coord
             self.map[y, x] = flag
 
