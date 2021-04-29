@@ -136,18 +136,42 @@ registration.register(
     id="MiniHack-Read-v0",
     entry_point="nle.minihack.skills:MiniHackRead",
 )
+
+# MiniGrid: MultiRoom
 registration.register(
     id="MiniHack-MultiRoom-N2-S4-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHackMultiroom",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0"},
 )
 registration.register(
     id="MiniHack-MultiRoom-N4-S5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHackMultiroom",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0"},
 )
 registration.register(
     id="MiniHack-MultiRoom-N6-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHackMultiroom",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0"},
+)
+
+# MiniGrid: LavaCrossing
+registration.register(
+    id="MiniHack-LavaCrossingS9N1-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-LavaCrossingS9N1-v0"},
+)
+registration.register(
+    id="MiniHack-LavaCrossingS9N2-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-LavaCrossingS9N2-v0"},
+)
+registration.register(
+    id="MiniHack-LavaCrossingS9N3-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-LavaCrossingS9N3-v0"},
+)
+registration.register(
+    id="MiniHack-LavaCrossingS11N5-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-LavaCrossingS11N5-v0"},
 )

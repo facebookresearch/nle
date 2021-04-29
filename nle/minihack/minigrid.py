@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 from nle.minihack import MiniHackNavigation
 
 
-class MiniGridHackMultiroom(MiniHackNavigation):
+class MiniGridHack(MiniHackNavigation):
     def __init__(self, *args, **kwargs):
         import gym_minigrid  # noqa: F401
 
@@ -52,6 +52,9 @@ class MiniGridHackMultiroom(MiniHackNavigation):
                     continue
                 if c.type == "floor":
                     str += "."
+                    continue
+                if c.type == "lava":
+                    str += "L"
                     continue
                 if c.type == "goal":
                     goal_position = (i, j - empty_strs)
