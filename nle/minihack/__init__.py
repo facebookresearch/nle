@@ -1,54 +1,39 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from gym.envs import registration
 
-from nle.minihack.base import MiniHack
 from nle.minihack.level_gen import LevelGenerator
+from nle.minihack.base import MiniHack
+from nle.minihack.navigation import MiniHackNavigation
+from nle.minihack.skills import MiniHackSkill
 
 registration.register(
     id="MiniHack-Empty-v0",
-    entry_point="nle.minihack.tasks:MiniHackEmpty",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
 )
 registration.register(
     id="MiniHack-FourRooms-v0",
-    entry_point="nle.minihack.tasks:MiniHackFourRooms",
+    entry_point="nle.minihack.navigation:MiniHackFourRooms",
 )
 registration.register(
     id="MiniHack-Corridor-v0",
-    entry_point="nle.minihack.tasks:MiniHackCorridor",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
 )
-registration.register(
-    id="MiniHack-Multiroom-N2-S4-v0",
-    entry_point="nle.minihack.tasks:MiniGridHackMultiroom",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0"},
-)
-registration.register(
-    id="MiniHack-Multiroom-N4-S5-v0",
-    entry_point="nle.minihack.tasks:MiniGridHackMultiroom",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0"},
-)
-registration.register(
-    id="MiniHack-Multiroom-N6-v0",
-    entry_point="nle.minihack.tasks:MiniGridHackMultiroom",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0"},
-)
-
 registration.register(
     id="MiniHack-LavaCrossing-v0",
-    entry_point="nle.minihack.tasks:MiniHackLavaCrossing",
+    entry_point="nle.minihack.navigation:MiniHackLavaCrossing",
 )
 registration.register(
     id="MiniHack-SimpleCrossing-v0",
-    entry_point="nle.minihack.tasks:MiniHackSimpleCrossing",
+    entry_point="nle.minihack.navigation:MiniHackSimpleCrossing",
 )
 registration.register(
     id="MiniHack-KeyDoor-v0",
-    entry_point="nle.minihack.tasks:MiniHackKeyDoor",
+    entry_point="nle.minihack.navigation:MiniHackKeyDoor",
 )
 registration.register(
     id="MiniHack-MazeWalk-v0",
-    entry_point="nle.minihack.tasks:MiniHackMazeWalk",
+    entry_point="nle.minihack.navigation:MiniHackMazeWalk",
 )
-
 registration.register(
     id="MiniHack-Eat-v0",
     entry_point="nle.minihack.skills:MiniHackEat",
@@ -97,6 +82,21 @@ registration.register(
     id="MiniHack-Read-v0",
     entry_point="nle.minihack.skills:MiniHackRead",
 )
+registration.register(
+    id="MiniHack-MultiRoom-N2-S4-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHackMultiroom",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0"},
+)
+registration.register(
+    id="MiniHack-MultiRoom-N4-S5-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHackMultiroom",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0"},
+)
+registration.register(
+    id="MiniHack-MultiRoom-N6-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHackMultiroom",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0"},
+)
 
 
-__all__ = ["MiniHack", "LevelGenerator"]
+__all__ = ["MiniHack", "MiniHackNavigation", "MiniHackSkill", "LevelGenerator"]
