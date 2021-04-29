@@ -1,0 +1,26 @@
+LEVEL: "mylevel"
+
+ROOM: "ordinary" , lit, random, random, random {
+  STAIR: random, up
+}
+ROOM: "ordinary" , lit, random, random, random {
+  STAIR: random, down
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
+
+RANDOM_CORRIDORS

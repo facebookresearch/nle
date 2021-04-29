@@ -44,10 +44,34 @@ registration.register(
     id="MiniHack-FourRooms-v0",
     entry_point="nle.minihack.navigation:MiniHackFourRooms",
 )
+
+# Corridor
 registration.register(
-    id="MiniHack-Corridor-v0",
+    id="MiniHack-Corridor-R2-v0",
     entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 2},
 )
+registration.register(
+    id="MiniHack-Corridor-R3-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 3},
+)
+registration.register(
+    id="MiniHack-Corridor-R5-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 5},
+)
+registration.register(
+    id="MiniHack-Corridor-R8-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 8},
+)
+registration.register(
+    id="MiniHack-Corridor-R10-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 10},
+)
+
 registration.register(
     id="MiniHack-LavaCrossing-v0",
     entry_point="nle.minihack.navigation:MiniHackLavaCrossing",

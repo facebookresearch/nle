@@ -92,7 +92,9 @@ class MiniHackCorridor(MiniHackNavigation):
     def __init__(self, *args, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
         kwargs["actions"] = NAVIGATE_ACTIONS
-        super().__init__(*args, des_file="corridor.des", **kwargs)
+        rooms = kwargs.pop("rooms", 2)
+        assert rooms in [2, 3, 5, 8, 10]
+        super().__init__(*args, des_file=f"corridor{rooms}.des", **kwargs)
 
 
 class MiniHackNavigationWalk(MiniHackNavigation):
