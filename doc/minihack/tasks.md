@@ -56,3 +56,61 @@ Existing configurations:
 - `MiniHack-Corridor-R5-v0`
 - `MiniHack-Corridor-R8-v0`
 - `MiniHack-Corridor-R10-v0`
+
+## Skill Tasks
+
+TODO
+
+## MiniGrid Tasks
+
+### MultiRoom
+
+```
+                             -------
+                             |.....|
+                             |.....|
+                             |.....|
+                             |.....|
+                             |.....|
+                             |.@...|
+                             |.....|
+                          ----+-----
+                          |.....|
+                          |.....|---
+                          |.....|..|---------
+                          |.....|--|..||....|
+                          |.....+..+..||.>..|
+                          |.....|..|..||....|
+                          |.....|..|..|---+-----
+                          |.....|..|..|........|
+                          ------|..|..+........|
+                                ------|........|
+                                      ----------
+```
+
+Existing configurations:
+- `MiniHack-MultiRoom-N2-S4-v0` (two small rooms)
+- `MiniHack-MultiRoom-N4-S5-v0` (four rooms)
+- `MiniHack-MultiRoom-N6-v0` (six rooms)
+
+### LavaCrossing
+
+```css
+                                  -----------
+                                  |@....}.}.|
+                                  |}}}.}}}}}|
+                                  |.}.....}.|
+                                  |}}}}}}.}}|
+                                  |.}...}.}.|
+                                  |.}...}.}.|
+                                  |.}...}...|
+                                  |.}...}.}.|
+                                  |.}...}.}>|
+                                  -----------
+```
+
+Existing configurations:
+- `MiniHack-LavaCrossingS9N1-v0`
+- `MiniHack-LavaCrossingS9N2-v0`
+- `MiniHack-LavaCrossingS9N3-v0`
+- `MiniHack-LavaCrossingS11N5-v0`
