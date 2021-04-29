@@ -114,3 +114,24 @@ Existing configurations:
 - `MiniHack-LavaCrossingS9N2-v0`
 - `MiniHack-LavaCrossingS9N3-v0`
 - `MiniHack-LavaCrossingS11N5-v0`
+
+
+### SimpleCorssing
+
+```
+                                  ---------
+                                  |@|...|.|
+                                  |.|...|.|
+                                  |.|.....|
+                                  |.....|.|
+                                  |.|...|.|
+                                  ------|.---
+                                        |...|
+                                        ---.|
+                                          |>|
+                                          ---
+```
+- `MiniHack-SimpleCrossingS9N1-v0`
+- `MiniHack-SimpleCrossingS9N2-v0`
+- `MiniHack-SimpleCrossingS9N3-v0`
+- `MiniHack-SimpleCrossingS11N5-v0`
