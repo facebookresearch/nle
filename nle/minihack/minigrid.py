@@ -7,6 +7,7 @@ class MiniGridHack(MiniHackNavigation):
         import gym_minigrid  # noqa: F401
 
         self._minigrid_env = gym.make(kwargs["env_name"])
+        self.num_mon = kwargs.pop("num_mon", 0)
 
         des_file = self.get_env_desc()
         super().__init__(des_file=des_file)
@@ -67,6 +68,9 @@ class MiniGridHack(MiniHackNavigation):
         for d in door_pos:
             lev_gen.add_door("closed", d)
         lev_gen.wallify()
+
+        for _ in range(self.num_mon):
+            lev_gen.add_monster()
 
         return lev_gen.get_des()
 

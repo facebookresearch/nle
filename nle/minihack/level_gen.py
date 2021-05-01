@@ -178,4 +178,4 @@ GEOMETRY:center,center
         self.footer += f"SINK:{place}\n"
 
     def wallify(self):
-        self.footer += "WALLIFY"
+        self.footer += "WALLIFY\n"
