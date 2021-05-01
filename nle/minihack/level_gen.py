@@ -20,6 +20,55 @@ MAZE_FLAGS = (
     "inaccessibles",
 )
 
+MAP_CHARS = [
+    " ",  # solid wall
+    "#",  # corridor
+    ".",  # room floor
+    "-",  # horizontal wall
+    "|",  # vertical wall
+    "+",  # door
+    "A",  # air
+    "B",  # crosswall
+    "C",  # cloud
+    "S",  # secret door
+    "H",  # secret corridor
+    "{",  # fountain
+    "\\",  # throne
+    "K",  # soml
+    "}",  # moat
+    "P",  # pool of water
+    "L",  # lava pool
+    "I",  # ice
+    "W",  # water
+    "T",  # tree
+    "F",  # iron bars
+]
+
+TRAP_NAMES = [
+    "anti magic",
+    "arrow",
+    "bear",
+    "board",
+    "dart",
+    "falling rock",
+    "fire",
+    "hole",
+    "land mine",
+    "level teleport",
+    "magic portal",
+    "magic",
+    "pit",
+    "polymorph",
+    "rolling boulder",
+    "rust",
+    "sleep gas",
+    "spiked pit",
+    "statue",
+    "teleport",
+    "trap door",
+    "web",
+]
+
 
 class LevelGenerator:
     def __init__(
@@ -29,11 +78,11 @@ class LevelGenerator:
         h=8,
         lit=True,
         message="Welcome to MiniHack!",
-        flags=("noteleport", "hardfloor"),
+        flags=("hardfloor",),
     ):
         assert all(
             f in MAZE_FLAGS for f in flags
-        ), "One of the provided maze flags is incorrect"
+        ), f"One of the provided maze flags is incorrect: {flags}"
         flags_str = ",".join(flags)
 
         self.header = f"""
@@ -146,12 +195,11 @@ GEOMETRY:center,center
 
     def add_terrain(self, coord, flag, in_footer=False):
         coord = self.validate_coord(coord)
+        assert flag in MAP_CHARS
 
         if in_footer:
-            assert flag in ["-", "F", "L", "T", "C"]
             self.footer += f"TERRAIN: {str(coord)}, '{flag}'\n"
         else:
-            assert flag in [".", " ", "-", "F", "L", "T", "C", "}"]
             x, y = coord
             self.map[y, x] = flag
 
@@ -172,13 +220,28 @@ GEOMETRY:center,center
         assert state in ["nodoor", "locked", "closed", "open", "random"]
         self.footer += f"DOOR:{state},{place}\n"
 
-    def add_altar(self, place="random"):
+    def add_altar(self, place="random", align="random", type="random"):
         place = self.validate_place(place)
-        self.footer += f"ALTAR:{place},neutral,altar\n"
+        assert align in [
+            "noalign",
+            "law",
+            "neutral",
+            "chaos",
+            "coaligned",
+            "noncoaligned",
+            "random",
+        ]
+        assert type in [""]
+        self.footer += f"ALTAR:{place},{align},{type}\n"
 
     def add_sink(self, place="random"):
         place = self.validate_place(place)
         self.footer += f"SINK:{place}\n"
+
+    def add_trap(self, name="teleport", place="random"):
+        place = self.validate_place(place)
+        assert name in TRAP_NAMES
+        self.footer += f'TRAP:"{name}",{place}\n'
 
     def wallify(self):
         self.footer += "WALLIFY\n"

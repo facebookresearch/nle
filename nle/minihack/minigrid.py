@@ -13,6 +13,7 @@ class MiniGridHack(MiniHackNavigation):
 
         self._minigrid_env = gym.make(kwargs.pop("env_name"))
         self.num_mon = kwargs.pop("num_mon", 0)
+        self.num_trap = kwargs.pop("num_trap", 0)
         self.door_state = kwargs.pop("door_state", "closed")
         if self.door_state == "locked":
             kwargs["actions"] = MOVE_AND_KICK_ACTIONS
@@ -73,12 +74,17 @@ class MiniGridHack(MiniHackNavigation):
 
         lev_gen.add_stair_down(goal_pos)
         lev_gen.add_stair_up(start_pos)
+
         for d in door_pos:
             lev_gen.add_door(self.door_state, d)
+
         lev_gen.wallify()
 
         for _ in range(self.num_mon):
             lev_gen.add_monster()
+
+        for _ in range(self.num_trap):
+            lev_gen.add_trap()
 
         return lev_gen.get_des()
 

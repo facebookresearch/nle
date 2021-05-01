@@ -90,7 +90,6 @@ registration.register(
 )
 
 # Skill Tasks
-
 registration.register(
     id="MiniHack-MazeWalk-v0",
     entry_point="nle.minihack.navigation:MiniHackMazeWalk",
@@ -176,6 +175,23 @@ registration.register(
     id="MiniHack-LockedMultiRoom-N6-v0",
     entry_point="nle.minihack.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "door_state": "locked"},
+)
+
+# MiniGrid: TrappedMultiRoom
+registration.register(
+    id="MiniHack-TrappedMultiRoom-N2-S4-M1-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0", "num_trap": 1},
+)
+registration.register(
+    id="MiniHack-TrappedMultiRoom-N4-S5-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0", "num_trap": 4},
+)
+registration.register(
+    id="MiniHack-TrappedMultiRoom-N6-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "num_trap": 6},
 )
 
 # MiniGrid: MonsterMultiRoom

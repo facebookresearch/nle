@@ -337,7 +337,7 @@ class MiniHackPray(MiniHackSkill):
 
     def __init__(self, *args, **kwargs):
         lvl_gen = LevelGenerator(w=5, h=5, lit=True)
-        lvl_gen.add_altar()
+        lvl_gen.add_altar("random", "neutral", "altar")
 
         super().__init__(
             *args,
