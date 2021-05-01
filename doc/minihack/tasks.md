@@ -95,6 +95,13 @@ Existing configurations:
 - `MiniHack-MultiRoom-N4-S5-v0` (four rooms)
 - `MiniHack-MultiRoom-N6-v0` (six rooms)
 
+### MonsterMultiRoom
+
+Existing configurations:
+- `MiniHack-MonsterMultiRoom-N2-S4-v0` (two small rooms)
+- `MiniHack-MonsterMultiRoom-N4-S5-v0` (four rooms)
+- `MiniHack-MonsterMultiRoom-N6-v0` (six rooms)
+
 ### LavaCrossing
 
 ```
