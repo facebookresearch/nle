@@ -211,6 +211,38 @@ registration.register(
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "num_mon": 6},
 )
 
+# MiniGrid: ExtremeMultiRoom
+registration.register(
+    id="MiniHack-ExtremeMultiRoom-N2-S4-M1-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={
+        "env_name": "MiniGrid-MultiRoom-N2-S4-v0",
+        "num_mon": 1,
+        "num_trap": 1,
+        "door_state": "locked",
+    },
+)
+registration.register(
+    id="MiniHack-ExtremeMultiRoom-N4-S5-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={
+        "env_name": "MiniGrid-MultiRoom-N4-S5-v0",
+        "num_mon": 4,
+        "num_trap": 4,
+        "door_state": "locked",
+    },
+)
+registration.register(
+    id="MiniHack-ExtremeMultiRoom-N6-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={
+        "env_name": "MiniGrid-MultiRoom-N6-v0",
+        "num_mon": 6,
+        "num_trap": 6,
+        "door_state": "locked",
+    },
+)
+
 # MiniGrid: LavaCrossing
 registration.register(
     id="MiniHack-LavaCrossingS9N1-v0",
