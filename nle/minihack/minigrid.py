@@ -1,17 +1,24 @@
 from nle.minihack import MiniHackNavigation, LevelGenerator
+from nle.nethack import Command, CompassDirection
 import gym
+
+MOVE_AND_KICK_ACTIONS = tuple(
+    list(CompassDirection) + [Command.OPEN, Command.KICK, Command.SEARCH]
+)
 
 
 class MiniGridHack(MiniHackNavigation):
     def __init__(self, *args, **kwargs):
         import gym_minigrid  # noqa: F401
 
-        self._minigrid_env = gym.make(kwargs["env_name"])
+        self._minigrid_env = gym.make(kwargs.pop("env_name"))
         self.num_mon = kwargs.pop("num_mon", 0)
         self.door_state = kwargs.pop("door_state", "closed")
+        if self.door_state == "locked":
+            kwargs["actions"] = MOVE_AND_KICK_ACTIONS
 
         des_file = self.get_env_desc()
-        super().__init__(des_file=des_file)
+        super().__init__(*args, des_file=des_file, **kwargs)
 
     def get_env_map(self, env):
         door_pos = []

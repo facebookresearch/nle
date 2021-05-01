@@ -195,7 +195,6 @@ registration.register(
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "num_mon": 6},
 )
 
-
 # MiniGrid: LavaCrossing
 registration.register(
     id="MiniHack-LavaCrossingS9N1-v0",
