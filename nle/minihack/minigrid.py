@@ -8,6 +8,7 @@ class MiniGridHack(MiniHackNavigation):
 
         self._minigrid_env = gym.make(kwargs["env_name"])
         self.num_mon = kwargs.pop("num_mon", 0)
+        self.door_state = kwargs.pop("door_state", "closed")
 
         des_file = self.get_env_desc()
         super().__init__(des_file=des_file)
@@ -66,7 +67,7 @@ class MiniGridHack(MiniHackNavigation):
         lev_gen.add_stair_down(goal_pos)
         lev_gen.add_stair_up(start_pos)
         for d in door_pos:
-            lev_gen.add_door("closed", d)
+            lev_gen.add_door(self.door_state, d)
         lev_gen.wallify()
 
         for _ in range(self.num_mon):

@@ -1,5 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import numpy as np
+import os
+
+PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
 
 MAZE_FLAGS = (
     "noteleport",
@@ -179,3 +182,20 @@ GEOMETRY:center,center
 
     def wallify(self):
         self.footer += "WALLIFY\n"
+
+
+class KeyRoomGenerator:
+    def __init__(self, room_size, subroom_size, lit):
+        des_path = os.path.join(PATH_DAT_DIR, "key_and_door_tmp.des")
+        with open(des_path) as f:
+            df = f.read()
+
+        df = df.replace("RS", str(room_size))
+        df = df.replace("SS", str(subroom_size))
+        if not lit:
+            df = df.replace("lit", str("unlit"))
+
+        self.des_file = df
+
+    def get_des(self):
+        return self.des_file

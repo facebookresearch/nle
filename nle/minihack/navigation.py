@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 from nle.minihack import MiniHack, LevelGenerator
+from nle.minihack.level_gen import KeyRoomGenerator
 from nle import nethack
 from nle.nethack import Command
 
@@ -95,13 +96,13 @@ class MiniHackKeyDoor(MiniHackNavigation):
     learning.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, des_file, **kwargs):
         kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
         kwargs["options"].append("!autopickup")
         kwargs["character"] = kwargs.pop("charachter", "rog-hum-cha-mal")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
         kwargs["actions"] = APPLY_ACTIONS
-        super().__init__(*args, des_file="key_and_door.des", **kwargs)
+        super().__init__(*args, des_file=des_file, **kwargs)
 
     def step(self, action: int):
         # If apply action is chosen
@@ -129,3 +130,10 @@ class MiniHackKeyDoor(MiniHackNavigation):
 
         obs, reward, done, info = super().step(action)
         return obs, reward, done, info
+
+
+class MiniHackKeyRoom(MiniHackKeyDoor):
+    def __init__(self, *args, room_size, subroom_size, lit, **kwargs):
+        lev_gen = KeyRoomGenerator(room_size, subroom_size, lit)
+        des_file = lev_gen.get_des()
+        super().__init__(*args, des_file=des_file, **kwargs)

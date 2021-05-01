@@ -8,7 +8,6 @@ from nle.minihack.skills import MiniHackSkill
 
 __all__ = ["MiniHack", "MiniHackNavigation", "MiniHackSkill", "LevelGenerator"]
 
-
 # Empty
 registration.register(
     id="MiniHack-Empty-5x5-v0",
@@ -68,11 +67,30 @@ registration.register(
     kwargs={"rooms": 10},
 )
 
-# Skill Tasks
+# KeyRoom
 registration.register(
-    id="MiniHack-KeyDoor-v0",
-    entry_point="nle.minihack.navigation:MiniHackKeyDoor",
+    id="MiniHack-KeyRoom-S5-3-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 5, "subroom_size": 3, "lit": True},
 )
+registration.register(
+    id="MiniHack-KeyRoom-S12-4-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 12, "subroom_size": 4, "lit": True},
+)
+registration.register(
+    id="MiniHack-KeyRoom-Unlit-S5-3-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 5, "subroom_size": 3, "lit": False},
+)
+registration.register(
+    id="MiniHack-KeyRoom-Unlit-S12-4-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 12, "subroom_size": 4, "lit": False},
+)
+
+# Skill Tasks
+
 registration.register(
     id="MiniHack-MazeWalk-v0",
     entry_point="nle.minihack.navigation:MiniHackMazeWalk",
@@ -143,6 +161,23 @@ registration.register(
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0"},
 )
 
+# MiniGrid: LockedMultiRoom
+registration.register(
+    id="MiniHack-LockedMultiRoom-N2-S4-M1-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0", "door_state": "locked"},
+)
+registration.register(
+    id="MiniHack-LockedMultiRoom-N4-S5-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0", "door_state": "locked"},
+)
+registration.register(
+    id="MiniHack-LockedMultiRoom-N6-v0",
+    entry_point="nle.minihack.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "door_state": "locked"},
+)
+
 # MiniGrid: MonsterMultiRoom
 registration.register(
     id="MiniHack-MonsterMultiRoom-N2-S4-M1-v0",
@@ -159,6 +194,7 @@ registration.register(
     entry_point="nle.minihack.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "num_mon": 6},
 )
+
 
 # MiniGrid: LavaCrossing
 registration.register(
