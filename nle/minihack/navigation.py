@@ -4,6 +4,7 @@ from nle.minihack import MiniHack, LevelGenerator
 from nle.minihack.level_gen import KeyRoomGenerator
 from nle import nethack
 from nle.nethack import Command
+from gym.envs import registration
 
 
 MOVE_ACTIONS = tuple(nethack.CompassDirection)
@@ -62,6 +63,39 @@ class MiniHackEmpty(MiniHackNavigation):
         super().__init__(*args, des_file=lvl_gen.get_des(), **kwargs)
 
 
+# Empty
+registration.register(
+    id="MiniHack-Empty-5x5-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 5, "random": False},
+)
+registration.register(
+    id="MiniHack-Empty-Random-5x5-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 5, "random": True},
+)
+registration.register(
+    id="MiniHack-Empty-10x10-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 10, "random": False},
+)
+registration.register(
+    id="MiniHack-Empty-Random-10x10-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 10, "random": True},
+)
+registration.register(
+    id="MiniHack-Empty-15x15-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 15, "random": False},
+)
+registration.register(
+    id="MiniHack-Empty-Random-15x15-v0",
+    entry_point="nle.minihack.navigation:MiniHackEmpty",
+    kwargs={"size": 15, "random": True},
+)
+
+
 class MiniHackCorridor(MiniHackNavigation):
     """Environment for "corridor" task.
 
@@ -77,6 +111,34 @@ class MiniHackCorridor(MiniHackNavigation):
         super().__init__(*args, des_file=f"corridor{rooms}.des", **kwargs)
 
 
+# Corridor
+registration.register(
+    id="MiniHack-Corridor-R2-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 2},
+)
+registration.register(
+    id="MiniHack-Corridor-R3-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 3},
+)
+registration.register(
+    id="MiniHack-Corridor-R5-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 5},
+)
+registration.register(
+    id="MiniHack-Corridor-R8-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 8},
+)
+registration.register(
+    id="MiniHack-Corridor-R10-v0",
+    entry_point="nle.minihack.navigation:MiniHackCorridor",
+    kwargs={"rooms": 10},
+)
+
+
 class MiniHackMazeWalk(MiniHackNavigation):
     """Environment for "mazewalk" task."""
 
@@ -86,15 +148,14 @@ class MiniHackMazeWalk(MiniHackNavigation):
         super().__init__(*args, des_file="mazewalk.des", **kwargs)
 
 
-class MiniHackKeyDoor(MiniHackNavigation):
-    """Environment for "key and door" task.
+registration.register(
+    id="MiniHack-MazeWalk-v0",
+    entry_point="nle.minihack.navigation:MiniHackMazeWalk",
+)
 
-    This environment has a key that the agent must pick up in order to
-    unlock a goal and then get to the green goal square. This environment
-    is difficult, because of the sparse reward, to solve using classical
-    RL algorithms. It is useful to experiment with curiosity or curriculum
-    learning.
-    """
+
+class MiniHackKeyDoor(MiniHackNavigation):
+    """Environment for "key and door" task."""
 
     def __init__(self, *args, des_file, **kwargs):
         kwargs["options"] = kwargs.pop("options", list(nethack.NETHACKOPTIONS))
@@ -137,3 +198,26 @@ class MiniHackKeyRoom(MiniHackKeyDoor):
         lev_gen = KeyRoomGenerator(room_size, subroom_size, lit)
         des_file = lev_gen.get_des()
         super().__init__(*args, des_file=des_file, **kwargs)
+
+
+# KeyRoom
+registration.register(
+    id="MiniHack-KeyRoom-S5-3-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 5, "subroom_size": 3, "lit": True},
+)
+registration.register(
+    id="MiniHack-KeyRoom-S12-4-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 12, "subroom_size": 4, "lit": True},
+)
+registration.register(
+    id="MiniHack-KeyRoom-Unlit-S5-3-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 5, "subroom_size": 3, "lit": False},
+)
+registration.register(
+    id="MiniHack-KeyRoom-Unlit-S12-4-v0",
+    entry_point="nle.minihack.navigation:MiniHackKeyRoom",
+    kwargs={"room_size": 12, "subroom_size": 4, "lit": False},
+)

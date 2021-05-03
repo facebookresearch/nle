@@ -7,6 +7,7 @@ from nle.nethack import Command, CompassIntercardinalDirection
 import enum
 import string
 import numpy as np
+from gym.envs import registration
 
 FULL_ACTIONS_INV = tuple(list(FULL_ACTIONS) + list(InventorySelection))
 
@@ -479,3 +480,54 @@ class MiniHackRead(MiniHackSkill):
             goal_msgs=["This scroll seems to be blank."],
             **kwargs,
         )
+
+
+# Skill Tasks
+registration.register(
+    id="MiniHack-Eat-v0",
+    entry_point="nle.minihack.skills:MiniHackEat",
+)
+registration.register(
+    id="MiniHack-Pray-v0",
+    entry_point="nle.minihack.skills:MiniHackPray",
+)
+registration.register(
+    id="MiniHack-Sink-v0",
+    entry_point="nle.minihack.skills:MiniHackSink",
+)
+# registration.register(
+#     id="MiniHack-Quaff-v0",
+#     entry_point="nle.minihack.skills:MiniHackQuaff",
+# )
+registration.register(
+    id="MiniHack-ClosedDoor-v0",
+    entry_point="nle.minihack.skills:MiniHackClosedDoor",
+)
+registration.register(
+    id="MiniHack-LockedDoor-v0",
+    entry_point="nle.minihack.skills:MiniHackLockedDoor",
+)
+registration.register(
+    id="MiniHack-Wield-v0",
+    entry_point="nle.minihack.skills:MiniHackWield",
+)
+registration.register(
+    id="MiniHack-Wear-v0",
+    entry_point="nle.minihack.skills:MiniHackWear",
+)
+registration.register(
+    id="MiniHack-TakeOff-v0",
+    entry_point="nle.minihack.skills:MiniHackTakeOff",
+)
+registration.register(
+    id="MiniHack-PutOn-v0",
+    entry_point="nle.minihack.skills:MiniHackPutOn",
+)
+registration.register(
+    id="MiniHack-Zap-v0",
+    entry_point="nle.minihack.skills:MiniHackZap",
+)
+registration.register(
+    id="MiniHack-Read-v0",
+    entry_point="nle.minihack.skills:MiniHackRead",
+)
