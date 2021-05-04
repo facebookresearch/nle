@@ -339,7 +339,7 @@ class MiniHackLabyrinth(MiniHackSkillEnv):
         lvl_gen = LevelGenerator(map=map, lit=True)
         lvl_gen.add_stair_up((19, 1))
         lvl_gen.add_stair_down((19, 7))
-        lvl_gen.add_monster(name="minotaur", place=(np.random.randint(10, 25), 9))
+        lvl_gen.add_monster(name="minotaur", place=(19, 9))
         lvl_gen.add_object("death", "/", cursestate="blessed")
         des_file = lvl_gen.get_des()
 
