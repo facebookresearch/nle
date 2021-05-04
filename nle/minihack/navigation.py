@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 from nle.minihack import MiniHack, LevelGenerator
-from nle.minihack.level_gen import KeyRoomGenerator
+from nle.minihack.level_generator import KeyRoomGenerator
 from nle import nethack
 from nle.nethack import Command
 from gym.envs import registration
@@ -11,6 +11,9 @@ MOVE_ACTIONS = tuple(nethack.CompassDirection)
 APPLY_ACTIONS = tuple(list(MOVE_ACTIONS) + [Command.PICKUP, Command.APPLY])
 NAVIGATE_ACTIONS = tuple(
     list(MOVE_ACTIONS) + [Command.OPEN, Command.KICK, Command.SEARCH]
+)
+NAVIGATE_AND_APPLY_ACTIONS = tuple(
+    list(NAVIGATE_ACTIONS) + [Command.PICKUP, Command.APPLY]
 )
 
 
@@ -162,7 +165,7 @@ class MiniHackKeyDoor(MiniHackNavigation):
         kwargs["options"].append("!autopickup")
         kwargs["character"] = kwargs.pop("charachter", "rog-hum-cha-mal")
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 200)
-        kwargs["actions"] = APPLY_ACTIONS
+        kwargs["actions"] = kwargs.pop("actions", APPLY_ACTIONS)
         super().__init__(*args, des_file=des_file, **kwargs)
 
     def step(self, action: int):
@@ -202,9 +205,9 @@ class MiniHackKeyRoom(MiniHackKeyDoor):
 
 # KeyRoom
 registration.register(
-    id="MiniHack-KeyRoom-S5-3-v0",
+    id="MiniHack-KeyRoom-S5-2-v0",
     entry_point="nle.minihack.navigation:MiniHackKeyRoom",
-    kwargs={"room_size": 5, "subroom_size": 3, "lit": True},
+    kwargs={"room_size": 5, "subroom_size": 2, "lit": True},
 )
 registration.register(
     id="MiniHack-KeyRoom-S12-4-v0",

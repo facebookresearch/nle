@@ -231,7 +231,7 @@ GEOMETRY:center,center
             "noncoaligned",
             "random",
         ]
-        assert type in [""]
+        assert type in ["sanctum", "shrine", "altar", "random"]
         self.footer += f"ALTAR:{place},{align},{type}\n"
 
     def add_sink(self, place="random"):
