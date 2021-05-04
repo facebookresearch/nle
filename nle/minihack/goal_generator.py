@@ -81,8 +81,9 @@ class GoalGenerator:
     def add_amulet_goal(self, name=None):
         self._add_message_goal(["amulet (being worn)."])
 
-    # def add_kill_goal(self, name):
-    #     self._add_message_goal([f"you kill {name}"])
+    def add_kill_goal(self, name):
+        # TODO investigate
+        self._add_message_goal([f"You kill the {name}"])
 
     def add_positional_goal(self, place_name, action_name):
         self._add_loc_action_goal(place_name, action_name)

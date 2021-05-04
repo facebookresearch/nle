@@ -3,6 +3,7 @@ from nle.minihack import MiniHack, LevelGenerator, GoalGenerator
 from nle.minihack.goal_generator import GoalEvent
 from nle.nethack import CompassDirection
 from gym.envs import registration
+import numpy as np
 
 Y_cmd = CompassDirection.NW
 
@@ -267,49 +268,92 @@ class MiniHackLockedDoor(MiniHackSkillEnv):
         super().__init__(*args, des_file="locked_door.des", **kwargs)
 
 
-# class MiniHackLabyrinth(MiniHackSkillEnv):
-#     """Environment for "read" task."""
+class MiniHackWandOfDeath(MiniHackSkillEnv):
+    """Environment for "sink" task."""
 
-#     def __init__(self, *args, **kwargs):
-#         map = """
-# -------------------------------------
-# |.................|.|...............|
-# |.|-------------|.|.|.------------|.|
-# |.|.............|.|.|.............|.|
-# |.|.|----------.|.|.|------------.|.|
-# |.|.|...........|.|.............|.|.|
-# |.|.|.|----------.|-----------|.|.|.|
-# |.|.|.|...........|.......|...|.|.|.|
-# |.|.|.|.|----------------.|.|.|.|.|.|
-# |.|.|.|.|.................|.|.|.|.|.|
-# |.|.|.|.|.-----------------.|.|.|.|.|
-# |.|.|.|.|...................|.|.|.|.|
-# |.|.|.|.|--------------------.|.|.|.|
-# |.|.|.|.......................|.|.|.|
-# |.|.|.|-----------------------|.|.|.|
-# |.|.|...........................|.|.|
-# |.|.|---------------------------|.|.|
-# |.|...............................|.|
-# |.|-------------------------------|.|
-# |...................................|
-# -------------------------------------
-# """
-#         lvl_gen = LevelGenerator(map=map, lit=True)
-#         lvl_gen.add_monster(name="minotaur", place=(20, 7))
-#         lvl_gen.add_stair_up((20, 1))
-#         lvl_gen.add_object("wand of death", "blessed")
-#         des_file = lvl_gen.get_des()
+    def __init__(self, *args, **kwargs):
+        map = """
+-------------
+|...........|
+|...........|
+|...........|
+|...........|
+|....|.|....|
+|....|.|....|
+|-----.-----|
+|...........|
+|...........|
+|...........|
+-------------
+"""
+        lvl_gen = LevelGenerator(map=map, lit=True)
 
-#         goal_gen = GoalGenerator()
-#         goal_gen._add_kill_goal("minotaur")
-#         goals = goal_gen.get_goals()
+        def get_safe_coord():
+            return np.random.randint(1, 11), np.random.randint(1, 5)
 
-#         super().__init__(
-#             *args,
-#             des_file=des_file,
-#             goals=goals,
-#             **kwargs,
-#         )
+        def get_dangerous_coord():
+            return np.random.randint(1, 11), np.random.randint(8, 10)
+
+        lvl_gen.add_object("death", "/", cursestate="blessed", place=get_safe_coord())
+        lvl_gen.add_stair_up(get_safe_coord())
+        lvl_gen.add_monster("minotaur", args=("asleep",), place=(6, 8))
+        lvl_gen.add_stair_down(get_dangerous_coord())
+        des_file = lvl_gen.get_des()
+
+        super().__init__(*args, des_file=des_file, **kwargs)
+
+
+registration.register(
+    id="MiniHack-WandOfDeath-v0",
+    entry_point="nle.minihack.skills:MiniHackWandOfDeath",
+)
+
+
+class MiniHackLabyrinth(MiniHackSkillEnv):
+    """Environment for "read" task."""
+
+    def __init__(self, *args, **kwargs):
+        map = """
+-------------------------------------
+|.................|.|...............|
+|.|-------------|.|.|.------------|.|
+|.|.............|.|.|.............|.|
+|.|.|----------.|.|.|------------.|.|
+|.|.|...........|.|.............|.|.|
+|.|.|.|----------.|-----------|.|.|.|
+|.|.|.|...........|.......|...|.|.|.|
+|.|.|.|.|----------------.|.|.|.|.|.|
+|.|.|.|.|.................|.|.|.|.|.|
+|.|.|.|.|.-----------------.|.|.|.|.|
+|.|.|.|.|...................|.|.|.|.|
+|.|.|.|.|--------------------.|.|.|.|
+|.|.|.|.......................|.|.|.|
+|.|.|.|-----------------------|.|.|.|
+|.|.|...........................|.|.|
+|.|.|---------------------------|.|.|
+|.|...............................|.|
+|.|-------------------------------|.|
+|...................................|
+-------------------------------------
+"""
+        lvl_gen = LevelGenerator(map=map, lit=True)
+        lvl_gen.add_stair_up((19, 1))
+        lvl_gen.add_stair_down((19, 7))
+        lvl_gen.add_monster(name="minotaur", place=(np.random.randint(10, 25), 9))
+        lvl_gen.add_object("death", "/", cursestate="blessed")
+        des_file = lvl_gen.get_des()
+
+        super().__init__(
+            *args,
+            des_file=des_file,
+            **kwargs,
+        )
+
+
+registration.register(
+    id="MiniHack-Labyrinth-v0",
+    entry_point="nle.minihack.skills:MiniHackLabyrinth",
+)
 
 
 # Skill Tasks
