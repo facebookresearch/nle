@@ -172,10 +172,6 @@ def inference(
             batch.set_outputs(outputs)
 
 
-# TODO(heiner): Given that our nest implementation doesn't support
-# namedtuples, using them here doesn't seem like a good fit. We
-# probably want to nestify the environment server and deal with
-# dictionaries?
 EnvOutput = collections.namedtuple(
     "EnvOutput", "frame rewards done episode_step episode_return"
 )
