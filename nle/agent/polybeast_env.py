@@ -20,6 +20,8 @@ import threading
 import time
 
 from nle.agent.envs import tasks
+
+from nle.agent.envs.wrapper import CounterWrapper
 import libtorchbeast
 
 
@@ -114,9 +116,12 @@ def create_env(flags, env_id=0, lock=threading.Lock()):
             kwargs.update(reward_win=flags.reward_win, reward_lose=flags.reward_lose)
         elif env_id == 0:  # print warning once
             print("Ignoring flags.reward_win and flags.reward_lose")
-        if flags.state_counter != "none":
-            kwargs.update(state_counter=flags.state_counter)
+
         env = env_class(**kwargs)
+
+        if flags.state_counter != "none":
+            env = CounterWrapper(env, flags.state_counter)
+
         if flags.seedspath is not None and len(flags.seedspath) > 0:
             raise NotImplementedError("seedspath > 0 not implemented yet.")
 

@@ -111,7 +111,7 @@ momentum: 0        # keep at 0
 epsilon: 0.000001  # do not use 0.01, 1e-6 seems same as 1e-8
 
 # Experimental settings.
-state_counter: none        # none, coordinates
+state_counter: coordinates         # none, coordinates
 no_extrinsic: false        # ignore extrinsic reward
 
 int:                       # intrinsic reward options
@@ -134,6 +134,6 @@ rnd:                      # Random Network Distillation
   forward_cost: 0.01      # weight on modelling loss (ie convergence of predictor)
 
 msg:
-  model: lt_cnn            # character model? none, lt_cnn*, cnn, gru, lstm
+  model: none              # character model? none, lt_cnn*, cnn, gru, lstm
   hidden_dim: 64           # recommend 256
   embedding_dim: 32        # recommend 64
