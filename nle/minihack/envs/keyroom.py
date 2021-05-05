@@ -54,24 +54,40 @@ class MiniHackKeyRoom(MiniHackKeyDoor):
         super().__init__(*args, des_file=des_file, **kwargs)
 
 
+class MiniHackKeyRoom5x5(MiniHackKeyRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, room_size=5, subroom_size=2, lit=True, **kwargs)
+
+
+class MiniHackKeyRoom5x5Dark(MiniHackKeyRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, room_size=5, subroom_size=2, lit=False, **kwargs)
+
+
+class MiniHackKeyRoom15x15(MiniHackKeyRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, room_size=15, subroom_size=5, lit=True, **kwargs)
+
+
+class MiniHackKeyRoom15x15Dark(MiniHackKeyRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, room_size=15, subroom_size=5, lit=False, **kwargs)
+
+
 # KeyRoom
 registration.register(
-    id="MiniHack-KeyRoom-S5-2-v0",
-    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom",
-    kwargs={"room_size": 5, "subroom_size": 2, "lit": True},
+    id="MiniHack-KeyRoom-S5-v0",
+    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom5x5",
 )
 registration.register(
-    id="MiniHack-KeyRoom-S12-4-v0",
-    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom",
-    kwargs={"room_size": 12, "subroom_size": 4, "lit": True},
+    id="MiniHack-KeyRoom-S15-v0",
+    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom15x15",
 )
 registration.register(
-    id="MiniHack-KeyRoom-Unlit-S5-3-v0",
-    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom",
-    kwargs={"room_size": 5, "subroom_size": 3, "lit": False},
+    id="MiniHack-KeyRoom-Unlit-S5-v0",
+    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom5x5Dark",
 )
 registration.register(
-    id="MiniHack-KeyRoom-Unlit-S12-4-v0",
-    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom",
-    kwargs={"room_size": 12, "subroom_size": 4, "lit": False},
+    id="MiniHack-KeyRoom-Unlit-S15-v0",
+    entry_point="nle.minihack.envs.keyroom:MiniHackKeyRoom15x15Dark",
 )
