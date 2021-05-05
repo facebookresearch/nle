@@ -35,7 +35,7 @@ name: null  # can use this to have multiple runs with same params, eg name=1,2,3
 
 ## WandB settings
 wandb: false  # enable wandb logging
-project: neurips2020    # specifies the project name to log to
+project: minihack  # specifies the project name to log to
 entity: nethack  # the team to log to
 group: default  # defines a group name for the experiment
 

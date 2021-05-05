@@ -1,5 +1,6 @@
 from collections import defaultdict
 from nle.env import tasks
+from nle.minihack.envs.room import MiniHackRoom
 import numpy as np
 
 
@@ -29,7 +30,6 @@ class SharedPatch(object):
             features = obs["blstats"]
             x = features[0]
             y = features[1]
-            # TODO: prefer to use dungeon level and dungeon number from Blstats
             d = features[12]
             coord = (d, x, y)
             self.state_count_dict[coord] += 1
@@ -103,6 +103,35 @@ NetHackEat = PatchedNetHackEat
 NetHackScout = PatchedNetHackScout
 
 
+class PatchedMiniHackRoom(SharedPatch, MiniHackRoom):
+    pass
+
+
+class MiniHackRoom5x5(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=False, **kwargs)
+
+
+class MiniHackRoom5x5Random(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, **kwargs)
+
+
+class MiniHackRoom5x5Dark(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, lit=False, **kwargs)
+
+
+class MiniHackRoom5x5Monster(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, n_monster=1, **kwargs)
+
+
+class MiniHackRoom5x5Trap(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, n_trap=1, **kwargs)
+
+
 ENVS = dict(
     staircase=NetHackStaircase,
     score=NetHackScore,
@@ -111,4 +140,9 @@ ENVS = dict(
     gold=NetHackGold,
     eat=NetHackEat,
     scout=NetHackScout,
+    small_room=MiniHackRoom5x5,
+    small_room_random=MiniHackRoom5x5Random,
+    small_room_dark=MiniHackRoom5x5Dark,
+    small_room_monster=MiniHackRoom5x5Monster,
+    small_room_trap=MiniHackRoom5x5Trap,
 )
