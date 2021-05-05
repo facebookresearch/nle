@@ -27,50 +27,95 @@ class MiniHackRoom(MiniHackNavigation):
         super().__init__(*args, des_file=lvl_gen.get_des(), **kwargs)
 
 
-# Room
+class MiniHackRoom5x5(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=False, **kwargs)
+
+
+class MiniHackRoom5x5Random(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, **kwargs)
+
+
+class MiniHackRoom5x5Dark(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, lit=False, **kwargs)
+
+
+class MiniHackRoom5x5Monster(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, n_monster=1, **kwargs)
+
+
+class MiniHackRoom5x5Trap(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=5, random=True, n_trap=1, **kwargs)
+
+
 registration.register(
     id="MiniHack-Room-5x5-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 5, "random": False},
+    entry_point="nle.minihack.envs.room:MiniHackRoom5x5",
 )
 registration.register(
     id="MiniHack-Room-Random-5x5-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 5, "random": True},
+    entry_point="nle.minihack.envs.room:MiniHack5x5Random",
 )
 registration.register(
     id="MiniHack-Room-Dark-5x5-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 5, "random": True, "lit": False},
+    entry_point="nle.minihack.envs.room:MiniHackRoom5x5Dark",
 )
 registration.register(
     id="MiniHack-Room-Monster-5x5-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 5, "random": True, "n_monster": 1},
+    entry_point="nle.minihack.envs.room:MiniHackRoom5x5Monster",
 )
 registration.register(
     id="MiniHack-Room-Trap-5x5-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 5, "random": True, "n_trap": 1},
+    entry_point="nle.minihack.envs.room:MiniHackRoom5x5Trap",
 )
+
+
+class MiniHackRoom15x15(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=15, random=False, **kwargs)
+
+
+class MiniHackRoom15x15Random(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=15, random=True, **kwargs)
+
+
+class MiniHackRoom15x15Dark(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=15, random=True, lit=False, **kwargs)
+
+
+class MiniHackRoom15x15Monster(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=15, random=True, n_monster=3, **kwargs)
+
+
+class MiniHackRoom15x15MonsterTrap(MiniHackRoom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, size=15, random=True, n_monster=3, n_trap=10, **kwargs)
+
 
 registration.register(
     id="MiniHack-Room-15x15-v0",
     entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 15, "random": False},
 )
 registration.register(
     id="MiniHack-Room-Random-15x15-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 15, "random": True},
+    entry_point="nle.minihack.envs.room:MiniHackRoom15x15Random",
+)
+registration.register(
+    id="MiniHack-Room-Dark-15x15-v0",
+    entry_point="nle.minihack.envs.room:MiniHackRoom15x15Dark",
 )
 registration.register(
     id="MiniHack-Room-Monster-15x15-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 15, "random": True, "n_monster": 3},
+    entry_point="nle.minihack.envs.room:MiniHackRoom15x15Monster",
 )
 registration.register(
-    id="MiniHack-Room-Monster-Trapped-15x15-v0",
-    entry_point="nle.minihack.envs.room:MiniHackRoom",
-    kwargs={"size": 15, "random": True, "n_monster": 3, "n_trap": 10},
+    id="MiniHack-Room-Monster-Trap-15x15-v0",
+    entry_point="nle.minihack.envs.room:MiniHackRoom15x15MonsterTrap",
 )

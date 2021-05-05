@@ -73,7 +73,7 @@ class MiniHack(NetHackStaircase):
         *args,
         des_file: str,
         reward_win=1,
-        reward_lose=-1,
+        reward_lose=0,
         obs_crop_h=5,
         obs_crop_w=5,
         obs_crop_pad=0,
