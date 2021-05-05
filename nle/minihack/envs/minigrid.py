@@ -3,6 +3,7 @@ from nle.nethack import Command, CompassDirection
 from gym.envs import registration
 import gym
 
+
 MOVE_AND_KICK_ACTIONS = tuple(
     list(CompassDirection) + [Command.OPEN, Command.KICK, Command.SEARCH]
 )
@@ -12,7 +13,7 @@ class MiniGridHack(MiniHackNavigation):
     def __init__(self, *args, **kwargs):
         import gym_minigrid  # noqa: F401
 
-        self._minigrid_env = gym.make(kwargs.pop("env_name"))
+        self.minigrid_env = gym.make(kwargs.pop("env_name"))
         self.num_mon = kwargs.pop("num_mon", 0)
         self.num_trap = kwargs.pop("num_trap", 0)
         self.door_state = kwargs.pop("door_state", "closed")
@@ -66,8 +67,8 @@ class MiniGridHack(MiniHackNavigation):
         return env_map, start_pos, goal_pos, door_pos
 
     def get_env_desc(self):
-        self._minigrid_env.reset()
-        env = self._minigrid_env
+        self.minigrid_env.reset()
+        env = self.minigrid_env
 
         map, start_pos, goal_pos, door_pos = self.get_env_map(env)
 
@@ -98,75 +99,76 @@ class MiniGridHack(MiniHackNavigation):
 # MiniGrid: MultiRoom
 registration.register(
     id="MiniHack-MultiRoom-N2-S4-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0"},
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0", "max_episode_steps": 40},
 )
 registration.register(
     id="MiniHack-MultiRoom-N4-S5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0"},
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0", "max_episode_steps": 80},
 )
 registration.register(
     id="MiniHack-MultiRoom-N6-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
-    kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0"},
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
+    kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "max_episode_steps": 120},
 )
 
+# TODO define max_episode_steps for the following
 # MiniGrid: LockedMultiRoom
 registration.register(
     id="MiniHack-LockedMultiRoom-N2-S4-M1-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0", "door_state": "locked"},
 )
 registration.register(
     id="MiniHack-LockedMultiRoom-N4-S5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0", "door_state": "locked"},
 )
 registration.register(
     id="MiniHack-LockedMultiRoom-N6-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "door_state": "locked"},
 )
 
 # MiniGrid: TrappedMultiRoom
 registration.register(
     id="MiniHack-TrappedMultiRoom-N2-S4-M1-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0", "num_trap": 1},
 )
 registration.register(
     id="MiniHack-TrappedMultiRoom-N4-S5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0", "num_trap": 4},
 )
 registration.register(
     id="MiniHack-TrappedMultiRoom-N6-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "num_trap": 6},
 )
 
 # MiniGrid: MonsterMultiRoom
 registration.register(
     id="MiniHack-MonsterMultiRoom-N2-S4-M1-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N2-S4-v0", "num_mon": 1},
 )
 registration.register(
     id="MiniHack-MonsterMultiRoom-N4-S5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N4-S5-v0", "num_mon": 4},
 )
 registration.register(
     id="MiniHack-MonsterMultiRoom-N6-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-MultiRoom-N6-v0", "num_mon": 6},
 )
 
 # MiniGrid: ExtremeMultiRoom
 registration.register(
     id="MiniHack-ExtremeMultiRoom-N2-S4-M1-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={
         "env_name": "MiniGrid-MultiRoom-N2-S4-v0",
         "num_mon": 1,
@@ -176,7 +178,7 @@ registration.register(
 )
 registration.register(
     id="MiniHack-ExtremeMultiRoom-N4-S5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={
         "env_name": "MiniGrid-MultiRoom-N4-S5-v0",
         "num_mon": 4,
@@ -186,7 +188,7 @@ registration.register(
 )
 registration.register(
     id="MiniHack-ExtremeMultiRoom-N6-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={
         "env_name": "MiniGrid-MultiRoom-N6-v0",
         "num_mon": 6,
@@ -198,43 +200,43 @@ registration.register(
 # MiniGrid: LavaCrossing
 registration.register(
     id="MiniHack-LavaCrossingS9N1-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-LavaCrossingS9N1-v0"},
 )
 registration.register(
     id="MiniHack-LavaCrossingS9N2-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-LavaCrossingS9N2-v0"},
 )
 registration.register(
     id="MiniHack-LavaCrossingS9N3-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-LavaCrossingS9N3-v0"},
 )
 registration.register(
     id="MiniHack-LavaCrossingS11N5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-LavaCrossingS11N5-v0"},
 )
 
 # MiniGrid: Simple Crossing
 registration.register(
     id="MiniHack-SimpleCrossingS9N1-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-SimpleCrossingS9N1-v0"},
 )
 registration.register(
     id="MiniHack-SimpleCrossingS9N2-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-SimpleCrossingS9N2-v0"},
 )
 registration.register(
     id="MiniHack-SimpleCrossingS9N3-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-SimpleCrossingS9N3-v0"},
 )
 registration.register(
     id="MiniHack-SimpleCrossingS11N5-v0",
-    entry_point="nle.minihack.minigrid:MiniGridHack",
+    entry_point="nle.minihack.envs.minigrid:MiniGridHack",
     kwargs={"env_name": "MiniGrid-SimpleCrossingS11N5-v0"},
 )

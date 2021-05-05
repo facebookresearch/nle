@@ -7,11 +7,11 @@ class MiniHackRoom(MiniHackNavigation):
     """Environment for "empty" task."""
 
     def __init__(self, *args, **kwargs):
-        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 50)
         size = kwargs.pop("size", 5)
         random = kwargs.pop("random", True)
         n_monster = kwargs.pop("n_monster", 0)
         n_trap = kwargs.pop("n_trap", 0)
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", size * 20)
 
         lvl_gen = LevelGenerator(w=size, h=size, lit=True)
         if random:

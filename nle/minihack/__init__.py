@@ -10,6 +10,7 @@ import nle.minihack.envs.room  # noqa
 import nle.minihack.envs.keyroom  # noqa
 import nle.minihack.envs.corridor  # noqa
 import nle.minihack.envs.keyroom  # noqa
+import nle.minihack.envs.minigrid  # noqa
 import nle.minihack.skills  # noqa
 
 __all__ = [
