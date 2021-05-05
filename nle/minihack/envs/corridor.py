@@ -16,37 +16,54 @@ class MiniHackCorridor(MiniHackNavigation):
     connect several rooms and find the goal.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, des_file, **kwargs):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 1000)
         kwargs["actions"] = NAVIGATE_ACTIONS
-        rooms = kwargs.pop("rooms", 2)
-        assert rooms in [2, 3, 5, 8, 10]
-        super().__init__(*args, des_file=f"corridor{rooms}.des", **kwargs)
+        super().__init__(*args, des_file=des_file, **kwargs)
 
 
-# Corridor
+class MiniHackCorridor2(MiniHackCorridor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, des_file="corridor2.des", **kwargs)
+
+
+class MiniHackCorridor3(MiniHackCorridor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, des_file="corridor3.des", **kwargs)
+
+
+class MiniHackCorridor5(MiniHackCorridor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, des_file="corridor5.des", **kwargs)
+
+
+class MiniHackCorridor8(MiniHackCorridor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, des_file="corridor8.des", **kwargs)
+
+
+class MiniHackCorridor10(MiniHackCorridor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, des_file="corridor10.des", **kwargs)
+
+
 registration.register(
     id="MiniHack-Corridor-R2-v0",
-    entry_point="nle.minihack.envs.corridor:MiniHackCorridor",
-    kwargs={"rooms": 2},
+    entry_point="nle.minihack.envs.corridor:MiniHackCorridor2",
 )
 registration.register(
     id="MiniHack-Corridor-R3-v0",
-    entry_point="nle.minihack.envs.corridor:MiniHackCorridor",
-    kwargs={"rooms": 3},
+    entry_point="nle.minihack.envs.corridor:MiniHackCorridor3",
 )
 registration.register(
     id="MiniHack-Corridor-R5-v0",
-    entry_point="nle.minihack.envs.corridor:MiniHackCorridor",
-    kwargs={"rooms": 5},
+    entry_point="nle.minihack.envs.corridor:MiniHackCorridor5",
 )
 registration.register(
     id="MiniHack-Corridor-R8-v0",
-    entry_point="nle.minihack.envs.corridor:MiniHackCorridor",
-    kwargs={"rooms": 8},
+    entry_point="nle.minihack.envs.corridor:MiniHackCorridor8",
 )
 registration.register(
     id="MiniHack-Corridor-R10-v0",
-    entry_point="nle.minihack.envs.corridor:MiniHackCorridor",
-    kwargs={"rooms": 10},
+    entry_point="nle.minihack.envs.corridor:MiniHackCorridor10",
 )

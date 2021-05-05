@@ -1,5 +1,6 @@
 from nle.env import tasks as nle_tasks
 from nle.minihack.envs import room
+from nle.minihack.envs import corridor
 
 
 ENVS = dict(
@@ -22,4 +23,10 @@ ENVS = dict(
     big_room_dark=room.MiniHackRoom15x15Dark,
     big_room_monster=room.MiniHackRoom15x15Monster,
     big_room_monster_trap=room.MiniHackRoom15x15MonsterTrap,
+    # MiniHack Corridor
+    corridor2=corridor.MiniHackCorridor2,
+    corridor3=corridor.MiniHackCorridor3,
+    corridor5=corridor.MiniHackCorridor5,
+    corridor8=corridor.MiniHackCorridor8,
+    corridor10=corridor.MiniHackCorridor10,
 )
