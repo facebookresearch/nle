@@ -13,14 +13,12 @@
 # limitations under the License.
 
 import argparse
-import json
 import multiprocessing as mp
 import logging
 import os
 import threading
 import time
 
-import torch
 from nle.agent.envs import tasks
 import libtorchbeast
 
@@ -79,12 +77,6 @@ logging.basicConfig(
 )
 
 
-# Helper functions for NethackEnv.
-def _format_observation(obs):
-    obs = torch.from_numpy(obs)
-    return obs.view((1, 1) + obs.shape)  # (...) -> (T,B,...).
-
-
 def create_folders(flags):
     # Creates some of the folders that would be created by the filewriter.
     logdir = os.path.join(flags.savedir, "archives")
@@ -96,13 +88,7 @@ def create_folders(flags):
 
 
 def create_env(flags, env_id=0, lock=threading.Lock()):
-    # commenting out these options for now because they use too much disk space
-    # archivefile = "nethack.%i.%%(pid)i.%%(time)s.zip" % env_id
-    # if flags.single_ttyrec and env_id != 0:
-    #     archivefile = None
-
-    # logdir = os.path.join(flags.savedir, "archives")
-
+    # Create environment instances for actors
     with lock:
         env_class = tasks.ENVS[flags.env]
         kwargs = dict(
@@ -130,14 +116,8 @@ def create_env(flags, env_id=0, lock=threading.Lock()):
             kwargs.update(state_counter=flags.state_counter)
         env = env_class(**kwargs)
         if flags.seedspath is not None and len(flags.seedspath) > 0:
-            json  # Unused.
             raise NotImplementedError("seedspath > 0 not implemented yet.")
-        #     with open(flags.seedspath) as f:
-        #         seeds = json.load(f)
-        #     assert flags.num_seeds == len(seeds)
-        #     env = SeedingWrapper(env, seeds=seeds)
-        # elif flags.num_seeds > 0:
-        #     env = SeedingWrapper(env, num_seeds=flags.num_seeds)
+
         return env
 
 
