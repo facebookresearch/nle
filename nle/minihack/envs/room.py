@@ -6,14 +6,12 @@ from gym.envs import registration
 class MiniHackRoom(MiniHackNavigation):
     """Environment for "empty" task."""
 
-    def __init__(self, *args, **kwargs):
-        size = kwargs.pop("size", 5)
-        random = kwargs.pop("random", True)
-        n_monster = kwargs.pop("n_monster", 0)
-        n_trap = kwargs.pop("n_trap", 0)
+    def __init__(
+        self, *args, size=5, random=True, n_monster=0, n_trap=0, lit=True, **kwargs
+    ):
         kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", size * 20)
 
-        lvl_gen = LevelGenerator(w=size, h=size, lit=True)
+        lvl_gen = LevelGenerator(w=size, h=size, lit=lit)
         if random:
             lvl_gen.add_stair_down()
         else:
@@ -39,6 +37,11 @@ registration.register(
     id="MiniHack-Room-Random-5x5-v0",
     entry_point="nle.minihack.envs.room:MiniHackRoom",
     kwargs={"size": 5, "random": True},
+)
+registration.register(
+    id="MiniHack-Room-Dark-5x5-v0",
+    entry_point="nle.minihack.envs.room:MiniHackRoom",
+    kwargs={"size": 5, "random": True, "lit": False},
 )
 registration.register(
     id="MiniHack-Room-Monster-5x5-v0",

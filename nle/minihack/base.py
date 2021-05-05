@@ -72,6 +72,8 @@ class MiniHack(NetHackStaircase):
         self,
         *args,
         des_file: str,
+        reward_win=1,
+        reward_lose=-1,
         obs_crop_h=5,
         obs_crop_w=5,
         obs_crop_pad=0,
@@ -105,8 +107,12 @@ class MiniHack(NetHackStaircase):
         self.obs_crop_h = obs_crop_h
         self.obs_crop_w = obs_crop_w
         self.obs_crop_pad = obs_crop_pad
+
         assert self.obs_crop_h % 2 == 1
         assert self.obs_crop_w % 2 == 1
+
+        self.reward_win = reward_win
+        self.reward_lose = reward_lose
 
         self._scr_descr_index = self._observation_keys.index("screen_descriptions")
         self.observation_space = gym.spaces.Dict(self.get_obs_space_dict(space_dict))
@@ -123,6 +129,15 @@ class MiniHack(NetHackStaircase):
                 raise ValueError(f'Observation key "{key}" is not supported')
 
         return obs_space_dict
+
+    def _reward_fn(self, last_response, response, end_status):
+        if end_status == self.StepStatus.TASK_SUCCESSFUL:
+            reward = self.reward_win
+        elif end_status == self.StepStatus.RUNNING:
+            reward = 0
+        else:  # death or aborted
+            reward = self.reward_lose
+        return reward + self._get_time_penalty(last_response, response)
 
     def update(self, des_file):
         """Update the current environment by replacing its description file """
