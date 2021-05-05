@@ -66,11 +66,13 @@ class MiniHackKeyRoom5x5Dark(MiniHackKeyRoom):
 
 class MiniHackKeyRoom15x15(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 400)
         super().__init__(*args, room_size=15, subroom_size=5, lit=True, **kwargs)
 
 
 class MiniHackKeyRoom15x15Dark(MiniHackKeyRoom):
     def __init__(self, *args, **kwargs):
+        kwargs["max_episode_steps"] = kwargs.pop("max_episode_steps", 400)
         super().__init__(*args, room_size=15, subroom_size=5, lit=False, **kwargs)
 
 
