@@ -6,14 +6,16 @@ from nle.minihack.base import MiniHack
 from nle.minihack.navigation import MiniHackNavigation
 from nle.minihack.skills import MiniHackSkillEnv
 
-import nle.minihack.navigation  # noqa
+import nle.minihack.envs.room  # noqa
+import nle.minihack.envs.keyroom  # noqa
+import nle.minihack.envs.corridor  # noqa
+import nle.minihack.envs.keyroom  # noqa
 import nle.minihack.skills  # noqa
-import nle.minihack.minigrid  # noqa
 
 __all__ = [
     "MiniHack",
     "MiniHackNavigation",
-    "MiniHackSkill",
+    "MiniHackSkillEnv",
     "LevelGenerator",
     "GoalGenerator",
 ]

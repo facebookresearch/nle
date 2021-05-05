@@ -42,6 +42,7 @@ class GoalGenerator:
     def __init__(self):
         self.goals = []
         # TODO maybe add goal order
+        # TODO partial reward
 
     def get_goals(self):
         return tuple(self.goals)
