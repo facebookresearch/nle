@@ -13,7 +13,9 @@ import gym
 PATH_DAT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dat")
 LIB_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
 PATCH_SCRIPT = os.path.join(
-    pkg_resources.resource_filename("nle", "minihack"), "scripts", "mh_patch_nhdat.sh"
+    pkg_resources.resource_filename("nle", "minihack"),
+    "scripts",
+    "mh_patch_nhdat.sh",
 )
 
 MINIHACK_SPACE_FUNCS = {
@@ -69,7 +71,9 @@ class MiniHack(NetHackStaircase):
     def __init__(
         self,
         *args,
-        des_file: str = None,
+        des_file: str,
+        reward_win=1,
+        reward_lose=0,
         obs_crop_h=5,
         obs_crop_w=5,
         obs_crop_pad=0,
@@ -95,9 +99,6 @@ class MiniHack(NetHackStaircase):
             "observation_keys", list(space_dict.keys())
         )
 
-        if des_file is None:
-            raise ValueError("Description file is not provided.")
-
         super().__init__(*args, **kwargs)
 
         # Patch the nhdat library by compling the given .des file
@@ -106,8 +107,12 @@ class MiniHack(NetHackStaircase):
         self.obs_crop_h = obs_crop_h
         self.obs_crop_w = obs_crop_w
         self.obs_crop_pad = obs_crop_pad
+
         assert self.obs_crop_h % 2 == 1
         assert self.obs_crop_w % 2 == 1
+
+        self.reward_win = reward_win
+        self.reward_lose = reward_lose
 
         self._scr_descr_index = self._observation_keys.index("screen_descriptions")
         self.observation_space = gym.spaces.Dict(self.get_obs_space_dict(space_dict))
@@ -124,6 +129,15 @@ class MiniHack(NetHackStaircase):
                 raise ValueError(f'Observation key "{key}" is not supported')
 
         return obs_space_dict
+
+    def _reward_fn(self, last_response, response, end_status):
+        if end_status == self.StepStatus.TASK_SUCCESSFUL:
+            reward = self.reward_win
+        elif end_status == self.StepStatus.RUNNING:
+            reward = 0
+        else:  # death or aborted
+            reward = self.reward_lose
+        return reward + self._get_time_penalty(last_response, response)
 
     def update(self, des_file):
         """Update the current environment by replacing its description file """
@@ -154,7 +168,13 @@ class MiniHack(NetHackStaircase):
             )
         try:
             _ = subprocess.call(
-                [PATCH_SCRIPT, self.env._vardir, nethack.HACKDIR, LIB_DIR, des_path]
+                [
+                    PATCH_SCRIPT,
+                    self.env._vardir,
+                    nethack.HACKDIR,
+                    LIB_DIR,
+                    des_path,
+                ]
             )
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Couldn't patch the nhdat file.\n{e}")
@@ -185,9 +205,15 @@ class MiniHack(NetHackStaircase):
         y += dh
 
         obs = np.pad(
-            obs, pad_width=(dw, dh), mode="constant", constant_values=self.obs_crop_pad
+            obs,
+            pad_width=(dw, dh),
+            mode="constant",
+            constant_values=self.obs_crop_pad,
         )
         return obs[y - dh : y + dh + 1, x - dw : x + dw + 1]
+
+    def _no_rand_mon(self):
+        os.environ["NH_NO_RAND_MON"] = "1"
 
     def key_in_inventory(self, name):
         """Returns key of the object in the inventory.

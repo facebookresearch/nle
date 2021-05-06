@@ -299,7 +299,6 @@ struct instance_flags {
                                * on some non-move commands */
     boolean menu_tab_sep;     /* Use tabs to separate option menu fields */
     boolean news;             /* print news */
-    boolean no_rand_mon;      /* no random monster creation after every step */
     boolean num_pad;          /* use numbers for movement commands */
     boolean perm_invent;      /* keep full inventories up until dismissed */
     boolean renameallowed;    /* can change hero name during role selection */

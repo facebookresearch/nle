@@ -8,5 +8,9 @@ ROOM: "ordinary" , lit, random, random, random {
 }
 ROOM: "ordinary" , lit, random, random, random {
 }
+ROOM: "ordinary" , lit, random, random, random {
+}
+ROOM: "ordinary" , lit, random, random, random {
+}
 
 RANDOM_CORRIDORS

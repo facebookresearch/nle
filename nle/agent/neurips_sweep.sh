@@ -11,3 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# try both extrinsic-only and Random Network Distillation on different tasks with 3 repeats
+
+python polyhydra.py --multirun model=baseline,rnd character=mon-hum-neu-mal,val-dwa-law-fem,wiz-elf-cha-mal,tou-hum-neu-fem env=score,staircase,pet,eat,gold,scout,oracle name=1,2,3

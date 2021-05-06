@@ -1,5 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
+import string
+import enum
+
 ACTION_STR_DICT = {
     "N": "move north",
     "E": "move east",
@@ -9,8 +12,8 @@ ACTION_STR_DICT = {
     "SE": "move southeast",
     "SW": "move southwest",
     "NW": "move northwest",
-    "UP": "go up",
-    "DOWN": "go down",
+    "UP": "up",
+    "DOWN": "down",
     "WAIT": "wait",
     "MORE": "more",
     "EXTCMD": "extended command",  # NON RL
@@ -94,8 +97,7 @@ ACTION_STR_DICT = {
 }
 
 
-def action_to_str(action):
-    assert (
-        action.name in ACTION_STR_DICT
-    ), f"Action {action} cannot be mapped to a string"
-    return ACTION_STR_DICT[action.name]
+InventorySelection = enum.IntEnum(
+    "InventorySelection",
+    {k: ord(k) for k in string.ascii_letters},
+)
