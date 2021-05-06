@@ -3,19 +3,9 @@ import os
 import random
 
 from nle.minihack import MiniHackNavigation, LevelGenerator
-from nle import nethack
-from nle.nethack import Command
 
 from gym.envs import registration
 
-MOVE_ACTIONS = tuple(nethack.CompassDirection)
-APPLY_ACTIONS = tuple(list(MOVE_ACTIONS) + [Command.PICKUP, Command.APPLY])
-NAVIGATE_ACTIONS = tuple(
-    list(MOVE_ACTIONS) + [Command.OPEN, Command.KICK, Command.SEARCH]
-)
-
-# use fountain as a goal for boulders
-BOXOBAN_GOAL_CHAR_ORD = ord("{")
 LEVELS_PATH = ".boxoban_levels/"
 BOXOBAN_REPO_URL = (
     "https://github.com/deepmind/boxoban-levels/archive/refs/heads/master.zip"
@@ -39,6 +29,18 @@ def load_boxoban_levels(cur_levels_path):
     return levels
 
 
+def download_boxoban_levels():
+    print("Boxoban levels file not found. Downloading...")
+    os.system(
+        f"wget -c --read-timeout=5 --tries=0 " f'"{BOXOBAN_REPO_URL}" -P {LEVELS_PATH}'
+    )
+    print("Boxoban levels downloaded, unpacking...")
+    import zipfile
+
+    with zipfile.ZipFile(os.path.join(LEVELS_PATH, "master.zip"), "r") as zip_ref:
+        zip_ref.extractall(LEVELS_PATH)
+
+
 class BoxoHack(MiniHackNavigation):
     def __init__(self, *args, max_episode_steps=1000, **kwargs):
 
@@ -47,23 +49,12 @@ class BoxoHack(MiniHackNavigation):
 
         if not os.path.exists(LEVELS_PATH):
             os.mkdir(LEVELS_PATH)
-
         cur_levels_path = os.path.join(
             LEVELS_PATH, "boxoban-levels-master", level_set, level_mode
         )
-        if not os.path.exists(cur_levels_path):
-            print("Boxoban levels file not found. Downloading...")
-            os.system(
-                f"wget -c --read-timeout=5 --tries=0 "
-                f'"{BOXOBAN_REPO_URL}" -P {LEVELS_PATH}'
-            )
-            print("Boxoban levels downloaded, unpacking...")
-            import zipfile
 
-            with zipfile.ZipFile(
-                os.path.join(LEVELS_PATH, "master.zip"), "r"
-            ) as zip_ref:
-                zip_ref.extractall(LEVELS_PATH)
+        if not os.path.exists(cur_levels_path):
+            download_boxoban_levels()
 
         self._levels = load_boxoban_levels(cur_levels_path)
 
@@ -104,7 +95,7 @@ class BoxoHack(MiniHackNavigation):
     def _is_episode_end(self, observation):
         # If no goals in the observation, all of them are covered with boulders.
         if (
-            BOXOBAN_GOAL_CHAR_ORD
+            ord("{")  # use fountain as a goal for boulders
             not in observation[self._original_observation_keys.index("chars")]
         ):
             return self.StepStatus.TASK_SUCCESSFUL
