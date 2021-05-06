@@ -388,24 +388,7 @@ class BoxoHack(MiniHackMaze):
 
         level = random.choice(self._levels)
         level = level.split("\n")
-        # nethack does not like when there are two rows of the walls
-        # using # for solidfill gets rid of this issue
-        # consequtive_walls_st = 0
-        # for el in level:
-        #     if set(el) == {'#'}:
-        #         consequtive_walls_st+=1
-        #     else:
-        #         break
-        # if consequtive_walls_st > 1:
-        #     level = level[consequtive_walls_st-1:]
-        # consequtive_walls = 0
-        # for el in level[::-1]:
-        #     if set(el) == {'#'}:
-        #         consequtive_walls += 1
-        #     else:
-        #         break
-        # if consequtive_walls > 1:
-        #     level = level[:1-consequtive_walls:]
+
         object_strs = []
 
         level[0] = "-" * len(level[0])
