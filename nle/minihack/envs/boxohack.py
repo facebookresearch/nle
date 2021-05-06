@@ -1,8 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import os
-from tempfile import NamedTemporaryFile
+import random
 
-from nle.minihack import MiniHackNavigation
+from nle.minihack import MiniHackNavigation, LevelGenerator
 from nle import nethack
 from nle.nethack import Command
 
@@ -66,49 +66,40 @@ class BoxoHack(MiniHackNavigation):
                 zip_ref.extractall(LEVELS_PATH)
 
         self._levels = load_boxoban_levels(cur_levels_path)
-        import random
 
         level = random.choice(self._levels)
         level = level.split("\n")
+        map, info = self.get_env_map(level)
+        flags = kwargs.get("flags", [])
+        flags.append("noteleport")
+        flags.append("premapped")
+        lvl_gen = LevelGenerator(map=map, lit=True, flags=flags, solidfill="#")
+        for b in info["boulders"]:
+            lvl_gen.add_boulder(b)
+        for f in info["fountains"]:
+            lvl_gen.add_fountain(f)
+        lvl_gen.add_stair_up(info["player"])
+        super().__init__(*args, des_file=lvl_gen.get_des(), **kwargs)
 
-        object_strs = []
-
+    def get_env_map(self, level):
+        info = {"fountains": [], "boulders": []}
         level[0] = "-" * len(level[0])
         level[-1] = "-" * len(level[-1])
         for row in range(1, len(level) - 1):
             level[row] = f"|{level[row][1:-1]}|"
             for col in range(len(level[row])):
                 if level[row][col] == "$":
-                    object_strs.append(f'OBJECT: "boulder", ({col}, {row})')
+                    info["boulders"].append((col, row))
                 if level[row][col] == ".":
-                    object_strs.append(f"FOUNTAIN:({col}, {row})")
+                    info["fountains"].append((col, row))
             if "@" in level[row]:
                 py = level[row].index("@")
                 level[row] = level[row].replace("@", ".")
-                player_str = f"BRANCH:{py, row, py, row},(0,0,0,0)"
-
+                info["player"] = (py, row)
             level[row] = level[row].replace(" ", ".")
             level[row] = level[row].replace("#", " ")
             level[row] = level[row].replace("$", ".")
-
-        env_desc = [
-            "MAZE: \"mylevel\", ' '",
-            "FLAGS: noteleport, hardfloor, premapped",
-            "INIT_MAP: solidfill,'#'",
-            "GEOMETRY: center, center",
-            "MAP",
-        ]
-        env_desc.extend(level)
-
-        env_desc.append("ENDMAP")
-        env_desc.append(player_str)
-        env_desc.extend(object_strs)
-        f = NamedTemporaryFile(delete=False, suffix=".des")
-        with open(f.name, "w") as tmp:
-            tmp.write("\n".join(env_desc))
-        f.close()
-        super().__init__(des_file=f.name, max_episode_steps=max_episode_steps)
-        os.unlink(f.name)
+        return "\n".join(level), info
 
     def _is_episode_end(self, observation):
         # If no goals in the observation, all of them are covered with boulders.

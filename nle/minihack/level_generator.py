@@ -79,6 +79,7 @@ class LevelGenerator:
         lit=True,
         message="Welcome to MiniHack!",
         flags=("hardfloor",),
+        solidfill=None,
     ):
         assert all(
             f in MAZE_FLAGS for f in flags
@@ -89,9 +90,10 @@ class LevelGenerator:
 MAZE: "mylevel", ' '
 FLAGS:{flags_str}
 MESSAGE: \"{message}\"
-GEOMETRY:center,center
 """
-
+        if solidfill:
+            self.header += f"INIT_MAP: solidfill,'{solidfill}'\n"
+        self.header += "GEOMETRY:center,center\n"
         self.mapify = lambda x: "MAP\n" + x + "ENDMAP\n"
         self.init_map(map, w, h)
 
@@ -242,6 +244,12 @@ GEOMETRY:center,center
         place = self.validate_place(place)
         assert name in TRAP_NAMES
         self.footer += f'TRAP:"{name}",{place}\n'
+
+    def add_fountain(self, place):
+        self.footer += f"FOUNTAIN: {place}\n"
+
+    def add_boulder(self, place):
+        self.footer += f'OBJECT: "boulder", {place}\n'
 
     def wallify(self):
         self.footer += "WALLIFY\n"
