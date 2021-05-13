@@ -229,6 +229,7 @@ class NLE(gym.Env):
         options=None,
         wizard=False,
         allow_all_yn_questions=False,
+        skip_menus=False,
         space_dict=None,
     ):
         """Constructs a new NLE environment.
@@ -259,6 +260,7 @@ class NLE(gym.Env):
         self.character = character
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
+        self._skip_menus = skip_menus
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -379,10 +381,11 @@ class NLE(gym.Env):
         last_observation = tuple(a.copy() for a in self.last_observation)
 
         observation, done = self.env.step(self._actions[action])
-        observation, done = self._perform_known_steps(
-            observation, done, exceptions=True
-        )
-
+        if self._skip_menus or observation[self._program_state_index][0] == 1: # game over
+            observation, done = self._perform_known_steps(
+              observation, done, exceptions=True
+            )
+   
         self._steps += 1
 
         self.last_observation = observation

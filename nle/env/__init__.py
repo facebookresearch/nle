@@ -16,5 +16,6 @@ registration.register(id="NetHackOracle-v0", entry_point="nle.env.tasks:NetHackO
 registration.register(id="NetHackGold-v0", entry_point="nle.env.tasks:NetHackGold")
 registration.register(id="NetHackEat-v0", entry_point="nle.env.tasks:NetHackEat")
 registration.register(id="NetHackScout-v0", entry_point="nle.env.tasks:NetHackScout")
+registration.register(id="NetHackChallenge-v0", entry_point="nle.env.tasks:NetHackChallenge")
 
 __all__ = ["NLE", "DUNGEON_SHAPE"]

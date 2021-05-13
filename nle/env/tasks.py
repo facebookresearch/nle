@@ -278,3 +278,33 @@ class NetHackScout(NetHackScore):
         self.dungeon_explored[key] = explored
         time_penalty = self._get_time_penalty(last_observation, observation)
         return reward + time_penalty
+
+
+class NetHackChallenge(NetHackScore):
+    """Environment for the NetHack Challenge.
+
+    The task is an augmentation of the standard NLE task. This is the NLE Score Task
+    but with some subtle differences:
+        * the action space is fixed to include the full keyboard
+        * menus and "<More>" tokens are not skipped
+        * starting character is randomly assigned
+    """
+
+    def __init__(
+        self,
+        *args,
+        penalty_mode="constant",
+        penalty_step: float = -0.01,
+        penalty_time: float = -0.0,
+        **kwargs,
+    ):
+        self.penalty_mode = penalty_mode
+        self.penalty_step = penalty_step
+        self.penalty_time = penalty_time
+
+        self._frozen_steps = 0
+
+        kwargs['character'] = '@'
+        kwargs['allow_all_yn_questions'] = True
+        actions = nethack.ACTIONS
+        super().__init__(*args, actions=actions, **kwargs)

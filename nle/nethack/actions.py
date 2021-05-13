@@ -14,9 +14,22 @@ def C(c):
     return 0x1F & c
 
 
-# Missing here:
-#   Some characters for text input (e.g., +).
-# General menu handling isn't part of this either.
+class TextCharacters(enum.IntEnum):
+    PLUS = ord("+")
+    MINUS = ord("-")
+    SPACE = ord(" ")
+    APOS = ord("'")
+    QUOTE = ord('"')
+    NUM_0 = ord("0")
+    NUM_1 = ord("1")
+    NUM_2 = ord("2")
+    NUM_3 = ord("3")
+    NUM_4 = ord("4")
+    NUM_5 = ord("5")
+    NUM_6 = ord("6")
+    NUM_7 = ord("7")
+    NUM_8 = ord("8")
+    NUM_9 = ord("9")
 
 
 class CompassCardinalDirection(enum.IntEnum):
@@ -132,6 +145,7 @@ class Command(enum.IntEnum):
     RIDE = M("R")  # mount or dismount a saddled steed
     RUB = M("r")  # rub a lamp or a stone
     RUSH = ord("g")  # Prefix: rush until something interesting is seen
+    RUSH2 = ord("G")  # Prefix: rush until something interesting is seen
     SAVE = ord("S")  # save the game and exit
     SEARCH = ord("s")  # search for traps and secret doors
     SEEALL = ord("*")  # show all equipment in use
@@ -163,6 +177,7 @@ ACTIONS = tuple(
     + list(MiscDirection)
     + list(MiscAction)
     + list(Command)
+    + list(TextCharacters)
 )
 
 NON_RL_ACTIONS = (
@@ -198,6 +213,7 @@ del _USEFUL_ACTIONS
 
 _ACTIONS_DICT = {}
 for enum_class in [
+    TextCharacters,
     CompassDirection,
     CompassDirectionLonger,
     MiscDirection,

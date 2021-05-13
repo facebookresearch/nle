@@ -49,7 +49,7 @@ def get_action(env, action_mode, is_raw_env):
         while True:
             with no_echo():
                 ch = ord(os.read(0, 1))
-            if ch in [nethack.C("c"), ord(b"q")]:
+            if ch in [nethack.C("c")]:
                 print("Received exit code {}. Aborting.".format(ch))
                 return None
             try:
@@ -100,10 +100,14 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, render_mode, d
     while True:
         if not no_render:
             if not is_raw_env:
-                print("Previous reward:", reward)
-                if action is not None:
-                    print("Previous action: %s" % repr(env._actions[action]))
+                print('--------')
+                print(f"Previous reward: {str(reward):64s}")
+                act_str = repr(env._actions[action]) if action is not None else ''
+                print(f"Previous action: {str(act_str):64s}" )
+                print('--------')
                 env.render(render_mode)
+                print('--------')
+                print('\033[31A') # Go up 31 lines.
             else:
                 print("Previous action:", action)
                 _, chars, _, _, blstats, message, *_ = obs

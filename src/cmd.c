@@ -3351,6 +3351,25 @@ int final;
     en_win = WIN_ERR;
 }
 
+int nle_dosave() {
+    pline("You get the feeling there's only one way to save yourself..."); 
+    return 1;
+}
+
+int nle_done2() {
+    pline("You can't quit now, you're having so much fun!"); 
+    return 1;
+}
+
+int nle_doset() {
+    pline("The options are already set perfectly for you!"); 
+    return 1;
+}
+
+int nle_noop() {
+    return 1;
+}
+
 /* ordered by command name */
 struct ext_func_tab extcmdlist[] = {
     { '#', "#", "perform an extended command",
@@ -3421,7 +3440,7 @@ struct ext_func_tab extcmdlist[] = {
             dosacrifice, AUTOCOMPLETE },
     { 'o', "open", "open a door", doopen },
     { 'O', "options", "show option settings, possibly change them",
-            doset, IFBURIED | GENERALCMD },
+            nle_doset /* doset */, IFBURIED | GENERALCMD },
     { C('o'), "overview", "show a summary of the explored dungeon",
             dooverview, IFBURIED | AUTOCOMPLETE },
     { '\0', "panic", "test panic routine (fatal to game)",
@@ -3437,7 +3456,7 @@ struct ext_func_tab extcmdlist[] = {
     { 'P', "puton", "put on an accessory (ring, amulet, etc)", doputon },
     { 'q', "quaff", "quaff (drink) something", dodrink },
     { M('q'), "quit", "exit without saving current game",
-            done2, IFBURIED | AUTOCOMPLETE | GENERALCMD },
+            nle_done2 /* done2 */, IFBURIED | AUTOCOMPLETE | GENERALCMD },
     { 'Q', "quiver", "select ammunition for quiver", dowieldquiver },
     { 'r', "read", "read a scroll or spellbook", doread },
     { C('r'), "redraw", "redraw screen", doredraw, IFBURIED | GENERALCMD },
@@ -3445,7 +3464,7 @@ struct ext_func_tab extcmdlist[] = {
     { M('R'), "ride", "mount or dismount a saddled steed",
             doride, AUTOCOMPLETE },
     { M('r'), "rub", "rub a lamp or a stone", dorub, AUTOCOMPLETE },
-    { 'S', "save", "save the game and exit", dosave, IFBURIED | GENERALCMD },
+    { 'S', "save", "save the game and exit", nle_dosave /* dosave */, IFBURIED | GENERALCMD },
     { 's', "search", "search for traps and secret doors",
             dosearch, IFBURIED, "searching" },
     { '*', "seeall", "show all equipment in use", doprinuse, IFBURIED },
