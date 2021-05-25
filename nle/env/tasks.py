@@ -304,7 +304,8 @@ class NetHackChallenge(NetHackScore):
 
         self._frozen_steps = 0
 
-        # kwargs['character'] = '@'
+        kwargs['character'] = '@'
         kwargs['allow_all_yn_questions'] = True
+        kwargs['allow_all_modes'] = True
         actions = nethack.ACTIONS
         super().__init__(*args, actions=actions, **kwargs)

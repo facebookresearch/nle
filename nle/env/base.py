@@ -245,7 +245,7 @@ class NLE(gym.Env):
         options=None,
         wizard=False,
         allow_all_yn_questions=False,
-        skip_menus=False,
+        allow_all_modes=False,
         space_dict=None,
     ):
         """Constructs a new NLE environment.
@@ -271,12 +271,15 @@ class NLE(gym.Env):
                 If set to True, no y/n questions in step() are declined.
                 If set to False, only elements of SKIP_EXCEPTIONS are not declined.
                 Defaults to False.
+            allow_all_modes (bool):
+                If set to True, do not decline menus, text input or click through 'MORE'.
+                If set to False, only skip click through 'MORE' on death.
         """
 
         self.character = character
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
-        self._skip_menus = skip_menus
+        self._allow_all_modes = allow_all_modes
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -397,7 +400,7 @@ class NLE(gym.Env):
         last_observation = tuple(a.copy() for a in self.last_observation)
 
         observation, done = self.env.step(self._actions[action])
-        if self._skip_menus or observation[self._program_state_index][0] == 1: # game over
+        if not self._allow_all_modes or observation[self._program_state_index][0] == 1: # game over
             observation, done = self._perform_known_steps(
               observation, done, exceptions=True
             )
