@@ -45,6 +45,7 @@ def get_action(env, action_mode, is_raw_env):
             action = env.action_space.sample()
         else:
             action = random.choice(_ACTIONS)
+            print(action)
     elif action_mode == "human":
         while True:
             with no_echo():
@@ -100,14 +101,14 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, render_mode, d
     while True:
         if not no_render:
             if not is_raw_env:
-                print('--------')
-                print(f"Previous reward: {str(reward):64s}")
+                # print('--------')
+                # print(f"Previous reward: {str(reward):64s}")
                 act_str = repr(env._actions[action]) if action is not None else ''
-                print(f"Previous action: {str(act_str):64s}" )
-                print('--------')
-                env.render(render_mode)
-                print('--------')
-                print('\033[31A') # Go up 31 lines.
+                # print(f"Previous action: {str(act_str):64s}" )
+                # print('--------')
+                # env.render(render_mode)
+                # print('--------')
+                # print('\033[31A') # Go up 31 lines.
             else:
                 print("Previous action:", action)
                 _, chars, _, _, blstats, message, *_ = obs
@@ -118,6 +119,9 @@ def play(env, mode, ngames, max_steps, seeds, savedir, no_render, render_mode, d
                 print(blstats)
 
         action = get_action(env, mode, is_raw_env)
+        # print('Curr Action:', repr(env._actions[action]) if action is not None else '')
+        # print('\033[1A') # Go up 31 lines.
+
         if action is None:
             break
 
@@ -198,7 +202,7 @@ def main():
     parser.add_argument(
         "--max-steps",
         type=int,
-        default=10000,
+        default=1_000_000,
         help="Number of maximum steps per episode.",
     )
     parser.add_argument(

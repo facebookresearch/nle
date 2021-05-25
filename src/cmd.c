@@ -3367,6 +3367,7 @@ int nle_doset() {
 }
 
 int nle_noop() {
+    pline("Noop");
     return 1;
 }
 
@@ -3410,7 +3411,7 @@ struct ext_func_tab extcmdlist[] = {
     { '\0', "herecmdmenu", "show menu of commands you can do here",
             doherecmdmenu, IFBURIED },
     { 'V', "history", "show long version and game history",
-            dohistory, IFBURIED | GENERALCMD },
+            nle_noop /* dohistory */, IFBURIED | GENERALCMD },
     { 'i', "inventory", "show your inventory", ddoinv, IFBURIED },
     { 'I', "inventtype", "inventory specific item types",
             dotypeinv, IFBURIED },
@@ -3452,7 +3453,7 @@ struct ext_func_tab extcmdlist[] = {
     { M('p'), "pray", "pray to the gods for help",
             dopray, IFBURIED | AUTOCOMPLETE },
     { C('p'), "prevmsg", "view recent game messages",
-            doprev_message, IFBURIED | GENERALCMD },
+            nle_noop /* doprev_message */, IFBURIED | GENERALCMD },
     { 'P', "puton", "put on an accessory (ring, amulet, etc)", doputon },
     { 'q', "quaff", "quaff (drink) something", dodrink },
     { M('q'), "quit", "exit without saving current game",
