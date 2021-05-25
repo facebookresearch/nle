@@ -1,0 +1,5 @@
+nle
+hydra-core 
+hydra_colorlog
+wandb
+einops

@@ -14,25 +14,25 @@
 defaults:
 - hydra/job_logging: colorlog
 - hydra/hydra_logging: colorlog
-- hydra/launcher: submitit_slurm
+  #- hydra/launcher: submitit_slurm
 
 # pip install hydra-core hydra_colorlog
 # can set these on the commandline too, e.g. `hydra.launcher.partition=dev`
-hydra:
-  launcher:
-    timeout_min: 4300
-    cpus_per_task: 20  # you get 10 CPUs per GPU allocated on the cluster
-    gpus_per_node: 2
-    tasks_per_node: 1
-    mem_gb: 20
-    nodes: 1
-    partition: learnfair
-    comment: null  # replace this when using priority
-    # constraint: gpu2  # 2-GPU machines in H2
-    # exclude: null
-    # signal_delay_s: 120
-    max_num_timeout: 5  # will requeue on timeout or preemption
-
+#hydra:
+#  launcher:
+#    timeout_min: 4300
+#    cpus_per_task: 20  # you get 10 CPUs per GPU allocated on the cluster
+#    gpus_per_node: 2
+#    tasks_per_node: 1
+#    mem_gb: 20
+#    nodes: 1
+#    partition: learnfair
+#    comment: null  # replace this when using priority
+#    # constraint: gpu2  # 2-GPU machines in H2
+#    # exclude: null
+#    # signal_delay_s: 120
+#    max_num_timeout: 5  # will requeue on timeout or preemption
+#
 
 name: null  # can use this to have multiple runs with same params, eg name=1,2,3,4,5
 
