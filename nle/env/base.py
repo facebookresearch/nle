@@ -224,7 +224,7 @@ class NLE(gym.Env):
         savedir="",
         archivefile="nethack.%(pid)i.%(time)s.zip",
         character="mon-hum-neu-mal",
-        max_episode_steps=500_000,
+        max_episode_steps=5000,
         observation_keys=(
             "glyphs",
             "chars",

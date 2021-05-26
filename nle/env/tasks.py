@@ -299,6 +299,7 @@ class NetHackChallenge(NetHackScore):
         penalty_mode="constant",
         penalty_step: float = -0.01,
         penalty_time: float = -0.0,
+        max_episode_steps: int = 1e6,
         **kwargs,
     ):
         actions = nethack.ACTIONS
@@ -311,5 +312,6 @@ class NetHackChallenge(NetHackScore):
             penalty_mode=penalty_mode,
             penalty_step=penalty_step,
             penalty_time=penalty_time,
+            max_episode_steps=max_episode_steps,
             **kwargs,
         )
