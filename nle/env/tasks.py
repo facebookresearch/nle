@@ -293,13 +293,23 @@ class NetHackChallenge(NetHackScore):
     def __init__(
         self,
         *args,
-        character = '@',
-        allow_all_yn_questions = True,
-        allow_all_modes = True,
+        character="@",
+        allow_all_yn_questions=True,
+        allow_all_modes=True,
         penalty_mode="constant",
         penalty_step: float = -0.01,
         penalty_time: float = -0.0,
         **kwargs,
     ):
         actions = nethack.ACTIONS
-        super().__init__(*args, actions=actions, **kwargs)
+        super().__init__(
+            *args,
+            actions=actions,
+            character=character,
+            allow_all_yn_questions=allow_all_yn_questions,
+            allow_all_modes=allow_all_modes,
+            penalty_mode=penalty_mode,
+            penalty_step=penalty_step,
+            penalty_time=penalty_time,
+            **kwargs,
+        )
