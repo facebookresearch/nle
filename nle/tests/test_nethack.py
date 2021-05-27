@@ -93,7 +93,8 @@ class TestNetHack:
 
         nethackdir = tmpdir.chdir()
 
-        assert nethackdir.fnmatch("nle*")
+        if not game.shared:
+            assert nethackdir.fnmatch("nle*")
         assert tmpdir.ensure("nle.ttyrec")
 
         if mean_sps < 15000:
