@@ -538,10 +538,6 @@ check_linux_console()
     }
 }
 
-#ifdef NEED_HAS_COLORS_DECL
-int has_colors();
-#endif
-
 void
 init_linux_cons()
 {
@@ -550,8 +546,8 @@ init_linux_cons()
         atexit(linux_mapon);
         linux_mapoff();
 #ifdef TEXTCOLOR
-        if (has_colors())
-            iflags.use_color = TRUE;
+        /*if (has_colors())*/ /* Assume true in NLE. */
+        iflags.use_color = TRUE;
 #endif
     }
 #endif
