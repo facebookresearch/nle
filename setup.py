@@ -59,7 +59,7 @@ class CMakeBuild(build_ext.build_ext):
         ]
 
         build_cmd = ["cmake", "--build", ".", "--parallel"]
-        install_cmd = build_cmd + ["--target", "install"]
+        install_cmd = ["cmake", "--install", "."]
 
         try:
             subprocess.check_call(cmake_cmd, cwd=self.build_temp)
