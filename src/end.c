@@ -16,6 +16,8 @@
 #endif
 #include "dlb.h"
 
+extern void FDECL(nle_done, (int));
+
 /* add b to long a, convert wraparound to max value */
 #define nowrap_add(a, b) (a = ((a + b) < 0 ? LONG_MAX : (a + b)))
 
@@ -1472,6 +1474,8 @@ int how;
             Strcat(killer.name, " (with a fake Amulet)");
         /* don't bother counting to see whether it should be plural */
     }
+
+    nle_done(how);
 
     Sprintf(pbuf, "%s %s the %s...", Goodbye(), plname,
             (how != ASCENDED)

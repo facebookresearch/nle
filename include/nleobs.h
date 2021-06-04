@@ -5,7 +5,7 @@
 #define NLE_MESSAGE_SIZE 256
 #define NLE_BLSTATS_SIZE 25
 #define NLE_PROGRAM_STATE_SIZE 6
-#define NLE_INTERNAL_SIZE 8
+#define NLE_INTERNAL_SIZE 9
 #define NLE_INVENTORY_SIZE 55
 #define NLE_INVENTORY_STR_LENGTH 80
 #define NLE_SCREEN_DESCRIPTION_LENGTH 80
@@ -16,6 +16,7 @@ typedef struct nle_observation {
     int action;
     int done;
     char in_normal_game;     /* Bool indicating if other obs are set. */
+    int how_done;            /* If game is really_done, how it ended. */
     short *glyphs;           /* Size ROWNO * (COLNO - 1) */
     unsigned char *chars;    /* Size ROWNO * (COLNO - 1) */
     unsigned char *colors;   /* Size ROWNO * (COLNO - 1) */

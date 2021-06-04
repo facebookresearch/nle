@@ -212,6 +212,12 @@ class Nethack
         return obs_.in_normal_game;
     }
 
+    game_end_types
+    how_done()
+    {
+        return static_cast<game_end_types>(obs_.how_done);
+    }
+
   private:
     void
     reset(FILE *ttyrec)
@@ -268,7 +274,8 @@ PYBIND11_MODULE(_pynethack, m)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)
         .def("get_seeds", &Nethack::get_seeds)
-        .def("in_normal_game", &Nethack::in_normal_game);
+        .def("in_normal_game", &Nethack::in_normal_game)
+        .def("how_done", &Nethack::how_done);
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");
@@ -354,6 +361,27 @@ PYBIND11_MODULE(_pynethack, m)
     // From monsym.h.
     mn.attr("MAXMCLASSES") = py::int_(static_cast<int>(MAXMCLASSES));
 
+    // game_end_types from hack.h (used in end.c)
+    py::enum_<game_end_types>(mn, "game_end_types",
+                              "This is the way the game ends.")
+        .value("DIED", DIED)
+        .value("CHOKING", CHOKING)
+        .value("POISONING", POISONING)
+        .value("STARVING", STARVING)
+        .value("DROWNING", DROWNING)
+        .value("BURNING", BURNING)
+        .value("DISSOLVED", DISSOLVED)
+        .value("CRUSHING", CRUSHING)
+        .value("STONING", STONING)
+        .value("TURNED_SLIME", TURNED_SLIME)
+        .value("GENOCIDED", GENOCIDED)
+        .value("PANICKED", PANICKED)
+        .value("TRICKED", TRICKED)
+        .value("QUIT", QUIT)
+        .value("ESCAPED", ESCAPED)
+        .value("ASCENDED", ASCENDED)
+        .export_values();
+
     // "Special" mapglyph
     mn.attr("MG_CORPSE") = py::int_(MG_CORPSE);
     mn.attr("MG_INVIS") = py::int_(MG_INVIS);
@@ -392,19 +420,20 @@ PYBIND11_MODULE(_pynethack, m)
            [](int glyph) { return glyph_is_warning(glyph); });
 
     py::class_<permonst>(mn, "permonst", "The permonst struct.")
-        .def("__init__",
-             // See https://github.com/pybind/pybind11/issues/2394
-             [](py::detail::value_and_holder &v_h, int index) {
-                 if (index < 0 || index >= NUMMONS)
-                     throw std::out_of_range(
-                         "Index should be between 0 and NUMMONS ("
-                         + std::to_string(NUMMONS) + ") but got "
-                         + std::to_string(index));
-                 v_h.value_ptr() = &mons[index];
-                 v_h.inst->owned = false;
-                 v_h.set_holder_constructed(true);
-             },
-             py::detail::is_new_style_constructor())
+        .def(
+            "__init__",
+            // See https://github.com/pybind/pybind11/issues/2394
+            [](py::detail::value_and_holder &v_h, int index) {
+                if (index < 0 || index >= NUMMONS)
+                    throw std::out_of_range(
+                        "Index should be between 0 and NUMMONS ("
+                        + std::to_string(NUMMONS) + ") but got "
+                        + std::to_string(index));
+                v_h.value_ptr() = &mons[index];
+                v_h.inst->owned = false;
+                v_h.set_holder_constructed(true);
+            },
+            py::detail::is_new_style_constructor())
         .def_readonly("mname", &permonst::mname)   /* full name */
         .def_readonly("mlet", &permonst::mlet)     /* symbol */
         .def_readonly("mlevel", &permonst::mlevel) /* base monster level */
@@ -468,28 +497,29 @@ PYBIND11_MODULE(_pynethack, m)
         mn, "objclass",
         "The objclass struct.\n\n"
         "All fields are constant and don't reflect user changes.")
-        .def("__init__",
-             // See https://github.com/pybind/pybind11/issues/2394
-             [](py::detail::value_and_holder &v_h, int i) {
-                 if (i < 0 || i >= NUM_OBJECTS)
-                     throw std::out_of_range(
-                         "Index should be between 0 and NUM_OBJECTS ("
-                         + std::to_string(NUM_OBJECTS) + ") but got "
-                         + std::to_string(i));
+        .def(
+            "__init__",
+            // See https://github.com/pybind/pybind11/issues/2394
+            [](py::detail::value_and_holder &v_h, int i) {
+                if (i < 0 || i >= NUM_OBJECTS)
+                    throw std::out_of_range(
+                        "Index should be between 0 and NUM_OBJECTS ("
+                        + std::to_string(NUM_OBJECTS) + ") but got "
+                        + std::to_string(i));
 
-                 /* Initialize. Cannot depend on o_init.c as it pulls
-                  * in all kinds of other code. Instead, do what
-                  * makedefs.c does at set it here.
-                  * Alternative: Get the pointer from the game itself?
-                  * Dangerous!
-                  */
-                 objects[i].oc_name_idx = objects[i].oc_descr_idx = i;
+                /* Initialize. Cannot depend on o_init.c as it pulls
+                 * in all kinds of other code. Instead, do what
+                 * makedefs.c does at set it here.
+                 * Alternative: Get the pointer from the game itself?
+                 * Dangerous!
+                 */
+                objects[i].oc_name_idx = objects[i].oc_descr_idx = i;
 
-                 v_h.value_ptr() = &objects[i];
-                 v_h.inst->owned = false;
-                 v_h.set_holder_constructed(true);
-             },
-             py::detail::is_new_style_constructor())
+                v_h.value_ptr() = &objects[i];
+                v_h.inst->owned = false;
+                v_h.set_holder_constructed(true);
+            },
+            py::detail::is_new_style_constructor())
         .def_readonly("oc_name_idx",
                       &objclass::oc_name_idx) /* index of actual name */
         .def_readonly(

@@ -224,3 +224,6 @@ class Nethack:
 
     def in_normal_game(self):
         return self._pynethack.in_normal_game()
+
+    def how_done(self):
+        return self._pynethack.how_done()

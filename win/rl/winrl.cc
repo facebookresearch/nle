@@ -256,6 +256,8 @@ NetHackRL::fill_obs(nle_obs *obs)
         obs->internal[5] = nle_seeds[0]; /* core */
         obs->internal[6] = nle_seeds[1]; /* disp */
         obs->internal[7] = u.uhunger;
+        obs->internal[8] =
+            u.urexp; /* score (careful! check botl_score() and end.c) */
     }
 
     if ((!program_state.something_worth_saving && !program_state.in_moveloop)
@@ -412,7 +414,8 @@ NetHackRL::fill_obs(nle_obs *obs)
         }
     }
     if (obs->screen_descriptions) {
-        memcpy(obs->screen_descriptions, &screen_descriptions_, screen_descriptions_.size());
+        memcpy(obs->screen_descriptions, &screen_descriptions_,
+               screen_descriptions_.size());
     }
 }
 

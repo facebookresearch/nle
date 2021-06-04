@@ -44,6 +44,7 @@ def rollout_env(env, max_rollout_len):
         assert isinstance(done, bool)
         assert isinstance(info, dict)
         if done:
+            assert not info["is_ascended"]
             break
     env.close()
     return reward
@@ -73,10 +74,6 @@ def compare_rollouts(env0, env1, max_rollout_len):
             np.testing.assert_equal(obs0, obs1)
         assert reward0 == reward1
         assert done0 == done1
-
-        if done0:
-            assert "stats" in info0  # just to be sure
-            assert "stats" in info1
 
         assert info0 == info1
 

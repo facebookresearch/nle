@@ -73,6 +73,8 @@ vt_char_color_extract(TMTCHAR *c)
     case (TMT_COLOR_WHITE):
         color = (c->a.bold) ? CLR_WHITE : CLR_GRAY; // c = 15:7
         break;
+    case (TMT_COLOR_MAX):
+        break;
     }
 
     if (c->a.reverse) {
@@ -220,8 +222,8 @@ nle_fflush(FILE *stream)
     /* Only act on fflush(stdout). */
     if (stream != stdout) {
         fprintf(stderr,
-                "Warning: nle_flush called with unexpected FILE pointer %d ",
-                (int) stream);
+                "Warning: nle_flush called with unexpected FILE pointer %p ",
+                stream);
         return fflush(stream);
     }
     nle_ctx_t *nle = current_nle_ctx;
@@ -326,6 +328,14 @@ nethack_exit(int status)
         fprintf(stderr, "NetHack exit with status %i\n", status);
     }
     nle_yield(NULL);
+}
+
+/* Called in really_done() in end.c to get "how". */
+void
+nle_done(int how)
+{
+    nle_ctx_t *nle = current_nle_ctx;
+    nle->observation->how_done = how;
 }
 
 nle_seeds_init_t *nle_seeds_init;
