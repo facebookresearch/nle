@@ -2,6 +2,10 @@
 #
 # Copyright (c) Facebook, Inc. and its affiliates.
 
+# Requires
+#   pip install pytest-benchmark
+# to run
+
 import pytest
 
 import numpy as np
