@@ -401,16 +401,18 @@ class NLE(gym.Env):
             done = True
 
         info = {}
-        if end_status:
-            # TODO: fix stats
-            # stats = self._collect_stats(last_observation, end_status)
-            # stats = stats._asdict()
-            stats = {}
-            info["stats"] = stats
+        # TODO: fix stats
+        # if end_status:
+        #     # stats = self._collect_stats(last_observation, end_status)
+        #     # stats = stats._asdict()
+        #     # stats = {}
+        #     # info["stats"] = stats
+        #
+        #    # if self._stats_logger is not None:
+        #     #     self._stats_logger.writerow(stats)
 
-            if self._stats_logger is not None:
-                self._stats_logger.writerow(stats)
         info["end_status"] = end_status
+        info["is_ascended"] = self.env.how_done() == nethack.ASCENDED
 
         return self._get_observation(observation), reward, done, info
 
