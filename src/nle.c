@@ -330,6 +330,14 @@ nethack_exit(int status)
     nle_yield(NULL);
 }
 
+/* Called in really_done() in end.c to get "how". */
+void
+nle_done(int how)
+{
+    nle_ctx_t *nle = current_nle_ctx;
+    nle->observation->how_done = how;
+}
+
 nle_seeds_init_t *nle_seeds_init;
 
 /* See rng.c. */

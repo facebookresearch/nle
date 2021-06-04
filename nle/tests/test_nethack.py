@@ -74,6 +74,8 @@ class TestNetHack:
                 ch = random.choice(ACTIONS)
                 _, done = game.step(ch)
                 if done:
+                    # This will typically be DIED, but could be POISONED, etc.
+                    assert int(game._pynethack.how_done()) < int(nethack.GENOCIDED)
                     break
 
                 steps += 1
