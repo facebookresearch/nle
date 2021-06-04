@@ -37,6 +37,8 @@ BLSTATS_SCORE_INDEX = 9
 
 SKIP_EXCEPTIONS = (b"eat", b"attack", b"direction?", b"pray")
 
+TTY_BRIGHT = 8
+
 NLE_SPACE_ITEMS = (
     (
         "glyphs",
@@ -129,27 +131,6 @@ NLE_SPACE_ITEMS = (
         gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["tty_cursor"]),
     ),
 )
-
-
-# TODO: can probably be imported from somewhere?
-COLORS = [
-    "\033[30m",
-    "\033[31m",
-    "\033[32m",
-    "\033[33m",
-    "\033[34m",
-    "\033[35m",
-    "\033[36m",
-    "\033[37m",
-    "\x1b[90m",
-    "\x1b[91m",
-    "\x1b[92m",
-    "\x1b[93m",
-    "\x1b[94m",
-    "\x1b[95m",
-    "\x1b[96m",
-    "\x1b[97m",
-]
 
 
 class NLE(gym.Env):
@@ -532,38 +513,23 @@ class NLE(gym.Env):
         """
         return self.env.get_current_seeds()
 
-    def get_tty_rendering(self, tty_chars, tty_colors, print_guides=False):
-
-        H, W = tty_chars.shape
-        rendering = []
-        col_index_str = " " + COLORS[1] + "".join([str(i % 10) for i in range(W)])
-        if print_guides:
-            rendering.append(col_index_str)
-        for i in range(H):
-            line = []
-            for j in range(W):
-                char = tty_chars[i, j]
-                color = tty_colors[i, j]
-                line.append(COLORS[color] + chr(char))
-            row_index_str = COLORS[1] + str(i % 10)
-            if print_guides:
-                rendering.append(row_index_str + "".join(line) + row_index_str)
-            else:
-                rendering.append("".join(line))
-        if print_guides:
-            rendering.append(col_index_str)
-        rendering.append(COLORS[7])
-        rendering = "\n".join(rendering)
-        return rendering
+    def get_tty_rendering(self, tty_chars, tty_colors):
+        # TODO: Merge with "full" rendering below. Why do we have both?
+        rows, cols = tty_chars.shape
+        result = ""
+        for i in range(rows):
+            line = "\n"
+            for j in range(cols):
+                line += "\033[%d;3%dm%s" % (
+                    bool(tty_colors[i, j] & TTY_BRIGHT),
+                    tty_colors[i, j] & ~TTY_BRIGHT,
+                    chr(tty_chars[i, j]),
+                )
+            result += line
+        return result + "\033[0m"
 
     def render(self, mode="human"):
-        """Renders the state of environment.
-
-        Arguments:
-           mode (str): Defaults to "human". Acceptable values are "human" and
-                       "ansi", otherwise a ``ValueError`` is raised.
-
-        """
+        """Renders the state of the environment."""
         chars_index = self._observation_keys.index("chars")
         if mode == "human":
             obs = self.last_observation
@@ -597,12 +563,11 @@ class NLE(gym.Env):
             colors = self.last_observation[colors_index]
             rows, cols = chars.shape
             nh_HE = "\033[0m"
-            BRIGHT = 8
             for r in range(rows):
                 for c in range(cols):
                     # cf. termcap.c.
-                    start_color = "\033[%d" % bool(colors[r][c] & BRIGHT)
-                    start_color += ";3%d" % (colors[r][c] & ~BRIGHT)
+                    start_color = "\033[%d" % bool(colors[r][c] & TTY_BRIGHT)
+                    start_color += ";3%d" % (colors[r][c] & ~TTY_BRIGHT)
                     start_color += "m"
 
                     print(start_color + chr(chars[r][c]), end=nh_HE)
