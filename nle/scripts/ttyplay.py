@@ -25,6 +25,12 @@ parser.add_argument(
     help="Ignore timestamp data and don't wait between frames",
 )
 parser.add_argument(
+    "-f",
+    "--fixed_frame_wait",
+    action="store_true",
+    help="Wait a fixed time between each frame.",
+)
+parser.add_argument(
     "-s", "--speed", default=1.0, type=float, help="Set playback speed multiplier"
 )
 parser.add_argument(
@@ -43,6 +49,9 @@ def wait(diff, speed, drift=0.0):
     jump = 0
 
     if FLAGS.no_wait:
+        return speed, drift, jump
+    if FLAGS.fixed_frame_wait:
+        time.sleep(0.2 / speed)
         return speed, drift, jump
 
     start = time.time()
@@ -101,6 +110,7 @@ def read_header(f, peek=False, no_input=False):
 
 
 CLRCODE = re.compile(rb"\033\[2?J")  # https://stackoverflow.com/a/37778152/1136208
+INPUTS = ["KeyPress %i" % i for i in range(255)]
 
 
 def process(f):
@@ -115,7 +125,6 @@ def process(f):
 
     lastpos = 0
     frame = 0
-
     for timestamp, length, channel in read_header(
         f, peek=FLAGS.peek, no_input=FLAGS.no_input
     ):
@@ -126,6 +135,12 @@ def process(f):
             continue
 
         if channel == 1:  # Input channel.
+            os.write(
+                1, b"\033[s\033[26;0f\033[37;1mFrame %d:\033[0m " % frame
+            )  # Save Cursor & Jump to L26
+            os.write(1, INPUTS[ord(data)].encode("ascii"))
+            os.write(1, b" " * 32)
+            os.write(1, b" \033[u")  # Jump back Cursor
             continue
 
         if jump == 0 and prev is not None:
@@ -182,7 +197,6 @@ def main():
     # Set to unbuffered, no echo.
     new[3] &= ~(termios.ICANON | termios.ECHO | termios.ECHONL)  # lflags
     termios.tcsetattr(0, termios.TCSANOW, new)
-
     try:
         if FLAGS.peek:
             # Skip all previous data.
