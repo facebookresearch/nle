@@ -8,7 +8,6 @@
 #include <memory>
 #include <stdio.h>
 #include <string>
-#include <cstring>
 #include <unistd.h>
 #include <vector>
 
@@ -384,7 +383,8 @@ NetHackRL::fill_obs(nle_obs *obs)
         int i = 0;
         for (const rl_inventory_item &item : inventory_) {
             int j = 0;
-            for (int size = item.str.size(); j < size; ++j) {
+            for (int size = min(item.str.size(), NLE_INVENTORY_STR_LENGTH);
+                 j < size; ++j) {
                 obs->inv_strs[i++] = item.str[j];
             }
             for (; j < NLE_INVENTORY_STR_LENGTH; ++j) {
