@@ -116,13 +116,13 @@ NLE_SPACE_ITEMS = (
     ),
     (
         "tty_chars",
-        gym.spaces.Box(low=0, high=127, **nethack.OBSERVATION_DESC["tty_chars"]),
+        gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["tty_chars"]),
     ),
     (
         "tty_colors",
         gym.spaces.Box(
-            low=-15,
-            high=15,
+            low=0,
+            high=32,
             **nethack.OBSERVATION_DESC["tty_colors"],
         ),
     ),
@@ -210,6 +210,7 @@ class NLE(gym.Env):
         options=None,
         wizard=False,
         allow_all_yn_questions=False,
+        allow_all_modes=False,
         space_dict=None,
     ):
         """Constructs a new NLE environment.
@@ -235,11 +236,15 @@ class NLE(gym.Env):
                 If set to True, no y/n questions in step() are declined.
                 If set to False, only elements of SKIP_EXCEPTIONS are not declined.
                 Defaults to False.
+            allow_all_modes (bool):
+                If set to True, do not decline menus, text input or auto 'MORE'.
+                If set to False, only skip click through 'MORE' on death.
         """
 
         self.character = character
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
+        self._allow_all_modes = allow_all_modes
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -339,6 +344,9 @@ class NLE(gym.Env):
         for a_idx, a in enumerate(self._actions):
             print(a_idx, a)
 
+    def _check_abort(self, observation):
+        return self._steps >= self._max_episode_steps
+
     def step(self, action: int):
         """Steps the environment.
 
@@ -360,15 +368,17 @@ class NLE(gym.Env):
         last_observation = tuple(a.copy() for a in self.last_observation)
 
         observation, done = self.env.step(self._actions[action])
-        observation, done = self._perform_known_steps(
-            observation, done, exceptions=True
-        )
+        is_game_over = observation[self._program_state_index][0] == 1
+        if is_game_over or not self._allow_all_modes:
+            observation, done = self._perform_known_steps(
+                observation, done, exceptions=True
+            )
 
         self._steps += 1
 
         self.last_observation = observation
 
-        if self._steps >= self._max_episode_steps:
+        if self._check_abort(observation):
             end_status = self.StepStatus.ABORTED
         else:
             end_status = self._is_episode_end(observation)

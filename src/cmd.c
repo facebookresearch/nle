@@ -3351,6 +3351,26 @@ int final;
     en_win = WIN_ERR;
 }
 
+int nle_dosave() {
+    pline("You get the feeling there's only one way to save yourself..."); 
+    return 1;
+}
+
+int nle_done2() {
+    pline("You can't quit now, you're having so much fun!"); 
+    return 1;
+}
+
+int nle_doset() {
+    pline("The options are already set perfectly for you!"); 
+    return 1;
+}
+
+int nle_noop() {
+    pline("Noop");
+    return 1;
+}
+
 /* ordered by command name */
 struct ext_func_tab extcmdlist[] = {
     { '#', "#", "perform an extended command",
@@ -3391,7 +3411,7 @@ struct ext_func_tab extcmdlist[] = {
     { '\0', "herecmdmenu", "show menu of commands you can do here",
             doherecmdmenu, IFBURIED },
     { 'V', "history", "show long version and game history",
-            dohistory, IFBURIED | GENERALCMD },
+            nle_noop /* dohistory */, IFBURIED | GENERALCMD },
     { 'i', "inventory", "show your inventory", ddoinv, IFBURIED },
     { 'I', "inventtype", "inventory specific item types",
             dotypeinv, IFBURIED },
@@ -3421,7 +3441,7 @@ struct ext_func_tab extcmdlist[] = {
             dosacrifice, AUTOCOMPLETE },
     { 'o', "open", "open a door", doopen },
     { 'O', "options", "show option settings, possibly change them",
-            doset, IFBURIED | GENERALCMD },
+            nle_doset /* doset */, IFBURIED | GENERALCMD },
     { C('o'), "overview", "show a summary of the explored dungeon",
             dooverview, IFBURIED | AUTOCOMPLETE },
     { '\0', "panic", "test panic routine (fatal to game)",
@@ -3433,7 +3453,7 @@ struct ext_func_tab extcmdlist[] = {
     { M('p'), "pray", "pray to the gods for help",
             dopray, IFBURIED | AUTOCOMPLETE },
     { C('p'), "prevmsg", "view recent game messages",
-            doprev_message, IFBURIED | GENERALCMD },
+            nle_noop /* doprev_message */, IFBURIED | GENERALCMD },
     { 'P', "puton", "put on an accessory (ring, amulet, etc)", doputon },
     { 'q', "quaff", "quaff (drink) something", dodrink },
     { M('q'), "quit", "exit without saving current game",
@@ -3445,7 +3465,7 @@ struct ext_func_tab extcmdlist[] = {
     { M('R'), "ride", "mount or dismount a saddled steed",
             doride, AUTOCOMPLETE },
     { M('r'), "rub", "rub a lamp or a stone", dorub, AUTOCOMPLETE },
-    { 'S', "save", "save the game and exit", dosave, IFBURIED | GENERALCMD },
+    { 'S', "save", "save the game and exit", nle_dosave /* dosave */, IFBURIED | GENERALCMD },
     { 's', "search", "search for traps and secret doors",
             dosearch, IFBURIED, "searching" },
     { '*', "seeall", "show all equipment in use", doprinuse, IFBURIED },

@@ -278,3 +278,76 @@ class NetHackScout(NetHackScore):
         self.dungeon_explored[key] = explored
         time_penalty = self._get_time_penalty(last_observation, observation)
         return reward + time_penalty
+
+
+class NetHackChallenge(NetHackScore):
+    """Environment for the NetHack Challenge.
+
+    The task is an augmentation of the standard NLE task. This is the NLE Score Task
+    but with some subtle differences:
+        * the action space is fixed to include the full keyboard
+        * menus and "<More>" tokens are not skipped
+        * starting character is randomly assigned
+    """
+
+    def __init__(
+        self,
+        *args,
+        character="@",
+        allow_all_yn_questions=True,
+        allow_all_modes=True,
+        penalty_mode="constant",
+        penalty_step: float = -0.00,
+        penalty_time: float = -0.0,
+        max_episode_steps: int = 1e6,
+        observation_keys=(
+            "glyphs",
+            "chars",
+            "colors",
+            "specials",
+            "blstats",
+            "message",
+            "inv_glyphs",
+            "inv_strs",
+            "inv_letters",
+            "inv_oclasses",
+            "tty_chars",
+            "tty_colors",
+            "tty_cursor",
+        ),
+        no_progress_timeout: int = 10_000,
+        **kwargs,
+    ):
+        actions = nethack.ACTIONS
+        super().__init__(
+            *args,
+            actions=actions,
+            character=character,
+            allow_all_yn_questions=allow_all_yn_questions,
+            allow_all_modes=allow_all_modes,
+            penalty_mode=penalty_mode,
+            penalty_step=penalty_step,
+            penalty_time=penalty_time,
+            max_episode_steps=max_episode_steps,
+            observation_keys=observation_keys,
+            **kwargs,
+        )
+        # If the in-game turn count doesn't change for 10_000 steps, we abort
+        self._turns = None
+        self._no_progress_count = 0
+        self.no_progress_timeout = no_progress_timeout
+
+    def _check_abort(self, observation):
+        """Check if time has stopped and no observations has changed long enough
+        to trigger an abort."""
+
+        turns = observation[self._blstats_index][20]
+        if self._turns == turns:
+            self._no_progress_count += 1
+        else:
+            self._turns = turns
+            self._no_progress_count = 0
+        return (
+            self._steps >= self._max_episode_steps
+            or self._no_progress_count >= self.no_progress_timeout
+        )
