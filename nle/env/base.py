@@ -541,14 +541,15 @@ This might contain data that shouldn't be abailable to agents."""
         """
         return self.env.get_current_seeds()
 
-    def get_tty_rendering(self, tty_chars, tty_colors):
+    def get_tty_rendering(self, tty_chars, tty_colors, set_background=False):
         # TODO: Merge with "full" rendering below. Why do we have both?
+        ansi_code = "\033[%d;3%d;40m%s" if set_background else "\033[%d;3%dm%s"
         rows, cols = tty_chars.shape
         result = ""
         for i in range(rows):
             line = "\n"
             for j in range(cols):
-                line += "\033[%d;3%dm%s" % (
+                line += ansi_code % (
                     bool(tty_colors[i, j] & TTY_BRIGHT),
                     tty_colors[i, j] & ~TTY_BRIGHT,
                     chr(tty_chars[i, j]),
@@ -559,13 +560,14 @@ This might contain data that shouldn't be abailable to agents."""
     def render(self, mode="human"):
         """Renders the state of the environment."""
         chars_index = self._observation_keys.index("chars")
-        if mode == "human":
+        if mode == "human" or mode == "notebook":
+            set_background = mode == "notebook"
             obs = self.last_observation
             tty_chars_index = self._observation_keys.index("tty_chars")
             tty_colors_index = self._observation_keys.index("tty_colors")
             tty_chars = obs[tty_chars_index]
             tty_colors = obs[tty_colors_index]
-            rendering = self.get_tty_rendering(tty_chars, tty_colors)
+            rendering = self.get_tty_rendering(tty_chars, tty_colors, set_background)
             print(rendering)
             return
         elif mode == "full":
