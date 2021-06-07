@@ -94,7 +94,7 @@ NLE_SPACE_ITEMS = (
     ),
     (
         "inv_strs",
-        gym.spaces.Box(low=0, high=127, **nethack.OBSERVATION_DESC["inv_strs"]),
+        gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["inv_strs"]),
     ),
     (
         "inv_letters",
@@ -122,7 +122,7 @@ NLE_SPACE_ITEMS = (
         "tty_colors",
         gym.spaces.Box(
             low=0,
-            high=32,
+            high=31,
             **nethack.OBSERVATION_DESC["tty_colors"],
         ),
     ),
