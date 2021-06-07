@@ -14,9 +14,22 @@ def C(c):
     return 0x1F & c
 
 
-# Missing here:
-#   Some characters for text input (e.g., +).
-# General menu handling isn't part of this either.
+class TextCharacters(enum.IntEnum):
+    PLUS = ord("+")
+    MINUS = ord("-")
+    SPACE = ord(" ")
+    APOS = ord("'")
+    QUOTE = ord('"')
+    NUM_0 = ord("0")
+    NUM_1 = ord("1")
+    NUM_2 = ord("2")
+    NUM_3 = ord("3")
+    NUM_4 = ord("4")
+    NUM_5 = ord("5")
+    NUM_6 = ord("6")
+    NUM_7 = ord("7")
+    NUM_8 = ord("8")
+    NUM_9 = ord("9")
 
 
 class CompassCardinalDirection(enum.IntEnum):
@@ -76,6 +89,12 @@ class MiscAction(enum.IntEnum):
     MORE = ord("\r")  # read the next message
 
 
+class UnsafeActions(enum.IntEnum):
+    # currently these result in an error or undesirable behaviour
+    HELP = ord("?")  # give a help message
+    PREVMSG = C("p")  # view recent game messages
+
+
 class Command(enum.IntEnum):
     EXTCMD = ord("#")  # perform an extended command
     EXTLIST = M("?")  # list all extended commands
@@ -100,7 +119,6 @@ class Command(enum.IntEnum):
     FIGHT = ord("F")  # Prefix: force fight even if you don't see a monster
     FORCE = M("f")  # force a lock
     GLANCE = ord(";")  # show what type of thing a map symbol corresponds to
-    HELP = ord("?")  # give a help message
     HISTORY = ord("V")  # show long version and game history
     INVENTORY = ord("i")  # show your inventory
     INVENTTYPE = ord("I")  # inventory specific item types
@@ -121,7 +139,6 @@ class Command(enum.IntEnum):
     PAY = ord("p")  # pay your shopping bill
     PICKUP = ord(",")  # pick up things at the current location
     PRAY = M("p")  # pray to the gods for help
-    PREVMSG = C("p")  # view recent game messages
     PUTON = ord("P")  # put on an accessory (ring, amulet, etc)
     QUAFF = ord("q")  # quaff (drink) something
     QUIT = M("q")  # exit without saving current game
@@ -132,6 +149,7 @@ class Command(enum.IntEnum):
     RIDE = M("R")  # mount or dismount a saddled steed
     RUB = M("r")  # rub a lamp or a stone
     RUSH = ord("g")  # Prefix: rush until something interesting is seen
+    RUSH2 = ord("G")  # Prefix: rush until something interesting is seen
     SAVE = ord("S")  # save the game and exit
     SEARCH = ord("s")  # search for traps and secret doors
     SEEALL = ord("*")  # show all equipment in use
@@ -163,6 +181,7 @@ ACTIONS = tuple(
     + list(MiscDirection)
     + list(MiscAction)
     + list(Command)
+    + list(TextCharacters)
 )
 
 NON_RL_ACTIONS = (
@@ -172,13 +191,11 @@ NON_RL_ACTIONS = (
     Command.EXTCMD,  # Potentially useful for some wizard actions.
     Command.EXTLIST,
     Command.GLANCE,
-    Command.HELP,
     Command.HISTORY,
     Command.KNOWN,  # Could potentially be useful.
     Command.KNOWNCLASS,  # Could potentially be useful.
     Command.OPTIONS,
     Command.OVERVIEW,  # Could potentially be useful.
-    Command.PREVMSG,  # Could potentially be useful.
     Command.TELEPORT,
     Command.QUIT,
     Command.REDRAW,
@@ -191,13 +208,15 @@ NON_RL_ACTIONS = (
 )
 
 _USEFUL_ACTIONS = list(ACTIONS)
-for action in NON_RL_ACTIONS:
+for action in NON_RL_ACTIONS + tuple(TextCharacters):
     _USEFUL_ACTIONS.remove(action)
+_USEFUL_ACTIONS.append(TextCharacters.SPACE)
 USEFUL_ACTIONS = tuple(_USEFUL_ACTIONS)
 del _USEFUL_ACTIONS
 
 _ACTIONS_DICT = {}
 for enum_class in [
+    TextCharacters,
     CompassDirection,
     CompassDirectionLonger,
     MiscDirection,
