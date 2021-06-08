@@ -33,6 +33,7 @@ parser.add_argument(
 parser.add_argument(
     "-s", "--speed", default=1.0, type=float, help="Set playback speed multiplier"
 )
+parser.add_argument("-a", "--print-actions", action="store_true", help="Print actions")
 parser.add_argument(
     "-p", "--peek", action="store_true", help="Peek mode (like tail -f)"
 )
@@ -135,12 +136,13 @@ def process(f):
             continue
 
         if channel == 1:  # Input channel.
-            os.write(
-                1, b"\033[s\033[26;0f\033[37;1mFrame %d:\033[0m " % frame
-            )  # Save Cursor & Jump to L26
-            os.write(1, INPUTS[ord(data)].encode("ascii"))
-            os.write(1, b" " * 32)
-            os.write(1, b" \033[u")  # Jump back Cursor
+            if FLAGS.print_actions:
+                os.write(
+                    1, b"\033[s\033[26;0f\033[37;1mFrame %d:\033[0m " % frame
+                )  # Save Cursor & Jump to L26
+                os.write(1, INPUTS[ord(data)].encode("ascii"))
+                os.write(1, b" " * 32)
+                os.write(1, b" \033[u")  # Jump back Cursor
             continue
 
         if jump == 0 and prev is not None:
