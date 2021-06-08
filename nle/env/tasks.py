@@ -82,9 +82,11 @@ class NetHackScore(base.NLE):
         penalty += (new_time - old_time) * self.penalty_time
         return penalty
 
-    def _reward_fn(self, last_observation, observation, end_status):
+    def _reward_fn(self, last_observation, action, observation, end_status):
         """Score delta, but with added a state loop penalty."""
-        score_diff = super()._reward_fn(last_observation, observation, end_status)
+        score_diff = super()._reward_fn(
+            last_observation, action, observation, end_status
+        )
         time_penalty = self._get_time_penalty(last_observation, observation)
         return score_diff + time_penalty
 
@@ -111,7 +113,8 @@ class NetHackStaircase(NetHackScore):
             return self.StepStatus.TASK_SUCCESSFUL
         return self.StepStatus.RUNNING
 
-    def _reward_fn(self, last_observation, observation, end_status):
+    def _reward_fn(self, last_observation, action, observation, end_status):
+        del action  # Unused
         time_penalty = self._get_time_penalty(last_observation, observation)
         if end_status == self.StepStatus.TASK_SUCCESSFUL:
             reward = 1
@@ -194,9 +197,10 @@ class NetHackGold(NetHackScore):
 
         super().__init__(*args, options=options, **kwargs)
 
-    def _reward_fn(self, last_observation, observation, end_status):
+    def _reward_fn(self, last_observation, action, observation, end_status):
         """Difference between previous gold and new gold."""
         del end_status  # Unused
+        del action  # Unused
         if not self.env.in_normal_game():
             # Before game started or after it ended stats are zero.
             return 0.0
@@ -224,9 +228,10 @@ class NetHackEat(NetHackScore):
     comestibles or monster corpses), rather than the score.
     """
 
-    def _reward_fn(self, last_observation, observation, end_status):
+    def _reward_fn(self, last_observation, action, observation, end_status):
         """Difference between previous hunger and new hunger."""
         del end_status  # Unused
+        del action  # Unused
 
         if not self.env.in_normal_game():
             # Before game started or after it ended stats are zero.
@@ -256,8 +261,9 @@ class NetHackScout(NetHackScore):
         self.dungeon_explored = {}
         return super().reset(*args, **kwargs)
 
-    def _reward_fn(self, last_observation, observation, end_status):
+    def _reward_fn(self, last_observation, action, observation, end_status):
         del end_status  # Unused
+        del action  # Unused
 
         if not self.env.in_normal_game():
             # Before game started or after it ended stats are zero.

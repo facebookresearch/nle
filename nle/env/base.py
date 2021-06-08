@@ -384,7 +384,9 @@ class NLE(gym.Env):
             end_status = self._is_episode_end(observation)
         end_status = self.StepStatus(done or end_status)
 
-        reward = float(self._reward_fn(last_observation, observation, end_status))
+        reward = float(
+            self._reward_fn(last_observation, action, observation, end_status)
+        )
 
         if end_status and not done:
             # Try to end the game nicely.
@@ -605,7 +607,7 @@ class NLE(gym.Env):
         """
         return self.StepStatus.RUNNING
 
-    def _reward_fn(self, last_observation, observation, end_status):
+    def _reward_fn(self, last_observation, action, observation, end_status):
         """Reward function. Difference between previous score and new score."""
         if not self.env.in_normal_game():
             # Before game started or after it ended stats are zero.
@@ -613,6 +615,7 @@ class NLE(gym.Env):
         old_score = last_observation[self._blstats_index][BLSTATS_SCORE_INDEX]
         score = observation[self._blstats_index][BLSTATS_SCORE_INDEX]
         del end_status  # Unused for "score" reward.
+        del action  # Unused for "score reward.
         return score - old_score
 
     def _perform_known_steps(self, observation, done, exceptions=True):
