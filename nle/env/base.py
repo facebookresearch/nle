@@ -282,6 +282,12 @@ class NLE(gym.Env):
 
         self._observation_keys = list(observation_keys)
 
+        if "internal" in self._observation_keys:
+            logger.warn(
+                """The 'internal' NLE observation was requested.
+This might contain data that shouldn't be abailable to agents."""
+            )
+
         # Observations we always need.
         for key in (
             "glyphs",

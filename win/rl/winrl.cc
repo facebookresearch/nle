@@ -252,8 +252,8 @@ NetHackRL::fill_obs(nle_obs *obs)
         obs->internal[2] = in_getlin;
         obs->internal[3] = xwaitingforspace;
         obs->internal[4] = stairs_down;
-        obs->internal[5] = nle_seeds[0]; /* core */
-        obs->internal[6] = nle_seeds[1]; /* disp */
+        obs->internal[5] = 0; /* used to be core seed */
+        obs->internal[6] = 0; /* used to be disp seed */
         obs->internal[7] = u.uhunger;
         obs->internal[8] =
             u.urexp; /* score (careful! check botl_score() and end.c) */
