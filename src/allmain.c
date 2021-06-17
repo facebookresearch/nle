@@ -120,12 +120,16 @@ boolean resuming;
 
                     /* occasionally add another monster; since this takes
                        place after movement has been allotted, the new
-                       monster effectively loses its first turn */
-                    if (!rn2(u.uevent.udemigod ? 25
-                             : (depth(&u.uz) > depth(&stronghold_level)) ? 50
-                               : 70))
-                        (void) makemon((struct permonst *) 0, 0, 0,
-                                       NO_MM_FLAGS);
+                       monster effectively loses its first turn, unless
+                       random monster generation is turned off */
+                    if (!getenv("NH_NO_RAND_MON")) {
+                        if (!rn2(u.uevent.udemigod ? 25
+                                 : (depth(&u.uz) > depth(&stronghold_level))
+                                     ? 50
+                                     : 70))
+                            (void) makemon((struct permonst *) 0, 0, 0,
+                                           NO_MM_FLAGS);
+                    }
 
                     /* calculate how much time passed. */
                     if (u.usteed && u.umoved) {
