@@ -339,9 +339,12 @@ class NetHackChallenge(NetHackScore):
             **kwargs,
         )
         # If the in-game turn count doesn't change for 10_000 steps, we abort
+        self.no_progress_timeout = no_progress_timeout
+
+    def reset(self, *args, **kwargs):
         self._turns = None
         self._no_progress_count = 0
-        self.no_progress_timeout = no_progress_timeout
+        return super().reset(*args, **kwargs)
 
     def _check_abort(self, observation):
         """Check if time has stopped and no observations has changed long enough
