@@ -44,15 +44,18 @@ class TestProfile:
     @pytest.mark.benchmark(disable_gc=True, warmup=False)
     def test_run_1k_steps(self, observation_keys, make_cwd_tmp, benchmark):
         env = gym.make("NetHack-v0", observation_keys=observation_keys)
-        seeds = [123456]
+        seeds = 123456
         steps = 1000
 
-        np.random.seed(seeds[0])
+        np.random.seed(seeds)
         actions = np.random.choice(len(env._actions), size=steps)
 
         def seed():
-            seeds[0] += 1
-            env.seed(seeds[0], 2 * seeds[0])
+            if not nle.nethack.NLE_ALLOW_SEEDING:
+                return
+            nonlocal seeds
+            seeds += 1
+            env.seed(seeds, 2 * seeds)
 
         def play_1k_steps():
             env.reset()

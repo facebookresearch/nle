@@ -178,23 +178,32 @@ class Nethack
     void
     set_initial_seeds(unsigned long core, unsigned long disp, bool reseed)
     {
+#ifdef NLE_ALLOW_SEEDING
         seed_init_.seeds[0] = core;
         seed_init_.seeds[1] = disp;
         seed_init_.reseed = reseed;
         use_seed_init = true;
+#else
+        throw std::runtime_error("Seeding not enabled");
+#endif
     }
 
     void
     set_seeds(unsigned long core, unsigned long disp, bool reseed)
     {
+#ifdef NLE_ALLOW_SEEDING
         if (!nle_)
             throw std::runtime_error("set_seed called without reset()");
         nle_set_seed(nle_, core, disp, reseed);
+#else
+        throw std::runtime_error("Seeding not enabled");
+#endif
     }
 
     std::tuple<unsigned long, unsigned long, bool>
     get_seeds()
     {
+#ifdef NLE_ALLOW_SEEDING
         if (!nle_)
             throw std::runtime_error("get_seed called without reset()");
         std::tuple<unsigned long, unsigned long, bool> result;
@@ -204,6 +213,9 @@ class Nethack
                      &reseed);
         std::get<2>(result) = reseed;
         return result;
+#else
+        throw std::runtime_error("Seeding not enabled");
+#endif
     }
 
     boolean
@@ -289,6 +301,13 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_INVENTORY_STR_LENGTH") = py::int_(NLE_INVENTORY_STR_LENGTH);
     mn.attr("NLE_SCREEN_DESCRIPTION_LENGTH") =
         py::int_(NLE_SCREEN_DESCRIPTION_LENGTH);
+
+    mn.attr("NLE_ALLOW_SEEDING") =
+#ifdef NLE_ALLOW_SEEDING
+        true;
+#else
+        false;
+#endif
 
     /* NetHack constants. */
     mn.attr("ROWNO") = py::int_(ROWNO);

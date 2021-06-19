@@ -244,6 +244,11 @@ class TestGymEnvRollout:
 
     def test_seed_interface_output(self, env_name, rollout_len):
         """Tests whether env.seed output can be reused correctly."""
+        if not nethack.NLE_ALLOW_SEEDING:
+            return  # Nothing to test.
+        if env_name.startswith("NetHackChallenge"):
+            pytest.skip("Not running seed test on NetHackChallenge")
+
         env0 = gym.make(env_name)
         env1 = gym.make(env_name)
 
@@ -257,6 +262,11 @@ class TestGymEnvRollout:
 
     def test_seed_rollout_seeded(self, env_name, rollout_len):
         """Tests that two seeded envs return same step data."""
+        if not nethack.NLE_ALLOW_SEEDING:
+            return  # Nothing to test.
+        if env_name.startswith("NetHackChallenge"):
+            pytest.skip("Not running seed test on NetHackChallenge")
+
         env0 = gym.make(env_name)
         env1 = gym.make(env_name)
 
@@ -277,6 +287,11 @@ class TestGymEnvRollout:
 
     def test_seed_rollout_seeded_int(self, env_name, rollout_len):
         """Tests that two seeded envs return same step data."""
+        if not nethack.NLE_ALLOW_SEEDING:
+            return  # Nothing to test.
+        if env_name.startswith("NetHackChallenge"):
+            pytest.skip("Not running seed test on NetHackChallenge")
+
         env0 = gym.make(env_name)
         env1 = gym.make(env_name)
 
@@ -366,3 +381,21 @@ class TestGymDynamics:
 
         assert done
         assert reward == 0.0
+
+
+class TestNetHackChallenge:
+    def test_no_seed_setting(self):
+        assert not nethack.NLE_ALLOW_SEEDING
+
+        MESSAGE = "Should not try changing seeds"
+
+        env = gym.make("NetHackChallenge-v0")
+        with pytest.raises(
+            RuntimeError, match="NetHackChallenge doesn't allow seed changes"
+        ):
+            env.seed()
+        with pytest.raises(RuntimeError, match=MESSAGE):
+            env.env.set_initial_seeds(0, 0, True)
+
+        with pytest.raises(RuntimeError, match="Seeding not enabled"):
+            env.env._pynethack.set_initial_seeds(0, 0, True)

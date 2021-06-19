@@ -102,6 +102,7 @@ nle_end(nle_ctx_t *nledl)
     free(nledl);
 }
 
+#ifdef NLE_ALLOW_SEEDING
 void
 nle_set_seed(nle_ctx_t *nledl, unsigned long core, unsigned long disp,
              char reseed)
@@ -138,3 +139,4 @@ nle_get_seed(nle_ctx_t *nledl, unsigned long *core, unsigned long *disp,
      */
     get_seed(nledl->nle_ctx, core, disp, reseed);
 }
+#endif
