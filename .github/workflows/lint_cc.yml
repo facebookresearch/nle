@@ -20,4 +20,4 @@ jobs:
       - name: Clone NLE repo
         uses: actions/checkout@v2
       - name: Run clang
-        run: "./nle/scripts/run-clang-format -r win/rl"
+        run: "./nle/scripts/run-clang-format -r win/rl src/nle.c sys/unix/nledl.c include/nle.h include/nledl.h include/nleobs.h"
