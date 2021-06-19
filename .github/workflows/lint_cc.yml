@@ -5,10 +5,14 @@ on:
     branches:
       - master
     paths:
-      - "win/rl/**.{c,cc,cpp,h,hh,hpp}"
+      - "src/nle**.c"
+      - "include/nle**.h"
+      - "win/rl/**.cc"
   pull_request:
     paths:
-      - "win/rl/**.{c,cc,cpp,h,hh,hpp}"
+      - "src/nle**.c"
+      - "include/nle**.h"
+      - "win/rl/**.cc"
   schedule:
     - cron: "0 6,18 * * *"
 
