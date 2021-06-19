@@ -538,3 +538,12 @@ class TestAuxillaryFunctions:
             "\n\033[0;31mD\033[4m\033[0;32mE\033[0m\n\033[0;33mH\033[1;36mV\033[0m"
         )
         assert expected == nethack.tty_render(chars, colors, cursor)
+
+
+class TestNethackActions:
+    def test_all_ascii(self):
+        for c in range(32, 127):
+            if c in (ord("%"), ord("]"), ord("{"), ord("|"), ord("}"), ord("~")):
+                # Not a NetHack command.
+                continue
+            nethack.action_id_to_type(c)
