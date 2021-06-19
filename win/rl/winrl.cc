@@ -178,7 +178,8 @@ class NetHackRL
     std::array<uint8_t, (COLNO - 1) * ROWNO> colors_;
     std::array<uint8_t, (COLNO - 1) * ROWNO> specials_;
 
-    std::array<char, (COLNO - 1) * ROWNO * NLE_SCREEN_DESCRIPTION_LENGTH> screen_descriptions_;
+    std::array<char, (COLNO - 1) * ROWNO * NLE_SCREEN_DESCRIPTION_LENGTH>
+        screen_descriptions_;
 
     void store_glyph(XCHAR_P x, XCHAR_P y, int glyph);
     void store_mapped_glyph(int ch, int color, int special, XCHAR_P x,
@@ -507,9 +508,11 @@ NetHackRL::store_screen_description(XCHAR_P x, XCHAR_P y, int glyph)
 
     if (do_screen_description(cc, TRUE, sym, tmpbuf, &firstmatch,
                               (struct permonst **) 0)) {
-        strncpy((char *) &screen_descriptions_ + start, firstmatch, NLE_SCREEN_DESCRIPTION_LENGTH);
+        strncpy((char *) &screen_descriptions_ + start, firstmatch,
+                NLE_SCREEN_DESCRIPTION_LENGTH);
     } else {
-        strncpy((char *) &screen_descriptions_ + start, "", NLE_SCREEN_DESCRIPTION_LENGTH);
+        strncpy((char *) &screen_descriptions_ + start, "",
+                NLE_SCREEN_DESCRIPTION_LENGTH);
     }
 }
 
@@ -640,7 +643,7 @@ NetHackRL::add_menu_method(
     int attr,                   /* attribute for string (like putstr()) */
     const char *str,            /* menu string */
     bool preselected            /* item is marked as selected */
-    )
+)
 {
     DEBUG_API("rl_add_menu" << std::endl);
     tty_add_menu(wid, glyph, identifier, ch, gch, attr, str, preselected);
