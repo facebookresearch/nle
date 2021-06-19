@@ -357,12 +357,14 @@ extern unsigned long NDECL(sys_random_seed);
 void
 init_random(int FDECL((*fn), (int) ))
 {
-    if (!nle_seeds_init) {
-        set_random(sys_random_seed(), fn);
+#ifdef NLE_ALLOW_SEEDING
+    if (nle_seeds_init) {
+        set_random(nle_seeds_init->seeds[whichrng(fn)], fn);
+        has_strong_rngseed = nle_seeds_init->reseed;
         return;
     }
-    set_random(nle_seeds_init->seeds[whichrng(fn)], fn);
-    has_strong_rngseed = nle_seeds_init->reseed;
+#endif
+    set_random(sys_random_seed(), fn);
 }
 
 nle_ctx_t *
@@ -430,6 +432,7 @@ nle_end(nle_ctx_t *nle)
     free(nle);
 }
 
+#ifdef NLE_ALLOW_SEEDING
 void
 nle_set_seed(nle_ctx_t *nle, unsigned long core, unsigned long disp,
              boolean reseed)
@@ -452,6 +455,7 @@ nle_get_seed(nle_ctx_t *nle, unsigned long *core, unsigned long *disp,
     *disp = nle_seeds[1];
     *reseed = has_strong_rngseed;
 }
+#endif
 
 /* From unixtty.c */
 /* fatal error */

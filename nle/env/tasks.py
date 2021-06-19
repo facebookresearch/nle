@@ -341,6 +341,13 @@ class NetHackChallenge(NetHackScore):
         # If the in-game turn count doesn't change for 10_000 steps, we abort
         self.no_progress_timeout = no_progress_timeout
 
+        def f(*args, **kwargs):
+            raise RuntimeError("Should not try changing seeds")
+
+        self.env.set_initial_seeds = f
+        self.env.set_current_seeds = f
+        self.env.get_current_seeds = f
+
     def reset(self, *args, **kwargs):
         self._turns = None
         self._no_progress_count = 0
@@ -360,3 +367,6 @@ class NetHackChallenge(NetHackScore):
             self._steps >= self._max_episode_steps
             or self._no_progress_count >= self.no_progress_timeout
         )
+
+    def seed(self, core=None, disp=None, reseed=True):
+        raise RuntimeError("NetHackChallenge doesn't allow seed changes")
