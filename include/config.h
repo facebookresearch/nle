@@ -55,6 +55,7 @@
 #define RL_GRAPHICS  /* Reinforcement learning 'window' port */
 
 #define NO_SIGNAL
+#define NOSHELL
 
 /*
  * Define the default window system.  This should be one that is compiled
