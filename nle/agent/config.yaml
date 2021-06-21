@@ -1,0 +1,107 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+defaults:
+- hydra/job_logging: colorlog
+- hydra/hydra_logging: colorlog
+# - hydra/launcher: submitit_slurm
+
+# # To Be Used With hydra submitit_slurm if you have SLURM cluster
+# # pip install hydra-core hydra_colorlog
+# # can set these on the commandline too, e.g. `hydra.launcher.partition=dev`
+# hydra:
+#   launcher:
+#     timeout_min: 4300
+#     cpus_per_task: 20  
+#     gpus_per_node: 2
+#     tasks_per_node: 1
+#     mem_gb: 20
+#     nodes: 1
+#     partition: dev
+#     comment: null  
+#     max_num_timeout: 5  # will requeue on timeout or preemption
+
+
+name: null  # can use this to have multiple runs with same params, eg name=1,2,3,4,5
+
+## WANDB settings
+wandb: false                 # Enable wandb logging.
+project: nethack_challenge   # The wandb project name.
+entity: user1                # The wandb user to log to.
+group: group1                # The wandb group for the run.
+
+# POLYBEAST ENV settings
+mock: false                  # Use mock environment instead of NetHack.
+single_ttyrec: true          # Record ttyrec only for actor 0.
+num_seeds: 0                 # If larger than 0, samples fixed number of environment seeds to be used.'
+write_profiler_trace: false  # Collect and write a profiler trace for chrome://tracing/.
+fn_penalty_step: constant    # Function to accumulate penalty.
+penalty_time: 0.0            # Penalty per time step in the episode.
+penalty_step: -0.01          # Penalty per step in the episode.
+reward_lose: 0               # Reward for losing (dying before finding the staircase).
+reward_win: 100              # Reward for winning (finding the staircase).
+state_counter: none          # Method for counting state visits. Default none.
+character: '@' # Specification of the NetHack character.
+                              ## typical characters we use
+                                # 'mon-hum-neu-mal'
+                                # 'val-dwa-law-fem'
+                                # 'wiz-elf-cha-mal'
+                                # 'tou-hum-neu-fem'
+                                # '@'   # random (used in Challenge assessment)
+
+# RUN settings.
+mode: train                  # Training or test mode.
+env: challenge               # Name of Gym environment to create.
+                             # # env (task) names: challenge, staircase, pet, 
+                             #     eat, gold, score, scout, oracle
+
+# TRAINING settings.
+num_actors: 256              # Number of actors.
+total_steps: 1e9             # Total environment steps to train for. Will be cast to int.
+batch_size: 32               # Learner batch size.
+unroll_length: 80            # The unroll length (time dimension).
+num_learner_threads: 1       # Number learner threads.
+num_inference_threads: 1     # Number inference threads.
+disable_cuda: false          # Disable CUDA.
+learner_device: cuda:1       # Set learner device.
+actor_device: cuda:0         # Set actor device.
+
+# OPTIMIZER settings. (RMS Prop)
+learning_rate: 0.0002        # Learning rate.
+grad_norm_clipping: 40       # Global gradient norm clip.
+alpha: 0.99                  # RMSProp smoothing constant.
+momentum: 0                  # RMSProp momentum.
+epsilon: 0.000001            # RMSProp epsilon.
+
+# LOSS settings.
+entropy_cost: 0.001          # Entropy cost/multiplier.
+baseline_cost: 0.5           # Baseline cost/multiplier.
+discounting: 0.999           # Discounting factor.
+normalize_reward: true       # Normalizes reward by dividing by running stdev from mean.
+
+# MODEL settings.
+model: baseline              # Name of model to build (see models/__init__.py).
+use_lstm: true               # Use LSTM in agent model.
+hidden_dim: 256              # Size of hidden representations.
+embedding_dim: 64            # Size of glyph embeddings.
+layers: 5                    # Number of ConvNet Layers for Glyph Model
+crop_dim: 9                  # Size of crop (c x c)
+use_index_select: true       # Whether to use index_select instead of embedding lookup (for speed reasons).
+restrict_action_space: True  # Use a restricted ACTION SPACE (only nethack.USEFUL_ACTIONS)
+
+msg:                      
+  hidden_dim: 64             # Hidden dimension for message encoder.
+  embedding_dim: 32          # Embedding dimension for characters in message encoder.
+
+# TEST settings.    
+load_dir: null               # Path to load a model from for testing
