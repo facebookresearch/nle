@@ -60,9 +60,10 @@ checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 class Nethack
 {
   public:
-    Nethack(std::string dlpath, std::string ttyrec)
+    Nethack(std::string dlpath, std::string ttyrec, bool shared)
         : dlpath_(std::move(dlpath)), obs_{},
-          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose)
+          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose),
+          shared_(shared)
     {
         if (!ttyrec_) {
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
@@ -225,7 +226,7 @@ class Nethack
         if (!nle_) {
             nle_ = nle_start(dlpath_.c_str(), &obs_,
                              ttyrec ? ttyrec : ttyrec_.get(),
-                             use_seed_init ? &seed_init_ : nullptr);
+                             use_seed_init ? &seed_init_ : nullptr, shared_);
         } else
             nle_reset(nle_, &obs_, ttyrec,
                       use_seed_init ? &seed_init_ : nullptr);
@@ -243,6 +244,7 @@ class Nethack
     bool use_seed_init = false;
     nle_ctx_t *nle_ = nullptr;
     std::unique_ptr<std::FILE, int (*)(std::FILE *)> ttyrec_;
+    bool shared_ = false;
 };
 
 PYBIND11_MODULE(_pynethack, m)
@@ -250,8 +252,8 @@ PYBIND11_MODULE(_pynethack, m)
     m.doc() = "The NetHack Learning Environment";
 
     py::class_<Nethack>(m, "Nethack")
-        .def(py::init<std::string, std::string>(), py::arg("dlpath"),
-             py::arg("ttyrec"))
+        .def(py::init<std::string, std::string, bool>(), py::arg("dlpath"),
+             py::arg("ttyrec"), py::arg("shared"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
         .def("reset", py::overload_cast<>(&Nethack::reset))
@@ -276,6 +278,10 @@ PYBIND11_MODULE(_pynethack, m)
         .def("get_seeds", &Nethack::get_seeds)
         .def("in_normal_game", &Nethack::in_normal_game)
         .def("how_done", &Nethack::how_done);
+
+    m.def("supports_shared", []() {
+      return nle_supports_shared();
+    });
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");

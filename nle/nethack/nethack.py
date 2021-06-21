@@ -81,8 +81,6 @@ def _set_env_vars(options, hackdir, wizkit=None):
 # which should allow several instances of this. On MacOS, that seems
 # a tough call.
 class Nethack:
-    _instances = 0
-
     def __init__(
         self,
         observation_keys=OBSERVATION_DESC.keys(),
@@ -102,25 +100,38 @@ class Nethack:
                 "Couldn't find NetHack installation at '%s'." % hackdir
             )
 
-        # Create a HACKDIR for us.
-        self._tempdir = tempfile.TemporaryDirectory(prefix="nle")
-        self._vardir = self._tempdir.name
+        self.shared = False
 
-        # Save cwd and restore later. Currently libnethack changes
-        # directory on loading.
-        self._oldcwd = os.getcwd()
+        if _pynethack.supports_shared():
+            # "shared" mode does some hacky things to enable using a
+            # shared libnethack.so, prevents writing to any files, and does
+            # not chdir.
+            self.shared = True
+            dlpath = DLPATH
+            self._hackdir = hackdir
+        else:
 
-        # Symlink a few files.
-        for fn in ["nhdat", "sysconf"]:
-            os.symlink(os.path.join(hackdir, fn), os.path.join(self._vardir, fn))
-        # Touch a few files.
-        for fn in ["perm", "logfile", "xlogfile"]:
-            os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
-        os.mkdir(os.path.join(self._vardir, "save"))
+            # Create a HACKDIR for us.
+            self._tempdir = tempfile.TemporaryDirectory(prefix="nle")
+            self._vardir = self._tempdir.name
 
-        # Hacky AF: Copy our so into this directory to load several copies ...
-        dlpath = os.path.join(self._vardir, "libnethack.so")
-        shutil.copyfile(DLPATH, dlpath)
+            self._hackdir = self._vardir
+
+            # Save cwd and restore later. Currently libnethack changes
+            # directory on loading.
+            self._oldcwd = os.getcwd()
+
+            # Symlink a few files.
+            for fn in ["nhdat", "sysconf"]:
+                os.symlink(os.path.join(hackdir, fn), os.path.join(self._vardir, fn))
+            # Touch a few files.
+            for fn in ["perm", "logfile", "xlogfile"]:
+                os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
+            os.mkdir(os.path.join(self._vardir, "save"))
+
+            # Hacky AF: Copy our so into this directory to load several copies ...
+            dlpath = os.path.join(self._vardir, "libnethack.so")
+            shutil.copyfile(DLPATH, dlpath)
 
         if options is None:
             options = NETHACKOPTIONS
@@ -129,10 +140,10 @@ class Nethack:
             self._options.append("playmode:debug")
         self._wizard = wizard
 
-        _set_env_vars(self._options, self._vardir)
+        _set_env_vars(self._options, self._hackdir)
         self._ttyrec = ttyrec
 
-        self._pynethack = _pynethack.Nethack(dlpath, ttyrec)
+        self._pynethack = _pynethack.Nethack(dlpath, ttyrec, self.shared)
 
         self._obs_buffers = {}
 
@@ -154,6 +165,11 @@ class Nethack:
         return self._step_return(), self._pynethack.done()
 
     def _write_wizkit_file(self, wizkit_items):
+        if self._vardir is None:
+            raise RuntimeError(
+                "FIXME: shared wizkit: can't write to HACKDIR as "
+                "it is a shared directory"
+            )
         # TODO ideally we need to check the validity of the requested items
         with open(os.path.join(self._vardir, WIZKIT_FNAME), "w") as f:
             for item in wizkit_items:
@@ -164,9 +180,9 @@ class Nethack:
             if not self._wizard:
                 raise ValueError("Set wizard=True to use the wizkit option.")
             self._write_wizkit_file(wizkit_items)
-            _set_env_vars(self._options, self._vardir, wizkit=WIZKIT_FNAME)
+            _set_env_vars(self._options, self._hackdir, wizkit=WIZKIT_FNAME)
         else:
-            _set_env_vars(self._options, self._vardir)
+            _set_env_vars(self._options, self._hackdir)
         if new_ttyrec is None:
             self._pynethack.reset()
         else:
@@ -178,11 +194,13 @@ class Nethack:
 
     def close(self):
         self._pynethack.close()
-        try:
-            os.chdir(self._oldcwd)
-        except IOError:
-            os.chdir(os.path.dirname(os.path.realpath(__file__)))
-        self._tempdir.cleanup()
+        if not self.shared:
+            try:
+                os.chdir(self._oldcwd)
+            except IOError:
+                os.chdir(os.path.dirname(os.path.realpath(__file__)))
+            if self._tempdir is not None:
+                self._tempdir.cleanup()
 
     def set_initial_seeds(self, core, disp, reseed=False):
         self._pynethack.set_initial_seeds(core, disp, reseed)

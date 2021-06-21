@@ -6,74 +6,113 @@
 
 #include "nledl.h"
 
-void
-nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init)
-{
-    nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
+void *nleshared_open(const char *dlpath);
+void nleshared_close(void *handle);
+void nleshared_reset(void *handle);
+void *nleshared_sym(void *handle, const char *symname);
+void nleshared_set_current(void *handle);
+int nleshared_supported(void);
 
-    if (!nledl->dlhandle) {
-        fprintf(stderr, "%s\n", dlerror());
-        exit(EXIT_FAILURE);
-    }
-
-    dlerror(); /* Clear any existing error */
-
+typedef struct nledl_ctx {
+    void *shared;
+    char dlpath[1024];
+    void *dlhandle;
+    void *nle_ctx;
     void *(*start)(nle_obs *, FILE *, nle_seeds_init_t *);
-    start = dlsym(nledl->dlhandle, "nle_start");
-    nledl->nle_ctx = start(obs, nledl->ttyrec, seed_init);
+    void *(*step)(void *, nle_obs *);
+    void (*end)(void *);
+    FILE *ttyrec;
+} nle_ctx_t;
 
-    char *error = dlerror();
-    if (error != NULL) {
-        fprintf(stderr, "%s\n", error);
-        exit(EXIT_FAILURE);
+static void *
+sym(nle_ctx_t *nledl, const char *name)
+{
+    if (nledl->shared) {
+        return nleshared_sym(nledl->shared, name);
+    } else {
+        dlerror(); /* Clear any existing error */
+        void *r = dlsym(nledl->dlhandle, name);
+        char *error = dlerror();
+        if (error != NULL) {
+            fprintf(stderr, "%s\n", error);
+            exit(EXIT_FAILURE);
+        }
+        return r;
+    }
+}
+
+void
+nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
+           int shared)
+{
+    nledl->shared = NULL;
+    if (shared) {
+        if (nleshared_supported()) {
+            nledl->shared = nleshared_open(nledl->dlpath);
+            nleshared_set_current(nledl->shared);
+        } else {
+            fprintf(stderr, "Shared mode not supported on this system!\n");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
+        if (!nledl->dlhandle) {
+            fprintf(stderr, "%s\n", dlerror());
+            exit(EXIT_FAILURE);
+        }
     }
 
-    nledl->step = dlsym(nledl->dlhandle, "nle_step");
+    nledl->start = sym(nledl, "nle_start");
+    nledl->step = sym(nledl, "nle_step");
+    nledl->end = sym(nledl, "nle_end");
 
-    error = dlerror();
-    if (error != NULL) {
-        fprintf(stderr, "%s\n", error);
-        exit(EXIT_FAILURE);
-    }
+    nledl->nle_ctx = nledl->start(obs, nledl->ttyrec, seed_init);
 }
 
 void
 nledl_close(nle_ctx_t *nledl)
 {
-    void (*end)(void *);
-
-    end = dlsym(nledl->dlhandle, "nle_end");
-    end(nledl->nle_ctx);
-
-    if (dlclose(nledl->dlhandle)) {
-        fprintf(stderr, "Error in dlclose: %s\n", dlerror());
-        exit(EXIT_FAILURE);
+    if (nledl->shared) {
+        nleshared_set_current(nledl->shared);
     }
+    nledl->end(nledl->nle_ctx);
 
-    dlerror();
+    if (nledl->shared) {
+        nleshared_close(nledl->shared);
+    } else {
+        if (dlclose(nledl->dlhandle)) {
+            fprintf(stderr, "Error in dlclose: %s\n", dlerror());
+            exit(EXIT_FAILURE);
+        }
+
+        dlerror();
+    }
 }
 
 nle_ctx_t *
 nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec,
-          nle_seeds_init_t *seed_init)
+          nle_seeds_init_t *seed_init, int shared)
 {
     /* TODO: Consider getting ttyrec path from caller? */
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
     nledl->ttyrec = ttyrec;
     strncpy(nledl->dlpath, dlpath, sizeof(nledl->dlpath));
 
-    nledl_init(nledl, obs, seed_init);
+    nledl_init(nledl, obs, seed_init, shared);
     return nledl;
 };
 
 nle_ctx_t *
 nle_step(nle_ctx_t *nledl, nle_obs *obs)
 {
-    if (!nledl || !nledl->dlhandle || !nledl->nle_ctx) {
+    if (!nledl || (!nledl->dlhandle && !nledl->shared) || !nledl->nle_ctx) {
         fprintf(stderr, "Illegal nledl_ctx\n");
         exit(EXIT_FAILURE);
     }
 
+    if (nledl->shared) {
+        nleshared_set_current(nledl->shared);
+    }
     nledl->step(nledl->nle_ctx, obs);
 
     return nledl;
@@ -85,14 +124,25 @@ void
 nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
           nle_seeds_init_t *seed_init)
 {
-    nledl_close(nledl);
-    /* Reset file only if not-NULL. */
-    if (ttyrec)
-        nledl->ttyrec = ttyrec;
+    if (nledl->shared) {
+        if (nledl->shared) {
+            nleshared_set_current(nledl->shared);
+        }
+        nledl->end(nledl->nle_ctx);
+        nleshared_reset(nledl->shared);
+        if (ttyrec)
+            nledl->ttyrec = ttyrec;
+        nledl->nle_ctx = nledl->start(obs, ttyrec, seed_init);
+    } else {
+        nledl_close(nledl);
+        /* Reset file only if not-NULL. */
+        if (ttyrec)
+            nledl->ttyrec = ttyrec;
 
-    // TODO: Consider refactoring nledl.h such that we expose this init
-    // function but drop reset.
-    nledl_init(nledl, obs, seed_init);
+        // TODO: Consider refactoring nledl.h such that we expose this init
+        // function but drop reset.
+        nledl_init(nledl, obs, seed_init, 0);
+    }
 }
 
 void
@@ -108,13 +158,7 @@ nle_set_seed(nle_ctx_t *nledl, unsigned long core, unsigned long disp,
 {
     void (*set_seed)(void *, unsigned long, unsigned long, char);
 
-    set_seed = dlsym(nledl->dlhandle, "nle_set_seed");
-
-    char *error = dlerror();
-    if (error != NULL) {
-        fprintf(stderr, "%s\n", error);
-        exit(EXIT_FAILURE);
-    }
+    set_seed = sym(nledl, "nle_set_seed");
 
     set_seed(nledl->nle_ctx, core, disp, reseed);
 }
@@ -125,16 +169,16 @@ nle_get_seed(nle_ctx_t *nledl, unsigned long *core, unsigned long *disp,
 {
     void (*get_seed)(void *, unsigned long *, unsigned long *, char *);
 
-    get_seed = dlsym(nledl->dlhandle, "nle_get_seed");
-
-    char *error = dlerror();
-    if (error != NULL) {
-        fprintf(stderr, "%s\n", error);
-        exit(EXIT_FAILURE);
-    }
+    get_seed = sym(nledl, "nle_get_seed");
 
     /* Careful here. NetHack has different ideas of what a boolean is
      * than C++ (see global.h and SKIP_BOOLEAN). But one byte should be fine.
      */
     get_seed(nledl->nle_ctx, core, disp, reseed);
+}
+
+int
+nle_supports_shared(void)
+{
+    return nleshared_supported();
 }

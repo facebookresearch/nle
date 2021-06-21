@@ -27,6 +27,7 @@ endif()
 
 message(STATUS "Building nle backend version: ${NLE_VERSION}")
 
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # We use this to decide where the root of the nle/ package is. Normally it
@@ -99,7 +100,7 @@ target_link_directories(nethack PUBLIC /usr/local/lib)
 target_link_libraries(nethack PUBLIC m fcontext bz2)
 
 # dlopen wrapper library
-add_library(nethackdl STATIC "sys/unix/nledl.c")
+add_library(nethackdl STATIC "sys/unix/nledl.c" "sys/unix/nleshared.cc")
 target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(nethackdl PUBLIC dl)
 
