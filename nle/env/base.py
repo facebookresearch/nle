@@ -186,8 +186,7 @@ class NLE(gym.Env):
 
     def __init__(
         self,
-        savedir="",
-        archivefile="nethack.%(pid)i.%(time)s.zip",
+        savedir=None,
         character="mon-hum-neu-mal",
         max_episode_steps=5000,
         observation_keys=(
