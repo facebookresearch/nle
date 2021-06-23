@@ -187,6 +187,7 @@ class NLE(gym.Env):
     def __init__(
         self,
         savedir=None,
+        archivefile=None,
         character="mon-hum-neu-mal",
         max_episode_steps=5000,
         observation_keys=(
