@@ -430,7 +430,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         logging.info("Not using CUDA.")
         flags.device = torch.device("cpu")
 
-    env = create_env(flags.env, archivefile=None)
+    env = create_env(flags.env)
     observation_space = env.observation_space
     action_space = env.action_space
     del env  # End this before forking.
@@ -592,7 +592,7 @@ def test(flags, num_episodes=10):
     flags.savedir = os.path.expandvars(os.path.expanduser(flags.savedir))
     checkpointpath = os.path.join(flags.savedir, "latest", "model.tar")
 
-    gym_env = create_env(flags.env, archivefile=None)
+    gym_env = create_env(flags.env)
     env = ResettingEnvironment(gym_env)
     model = Net(gym_env.observation_space, gym_env.action_space.n, flags.use_lstm)
     model.eval()
