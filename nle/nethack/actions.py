@@ -15,11 +15,11 @@ def C(c):
 
 
 class TextCharacters(enum.IntEnum):
-    PLUS = ord("+")
+    PLUS = ord("+")  # Also SEESPELLS.
     MINUS = ord("-")
     SPACE = ord(" ")
     APOS = ord("'")
-    QUOTE = ord('"')
+    QUOTE = ord('"')  # Also SEEAMULET.
     NUM_0 = ord("0")
     NUM_1 = ord("1")
     NUM_2 = ord("2")
@@ -112,11 +112,11 @@ class Command(enum.IntEnum):
     DROP = ord("d")  # drop an item
     DROPTYPE = ord("D")  # drop specific item types
     EAT = ord("e")  # eat something
-    ESC = C("[")  # escape from the current query/action
     ENGRAVE = ord("E")  # engrave writing on the floor
     ENHANCE = M("e")  # advance or check weapon and spell skills
-    FIRE = ord("f")  # fire ammunition from quiver
+    ESC = C("[")  # escape from the current query/action
     FIGHT = ord("F")  # Prefix: force fight even if you don't see a monster
+    FIRE = ord("f")  # fire ammunition from quiver
     FORCE = M("f")  # force a lock
     GLANCE = ord(";")  # show what type of thing a map symbol corresponds to
     HISTORY = ord("V")  # show long version and game history
@@ -153,7 +153,15 @@ class Command(enum.IntEnum):
     SAVE = ord("S")  # save the game and exit
     SEARCH = ord("s")  # search for traps and secret doors
     SEEALL = ord("*")  # show all equipment in use
+    SEEAMULET = ord('"')  # show the amulet currently worn
+    SEEARMOR = ord("[")  # show the armor currently worn
+    SEEGOLD = ord("$")  # count your gold
+    SEERINGS = ord("=")  # show the ring(s) currently worn
+    SEESPELLS = ord("+")  # list and reorder known spells
+    SEETOOLS = ord("(")  # show the tools currently in use"
     SEETRAP = ord("^")  # show the type of adjacent trap
+    SEEWEAPON = ord(")")  # show the weapon currently wielded
+    SHELL = ord("!")  # do a shell escape (not enabled in NLE build)
     SIT = M("s")  # sit down
     SWAP = ord("x")  # swap wielded and secondary weapons
     TAKEOFF = ord("T")  # take off one piece of armor
@@ -216,14 +224,17 @@ del _USEFUL_ACTIONS
 
 _ACTIONS_DICT = {}
 for enum_class in [
-    TextCharacters,
     CompassDirection,
     CompassDirectionLonger,
     MiscDirection,
     MiscAction,
     Command,
+    UnsafeActions,
+    TextCharacters,
 ]:
     for action in enum_class:
+        if action in _ACTIONS_DICT:
+            continue
         _ACTIONS_DICT[action.value] = "%s.%s" % (enum_class.__name__, action.name)
 
 

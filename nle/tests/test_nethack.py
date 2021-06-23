@@ -453,3 +453,12 @@ class TestNethackTerminalObservation:
         for g_char, g_col, t_char, t_col in zip(g_chars, g_cols, t_chars, t_cols):
             assert g_char == t_char
             assert g_col == t_col
+
+
+class TestNethackActions:
+    def test_all_ascii(self):
+        for c in range(32, 127):
+            if c in (ord("%"), ord("]"), ord("{"), ord("|"), ord("}"), ord("~")):
+                # Not a NetHack command.
+                continue
+            nethack.action_id_to_type(c)
