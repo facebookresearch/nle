@@ -468,6 +468,8 @@ class TestNethackMiscObservation:
         game.reset()
         misc = game._obs_buffers["misc"]
         internal = game._obs_buffers["internal"]
+        if misc[2]:
+            game.step(ord(" "))
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
@@ -484,6 +486,8 @@ class TestNethackMiscObservation:
         game.reset()
         misc = game._obs_buffers["misc"]
         internal = game._obs_buffers["internal"]
+        if misc[2]:
+            game.step(ord(" "))
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
@@ -506,6 +510,8 @@ class TestNethackMiscObservation:
         game.reset()
         misc = game._obs_buffers["misc"]
         internal = game._obs_buffers["internal"]
+        if misc[2]:
+            game.step(ord(" "))
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
