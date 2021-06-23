@@ -117,7 +117,7 @@ class Nethack
                 py::object inv_glyphs, py::object inv_letters,
                 py::object inv_oclasses, py::object inv_strs,
                 py::object screen_descriptions, py::object tty_chars,
-                py::object tty_colors, py::object tty_cursor)
+                py::object tty_colors, py::object tty_cursor, py::object misc)
     {
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
         obs_.glyphs = checked_conversion<int16_t>(glyphs, dungeon);
@@ -147,6 +147,7 @@ class Nethack
         obs_.tty_colors = checked_conversion<int8_t>(
             tty_colors, { NLE_TERM_LI, NLE_TERM_CO });
         obs_.tty_cursor = checked_conversion<uint8_t>(tty_cursor, { 2 });
+        obs_.misc = checked_conversion<int32_t>(misc, { NLE_MISC_SIZE });
 
         py_buffers_ = { std::move(glyphs),
                         std::move(chars),
@@ -163,7 +164,8 @@ class Nethack
                         std::move(screen_descriptions),
                         std::move(tty_chars),
                         std::move(tty_colors),
-                        std::move(tty_cursor) };
+                        std::move(tty_cursor),
+                        std::move(misc) };
     }
 
     void
@@ -281,7 +283,7 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("screen_descriptions") = py::none(),
              py::arg("tty_chars") = py::none(),
              py::arg("tty_colors") = py::none(),
-             py::arg("tty_cursor") = py::none())
+             py::arg("tty_cursor") = py::none(), py::arg("misc") = py::none())
         .def("close", &Nethack::close)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)
@@ -297,6 +299,7 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_BLSTATS_SIZE") = py::int_(NLE_BLSTATS_SIZE);
     mn.attr("NLE_PROGRAM_STATE_SIZE") = py::int_(NLE_PROGRAM_STATE_SIZE);
     mn.attr("NLE_INTERNAL_SIZE") = py::int_(NLE_INTERNAL_SIZE);
+    mn.attr("NLE_MISC_SIZE") = py::int_(NLE_MISC_SIZE);
     mn.attr("NLE_INVENTORY_SIZE") = py::int_(NLE_INVENTORY_SIZE);
     mn.attr("NLE_INVENTORY_STR_LENGTH") = py::int_(NLE_INVENTORY_STR_LENGTH);
     mn.attr("NLE_SCREEN_DESCRIPTION_LENGTH") =

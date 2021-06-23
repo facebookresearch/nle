@@ -453,3 +453,67 @@ class TestNethackTerminalObservation:
         for g_char, g_col, t_char, t_col in zip(g_chars, g_cols, t_chars, t_cols):
             assert g_char == t_char
             assert g_col == t_col
+
+
+class TestNethackMiscObservation:
+    @pytest.fixture
+    def game(self):  # Make sure we close even on test failure.
+        g = nethack.Nethack(playername="MonkBot-mon-hum-neu-mal")
+        try:
+            yield g
+        finally:
+            g.close()
+
+    def test_misc_yn_question(self, game):
+        game.reset()
+        misc = game._obs_buffers["misc"]
+        internal = game._obs_buffers["internal"]
+
+        assert np.all(misc == 0)
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+        game.step(nethack.M("p"))  # pray
+        np.testing.assert_array_equal(misc, np.array([1, 0, 0]))
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+        game.step(ord("n"))
+        assert np.all(misc == 0)
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+    def test_misc_getline(self, game):
+        game.reset()
+        misc = game._obs_buffers["misc"]
+        internal = game._obs_buffers["internal"]
+
+        assert np.all(misc == 0)
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+        game.step(nethack.M("n"))  # name ..
+        game.step(ord("a"))  # ... the current level
+        np.testing.assert_array_equal(misc, np.array([0, 1, 0]))
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+        for let in "Gehennom":
+            game.step(ord(let))
+            np.testing.assert_array_equal(misc, np.array([0, 1, 0]))
+            np.testing.assert_array_equal(misc, internal[1:4])
+
+        game.step(ord("\r"))
+        assert np.all(misc == 0)
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+    def test_misc_wait_for_space(self, game):
+        game.reset()
+        misc = game._obs_buffers["misc"]
+        internal = game._obs_buffers["internal"]
+
+        assert np.all(misc == 0)
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+        game.step(ord("i"))
+        np.testing.assert_array_equal(misc, np.array([0, 0, 1]))
+        np.testing.assert_array_equal(misc, internal[1:4])
+
+        game.step(ord(" "))
+        assert np.all(misc == 0)
+        np.testing.assert_array_equal(misc, internal[1:4])
