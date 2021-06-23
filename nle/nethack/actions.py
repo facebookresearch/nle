@@ -30,6 +30,7 @@ class TextCharacters(enum.IntEnum):
     NUM_7 = ord("7")
     NUM_8 = ord("8")
     NUM_9 = ord("9")
+    DOLLAR = ord("$")  # TODO: Add SEE* actions instead (see PR #177).
 
 
 class CompassCardinalDirection(enum.IntEnum):
@@ -211,6 +212,7 @@ _USEFUL_ACTIONS = list(ACTIONS)
 for action in NON_RL_ACTIONS + tuple(TextCharacters):
     _USEFUL_ACTIONS.remove(action)
 _USEFUL_ACTIONS.append(TextCharacters.SPACE)
+_USEFUL_ACTIONS.append(TextCharacters.DOLLAR)
 USEFUL_ACTIONS = tuple(_USEFUL_ACTIONS)
 del _USEFUL_ACTIONS
 
