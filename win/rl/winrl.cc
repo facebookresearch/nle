@@ -57,6 +57,9 @@ extern void *nle_yield(boolean);
 extern nle_obs *nle_get_obs();
 }
 
+/* Initial value of glyph_ buffer. Cf. display.c. */
+const int nul_glyph = cmap_to_glyph(S_stone);
+
 namespace nethack_rl
 {
 std::deque<std::string> win_proc_calls;
@@ -241,6 +244,7 @@ NetHackRL::NetHackRL(int &argc, char **argv) : glyphs_()
     // (done in tty_init_nhwindows before this NetHackRL object got created).
     assert(BASE_WINDOW == 0);
     windows_.emplace_back(new rl_window({ NHW_BASE }));
+    glyphs_.fill(nul_glyph);
 }
 
 void
@@ -294,9 +298,9 @@ NetHackRL::fill_obs(nle_obs *obs)
         // observations.
         obs->in_normal_game = false;
         if (obs->glyphs)
-            std::memset(obs->glyphs, 0, sizeof(int16_t) * glyphs_.size());
+            std::fill_n(obs->glyphs, glyphs_.size(), nul_glyph);
         if (obs->chars)
-            std::memset(obs->chars, 0, chars_.size());
+            std::memset(obs->chars, 0, chars_.size()); /* Or fill with ' '? */
         if (obs->colors)
             std::memset(obs->colors, 0, colors_.size());
         if (obs->specials)
@@ -620,7 +624,7 @@ NetHackRL::clear_nhwindow_method(winid wid)
     rl_win->strings.clear();
 
     if (wid == WIN_MAP) {
-        glyphs_.fill(0);
+        glyphs_.fill(nul_glyph);
         chars_.fill(' ');
         colors_.fill(0);
         specials_.fill(0);
