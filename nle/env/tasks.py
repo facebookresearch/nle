@@ -320,6 +320,7 @@ class NetHackChallenge(NetHackScore):
             "tty_chars",
             "tty_colors",
             "tty_cursor",
+            "misc",
         ),
         no_progress_timeout: int = 10_000,
         **kwargs,

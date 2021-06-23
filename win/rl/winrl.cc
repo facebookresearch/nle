@@ -279,6 +279,11 @@ NetHackRL::fill_obs(nle_obs *obs)
         obs->internal[8] =
             u.urexp; /* score (careful! check botl_score() and end.c) */
     }
+    if (obs->misc) {
+        obs->misc[0] = in_yn_function;
+        obs->misc[1] = in_getlin;
+        obs->misc[2] = xwaitingforspace;
+    }
 
     if ((!program_state.something_worth_saving && !program_state.in_moveloop)
         || !iflags.window_inited) {

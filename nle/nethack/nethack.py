@@ -16,6 +16,7 @@ BLSTATS_SHAPE = (_pynethack.nethack.NLE_BLSTATS_SIZE,)
 MESSAGE_SHAPE = (_pynethack.nethack.NLE_MESSAGE_SIZE,)
 PROGRAM_STATE_SHAPE = (_pynethack.nethack.NLE_PROGRAM_STATE_SIZE,)
 INTERNAL_SHAPE = (_pynethack.nethack.NLE_INTERNAL_SIZE,)
+MISC_SHAPE = (_pynethack.nethack.NLE_MISC_SIZE,)
 INV_SIZE = (_pynethack.nethack.NLE_INVENTORY_SIZE,)
 INV_STRS_SHAPE = (
     _pynethack.nethack.NLE_INVENTORY_SIZE,
@@ -43,6 +44,7 @@ OBSERVATION_DESC = {
     "tty_chars": dict(shape=TERMINAL_SHAPE, dtype=np.uint8),
     "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int8),
     "tty_cursor": dict(shape=(2,), dtype=np.uint8),
+    "misc": dict(shape=MISC_SHAPE, dtype=np.int32),
 }
 
 

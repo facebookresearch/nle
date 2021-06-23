@@ -130,6 +130,14 @@ NLE_SPACE_ITEMS = (
         "tty_cursor",
         gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["tty_cursor"]),
     ),
+    (
+        "misc",
+        gym.spaces.Box(
+            low=np.iinfo(np.int32).min,
+            high=np.iinfo(np.int32).max,
+            **nethack.OBSERVATION_DESC["misc"],
+        ),
+    ),
 )
 
 
