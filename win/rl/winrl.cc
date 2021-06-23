@@ -63,6 +63,26 @@ std::deque<std::string> win_proc_calls;
 bool in_yn_function = false;
 bool in_getlin = false;
 
+// Glyphs provide instructions for windows to render the game (see display.h).
+// At the start of the game, descriptions and properties of the object classes
+// are shuffled (see o_init.c) while the glyphs pointing to these classes are
+// not. This means glyph observations would always identify a 'wand of
+// wishing', regardless of whether it is 'metal', 'balsa', &c.
+//
+// In this function, we map a glyph to correspond to its shuffled equivalent,
+// following the logic used by tiles that also need to generate images from
+// glyphs (c.f. o_init.c).  In practice this means:
+//   BEFORE: looking up objclass on a glyph gives CORRECT name INCORRECT descr
+//   AFTER: looking up objclass on a glyph gives INCORRECT name CORRECT descr
+int
+shuffled_glyph(int glyph)
+{
+    if glyph_is_normal_object (glyph) {
+        return GLYPH_OBJ_OFF + objects[glyph_to_obj(glyph)].oc_descr_idx;
+    }
+    return glyph;
+}
+
 class ScopedStack
 {
   public:
@@ -454,10 +474,10 @@ NetHackRL::update_inventory_method()
     inventory_.clear();
 
     for (otmp = invent; otmp; otmp = otmp->nobj) {
-        inventory_.emplace_back(
-            rl_inventory_item{ obj_to_glyph(otmp, rn2_on_display_rng),
-                               doname(otmp), otmp->invlet, otmp->oclass,
-                               let_to_name(otmp->oclass, false, false) });
+        inventory_.emplace_back(rl_inventory_item{
+            shuffled_glyph(obj_to_glyph(otmp, rn2_on_display_rng)),
+            doname(otmp), otmp->invlet, otmp->oclass,
+            let_to_name(otmp->oclass, false, false) });
     }
 }
 
@@ -470,7 +490,7 @@ NetHackRL::store_glyph(XCHAR_P x, XCHAR_P y, int glyph)
     size_t offset = j * (COLNO - 1) + i;
 
     // TODO: Glyphs might be taken from gbuf[y][x].glyph.
-    glyphs_[offset] = glyph;
+    glyphs_[offset] = shuffled_glyph(glyph);
 }
 
 void
