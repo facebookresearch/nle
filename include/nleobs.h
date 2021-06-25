@@ -45,6 +45,8 @@ typedef struct {
 #ifdef NLE_ALLOW_SEEDING
     unsigned long seeds[2]; /* core, disp */
     char reseed; /* boolean: use NetHack's anti-TAS reseed mechanism? */
+#else
+    int _dummy; /* empty struct has size 0 in C, size 1 in C++ */
 #endif
 } nle_seeds_init_t;
 

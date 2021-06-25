@@ -215,6 +215,9 @@ class NetHackRL
     std::array<std::string, MAXBLSTATS> status_;
     long condition_bits_;
 
+    void update_blstats();
+    long blstats_[NLE_BLSTATS_SIZE];
+
     void player_selection_method();
     void status_update_method(int fldidx, genericptr_t ptr, int, int percent,
                               int color, unsigned long *colormasks);
@@ -238,7 +241,7 @@ class NetHackRL
 std::unique_ptr<NetHackRL> NetHackRL::instance =
     std::unique_ptr<NetHackRL>(nullptr);
 
-NetHackRL::NetHackRL(int &argc, char **argv) : glyphs_()
+NetHackRL::NetHackRL(int &argc, char **argv) : glyphs_(), blstats_{}
 {
     // create base window
     // (done in tty_init_nhwindows before this NetHackRL object got created).
@@ -351,52 +354,7 @@ NetHackRL::fill_obs(nle_obs *obs)
         }
     }
     if (obs->blstats) {
-        // Blstats
-        int hitpoints;
-
-        /* See botl.c. */
-        int i = Upolyd ? u.mh : u.uhp;
-        if (i < 0)
-            i = 0;
-
-        hitpoints = min(i, 9999);
-
-        int max_hitpoints;
-        i = Upolyd ? u.mhmax : u.uhpmax;
-        max_hitpoints = min(i, 9999);
-
-        long blstats[NLE_BLSTATS_SIZE] = {
-            /* Cf. botl.c. */
-            u.ux - 1,            /* x coordinate, 1 <= ux <= cols */
-            u.uy,                /* y coordinate, 0 <= uy < rows */
-            ACURRSTR,            /* strength_percentage */
-            ACURR(A_STR),        /* strength          */
-            ACURR(A_DEX),        /* dexterity         */
-            ACURR(A_CON),        /* constitution      */
-            ACURR(A_INT),        /* intelligence      */
-            ACURR(A_WIS),        /* wisdom            */
-            ACURR(A_CHA),        /* charisma          */
-            botl_score(),        /* score             */
-            hitpoints,           /* hitpoints         */
-            max_hitpoints,       /* max_hitpoints     */
-            depth(&u.uz),        /* depth             */
-            money_cnt(invent),   /* gold              */
-            min(u.uen, 9999),    /* energy            */
-            min(u.uenmax, 9999), /* max_energy        */
-            u.uac,               /* armor_class       */
-            Upolyd ? (int) mons[u.umonnum].mlevel : 0, /* monster_level     */
-            u.ulevel,                                  /* experience_level  */
-            u.uexp,                                    /* experience_points */
-            moves,                                     /* time              */
-            u.uhs,                                     /* hunger state      */
-            near_capacity(),                           /* carrying_capacity */
-            u.uz.dnum,                                 /* dungeon number */
-            u.uz.dlevel,                               /* level number */
-        };
-
-        assert(sizeof(blstats) == NLE_BLSTATS_SIZE * sizeof(long));
-
-        std::memcpy(obs->blstats, &blstats[0], sizeof(blstats));
+        std::memcpy(obs->blstats, &blstats_[0], sizeof(blstats_));
     }
     if (obs->inv_glyphs) {
         /* This iterates over the inventory_ vector list once per inv
@@ -546,6 +504,54 @@ NetHackRL::store_screen_description(XCHAR_P x, XCHAR_P y, int glyph)
 }
 
 void
+NetHackRL::update_blstats()
+{
+    int hitpoints;
+
+    /* See botl.c. */
+    int i = Upolyd ? u.mh : u.uhp;
+    if (i < 0)
+        i = 0;
+
+    hitpoints = min(i, 9999);
+
+    int max_hitpoints;
+    i = Upolyd ? u.mhmax : u.uhpmax;
+    max_hitpoints = min(i, 9999);
+
+    long blstats[NLE_BLSTATS_SIZE] = {
+        /* Cf. botl.c. */
+        u.ux - 1,            /* x coordinate, 1 <= ux <= cols */
+        u.uy,                /* y coordinate, 0 <= uy < rows */
+        ACURRSTR,            /* strength_percentage */
+        ACURR(A_STR),        /* strength          */
+        ACURR(A_DEX),        /* dexterity         */
+        ACURR(A_CON),        /* constitution      */
+        ACURR(A_INT),        /* intelligence      */
+        ACURR(A_WIS),        /* wisdom            */
+        ACURR(A_CHA),        /* charisma          */
+        botl_score(),        /* score             */
+        hitpoints,           /* hitpoints         */
+        max_hitpoints,       /* max_hitpoints     */
+        depth(&u.uz),        /* depth             */
+        money_cnt(invent),   /* gold              */
+        min(u.uen, 9999),    /* energy            */
+        min(u.uenmax, 9999), /* max_energy        */
+        u.uac,               /* armor_class       */
+        Upolyd ? (int) mons[u.umonnum].mlevel : 0, /* monster_level     */
+        u.ulevel,                                  /* experience_level  */
+        u.uexp,                                    /* experience_points */
+        moves,                                     /* time              */
+        u.uhs,                                     /* hunger state      */
+        near_capacity(),                           /* carrying_capacity */
+        u.uz.dnum,                                 /* dungeon number */
+        u.uz.dlevel,                               /* level number */
+    };
+
+    std::memcpy(blstats_, &blstats[0], sizeof(blstats));
+}
+
+void
 NetHackRL::status_update_method(int fldidx, genericptr_t ptr, int,
                                 int percent, int color,
                                 unsigned long *colormasks)
@@ -554,9 +560,10 @@ NetHackRL::status_update_method(int fldidx, genericptr_t ptr, int,
         return;
 
     // Needs to be kept in sync with the switch statement in rl_status_update.
-    if (fldidx == BL_FLUSH || fldidx == BL_RESET)
+    if (fldidx == BL_FLUSH || fldidx == BL_RESET) {
+        update_blstats();
         return;
-    else if (fldidx == BL_CONDITION) {
+    } else if (fldidx == BL_CONDITION) {
         long *condptr = (long *) ptr;
         condition_bits_ = *condptr;
         return;
