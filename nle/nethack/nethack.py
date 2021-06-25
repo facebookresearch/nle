@@ -61,7 +61,6 @@ NETHACKOPTIONS = (
     "runmode:teleport",
     "mention_walls",
     "nosparkle",
-    "showexp",
     "showscore",
 )
 
