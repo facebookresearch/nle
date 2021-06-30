@@ -7,7 +7,7 @@
 #include "nledl.h"
 
 void
-nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init)
+nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_init_settings_t *init_settings)
 {
     nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
 
@@ -18,9 +18,9 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init)
 
     dlerror(); /* Clear any existing error */
 
-    void *(*start)(nle_obs *, FILE *, nle_seeds_init_t *);
+    void *(*start)(nle_obs *, FILE *, nle_init_settings_t *);
     start = dlsym(nledl->dlhandle, "nle_start");
-    nledl->nle_ctx = start(obs, nledl->ttyrec, seed_init);
+    nledl->nle_ctx = start(obs, nledl->ttyrec, init_settings);
 
     char *error = dlerror();
     if (error != NULL) {
@@ -55,14 +55,14 @@ nledl_close(nle_ctx_t *nledl)
 
 nle_ctx_t *
 nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec,
-          nle_seeds_init_t *seed_init)
+          nle_init_settings_t *init_settings)
 {
     /* TODO: Consider getting ttyrec path from caller? */
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
     nledl->ttyrec = ttyrec;
     strncpy(nledl->dlpath, dlpath, sizeof(nledl->dlpath));
 
-    nledl_init(nledl, obs, seed_init);
+    nledl_init(nledl, obs, init_settings);
     return nledl;
 };
 
@@ -83,7 +83,7 @@ nle_step(nle_ctx_t *nledl, nle_obs *obs)
  * E.g., we could re-use the stack buffer and the nle_ctx_t. */
 void
 nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
-          nle_seeds_init_t *seed_init)
+          nle_init_settings_t *init_settings)
 {
     nledl_close(nledl);
     /* Reset file only if not-NULL. */
@@ -92,7 +92,7 @@ nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
 
     // TODO: Consider refactoring nledl.h such that we expose this init
     // function but drop reset.
-    nledl_init(nledl, obs, seed_init);
+    nledl_init(nledl, obs, init_settings);
 }
 
 void
@@ -102,7 +102,7 @@ nle_end(nle_ctx_t *nledl)
     free(nledl);
 }
 
-#ifdef NLE_ALLOW_SEEDING
+#ifdef NLE_ALLOW_CONTROL
 void
 nle_set_seed(nle_ctx_t *nledl, unsigned long core, unsigned long disp,
              char reseed)

@@ -13,7 +13,7 @@
 #define NLE_TERM_CO 80
 #define NLE_TERM_LI 24
 
-/* #define NLE_ALLOW_SEEDING 1 */
+/* #define NLE_ALLOW_CONTROL 1 */
 
 typedef struct nle_observation {
     int action;
@@ -42,12 +42,12 @@ typedef struct nle_observation {
 } nle_obs;
 
 typedef struct {
-#ifdef NLE_ALLOW_SEEDING
+#ifdef NLE_ALLOW_CONTROL
     unsigned long seeds[2]; /* core, disp */
     char reseed; /* boolean: use NetHack's anti-TAS reseed mechanism? */
 #else
     int _dummy; /* empty struct has size 0 in C, size 1 in C++ */
 #endif
-} nle_seeds_init_t;
+} nle_init_settings_t;
 
 #endif /* NLEOBS_H */

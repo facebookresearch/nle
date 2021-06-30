@@ -180,11 +180,11 @@ class Nethack
     void
     set_initial_seeds(unsigned long core, unsigned long disp, bool reseed)
     {
-#ifdef NLE_ALLOW_SEEDING
-        seed_init_.seeds[0] = core;
-        seed_init_.seeds[1] = disp;
-        seed_init_.reseed = reseed;
-        use_seed_init = true;
+#ifdef NLE_ALLOW_CONTROL
+        init_settings_.seeds[0] = core;
+        init_settings_.seeds[1] = disp;
+        init_settings_.reseed = reseed;
+        use_init_settings = true;
 #else
         throw std::runtime_error("Seeding not enabled");
 #endif
@@ -193,7 +193,7 @@ class Nethack
     void
     set_seeds(unsigned long core, unsigned long disp, bool reseed)
     {
-#ifdef NLE_ALLOW_SEEDING
+#ifdef NLE_ALLOW_CONTROL
         if (!nle_)
             throw std::runtime_error("set_seed called without reset()");
         nle_set_seed(nle_, core, disp, reseed);
@@ -205,7 +205,7 @@ class Nethack
     std::tuple<unsigned long, unsigned long, bool>
     get_seeds()
     {
-#ifdef NLE_ALLOW_SEEDING
+#ifdef NLE_ALLOW_CONTROL
         if (!nle_)
             throw std::runtime_error("get_seed called without reset()");
         std::tuple<unsigned long, unsigned long, bool> result;
@@ -239,12 +239,12 @@ class Nethack
         if (!nle_) {
             nle_ = nle_start(dlpath_.c_str(), &obs_,
                              ttyrec ? ttyrec : ttyrec_.get(),
-                             use_seed_init ? &seed_init_ : nullptr);
+                             use_init_settings ? &init_settings_ : nullptr);
         } else
             nle_reset(nle_, &obs_, ttyrec,
-                      use_seed_init ? &seed_init_ : nullptr);
+                      use_init_settings ? &init_settings_ : nullptr);
 
-        use_seed_init = false;
+        use_init_settings = false;
 
         if (obs_.done)
             throw std::runtime_error("NetHack done right after reset");
@@ -253,8 +253,8 @@ class Nethack
     std::string dlpath_;
     nle_obs obs_;
     std::vector<py::object> py_buffers_;
-    nle_seeds_init_t seed_init_;
-    bool use_seed_init = false;
+    nle_init_settings_t init_settings_;
+    bool use_init_settings = false;
     nle_ctx_t *nle_ = nullptr;
     std::unique_ptr<std::FILE, int (*)(std::FILE *)> ttyrec_;
 };
@@ -305,8 +305,8 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_SCREEN_DESCRIPTION_LENGTH") =
         py::int_(NLE_SCREEN_DESCRIPTION_LENGTH);
 
-    mn.attr("NLE_ALLOW_SEEDING") =
-#ifdef NLE_ALLOW_SEEDING
+    mn.attr("NLE_ALLOW_CONTROL") =
+#ifdef NLE_ALLOW_CONTROL
         true;
 #else
         false;
