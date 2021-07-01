@@ -126,9 +126,9 @@ boolean resuming;
                         mtmp->movement += mcalcmove(mtmp);
 
                     /* occasionally add another monster; since this takes
-                       place after movement has been allotted (unless turned
-                       off in nle), the new monster effectively loses its first
-                       turn */
+                       place after movement has been allotted, the new
+                       monster effectively loses its first turn */
+                    /* Change for NLE: Optionally disable monster spawning */
                     if (nle_spawn_monsters && !rn2(u.uevent.udemigod ? 25
                              : (depth(&u.uz) > depth(&stronghold_level)) ? 50
                                : 70))
