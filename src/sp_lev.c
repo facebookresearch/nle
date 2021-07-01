@@ -12,7 +12,6 @@
 #include "hack.h"
 #include "dlb.h"
 #include "sp_lev.h"
-#include "nle.h"
 
 #ifdef _MSC_VER
  #pragma warning(push)
@@ -4714,6 +4713,13 @@ struct sp_coder *coder;
     opvar_free(db_open);
     opvar_free(dir);
 }
+
+/*
+ * nle_spawn_monsters variable here indicates whether to spawn monsters
+ * randomly in procedurally generated mazes (true by default).
+ * The variable is defined in nle.c.
+ */
+extern int nle_spawn_monsters;
 
 void
 spo_mazewalk(coder)

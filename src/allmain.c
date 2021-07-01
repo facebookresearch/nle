@@ -6,7 +6,6 @@
 /* various code that was replicated in *main.c */
 
 #include "hack.h"
-#include "nle.h"
 #include <ctype.h>
 
 #ifndef NO_SIGNAL
@@ -19,6 +18,13 @@ STATIC_DCL void NDECL(do_positionbar);
 STATIC_DCL void FDECL(regen_hp, (int));
 STATIC_DCL void FDECL(interrupt_multi, (const char *));
 STATIC_DCL void FDECL(debug_fields, (const char *));
+
+/*
+ * nle_spawn_monsters indicates whether to spawn monsters randomly
+ * after every step with some probability (true by default).
+ * The variable is defined in nle.c.
+ */
+extern int nle_spawn_monsters;
 
 void
 moveloop(resuming)
