@@ -18,7 +18,7 @@
 typedef struct nle_observation {
     int action;
     int done;
-    char in_normal_game;     /* Bool indicatin:g if other obs are set. */
+    char in_normal_game;     /* Bool indicating if other obs are set. */
     int how_done;            /* If game is really_done, how it ended. */
     short *glyphs;           /* Size ROWNO * (COLNO - 1) */
     unsigned char *chars;    /* Size ROWNO * (COLNO - 1) */
