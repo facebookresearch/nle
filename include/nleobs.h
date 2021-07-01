@@ -45,8 +45,6 @@ typedef struct {
 #ifdef NLE_ALLOW_SEEDING
     unsigned long seeds[2]; /* core, disp */
     char reseed; /* boolean: use NetHack's anti-TAS reseed mechanism? */
-    int spawn_monsters; /* boolean: spawn monsters randomly after every step
-                          with some probability */
 #else
     int _dummy; /* empty struct has size 0 in C, size 1 in C++ */
 #endif
