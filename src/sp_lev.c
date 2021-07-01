@@ -4791,6 +4791,7 @@ struct sp_coder *coder;
     }
 
     walkfrom(x, y, OV_i(ftyp));
+    /* Change for NLE: Optionally disable monster spawning */
     if (OV_i(fstocked) && nle_spawn_monsters)
         fill_empty_maze();
 
