@@ -12,6 +12,7 @@
 #include "hack.h"
 #include "dlb.h"
 #include "sp_lev.h"
+#include "nle.h"
 
 #ifdef _MSC_VER
  #pragma warning(push)
@@ -4784,7 +4785,7 @@ struct sp_coder *coder;
     }
 
     walkfrom(x, y, OV_i(ftyp));
-    if (OV_i(fstocked))
+    if (OV_i(fstocked) && nle_spawn_monsters)
         fill_empty_maze();
 
     opvar_free(mcoord);
