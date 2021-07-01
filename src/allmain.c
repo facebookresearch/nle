@@ -123,13 +123,11 @@ boolean resuming;
                        place after movement has been allotted (unless turned
                        off in nle), the new monster effectively loses its first
                        turn */
-                    if (nle_spawn_monsters) {
-                        if (!rn2(u.uevent.udemigod ? 25
+                    if (nle_spawn_monsters && !rn2(u.uevent.udemigod ? 25
                              : (depth(&u.uz) > depth(&stronghold_level)) ? 50
                                : 70))
-                            (void) makemon((struct permonst *) 0, 0, 0,
-                                           NO_MM_FLAGS);
-                    }
+                        (void) makemon((struct permonst *) 0, 0, 0,
+                                       NO_MM_FLAGS);
 
                     /* calculate how much time passed. */
                     if (u.usteed && u.umoved) {
