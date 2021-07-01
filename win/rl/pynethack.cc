@@ -60,9 +60,10 @@ checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 class Nethack
 {
   public:
-    Nethack(std::string dlpath, std::string ttyrec)
+    Nethack(std::string dlpath, std::string ttyrec, bool spawn_monsters)
         : dlpath_(std::move(dlpath)), obs_{},
-          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose)
+          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose),
+          spawn_monsters_(spawn_monsters)
     {
         if (!ttyrec_) {
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
@@ -178,12 +179,6 @@ class Nethack
     }
 
     void
-    set_spawn_monsters(bool spawn_monsters)
-    {
-        spawn_monsters_ = spawn_monsters;
-    }
-
-    void
     set_initial_seeds(unsigned long core, unsigned long disp, bool reseed)
     {
 #ifdef NLE_ALLOW_SEEDING
@@ -270,8 +265,8 @@ PYBIND11_MODULE(_pynethack, m)
     m.doc() = "The NetHack Learning Environment";
 
     py::class_<Nethack>(m, "Nethack")
-        .def(py::init<std::string, std::string>(), py::arg("dlpath"),
-             py::arg("ttyrec"))
+        .def(py::init<std::string, std::string, bool>(), py::arg("dlpath"),
+             py::arg("ttyrec"), py::arg("spawn_monsters"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
         .def("reset", py::overload_cast<>(&Nethack::reset))
@@ -291,7 +286,6 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("tty_colors") = py::none(),
              py::arg("tty_cursor") = py::none(), py::arg("misc") = py::none())
         .def("close", &Nethack::close)
-        .def("set_spawn_monsters", &Nethack::set_spawn_monsters)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)
         .def("get_seeds", &Nethack::get_seeds)

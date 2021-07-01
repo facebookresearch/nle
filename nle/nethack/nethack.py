@@ -134,9 +134,7 @@ class Nethack:
         _set_env_vars(self._options, self._vardir)
         self._ttyrec = ttyrec
 
-        self._pynethack = _pynethack.Nethack(dlpath, ttyrec)
-        if not spawn_monsters:
-            self._pynethack.set_spawn_monsters(False)
+        self._pynethack = _pynethack.Nethack(dlpath, ttyrec, spawn_monsters)
 
         self._obs_buffers = {}
 
