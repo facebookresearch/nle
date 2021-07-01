@@ -178,6 +178,17 @@ class Nethack
     }
 
     void
+    set_spawn_monsters(bool spawn_monsters)
+    {
+#ifdef NLE_ALLOW_CONTROL
+        init_settings_.spawn_monsters = spawn_monsters;
+        use_init_settings = true;
+#else
+        throw std::runtime_error("Setting monster spawning not enabled");
+#endif
+    }
+
+    void
     set_initial_seeds(unsigned long core, unsigned long disp, bool reseed)
     {
 #ifdef NLE_ALLOW_CONTROL
@@ -285,6 +296,7 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("tty_colors") = py::none(),
              py::arg("tty_cursor") = py::none(), py::arg("misc") = py::none())
         .def("close", &Nethack::close)
+        .def("set_spawn_monsters", &Nethack::set_spawn_monsters)
         .def("set_initial_seeds", &Nethack::set_initial_seeds)
         .def("set_seeds", &Nethack::set_seeds)
         .def("get_seeds", &Nethack::get_seeds)

@@ -13,7 +13,7 @@
 #define NLE_TERM_CO 80
 #define NLE_TERM_LI 24
 
-/* #define NLE_ALLOW_CONTROL 1 */
+#define NLE_ALLOW_CONTROL 1
 
 typedef struct nle_observation {
     int action;
@@ -45,6 +45,8 @@ typedef struct {
 #ifdef NLE_ALLOW_CONTROL
     unsigned long seeds[2]; /* core, disp */
     char reseed; /* boolean: use NetHack's anti-TAS reseed mechanism? */
+    int spawn_monsters; /* boolean: spawn monsters randomly after every step
+                          with some probability */
 #else
     int _dummy; /* empty struct has size 0 in C, size 1 in C++ */
 #endif

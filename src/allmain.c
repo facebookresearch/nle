@@ -6,6 +6,7 @@
 /* various code that was replicated in *main.c */
 
 #include "hack.h"
+#include "nle.h"
 #include <ctype.h>
 
 #ifndef NO_SIGNAL
@@ -119,13 +120,16 @@ boolean resuming;
                         mtmp->movement += mcalcmove(mtmp);
 
                     /* occasionally add another monster; since this takes
-                       place after movement has been allotted, the new
-                       monster effectively loses its first turn */
-                    if (!rn2(u.uevent.udemigod ? 25
+                       place after movement has been allotted (unless turned
+                       off in nle), the new monster effectively loses its first
+                       turn */
+                    if (nle_spawn_monsters) {
+                        if (!rn2(u.uevent.udemigod ? 25
                              : (depth(&u.uz) > depth(&stronghold_level)) ? 50
                                : 70))
-                        (void) makemon((struct permonst *) 0, 0, 0,
-                                       NO_MM_FLAGS);
+                            (void) makemon((struct permonst *) 0, 0, 0,
+                                           NO_MM_FLAGS);
+                    }
 
                     /* calculate how much time passed. */
                     if (u.usteed && u.umoved) {
