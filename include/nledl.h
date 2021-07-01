@@ -18,10 +18,10 @@ typedef struct nledl_ctx {
     FILE *ttyrec;
 } nle_ctx_t;
 
-nle_ctx_t *nle_start(const char *, nle_obs *, FILE *, nle_init_settings_t *);
+nle_ctx_t *nle_start(const char *, nle_obs *, FILE *, nle_seeds_init_t *);
 nle_ctx_t *nle_step(nle_ctx_t *, nle_obs *);
 
-void nle_reset(nle_ctx_t *, nle_obs *, FILE *, nle_init_settings_t *);
+void nle_reset(nle_ctx_t *, nle_obs *, FILE *, nle_seeds_init_t *);
 void nle_end(nle_ctx_t *);
 
 void nle_set_seed(nle_ctx_t *, unsigned long, unsigned long, char);

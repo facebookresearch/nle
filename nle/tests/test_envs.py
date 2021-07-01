@@ -244,7 +244,7 @@ class TestGymEnvRollout:
 
     def test_seed_interface_output(self, env_name, rollout_len):
         """Tests whether env.seed output can be reused correctly."""
-        if not nethack.NLE_ALLOW_CONTROL:
+        if not nethack.NLE_ALLOW_SEEDING:
             return  # Nothing to test.
         if env_name.startswith("NetHackChallenge"):
             pytest.skip("Not running seed test on NetHackChallenge")
@@ -262,7 +262,7 @@ class TestGymEnvRollout:
 
     def test_seed_rollout_seeded(self, env_name, rollout_len):
         """Tests that two seeded envs return same step data."""
-        if not nethack.NLE_ALLOW_CONTROL:
+        if not nethack.NLE_ALLOW_SEEDING:
             return  # Nothing to test.
         if env_name.startswith("NetHackChallenge"):
             pytest.skip("Not running seed test on NetHackChallenge")
@@ -287,7 +287,7 @@ class TestGymEnvRollout:
 
     def test_seed_rollout_seeded_int(self, env_name, rollout_len):
         """Tests that two seeded envs return same step data."""
-        if not nethack.NLE_ALLOW_CONTROL:
+        if not nethack.NLE_ALLOW_SEEDING:
             return  # Nothing to test.
         if env_name.startswith("NetHackChallenge"):
             pytest.skip("Not running seed test on NetHackChallenge")
@@ -385,7 +385,7 @@ class TestGymDynamics:
 
 class TestNetHackChallenge:
     def test_no_seed_setting(self):
-        assert not nethack.NLE_ALLOW_CONTROL
+        assert not nethack.NLE_ALLOW_SEEDING
 
         MESSAGE = "Should not try changing seeds"
 

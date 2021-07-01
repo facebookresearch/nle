@@ -338,7 +338,7 @@ nle_done(int how)
     nle->observation->how_done = how;
 }
 
-nle_init_settings_t *nle_init_settings;
+nle_seeds_init_t *nle_seeds_init;
 
 /* See rng.c. */
 extern int FDECL(whichrng, (int FDECL((*fn), (int) )));
@@ -363,10 +363,10 @@ int nle_spawn_monsters = 1;
 void
 init_random(int FDECL((*fn), (int) ))
 {
-#ifdef NLE_ALLOW_CONTROL
-    if (nle_init_settings) {
-        set_random(nle_init_settings->seeds[whichrng(fn)], fn);
-        has_strong_rngseed = nle_init_settings->reseed;
+#ifdef NLE_ALLOW_SEEDING
+    if (nle_seeds_init) {
+        set_random(nle_seeds_init->seeds[whichrng(fn)], fn);
+        has_strong_rngseed = nle_seeds_init->reseed;
         return;
     }
 #endif
@@ -374,17 +374,17 @@ init_random(int FDECL((*fn), (int) ))
 }
 
 nle_ctx_t *
-nle_start(nle_obs *obs, FILE *ttyrec, nle_init_settings_t *init_settings)
+nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init)
 {
     /* Set CO and LI to control ttyrec output size. */
     CO = NLE_TERM_CO;
     LI = NLE_TERM_LI;
 
     nle_ctx_t *nle = init_nle(ttyrec, obs);
-    nle_init_settings = init_settings;
-#ifdef NLE_ALLOW_CONTROL
-    if (nle_init_settings) {
-        nle_spawn_monsters = nle_init_settings->spawn_monsters;
+    nle_seeds_init = seed_init;
+#ifdef NLE_ALLOW_SEEDING
+    if (nle_seeds_init) {
+        nle_spawn_monsters = nle_seeds_init->spawn_monsters;
     }
 #endif
 
@@ -397,7 +397,7 @@ nle_start(nle_obs *obs, FILE *ttyrec, nle_init_settings_t *init_settings)
     nle->generatorcontext = t.ctx;
     nle->done = (t.data == NULL);
     obs->done = nle->done;
-    nle_init_settings =
+    nle_seeds_init =
         NULL; /* Don't set to *these* seeds on subsequent reseeds, if any. */
 
     return nle;
@@ -443,7 +443,7 @@ nle_end(nle_ctx_t *nle)
     free(nle);
 }
 
-#ifdef NLE_ALLOW_CONTROL
+#ifdef NLE_ALLOW_SEEDING
 void
 nle_set_seed(nle_ctx_t *nle, unsigned long core, unsigned long disp,
              boolean reseed)
