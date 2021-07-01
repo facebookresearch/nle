@@ -133,9 +133,10 @@ class Nethack:
 
         _set_env_vars(self._options, self._vardir)
         self._ttyrec = ttyrec
-        self._spawn_monsters = spawn_monsters
 
         self._pynethack = _pynethack.Nethack(dlpath, ttyrec)
+        if not spawn_monsters:
+            self._pynethack.set_spawn_monsters(False)
 
         self._obs_buffers = {}
 
@@ -170,8 +171,6 @@ class Nethack:
             _set_env_vars(self._options, self._vardir, wizkit=WIZKIT_FNAME)
         else:
             _set_env_vars(self._options, self._vardir)
-        if not self._spawn_monsters:
-            self._pynethack.set_spawn_monsters(False)
         if new_ttyrec is None:
             self._pynethack.reset()
         else:

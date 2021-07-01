@@ -180,12 +180,7 @@ class Nethack
     void
     set_spawn_monsters(bool spawn_monsters)
     {
-#ifdef NLE_ALLOW_SEEDING
-        seed_init_.spawn_monsters = spawn_monsters;
-        use_seed_init = true;
-#else
-        throw std::runtime_error("Setting monster spawning not enabled");
-#endif
+        spawn_monsters_ = spawn_monsters;
     }
 
     void
@@ -248,13 +243,12 @@ class Nethack
     reset(FILE *ttyrec)
     {
         if (!nle_) {
-            nle_ = nle_start(dlpath_.c_str(), &obs_,
-                             ttyrec ? ttyrec : ttyrec_.get(),
-                             use_seed_init ? &seed_init_ : nullptr);
+            nle_ = nle_start(
+                dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_.get(),
+                use_seed_init ? &seed_init_ : nullptr, spawn_monsters_);
         } else
             nle_reset(nle_, &obs_, ttyrec,
-                      use_seed_init ? &seed_init_ : nullptr);
-
+                      use_seed_init ? &seed_init_ : nullptr, spawn_monsters_);
         use_seed_init = false;
 
         if (obs_.done)
@@ -266,6 +260,7 @@ class Nethack
     std::vector<py::object> py_buffers_;
     nle_seeds_init_t seed_init_;
     bool use_seed_init = false;
+    bool spawn_monsters_ = true;
     nle_ctx_t *nle_ = nullptr;
     std::unique_ptr<std::FILE, int (*)(std::FILE *)> ttyrec_;
 };
