@@ -60,9 +60,10 @@ checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 class Nethack
 {
   public:
-    Nethack(std::string dlpath, std::string ttyrec)
+    Nethack(std::string dlpath, std::string ttyrec, bool spawn_monsters)
         : dlpath_(std::move(dlpath)), obs_{},
-          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose)
+          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose),
+          spawn_monsters_(spawn_monsters)
     {
         if (!ttyrec_) {
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
@@ -237,13 +238,12 @@ class Nethack
     reset(FILE *ttyrec)
     {
         if (!nle_) {
-            nle_ = nle_start(dlpath_.c_str(), &obs_,
-                             ttyrec ? ttyrec : ttyrec_.get(),
-                             use_seed_init ? &seed_init_ : nullptr);
+            nle_ = nle_start(
+                dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_.get(),
+                use_seed_init ? &seed_init_ : nullptr, spawn_monsters_);
         } else
             nle_reset(nle_, &obs_, ttyrec,
-                      use_seed_init ? &seed_init_ : nullptr);
-
+                      use_seed_init ? &seed_init_ : nullptr, spawn_monsters_);
         use_seed_init = false;
 
         if (obs_.done)
@@ -255,6 +255,7 @@ class Nethack
     std::vector<py::object> py_buffers_;
     nle_seeds_init_t seed_init_;
     bool use_seed_init = false;
+    bool spawn_monsters_ = true;
     nle_ctx_t *nle_ = nullptr;
     std::unique_ptr<std::FILE, int (*)(std::FILE *)> ttyrec_;
 };
@@ -264,8 +265,8 @@ PYBIND11_MODULE(_pynethack, m)
     m.doc() = "The NetHack Learning Environment";
 
     py::class_<Nethack>(m, "Nethack")
-        .def(py::init<std::string, std::string>(), py::arg("dlpath"),
-             py::arg("ttyrec"))
+        .def(py::init<std::string, std::string, bool>(), py::arg("dlpath"),
+             py::arg("ttyrec"), py::arg("spawn_monsters"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
         .def("reset", py::overload_cast<>(&Nethack::reset))

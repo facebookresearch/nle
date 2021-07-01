@@ -48,7 +48,7 @@ play(nle_ctx_t *nle, nle_obs *obs)
         std::cout << std::endl;
         read(STDIN_FILENO, &obs->action, 1);
         if (obs->action == 'r')
-            nle_reset(nle, obs, nullptr, nullptr);
+            nle_reset(nle, obs, nullptr, nullptr, 1);
         nle = nle_step(nle, obs);
     }
 }
@@ -78,7 +78,7 @@ randgame(nle_ctx_t *nle, nle_obs *obs, const int no_episodes)
     for (int i = 0; i < no_episodes; ++i) {
         randplay(nle, obs);
         if (i < no_episodes - 1)
-            nle_reset(nle, obs, nullptr, nullptr);
+            nle_reset(nle, obs, nullptr, nullptr, 1);
     }
 }
 
@@ -115,12 +115,13 @@ main(int argc, char **argv)
         fopen("nle.ttyrec.bz2", "a"), fclose);
 
     ScopedTC tc;
-    nle_ctx_t *nle = nle_start("libnethack.so", &obs, ttyrec.get(), nullptr);
+    nle_ctx_t *nle =
+        nle_start("libnethack.so", &obs, ttyrec.get(), nullptr, 1);
     if (argc > 1 && argv[1][0] == 'r') {
         randgame(nle, &obs, 3);
     } else {
         play(nle, &obs);
-        nle_reset(nle, &obs, nullptr, nullptr);
+        nle_reset(nle, &obs, nullptr, nullptr, 1);
         play(nle, &obs);
     }
     nle_end(nle);

@@ -351,6 +351,12 @@ extern int FDECL(set_random, (unsigned long, int FDECL((*fn), (int) )));
 extern unsigned long NDECL(sys_random_seed);
 
 /*
+ * Bool indicating whether to spawn monsters randomly after every step with
+ * some probability (1 by def). For more info, see
+ * https://nethackwiki.com/wiki/Monster_creation#Random_generation
+ */
+int nle_spawn_monsters = 1;
+/*
  * Initializes the random number generator.
  * Originally in hacklib.c.
  */
@@ -368,7 +374,8 @@ init_random(int FDECL((*fn), (int) ))
 }
 
 nle_ctx_t *
-nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init)
+nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init,
+          int spawn_monsters)
 {
     /* Set CO and LI to control ttyrec output size. */
     CO = NLE_TERM_CO;
@@ -376,6 +383,7 @@ nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init)
 
     nle_ctx_t *nle = init_nle(ttyrec, obs);
     nle_seeds_init = seed_init;
+    nle_spawn_monsters = spawn_monsters;
 
     nle->stack = create_fcontext_stack(STACK_SIZE);
     nle->generatorcontext =

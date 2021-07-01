@@ -19,6 +19,13 @@ STATIC_DCL void FDECL(regen_hp, (int));
 STATIC_DCL void FDECL(interrupt_multi, (const char *));
 STATIC_DCL void FDECL(debug_fields, (const char *));
 
+/*
+ * nle_spawn_monsters indicates whether to spawn monsters randomly
+ * after every step with some probability (true by default).
+ * The variable is defined in nle.c.
+ */
+extern int nle_spawn_monsters;
+
 void
 moveloop(resuming)
 boolean resuming;
@@ -121,7 +128,8 @@ boolean resuming;
                     /* occasionally add another monster; since this takes
                        place after movement has been allotted, the new
                        monster effectively loses its first turn */
-                    if (!rn2(u.uevent.udemigod ? 25
+                    /* Change for NLE: Optionally disable monster spawning */
+                    if (nle_spawn_monsters && !rn2(u.uevent.udemigod ? 25
                              : (depth(&u.uz) > depth(&stronghold_level)) ? 50
                                : 70))
                         (void) makemon((struct permonst *) 0, 0, 0,

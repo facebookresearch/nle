@@ -7,7 +7,8 @@
 #include "nledl.h"
 
 void
-nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init)
+nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
+           int spawn_monsters)
 {
     nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
 
@@ -18,9 +19,9 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init)
 
     dlerror(); /* Clear any existing error */
 
-    void *(*start)(nle_obs *, FILE *, nle_seeds_init_t *);
+    void *(*start)(nle_obs *, FILE *, nle_seeds_init_t *, int);
     start = dlsym(nledl->dlhandle, "nle_start");
-    nledl->nle_ctx = start(obs, nledl->ttyrec, seed_init);
+    nledl->nle_ctx = start(obs, nledl->ttyrec, seed_init, spawn_monsters);
 
     char *error = dlerror();
     if (error != NULL) {
@@ -55,14 +56,14 @@ nledl_close(nle_ctx_t *nledl)
 
 nle_ctx_t *
 nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec,
-          nle_seeds_init_t *seed_init)
+          nle_seeds_init_t *seed_init, int spawn_monsters)
 {
     /* TODO: Consider getting ttyrec path from caller? */
     struct nledl_ctx *nledl = malloc(sizeof(struct nledl_ctx));
     nledl->ttyrec = ttyrec;
     strncpy(nledl->dlpath, dlpath, sizeof(nledl->dlpath));
 
-    nledl_init(nledl, obs, seed_init);
+    nledl_init(nledl, obs, seed_init, spawn_monsters);
     return nledl;
 };
 
@@ -83,7 +84,7 @@ nle_step(nle_ctx_t *nledl, nle_obs *obs)
  * E.g., we could re-use the stack buffer and the nle_ctx_t. */
 void
 nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
-          nle_seeds_init_t *seed_init)
+          nle_seeds_init_t *seed_init, int spawn_monsters)
 {
     nledl_close(nledl);
     /* Reset file only if not-NULL. */
@@ -92,7 +93,7 @@ nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
 
     // TODO: Consider refactoring nledl.h such that we expose this init
     // function but drop reset.
-    nledl_init(nledl, obs, seed_init);
+    nledl_init(nledl, obs, seed_init, spawn_monsters);
 }
 
 void
