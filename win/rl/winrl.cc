@@ -354,6 +354,17 @@ NetHackRL::fill_obs(nle_obs *obs)
         }
     }
     if (obs->blstats) {
+        if (!u.dz) {
+            /* Tricky hack: On "You descend the stairs.--More--" we are
+               technically on the next floor, but we don't see it yet.
+               But x, y needs to be updated at every step (not just when
+               blstats changes for other reasons). But if we update it
+               on the descend message, it will be the new position.
+               u.dz stays nonzero for the env step after, too, but there
+               blstats will be updated. */
+            blstats_[0] = u.ux - 1; /* x coordinate, 1 <= ux <= cols */
+            blstats_[1] = u.uy;     /* y coordinate, 0 <= uy < rows */
+        }
         std::memcpy(obs->blstats, &blstats_[0], sizeof(blstats_));
     }
     if (obs->inv_glyphs) {
