@@ -23,8 +23,10 @@ README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 ![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/master/dat/nle/example_run.gif)
 
 # Papers using the NetHack Learning Environment
+- Izumiya and Simo-Serra [Inventory Management with Attention-Based Meta Actions](https://esslab.jp/~ess/publications/IzumiyaCOG2021.pdf) (Waseda University, CoG 2021)
+- Samvelyan et al. [MiniHack the Planet: A Sandbox for Open-Ended Reinforcement Learning Research](https://openreview.net/forum?id=skFwlyefkWJ) (FAIR, UCL, Oxford, June 2021)
 - Zhang et al. [BeBold: Exploration Beyond the Boundary of Explored Regions](https://arxiv.org/abs/2012.08621) (Berkley, FAIR, Dec 2020)
-- Küttler et al. [The NetHack Learning Environment](https://arxiv.org/abs/2006.13760) (FAIR, Oxford, NYU, UCL, NeurIPS 2020)
+- Küttler et al. [The NetHack Learning Environment](https://arxiv.org/abs/2006.13760) (FAIR, Oxford, NYU, Imperial, UCL, NeurIPS 2020)
 
 Open a [pull request](https://github.com/facebookresearch/nle/edit/master/README.md) to add papers
 
