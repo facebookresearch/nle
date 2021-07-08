@@ -343,44 +343,37 @@ class TestNethackFunctionsAndConstants:
 class TestNethackGlanceObservation:
     @pytest.fixture
     def game(self):  # Make sure we close even on test failure.
-        g = nethack.Nethack(playername="MonkBot-mon-hum-neu-mal")
+        g = nethack.Nethack(
+            playername="MonkBot-mon-hum-neu-mal",
+            observation_keys=("screen_descriptions", "glyphs", "chars"),
+        )
         try:
             yield g
         finally:
             g.close()
 
     def test_new_observation_shapes(self, game):
-        game = nethack.Nethack()
-        game.reset()
+        screen_descriptions, glyphs, *_ = game.reset()
 
-        screen_description_buff = game._obs_buffers["screen_descriptions"]
-        glyph_buff = game._obs_buffers["glyphs"]
-        glance_shape = screen_description_buff.shape
-        assert glyph_buff.shape == glance_shape[:2]
-        assert _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH == glance_shape[-1]
-        assert len(glance_shape) == 3
+        assert len(screen_descriptions.shape) == 3
+        rows, cols, descr_len = screen_descriptions.shape
+        assert tuple(glyphs.shape) == (rows, cols)
+        assert _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH == descr_len
 
     def test_glance_descriptions(self, game):
-        game.reset()
-
-        # rather naughty - testing against private impl
-        glyph_buff = game._obs_buffers["glyphs"]
-        char_buff = game._obs_buffers["chars"]
-        desc_buff = game._obs_buffers["screen_descriptions"]
-
-        row, col = glyph_buff.shape
         episodes = 6
         for _ in range(episodes):
-            game.reset()
+            desc, glyphs, chars = game.reset()
+            row, col = glyphs.shape
             for i in range(row):
                 for j in range(col):
-                    glyph = glyph_buff[i][j]
-                    char = char_buff[i][j]
+                    glyph = glyphs[i][j]
+                    char = chars[i][j]
                     letter = chr(char)
-                    glance = "".join(chr(c) for c in desc_buff[i][j] if c != 0)
+                    glance = "".join(chr(c) for c in desc[i][j] if c != 0)
                     if char == 32:  # no text
                         assert glance == ""
-                        assert (desc_buff[i][j] == 0).all()
+                        assert (desc[i][j] == 0).all()
                     elif glyph == 2378 and letter == ".":
                         assert glance == "floor of a room"
                     elif glyph == 333 and letter == "@":  # us!
@@ -401,18 +394,24 @@ class TestNethackGlanceObservation:
 class TestNethackTerminalObservation:
     @pytest.fixture
     def game(self):  # Make sure we close even on test failure.
-        g = nethack.Nethack(playername="MonkBot-mon-hum-neu-mal")
+        g = nethack.Nethack(
+            playername="MonkBot-mon-hum-neu-mal",
+            observation_keys=(
+                "tty_chars",
+                "tty_colors",
+                "tty_cursor",
+                "chars",
+                "colors",
+            ),
+        )
         try:
             yield g
         finally:
             g.close()
 
     def test_new_observation_shapes(self, game):
-        game.reset()
+        tty_chars, tty_colors, tty_cursor, *_ = game.reset()
 
-        tty_chars = game._obs_buffers["tty_chars"]
-        tty_colors = game._obs_buffers["tty_colors"]
-        tty_cursor = game._obs_buffers["tty_cursor"]
         assert tty_colors.shape == tty_chars.shape
         assert tty_cursor.shape == (2,)
         terminal_shape = tty_chars.shape
@@ -420,10 +419,7 @@ class TestNethackTerminalObservation:
         assert _pynethack.nethack.NLE_TERM_CO == terminal_shape[1]
 
     def test_observations(self, game):
-        game.reset()
-
-        tty_chars = game._obs_buffers["tty_chars"]
-        tty_colors = game._obs_buffers["tty_colors"]
+        tty_chars, tty_colors, *_ = game.reset()
 
         top_line = "".join(chr(c) for c in tty_chars[0])
         bottom_sub1_line = "".join(chr(c) for c in tty_chars[-2])
@@ -441,14 +437,14 @@ class TestNethackTerminalObservation:
                 assert font == 0  # NO_COLOR
 
     def test_crop(self, game):
-        game.reset()
+        tty_chars, tty_colors, _, chars, colors = game.reset()
 
-        g_chars = game._obs_buffers["chars"].reshape(-1)
-        g_cols = game._obs_buffers["colors"].reshape(-1)
+        g_chars = chars.reshape(-1)
+        g_cols = colors.reshape(-1)
 
         # DUNGEON is [21, 79], TTY is [24, 80]. Crop as follows  to get alignment.
-        t_chars = game._obs_buffers["tty_chars"][1:-2, :-1].reshape(-1)
-        t_cols = game._obs_buffers["tty_colors"][1:-2, :-1].reshape(-1)
+        t_chars = tty_chars[1:-2, :-1].reshape(-1)
+        t_cols = tty_colors[1:-2, :-1].reshape(-1)
 
         for g_char, g_col, t_char, t_col in zip(g_chars, g_cols, t_chars, t_cols):
             assert g_char == t_char
@@ -458,18 +454,18 @@ class TestNethackTerminalObservation:
 class TestNethackMiscObservation:
     @pytest.fixture
     def game(self):  # Make sure we close even on test failure.
-        g = nethack.Nethack(playername="MonkBot-mon-hum-neu-mal")
+        g = nethack.Nethack(
+            playername="MonkBot-mon-hum-neu-mal", observation_keys=("misc", "internal")
+        )
         try:
             yield g
         finally:
             g.close()
 
     def test_misc_yn_question(self, game):
-        game.reset()
-        misc = game._obs_buffers["misc"]
-        internal = game._obs_buffers["internal"]
-        if misc[2]:
-            game.step(ord(" "))
+        misc, internal = game.reset()
+        while misc[2]:
+            misc, internal = game.step(ord(" "))
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
@@ -483,11 +479,9 @@ class TestNethackMiscObservation:
         np.testing.assert_array_equal(misc, internal[1:4])
 
     def test_misc_getline(self, game):
-        game.reset()
-        misc = game._obs_buffers["misc"]
-        internal = game._obs_buffers["internal"]
-        if misc[2]:
-            game.step(ord(" "))
+        misc, internal = game.reset()
+        while misc[2]:
+            misc, internal = game.step(ord(" "))
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
@@ -507,11 +501,9 @@ class TestNethackMiscObservation:
         np.testing.assert_array_equal(misc, internal[1:4])
 
     def test_misc_wait_for_space(self, game):
-        game.reset()
-        misc = game._obs_buffers["misc"]
-        internal = game._obs_buffers["internal"]
-        if misc[2]:
-            game.step(ord(" "))
+        misc, internal = game.reset()
+        while misc[2]:
+            misc, internal = game.step(ord(" "))
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
