@@ -84,7 +84,7 @@ def compare_rollouts(env0, env1, max_rollout_len):
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
 @pytest.mark.parametrize("wizard", [False, True])
 class TestGymEnv:
-    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    @pytest.fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
         """Makes cwd point to the test's tmpdir."""
         with tmpdir.as_cwd():
@@ -127,7 +127,7 @@ class TestGymEnv:
 
 
 class TestWizkit:
-    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    @pytest.fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
         """Makes cwd point to the test's tmpdir."""
         with tmpdir.as_cwd():
@@ -217,7 +217,7 @@ class TestBasicGymEnv:
 @pytest.mark.parametrize("env_name", get_nethack_env_ids())
 @pytest.mark.parametrize("rollout_len", [500])
 class TestGymEnvRollout:
-    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    @pytest.fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
         """Makes cwd point to the test's tmpdir."""
         with tmpdir.as_cwd():
@@ -329,7 +329,7 @@ class TestGymEnvRollout:
 class TestGymDynamics:
     """Tests a few game dynamics."""
 
-    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    @pytest.fixture(autouse=True)  # will be applied to all tests in class
     def make_cwd_tmp(self, tmpdir):
         """Makes cwd point to the test's tmpdir."""
         with tmpdir.as_cwd():
