@@ -364,6 +364,7 @@ NetHackRL::fill_obs(nle_obs *obs)
                blstats will be updated. */
             blstats_[0] = u.ux - 1; /* x coordinate, 1 <= ux <= cols */
             blstats_[1] = u.uy;     /* y coordinate, 0 <= uy < rows */
+            blstats_[20] = moves;   /* time */
         }
         std::memcpy(obs->blstats, &blstats_[0], sizeof(blstats_));
     }
