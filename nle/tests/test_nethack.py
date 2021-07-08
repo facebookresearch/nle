@@ -465,7 +465,8 @@ class TestNethackMiscObservation:
     def test_misc_yn_question(self, game):
         misc, internal = game.reset()
         while misc[2]:
-            misc, internal = game.step(ord(" "))
+            (misc, internal), done = game.step(ord(" "))
+            assert not done
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
@@ -481,7 +482,8 @@ class TestNethackMiscObservation:
     def test_misc_getline(self, game):
         misc, internal = game.reset()
         while misc[2]:
-            misc, internal = game.step(ord(" "))
+            (misc, internal), done = game.step(ord(" "))
+            assert not done
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
@@ -503,7 +505,8 @@ class TestNethackMiscObservation:
     def test_misc_wait_for_space(self, game):
         misc, internal = game.reset()
         while misc[2]:
-            misc, internal = game.step(ord(" "))
+            (misc, internal), done = game.step(ord(" "))
+            assert not done
 
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
