@@ -70,6 +70,13 @@ class Nethack
             throw py::error_already_set();
         }
     }
+    Nethack(std::string dlpath, bool spawn_monsters)
+        : dlpath_(std::move(dlpath)), obs_{},
+          ttyrec_(nullptr, [](std::FILE *) { return 0; }),
+          spawn_monsters_(spawn_monsters)
+    {
+    }
+
     ~Nethack()
     {
         close();
@@ -267,6 +274,8 @@ PYBIND11_MODULE(_pynethack, m)
     py::class_<Nethack>(m, "Nethack")
         .def(py::init<std::string, std::string, bool>(), py::arg("dlpath"),
              py::arg("ttyrec"), py::arg("spawn_monsters"))
+        .def(py::init<std::string, bool>(), py::arg("dlpath"),
+             py::arg("spawn_monsters"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
         .def("reset", py::overload_cast<>(&Nethack::reset))

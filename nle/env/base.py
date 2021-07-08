@@ -325,7 +325,7 @@ This might contain data that shouldn't be abailable to agents."""
             )
             ttyrec = self._ttyrec_pattern % 0
         else:
-            ttyrec = "/dev/null"
+            ttyrec = None
 
         self.env = nethack.Nethack(
             observation_keys=self._observation_keys,
