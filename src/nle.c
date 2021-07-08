@@ -140,13 +140,14 @@ init_nle(FILE *ttyrec, nle_obs *obs)
 {
     nle_ctx_t *nle = malloc(sizeof(nle_ctx_t));
 
-    assert(ttyrec != NULL);
     nle->ttyrec = ttyrec;
 
 #ifdef NLE_BZ2_TTYRECS
-    int bzerror;
-    nle->ttyrec_bz2 = BZ2_bzWriteOpen(&bzerror, ttyrec, 9, 0, 0);
-    assert(bzerror == BZ_OK);
+    if (nle->ttyrec) {
+        int bzerror;
+        nle->ttyrec_bz2 = BZ2_bzWriteOpen(&bzerror, ttyrec, 9, 0, 0);
+        assert(bzerror == BZ_OK);
+    }
 #endif
 
     nle->observation = obs;
@@ -184,7 +185,7 @@ mainloop(fcontext_transfer_t ctx_transfer)
 }
 
 boolean
-write_data(void *buf, int length)
+write_ttyrec_data(void *buf, int length)
 {
     nle_ctx_t *nle = current_nle_ctx;
 #ifdef NLE_BZ2_TTYRECS
@@ -198,7 +199,7 @@ write_data(void *buf, int length)
 }
 
 boolean
-write_header(int length, unsigned char channel)
+write_ttyrec_header(int length, unsigned char channel)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -209,8 +210,8 @@ write_header(int length, unsigned char channel)
     buffer[2] = length;
 
     /* Assumes little endianness */
-    write_data(buffer, 3 * sizeof(int));
-    write_data(&channel, 1);
+    write_ttyrec_data(buffer, 3 * sizeof(int));
+    write_ttyrec_data(&channel, 1);
 
     return TRUE;
 }
@@ -232,8 +233,10 @@ nle_fflush(FILE *stream)
     if (length == 0)
         return 0;
 
-    write_header(length, 0);
-    write_data(nle->outbuf, length);
+    if (nle->ttyrec) {
+        write_ttyrec_header(length, 0);
+        write_ttyrec_data(nle->outbuf, length);
+    }
 
     nle_obs *obs = nle->observation;
     if (obs->tty_chars || obs->tty_colors || obs->tty_cursor) {
@@ -244,7 +247,7 @@ nle_fflush(FILE *stream)
 #ifdef NLE_BZ2_TTYRECS
     return 0;
 #else
-    return fflush(nle->ttyrec);
+    return nle->ttyrec ? fflush(nle->ttyrec) : 0;
 #endif
 }
 
@@ -405,8 +408,10 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
 {
     current_nle_ctx = nle;
     nle->observation = obs;
-    write_header(1, 1);
-    write_data(&obs->action, 1);
+    if (nle->ttyrec) {
+        write_ttyrec_header(1, 1);
+        write_ttyrec_data(&obs->action, 1);
+    }
     fcontext_transfer_t t = jump_fcontext(nle->generatorcontext, obs);
     nle->generatorcontext = t.ctx;
     nle->done = (t.data == NULL);
@@ -429,9 +434,11 @@ nle_end(nle_ctx_t *nle)
     nle_fflush(stdout);
 
 #ifdef NLE_BZ2_TTYRECS
-    int bzerror;
-    BZ2_bzWriteClose(&bzerror, nle->ttyrec_bz2, 0, NULL, NULL);
-    assert(bzerror == BZ_OK);
+    if (nle->ttyrec) {
+        int bzerror;
+        BZ2_bzWriteClose(&bzerror, nle->ttyrec_bz2, 0, NULL, NULL);
+        assert(bzerror == BZ_OK);
+    }
 #endif
 
     tmt_close(nle->vterminal);
