@@ -206,39 +206,41 @@ set(LEVS_GEN
     wizard3.lev)
 
 add_custom_command(
-  DEPENDS makedefs bogusmon.txt engrave.txt epitaph.txt
+  DEPENDS $<TARGET_FILE:makedefs> bogusmon.txt engrave.txt epitaph.txt
   OUTPUT bogusmon epitaph engrave
   COMMAND $<TARGET_FILE:makedefs> ARGS -s)
 
 add_custom_command(
-  DEPENDS makedefs data.base
+  DEPENDS $<TARGET_FILE:makedefs> data.base
   OUTPUT data
   COMMAND $<TARGET_FILE:makedefs> ARGS -d)
 
 add_custom_command(
-  DEPENDS makedefs rumors.tru rumors.fal
+  DEPENDS $<TARGET_FILE:makedefs> rumors.tru rumors.fal
   OUTPUT rumors
   COMMAND $<TARGET_FILE:makedefs> ARGS -r)
 
 add_custom_command(
-  DEPENDS makedefs quest.txt
+  DEPENDS $<TARGET_FILE:makedefs> quest.txt
   OUTPUT quest.dat
   COMMAND $<TARGET_FILE:makedefs> ARGS -q)
 
 add_custom_command(
-  DEPENDS makedefs oracles.txt
+  DEPENDS $<TARGET_FILE:makedefs> oracles.txt
   OUTPUT oracles
   COMMAND $<TARGET_FILE:makedefs> ARGS -h)
 
 # Hack: Depend on date.h to avoid race.
 add_custom_command(
-  DEPENDS makedefs ${NLE_INC_GEN}/date.h
+  DEPENDS $<TARGET_FILE:makedefs> ${NLE_INC_GEN}/date.h
   OUTPUT options
   COMMAND $<TARGET_FILE:makedefs> ARGS -v)
 
-# Hack: Depend on bogusmon to avoid race wrt. makedef's grep.tmp file.
+# Hack: Depend on bogusmon to avoid race wrt. makedef's grep.tmp file. Best to
+# be defensive about the paths (matters if NetHack's make install was run).
 add_custom_command(
-  DEPENDS makedefs dgn_comp dungeon.def bogusmon
+  DEPENDS $<TARGET_FILE:makedefs> $<TARGET_FILE:dgn_comp>
+          ${NLE_DAT_GEN}/dungeon.def ${NLE_DAT_GEN}/bogusmon
   OUTPUT dungeon dungeon.pdf
   COMMAND $<TARGET_FILE:makedefs> ARGS -e
   COMMAND $<TARGET_FILE:dgn_comp> ARGS dungeon.pdf)
@@ -254,8 +256,14 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile
   COMMAND ${CMAKE_COMMAND} -E echo "WIZARDS=*" > sysconf)
 
+# Defensive dependencies for when we also build NetHack with make/make install.
+list(TRANSFORM DATDLB PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
+                                              NLE_DAT_GEN_DATDLB)
+list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
+                                                NLE_DAT_GEN_LEVS_GEN)
+
 add_custom_command(
-  DEPENDS dlb ${DATDLB} ${LEVS_GEN}
+  DEPENDS dlb ${NLE_DAT_GEN_DATDLB} ${NLE_DAT_GEN_LEVS_GEN}
   OUTPUT nhdat
   COMMAND LC_ALL=C $<TARGET_FILE:dlb> ARGS cf nhdat ${DATDLB} ${LEVS_GEN})
 
