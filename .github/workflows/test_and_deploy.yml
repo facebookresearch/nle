@@ -1,5 +1,5 @@
 ---
-name: Test & deploy (MacOS)
+name: Test & deploy
 
 on:
   push:
@@ -14,11 +14,12 @@ on:
 
 jobs:
   test_repo:
-    name: Test on MacOS w/ Py${{ matrix.python-version }}
-    runs-on: macos-latest
+    name: Test on ${{ matrix.os }} w/ Py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8"]
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        os: [ubuntu-latest, macos-latest]
       fail-fast: false
     steps:
     - name: Setup Python ${{ matrix.python-version }} env
@@ -29,7 +30,19 @@ jobs:
       run: "python -m pip install -q --upgrade pip wheel"
     - name: Install dependencies
       run: |
-        brew install cmake
+           if [ "$RUNNER_OS" == "Linux" ]; then
+             sudo apt-get update && sudo apt-get install -yq \
+               apt-transport-https \
+               bison \
+               build-essential \
+               cmake \
+               flex \
+               libbz2-dev \
+               ninja-build \
+               software-properties-common
+           else
+             brew install cmake
+           fi
     - uses: actions/checkout@v2
       with:
         submodules: true
