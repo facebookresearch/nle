@@ -62,7 +62,7 @@ class Nethack
   public:
     Nethack(std::string dlpath, std::string ttyrec, bool spawn_monsters)
         : dlpath_(std::move(dlpath)), obs_{},
-          ttyrec_(std::fopen(ttyrec.c_str(), "a"), std::fclose),
+          ttyrec_(std::fopen(ttyrec.c_str(), "a")),
           spawn_monsters_(spawn_monsters)
     {
         if (!ttyrec_) {
@@ -71,15 +71,16 @@ class Nethack
         }
     }
     Nethack(std::string dlpath, bool spawn_monsters)
-        : dlpath_(std::move(dlpath)), obs_{},
-          ttyrec_(nullptr, [](std::FILE *) { return 0; }),
-          spawn_monsters_(spawn_monsters)
+        : dlpath_(std::move(dlpath)), obs_{}, spawn_monsters_(spawn_monsters)
     {
     }
 
     ~Nethack()
     {
         close();
+        if (ttyrec_) {
+            fclose(ttyrec_);
+        }
     }
     void
     step(int action)
@@ -112,10 +113,13 @@ class Nethack
             throw py::error_already_set();
         }
         // Reset environment, then close original FILE. Cannot use freopen
-        // as the game may still need to write to the original but reset()
-        // wants to get the new one already.
+        // as the game may still need to write to the original file but
+        // reset() wants to get the new one already.
         reset(f);
-        ttyrec_.reset(f);
+        if (ttyrec_) {
+            fclose(ttyrec_);
+        }
+        ttyrec_ = f;
     }
 
     void
@@ -246,7 +250,7 @@ class Nethack
     {
         if (!nle_) {
             nle_ = nle_start(
-                dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_.get(),
+                dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_,
                 use_seed_init ? &seed_init_ : nullptr, spawn_monsters_);
         } else
             nle_reset(nle_, &obs_, ttyrec,
@@ -264,7 +268,7 @@ class Nethack
     bool use_seed_init = false;
     bool spawn_monsters_ = true;
     nle_ctx_t *nle_ = nullptr;
-    std::unique_ptr<std::FILE, int (*)(std::FILE *)> ttyrec_;
+    std::FILE *ttyrec_ = nullptr;
 };
 
 PYBIND11_MODULE(_pynethack, m)
