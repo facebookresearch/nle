@@ -226,9 +226,9 @@ class NLE(gym.Env):
 
         Args:
             savedir (str or None): path to save ttyrecs (game recordings) into.
-                Defaults to "" (empty string), which makes NLE chose the
-                directory name. If None, don't save any data. Otherwise,
+                Defaults to None, which doesn't save any data. Otherwise,
                 interpreted as a path to a new or existing directory.
+                If "" (empty string), NLE choses a unique directory name.
             character (str): name of character. Defaults to "mon-hum-neu-mal".
             max_episode_steps (int): maximum amount of steps allowed before the
                 game is forcefully quit. In such cases, ``info["end_status"]``

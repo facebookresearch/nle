@@ -258,6 +258,8 @@ def main():
             FLAGS.savedir = "{}_{}_{}.zip".format(
                 time.strftime("%Y%m%d-%H%M%S"), FLAGS.mode, FLAGS.env
             )
+        elif FLAGS.savedir == "None":
+            FLAGS.savedir = None  # Not saving any ttyrecs.
 
         play()
 
