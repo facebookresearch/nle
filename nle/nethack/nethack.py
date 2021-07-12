@@ -74,7 +74,7 @@ def _set_env_vars(options, hackdir, wizkit=None):
     os.environ["HACKDIR"] = hackdir
     os.environ["TERM"] = "ansi"
     if wizkit is not None:
-        os.environ["WIZKIT"] = wizkit
+        os.environ["WIZKIT"] = os.path.join(hackdir, wizkit)
 
 
 # TODO: Not thread-safe for many reasons.

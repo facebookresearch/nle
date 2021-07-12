@@ -162,6 +162,8 @@ init_nle(FILE *ttyrec, nle_obs *obs)
     return nle;
 }
 
+static char nle_path[4096];
+
 /* TODO: Consider copying the relevant parts of main() in unixmain.c. */
 void
 mainloop(fcontext_transfer_t ctx_transfer)
@@ -178,6 +180,39 @@ mainloop(fcontext_transfer_t ctx_transfer)
     ASAN_UNPOISON_MEMORY_REGION((char *) stack->sptr - stack->ssize,
                                 stack->ssize);
 #endif
+
+    const char *p;
+
+    p = nh_getenv("HACKDIR");
+    if (!p || !*p) {
+        error("HACKDIR not set");
+        return;
+    }
+
+    int len = strlen(p);
+    if (len >= sizeof nle_path - 1) {
+        error("HACKDIR too long");
+        return;
+    }
+
+    strncpy(nle_path, p, sizeof nle_path - 1);
+    if (nle_path[len - 1] != '/') {
+        nle_path[len] = '/';
+        nle_path[len + 1] = '\0';
+    } else {
+        nle_path[len] = '\0';
+    }
+
+    fqn_prefix[SYSCONFPREFIX] = nle_path;
+    fqn_prefix[CONFIGPREFIX] = nle_path;
+    fqn_prefix[HACKPREFIX] = nle_path;
+    fqn_prefix[SAVEPREFIX] = nle_path;
+    fqn_prefix[LEVELPREFIX] = nle_path;
+    fqn_prefix[BONESPREFIX] = nle_path;
+    fqn_prefix[SCOREPREFIX] = nle_path;
+    fqn_prefix[LOCKPREFIX] = nle_path;
+    fqn_prefix[TROUBLEPREFIX] = nle_path;
+    fqn_prefix[DATAPREFIX] = nle_path;
 
     char *argv[1] = { "nethack" };
 

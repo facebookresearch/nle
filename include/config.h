@@ -356,7 +356,7 @@
 /* #define INSURANCE allow crashed game recovery */
 
 #ifndef MAC
-#define CHDIR /* delete if no chdir() available */
+/* #define CHDIR */ /* delete if no chdir() available */ /* Deleted for NLE */
 #endif
 
 #ifdef CHDIR
