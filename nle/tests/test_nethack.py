@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-import timeit
+import os
 import random
+import timeit
 import warnings
 
 import numpy as np
@@ -51,7 +52,7 @@ class TestNetHack:
         game.close()
 
     def test_run_n_episodes(self, tmpdir, game, episodes=3):
-        olddir = tmpdir.chdir()
+        olddir = tmpdir.chdir()  # tmpdir is a py.path.local object.
 
         chars, blstats = game.reset()
 
@@ -93,10 +94,8 @@ class TestNetHack:
 
         print("Finished after %i steps. Mean sps: %f" % (steps, mean_sps))
 
-        nethackdir = tmpdir.chdir()
-
-        assert nethackdir.fnmatch("nle*")
-        assert tmpdir.ensure("nle.ttyrec")
+        # Resetting the game shouldn't have caused cwd to change.
+        assert tmpdir.samefile(os.getcwd())
 
         if mean_sps < 15000:
             warnings.warn("Mean sps was only %f" % mean_sps)
@@ -149,9 +148,6 @@ class TestNetHack:
 
 class TestNetHackFurther:
     def test_run(self):
-        # TODO: Implement ttyrecording filename in libnethack wrapper.
-        # archivefile = tempfile.mktemp(suffix="nethack_test", prefix=".zip")
-
         game = nethack.Nethack(
             observation_keys=("glyphs", "chars", "colors", "blstats", "program_state")
         )
@@ -196,6 +192,7 @@ class TestNetHackFurther:
             assert class_sym.explain == "human or elf"
 
         game.close()
+        assert os.path.isfile(os.path.join(os.getcwd(), "nle.ttyrec.bz2"))
 
     def test_illegal_filename(self):
         with pytest.raises(IOError):

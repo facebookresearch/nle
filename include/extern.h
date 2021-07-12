@@ -781,6 +781,8 @@ E void NDECL(makerogueghost);
 
 /* ### files.c ### */
 
+E void FDECL(append_slash, (char *));  /* Moved for NLE. */
+
 E char *FDECL(fname_encode, (const char *, CHAR_P, char *, char *, int));
 E char *FDECL(fname_decode, (CHAR_P, char *, char *, int));
 E const char *FDECL(fqname, (const char *, int, int));

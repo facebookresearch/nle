@@ -53,7 +53,8 @@ add_compile_definitions(
   NOTPARMDECL
   HACKDIR="${HACKDIR}"
   DEFAULT_WINDOW_SYS="rl"
-  DLB)
+  DLB
+  NOCWD_ASSUMPTIONS)
 
 set(NLE_SRC ${nle_SOURCE_DIR}/src)
 set(NLE_INC ${nle_SOURCE_DIR}/include)
