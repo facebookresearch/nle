@@ -5,6 +5,7 @@
 # Requires
 #   pip install pytest-benchmark
 # to run
+import os
 
 import pytest
 
@@ -35,14 +36,17 @@ EXPERIMENTS = {
     "observation_keys", EXPERIMENTS.values(), ids=EXPERIMENTS.keys()
 )
 class TestProfile:
-    @pytest.yield_fixture(autouse=True)  # will be applied to all tests in class
+    @pytest.fixture(autouse=True)
     def make_cwd_tmp(self, tmpdir):
         """Makes cwd point to the test's tmpdir."""
         with tmpdir.as_cwd():
             yield
 
     @pytest.mark.benchmark(disable_gc=True, warmup=False)
-    def test_run_1k_steps(self, observation_keys, make_cwd_tmp, benchmark):
+    def test_run_1k_steps(self, observation_keys, benchmark):
+        if os.environ.get("CI") == "true":
+            pytest.skip("Not running benchmark on CI")
+
         env = gym.make("NetHack-v0", observation_keys=observation_keys)
         seeds = 123456
         steps = 1000
