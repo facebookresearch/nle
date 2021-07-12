@@ -6,7 +6,9 @@
 #define NLE_BLSTATS_SIZE 25
 #define NLE_PROGRAM_STATE_SIZE 6
 #define NLE_INTERNAL_SIZE 9
-#define NLE_MISC_SIZE 3
+#define NLE_MISC_SIZE 4
+#define NLE_MENU_SIZE 24
+#define NLE_MENU_STR_LENGTH 80
 #define NLE_INVENTORY_SIZE 55
 #define NLE_INVENTORY_STR_LENGTH 80
 #define NLE_SCREEN_DESCRIPTION_LENGTH 80
@@ -39,6 +41,7 @@ typedef struct nle_observation {
     signed char *tty_colors;            /* Size NLE_TERM_LI * NLE_TERM_CO */
     unsigned char *tty_cursor;          /* Size 2 */
     int *misc;                          /* Size NLE_MISC_SIZE */
+    unsigned char *menu_strs; /* Size NLE_MENU_SIZE * NLE_MENU_STR_LENGTH */
 } nle_obs;
 
 typedef struct {

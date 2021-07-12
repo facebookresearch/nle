@@ -469,15 +469,15 @@ class TestNethackMiscObservation:
             assert not done
 
         assert np.all(misc == 0)
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
         game.step(nethack.M("p"))  # pray
-        np.testing.assert_array_equal(misc, np.array([1, 0, 0]))
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc, np.array([1, 0, 0, 0]))
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
         game.step(ord("n"))
         assert np.all(misc == 0)
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
     def test_misc_getline(self, game):
         misc, internal = game.reset()
@@ -486,21 +486,21 @@ class TestNethackMiscObservation:
             assert not done
 
         assert np.all(misc == 0)
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
         game.step(nethack.M("n"))  # name ..
         game.step(ord("a"))  # ... the current level
-        np.testing.assert_array_equal(misc, np.array([0, 1, 0]))
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc, np.array([0, 1, 0, 0]))
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
         for let in "Gehennom":
             game.step(ord(let))
-            np.testing.assert_array_equal(misc, np.array([0, 1, 0]))
-            np.testing.assert_array_equal(misc, internal[1:4])
+            np.testing.assert_array_equal(misc, np.array([0, 1, 0, 0]))
+            np.testing.assert_array_equal(misc[:3], internal[1:4])
 
         game.step(ord("\r"))
         assert np.all(misc == 0)
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
     def test_misc_wait_for_space(self, game):
         misc, internal = game.reset()
@@ -509,12 +509,12 @@ class TestNethackMiscObservation:
             assert not done
 
         assert np.all(misc == 0)
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
         game.step(ord("i"))
-        np.testing.assert_array_equal(misc, np.array([0, 0, 1]))
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc, np.array([0, 0, 1, 0]))
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
 
         game.step(ord(" "))
         assert np.all(misc == 0)
-        np.testing.assert_array_equal(misc, internal[1:4])
+        np.testing.assert_array_equal(misc[:3], internal[1:4])
