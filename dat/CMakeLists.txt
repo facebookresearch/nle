@@ -250,16 +250,15 @@ add_custom_command(
   COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS})
 
 add_custom_command(
-  OUTPUT perm record logfile xlogfile sysconf
-  COMMAND ${CMAKE_COMMAND} -E touch perm record logfile xlogfile
-  COMMAND ${CMAKE_COMMAND} -E echo "WIZARDS=*" > sysconf)
+  OUTPUT perm record logfile xlogfile COMMAND ${CMAKE_COMMAND} -E touch perm
+                                              record logfile xlogfile)
 
 add_custom_command(
   DEPENDS dlb ${DATDLB} ${LEVS_GEN}
   OUTPUT nhdat
   COMMAND LC_ALL=C $<TARGET_FILE:dlb> ARGS cf nhdat ${DATDLB} ${LEVS_GEN})
 
-set(ALL_DAT_GEN nhdat perm record logfile xlogfile sysconf)
+set(ALL_DAT_GEN nhdat perm record logfile xlogfile)
 list(TRANSFORM ALL_DAT_GEN PREPEND ${NLE_DAT_GEN}/)
 
 add_custom_target(dat ALL DEPENDS ${ALL_DAT_GEN} ${ALL_DAT_NOTGEN})

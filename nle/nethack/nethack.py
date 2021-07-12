@@ -98,7 +98,7 @@ class Nethack:
         self._copy = copy
 
         if not os.path.exists(hackdir) or not os.path.exists(
-            os.path.join(hackdir, "sysconf")
+            os.path.join(hackdir, "nhdat")
         ):
             raise FileNotFoundError(
                 "Couldn't find NetHack installation at '%s'." % hackdir
@@ -112,9 +112,8 @@ class Nethack:
         # directory on loading.
         self._oldcwd = os.getcwd()
 
-        # Symlink a few files.
-        for fn in ["nhdat", "sysconf"]:
-            os.symlink(os.path.join(hackdir, fn), os.path.join(self._vardir, fn))
+        # Symlink a nhdat.
+        os.symlink(os.path.join(hackdir, "nhdat"), os.path.join(self._vardir, "nhdat"))
         # Touch a few files.
         for fn in ["perm", "logfile", "xlogfile"]:
             os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
