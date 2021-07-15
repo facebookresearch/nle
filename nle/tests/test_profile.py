@@ -13,21 +13,24 @@ import numpy as np
 import nle  # noqa: F401
 import gym
 
-BASE_KEYS = ["glyphs", "message", "blstats"]
+BASE_KEYS = ["glyphs", "message", "blstats", "misc"]
 MAPPED_GLYPH = ["chars", "colors", "specials"]
 INV_GLYPH = ["inv_glyphs", "inv_strs", "inv_letters", "inv_oclasses"]
+MENUS = ["menu_strs"]
 SCREEN_DESC = ["screen_descriptions"]
 TTY = ["tty_chars", "tty_colors", "tty_cursor"]
 
 EXPERIMENTS = {
-    "(1): glyphs/msg/blstats": BASE_KEYS,
+    "(1): glyphs/msg/blstats/misc": BASE_KEYS,
     "(2): (1)... + char/col/spec": BASE_KEYS + MAPPED_GLYPH,
     "(3): (2)... + inv_*": BASE_KEYS + MAPPED_GLYPH + INV_GLYPH,
     "(4): (3)... + tty_*": BASE_KEYS + MAPPED_GLYPH + INV_GLYPH + TTY,
-    "(5): (4)... + screen_desc": BASE_KEYS
+    "(5): (4)... + menu_strs": BASE_KEYS + MAPPED_GLYPH + INV_GLYPH + TTY + MENUS,
+    "(6): (5)... + screen_desc": BASE_KEYS
     + MAPPED_GLYPH
     + INV_GLYPH
     + TTY
+    + MENUS
     + SCREEN_DESC,
 }
 

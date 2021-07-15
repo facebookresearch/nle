@@ -17,6 +17,10 @@ MESSAGE_SHAPE = (_pynethack.nethack.NLE_MESSAGE_SIZE,)
 PROGRAM_STATE_SHAPE = (_pynethack.nethack.NLE_PROGRAM_STATE_SIZE,)
 INTERNAL_SHAPE = (_pynethack.nethack.NLE_INTERNAL_SIZE,)
 MISC_SHAPE = (_pynethack.nethack.NLE_MISC_SIZE,)
+MENU_STRS_SHAPE = (
+    _pynethack.nethack.NLE_MENU_SIZE,
+    _pynethack.nethack.NLE_MENU_STR_LENGTH,
+)
 INV_SIZE = (_pynethack.nethack.NLE_INVENTORY_SIZE,)
 INV_STRS_SHAPE = (
     _pynethack.nethack.NLE_INVENTORY_SIZE,
@@ -45,6 +49,7 @@ OBSERVATION_DESC = {
     "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int8),
     "tty_cursor": dict(shape=(2,), dtype=np.uint8),
     "misc": dict(shape=MISC_SHAPE, dtype=np.int32),
+    "menu_strs": dict(shape=MENU_STRS_SHAPE, dtype=np.uint8),
 }
 
 

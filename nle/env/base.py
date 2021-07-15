@@ -138,6 +138,10 @@ NLE_SPACE_ITEMS = (
             **nethack.OBSERVATION_DESC["misc"],
         ),
     ),
+    (
+        "menu_strs",
+        gym.spaces.Box(low=0, high=255, **nethack.OBSERVATION_DESC["menu_strs"]),
+    ),
 )
 
 
@@ -213,6 +217,8 @@ class NLE(gym.Env):
             "tty_chars",
             "tty_colors",
             "tty_cursor",
+            "misc",
+            "menu_strs",
         ),
         actions=None,
         options=None,

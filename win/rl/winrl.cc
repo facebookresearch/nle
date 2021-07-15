@@ -290,6 +290,13 @@ NetHackRL::fill_obs(nle_obs *obs)
         obs->misc[0] = in_yn_function;
         obs->misc[1] = in_getlin;
         obs->misc[2] = xwaitingforspace;
+        obs->misc[3] = false;
+        for (int i = 0; i < windows_.size(); ++i) {
+            // We have a Non-Inventory Menu Window
+            if (i != WIN_INVEN && windows_[i].get()->type == NHW_MENU) {
+                obs->misc[3] = true;
+            }
+        }
     }
 
     if ((!program_state.something_worth_saving && !program_state.in_moveloop)
@@ -353,6 +360,50 @@ NetHackRL::fill_obs(nle_obs *obs)
             std::memset(obs->message, 0, NLE_MESSAGE_SIZE);
         }
     }
+
+    if (obs->menu_strs) {
+        bool found_menu = false;
+        for (int i = 0; i < windows_.size(); ++i) {
+            if (i != WIN_INVEN && windows_[i].get()->type == NHW_MENU) {
+                // We have a new menu window to be rendered on screen!
+                // The menu can either have 'rl_menu_items' in init, or
+                // simple text. In this case we expect only one of the two
+                // to be available, and this one goes into menu_strs
+                found_menu = true;
+                rl_window *win = windows_[i].get();
+                assert(!win->menu_items.empty() ^ !win->strings.empty());
+
+                int rows = max(win->menu_items.size(), win->strings.size());
+                int blank_rows = max(NLE_MENU_SIZE - rows, 0);
+                bool do_full_menu = !win->menu_items.empty();
+
+                for (int i = 0; i < NLE_MENU_SIZE; ++i) {
+                    if (i >= rows)
+                        break;
+                    if (do_full_menu) {
+                        // we would need to send over the mappings etc in
+                        // different arrays
+                        std::strncpy(
+                            (char *) &obs->menu_strs[i * NLE_MENU_STR_LENGTH],
+                            win->menu_items[i].str.c_str(),
+                            NLE_MENU_STR_LENGTH);
+                    } else {
+                        // here we simply would put defaults or indicators
+                        std::strncpy(
+                            (char *) &obs->menu_strs[i * NLE_MENU_STR_LENGTH],
+                            win->strings[i].c_str(), NLE_MENU_STR_LENGTH);
+                    }
+                }
+                std::memset(&obs->menu_strs[rows * NLE_MENU_STR_LENGTH], 0,
+                            blank_rows * NLE_MENU_STR_LENGTH);
+            }
+        }
+        if (!found_menu) {
+            std::memset(&obs->menu_strs[0], 0,
+                        NLE_MENU_SIZE * NLE_MENU_STR_LENGTH);
+        }
+    }
+
     if (obs->blstats) {
         if (!u.dz) {
             /* Tricky hack: On "You descend the stairs.--More--" we are
@@ -670,6 +721,7 @@ NetHackRL::destroy_nhwindow_method(winid wid)
 {
     DEBUG_API("rl_destroy_nhwindow(wid=" << wid << ")" << std::endl);
     windows_[wid].reset(nullptr);
+    windows_.resize(wid);
     tty_destroy_nhwindow(wid);
 }
 
