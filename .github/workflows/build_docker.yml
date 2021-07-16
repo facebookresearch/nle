@@ -55,6 +55,6 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
         repository: ${{ format('fairnle/nle-{0}', matrix.distro) }}
         dockerfile: ${{ format('docker/Dockerfile-{0}', matrix.distro) }}
-        tags: ${{ github.event.release.tag_name }},stable
+        tags: ${{ github.event.release.tag_name }},latest
         add_git_labels: true
         push: true
