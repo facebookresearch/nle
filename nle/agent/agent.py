@@ -74,6 +74,11 @@ parser.add_argument("--disable_cuda", action="store_true",
                     help="Disable CUDA.")
 parser.add_argument("--use_lstm", action="store_true",
                     help="Use LSTM in agent model.")
+parser.add_argument("--seeds",
+                    help="Seeds used for the gym environment.", type=int,
+                    nargs=2)
+parser.add_argument("--reseed", action="store_true",
+                    help="Reseed parameter for Nethack.")
 
 # Loss settings.
 parser.add_argument("--entropy_cost", default=0.0006,
@@ -97,6 +102,7 @@ parser.add_argument("--epsilon", default=0.01, type=float,
                     help="RMSProp epsilon.")
 parser.add_argument("--grad_norm_clipping", default=40.0, type=float,
                     help="Global gradient norm clip.")
+
 # yapf: enable
 
 
@@ -155,6 +161,7 @@ def act(
         logging.info("Actor %i started.", actor_index)
 
         gym_env = create_env(flags.env, savedir=flags.rundir)
+        gym_env.seed(*flags.seeds, reseed=flags.reseed)
         env = ResettingEnvironment(gym_env)
         env_output = env.initial()
         agent_state = model.initial_state(batch_size=1)
@@ -593,6 +600,7 @@ def test(flags, num_episodes=10):
     checkpointpath = os.path.join(flags.savedir, "latest", "model.tar")
 
     gym_env = create_env(flags.env)
+    gym_env.seed(*flags.seeds, reseed=flags.reseed)
     env = ResettingEnvironment(gym_env)
     model = Net(gym_env.observation_space, gym_env.action_space.n, flags.use_lstm)
     model.eval()
@@ -945,6 +953,8 @@ Net = NetHackNet
 
 
 def main(flags):
+    if not flags.seeds:
+        flags.seeds = [None, None]
     if flags.mode == "train":
         train(flags)
     else:
