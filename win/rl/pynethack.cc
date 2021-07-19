@@ -397,6 +397,23 @@ PYBIND11_MODULE(_pynethack, m)
     // From monsym.h.
     mn.attr("MAXMCLASSES") = py::int_(static_cast<int>(MAXMCLASSES));
 
+    // From botl.h.
+    mn.attr("BL_MASK_STONE") = py::int_(static_cast<int>(BL_MASK_STONE));
+    mn.attr("BL_MASK_SLIME") = py::int_(static_cast<int>(BL_MASK_SLIME));
+    mn.attr("BL_MASK_STRNGL  ") = py::int_(static_cast<int>(BL_MASK_STRNGL));
+    mn.attr("BL_MASK_FOODPOIS") =
+        py::int_(static_cast<int>(BL_MASK_FOODPOIS));
+    mn.attr("BL_MASK_TERMILL ") = py::int_(static_cast<int>(BL_MASK_TERMILL));
+    mn.attr("BL_MASK_BLIND") = py::int_(static_cast<int>(BL_MASK_BLIND));
+    mn.attr("BL_MASK_DEAF") = py::int_(static_cast<int>(BL_MASK_DEAF));
+    mn.attr("BL_MASK_STUN") = py::int_(static_cast<int>(BL_MASK_STUN));
+    mn.attr("BL_MASK_CONF") = py::int_(static_cast<int>(BL_MASK_CONF));
+    mn.attr("BL_MASK_HALLU") = py::int_(static_cast<int>(BL_MASK_HALLU));
+    mn.attr("BL_MASK_LEV") = py::int_(static_cast<int>(BL_MASK_LEV));
+    mn.attr("BL_MASK_FLY") = py::int_(static_cast<int>(BL_MASK_FLY));
+    mn.attr("BL_MASK_RIDE") = py::int_(static_cast<int>(BL_MASK_RIDE));
+    mn.attr("BL_MASK_BITS") = py::int_(static_cast<int>(BL_MASK_BITS));
+
     // game_end_types from hack.h (used in end.c)
     py::enum_<game_end_types>(mn, "game_end_types",
                               "This is the way the game ends.")

@@ -57,7 +57,7 @@ class TestNetHack:
         chars, blstats = game.reset()
 
         assert chars.shape == (21, 79)
-        assert blstats.shape == (25,)
+        assert blstats.shape == (26,)
 
         game.step(ord("y"))
         game.step(ord("y"))
