@@ -7,9 +7,8 @@ version of NLE.
 You can try out the latest stable version in Ubuntu 18.04 by doing:
 
 ```bash
-$ docker pull fairnle/nle:stable
-$ docker run --rm -it fairnle/nle:stable python  # or bash
-# Then you can simply use the nle package as normal
+$ docker pull fairnle/nle
+$ docker run --rm -it fairnle/nle python -m nle.scripts.play -e NetHackScore-v0
 ```
 
 The git repository is installed inside a conda distribution, and can be found in
@@ -19,15 +18,17 @@ The DockerHub repository also contains pre-built images per each released
 version of `nle`, following a specific templates:
 
 ``` bash
-1.  fairnle/nle:stable
-2.  fairnle/nle:<nle-version>         # corresponds to (1), based on Ubuntu 18.04
-3.  fairnle/nle-xenial:<nle-version>  # Based on Ubuntu 16.04
-4.  fairnle/nle-focal:<nle-version>   # Based on Ubuntu 20.04
-5.  fairnle/nle:<sha>                 # bionic image built on dockerfile changes
-6.  fairnle/nle-xenial:<sha>          # xenial image built on dockerfile changes
-7.  fairnle/nle-focal:<sha>           # focal image built on dockerfile changes
-8.  fairnle/nle:dev                   # points to latest built sha
+3.  fairnle/nle-xenial:<nle-version>  # Based on Ubuntu 16.04, CUDA 10.2, cuDNN 7
+3.  fairnle/nle-bionic:<nle-version>  # Based on Ubuntu 18.04, CUDA 10.2, cuDNN 7
+4.  fairnle/nle-focal:<nle-version>   # Based on Ubuntu 20.04, CUDA 11.0, cuDNN 8
+3.  fairnle/nle-xenial:latest         # points to latest built version
+3.  fairnle/nle-bionic:latest         # points to latest built version
+4.  fairnle/nle-focal:latest          # points to latest built version
+6.  fairnle/nle-xenial:<sha>
+6.  fairnle/nle-bionic:<sha>
+7.  fairnle/nle-focal:<sha>
 9.  fairnle/nle-xenial:dev            # points to latest built sha
+8.  fairnle/nle-bionic:dev            # points to latest built sha
 10. fairnle/nle-focal:dev             # points to latest built sha
 ```
 
@@ -41,4 +42,14 @@ To build any of them (e.g. `Dockerfile-bionic`) do:
 $ git clone https://github.com/facebookresearch/nle --recursive
 $ cd nle
 $ docker build -f docker/Dockerfile-bionic . -t nle:latest
+```
+
+# Using prebuilt images 
+
+You can use any prebuilt images as a base for your own Dockerfiles in the usual way:
+
+```
+FROM fairnle/nle-bionic  # Ubuntu 18.04
+
+RUN [... etc ]
 ```

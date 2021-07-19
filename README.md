@@ -81,11 +81,21 @@ $ pip install -e ".[dev]"
 $ pre-commit install
 ```
 
+On **Windows**, prebuilt docker images are hosted on our DockerHub. 
+You can test our image based on Ubuntu 18.04 and CUDA 10.2 by running:
+
+```bash
+docker pull fairnle/nle-bionic
+docker run -it fairnle/nle-bionic python -m nle.scripts.play -e NetHackChallenge-v0
+```
 
 ## Docker
 
-We have provided some docker images. Please see the [relevant
-README](docker/README.md).
+We have provided some docker images that build from source. We also host these images
+prebuild on DockerHub. There are images for Ubuntu 16.04, 18.04, 20.04 with different 
+CUDA versions as well. 
+
+Please see the [relevant README](docker/README.md) for more info.
 
 
 ## Trying it out
