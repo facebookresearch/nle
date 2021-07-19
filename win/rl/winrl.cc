@@ -362,9 +362,9 @@ NetHackRL::fill_obs(nle_obs *obs)
                on the descend message, it will be the new position.
                u.dz stays nonzero for the env step after, too, but there
                blstats will be updated. */
-            blstats_[0] = u.ux - 1; /* x coordinate, 1 <= ux <= cols */
-            blstats_[1] = u.uy;     /* y coordinate, 0 <= uy < rows */
-            blstats_[20] = moves;   /* time */
+            blstats_[NLE_BL_X] = u.ux - 1; /* x coordinate, 1 <= ux <= cols */
+            blstats_[NLE_BL_Y] = u.uy;     /* y coordinate, 0 <= uy < rows */
+            blstats_[NLE_BL_TIME] = moves;
         }
         std::memcpy(obs->blstats, &blstats_[0], sizeof(blstats_));
     }
@@ -531,37 +531,34 @@ NetHackRL::update_blstats()
     i = Upolyd ? u.mhmax : u.uhpmax;
     max_hitpoints = min(i, 9999);
 
-    long blstats[NLE_BLSTATS_SIZE] = {
-        /* Cf. botl.c. */
-        u.ux - 1,            /* x coordinate, 1 <= ux <= cols */
-        u.uy,                /* y coordinate, 0 <= uy < rows */
-        ACURRSTR,            /* strength_percentage */
-        ACURR(A_STR),        /* strength          */
-        ACURR(A_DEX),        /* dexterity         */
-        ACURR(A_CON),        /* constitution      */
-        ACURR(A_INT),        /* intelligence      */
-        ACURR(A_WIS),        /* wisdom            */
-        ACURR(A_CHA),        /* charisma          */
-        botl_score(),        /* score             */
-        hitpoints,           /* hitpoints         */
-        max_hitpoints,       /* max_hitpoints     */
-        depth(&u.uz),        /* depth             */
-        money_cnt(invent),   /* gold              */
-        min(u.uen, 9999),    /* energy            */
-        min(u.uenmax, 9999), /* max_energy        */
-        u.uac,               /* armor_class       */
-        Upolyd ? (int) mons[u.umonnum].mlevel : 0, /* monster_level     */
-        u.ulevel,                                  /* experience_level  */
-        u.uexp,                                    /* experience_points */
-        moves,                                     /* time              */
-        u.uhs,                                     /* hunger state      */
-        near_capacity(),                           /* carrying_capacity */
-        u.uz.dnum,                                 /* dungeon number */
-        u.uz.dlevel,                               /* level number */
-        condition_bits_,                           /* BL_CONDITION bit mask */
-    };
-
-    std::memcpy(blstats_, &blstats[0], sizeof(blstats));
+    /* Cf. botl.c. */
+    blstats_[NLE_BL_X] = u.ux - 1;     /* x coordinate, 1 <= ux <= cols */
+    blstats_[NLE_BL_Y] = u.uy;         /* y coordinate, 0 <= uy < rows */
+    blstats_[NLE_BL_STR25] = ACURRSTR; /* strength 3..25 */
+    blstats_[NLE_BL_STR125] = ACURR(A_STR);        /* strength 3..125   */
+    blstats_[NLE_BL_DEX] = ACURR(A_DEX);           /* dexterity         */
+    blstats_[NLE_BL_CON] = ACURR(A_CON);           /* constitution      */
+    blstats_[NLE_BL_INT] = ACURR(A_INT);           /* intelligence      */
+    blstats_[NLE_BL_WIS] = ACURR(A_WIS);           /* wisdom            */
+    blstats_[NLE_BL_CHA] = ACURR(A_CHA);           /* charisma          */
+    blstats_[NLE_BL_SCORE] = botl_score();         /* score             */
+    blstats_[NLE_BL_HP] = hitpoints;               /* hitpoints         */
+    blstats_[NLE_BL_HPMAX] = max_hitpoints;        /* max_hitpoints     */
+    blstats_[NLE_BL_DEPTH] = depth(&u.uz);         /* depth             */
+    blstats_[NLE_BL_GOLD] = money_cnt(invent);     /* gold              */
+    blstats_[NLE_BL_ENE] = min(u.uen, 9999);       /* energy            */
+    blstats_[NLE_BL_ENEMAX] = min(u.uenmax, 9999); /* max_energy        */
+    blstats_[NLE_BL_AC] = u.uac;                   /* armor_class       */
+    blstats_[NLE_BL_HD] = Upolyd ? (int) mons[u.umonnum].mlevel
+                                 : 0;       /* monster level, hit-dice */
+    blstats_[NLE_BL_XP] = u.ulevel;         /* experience level  */
+    blstats_[NLE_BL_EXP] = u.uexp;          /* experience points */
+    blstats_[NLE_BL_TIME] = moves;          /* time              */
+    blstats_[NLE_BL_HUNGER] = u.uhs;        /* hunger state      */
+    blstats_[NLE_BL_CAP] = near_capacity(); /* carrying capacity */
+    blstats_[NLE_BL_DNUM] = u.uz.dnum;      /* dungeon number */
+    blstats_[NLE_BL_DLEVEL] = u.uz.dlevel;  /* level number */
+    blstats_[NLE_BL_CONDITION] = condition_bits_; /* condition bit mask */
 }
 
 void
@@ -579,7 +576,7 @@ NetHackRL::status_update_method(int fldidx, genericptr_t ptr, int,
     } else if (fldidx == BL_CONDITION) {
         long *condptr = (long *) ptr;
         condition_bits_ = *condptr;
-        blstats_[25] = condition_bits_;
+        blstats_[NLE_BL_CONDITION] = condition_bits_;
         return;
     }
 

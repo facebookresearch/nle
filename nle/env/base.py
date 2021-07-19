@@ -33,8 +33,6 @@ ASCII_ESC = nethack.C("[")
 
 FULL_ACTIONS = nethack.USEFUL_ACTIONS
 
-BLSTATS_SCORE_INDEX = 9
-
 SKIP_EXCEPTIONS = (b"eat", b"attack", b"direction?", b"pray")
 
 TTY_BRIGHT = 8
@@ -628,8 +626,8 @@ This might contain data that shouldn't be available to agents."""
         if not self.env.in_normal_game():
             # Before game started or after it ended stats are zero.
             return 0.0
-        old_score = last_observation[self._blstats_index][BLSTATS_SCORE_INDEX]
-        score = observation[self._blstats_index][BLSTATS_SCORE_INDEX]
+        old_score = last_observation[self._blstats_index][nethack.NLE_BL_SCORE]
+        score = observation[self._blstats_index][nethack.NLE_BL_SCORE]
         del end_status  # Unused for "score" reward.
         del action  # Unused for "score reward.
         return score - old_score
