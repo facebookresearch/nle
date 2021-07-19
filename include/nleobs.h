@@ -13,6 +13,34 @@
 #define NLE_TERM_CO 80
 #define NLE_TERM_LI 24
 
+/* blstats indices, see also botl.c */
+#define NLE_BL_X 0
+#define NLE_BL_Y 1
+#define NLE_BL_STR25 2  /* strength 3..25 */
+#define NLE_BL_STR125 3 /* strength 3..125   */
+#define NLE_BL_DEX 4
+#define NLE_BL_CON 5
+#define NLE_BL_INT 6
+#define NLE_BL_WIS 7
+#define NLE_BL_CHA 8
+#define NLE_BL_SCORE 9
+#define NLE_BL_HP 10
+#define NLE_BL_HPMAX 11
+#define NLE_BL_DEPTH 12
+#define NLE_BL_GOLD 13
+#define NLE_BL_ENE 14
+#define NLE_BL_ENEMAX 15
+#define NLE_BL_AC 16
+#define NLE_BL_HD 17  /* monster level, "hit-dice" */
+#define NLE_BL_XP 18  /* experience level */
+#define NLE_BL_EXP 19 /* experience points */
+#define NLE_BL_TIME 20
+#define NLE_BL_HUNGER 21 /* hunger state */
+#define NLE_BL_CAP 22    /* carrying capacity */
+#define NLE_BL_DNUM 23
+#define NLE_BL_DLEVEL 24
+#define NLE_BL_CONDITION 25 /* condition bit mask */
+
 /* #define NLE_ALLOW_SEEDING 1 */
 
 typedef struct nle_observation {

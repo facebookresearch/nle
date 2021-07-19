@@ -319,6 +319,33 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_SCREEN_DESCRIPTION_LENGTH") =
         py::int_(NLE_SCREEN_DESCRIPTION_LENGTH);
 
+    mn.attr("NLE_BL_X") = py::int_(NLE_BL_X);
+    mn.attr("NLE_BL_Y") = py::int_(NLE_BL_Y);
+    mn.attr("NLE_BL_STR25") = py::int_(NLE_BL_STR25);
+    mn.attr("NLE_BL_STR125") = py::int_(NLE_BL_STR125);
+    mn.attr("NLE_BL_DEX") = py::int_(NLE_BL_DEX);
+    mn.attr("NLE_BL_CON") = py::int_(NLE_BL_CON);
+    mn.attr("NLE_BL_INT") = py::int_(NLE_BL_INT);
+    mn.attr("NLE_BL_WIS") = py::int_(NLE_BL_WIS);
+    mn.attr("NLE_BL_CHA") = py::int_(NLE_BL_CHA);
+    mn.attr("NLE_BL_SCORE") = py::int_(NLE_BL_SCORE);
+    mn.attr("NLE_BL_HP") = py::int_(NLE_BL_HP);
+    mn.attr("NLE_BL_HPMAX") = py::int_(NLE_BL_HPMAX);
+    mn.attr("NLE_BL_DEPTH") = py::int_(NLE_BL_DEPTH);
+    mn.attr("NLE_BL_GOLD") = py::int_(NLE_BL_GOLD);
+    mn.attr("NLE_BL_ENE") = py::int_(NLE_BL_ENE);
+    mn.attr("NLE_BL_ENEMAX") = py::int_(NLE_BL_ENEMAX);
+    mn.attr("NLE_BL_AC") = py::int_(NLE_BL_AC);
+    mn.attr("NLE_BL_HD") = py::int_(NLE_BL_HD);
+    mn.attr("NLE_BL_XP") = py::int_(NLE_BL_XP);
+    mn.attr("NLE_BL_EXP") = py::int_(NLE_BL_EXP);
+    mn.attr("NLE_BL_TIME") = py::int_(NLE_BL_TIME);
+    mn.attr("NLE_BL_HUNGER") = py::int_(NLE_BL_HUNGER);
+    mn.attr("NLE_BL_CAP") = py::int_(NLE_BL_CAP);
+    mn.attr("NLE_BL_DNUM") = py::int_(NLE_BL_DNUM);
+    mn.attr("NLE_BL_DLEVEL") = py::int_(NLE_BL_DLEVEL);
+    mn.attr("NLE_BL_CONDITION") = py::int_(NLE_BL_CONDITION);
+
     mn.attr("NLE_ALLOW_SEEDING") =
 #ifdef NLE_ALLOW_SEEDING
         true;

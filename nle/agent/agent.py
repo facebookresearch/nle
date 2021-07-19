@@ -851,9 +851,6 @@ class NetHackNet(nn.Module):
         # coordinates[:, 0].add_(-1)
 
         # -- [B x F]
-        # FIXME: hack to use compatible blstats to before
-        # blstats = blstats[:, [0, 1, 21, 10, 11]]
-
         blstats = blstats.view(T * B, -1).float()
         # -- [B x K]
         blstats_emb = self.embed_blstats(blstats)
