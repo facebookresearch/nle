@@ -558,6 +558,7 @@ NetHackRL::update_blstats()
         near_capacity(),                           /* carrying_capacity */
         u.uz.dnum,                                 /* dungeon number */
         u.uz.dlevel,                               /* level number */
+        condition_bits_,                           /* BL_CONDITION bit mask */
     };
 
     std::memcpy(blstats_, &blstats[0], sizeof(blstats));
@@ -578,6 +579,7 @@ NetHackRL::status_update_method(int fldidx, genericptr_t ptr, int,
     } else if (fldidx == BL_CONDITION) {
         long *condptr = (long *) ptr;
         condition_bits_ = *condptr;
+        blstats_[25] = condition_bits_;
         return;
     }
 
