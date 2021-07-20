@@ -41,7 +41,7 @@
 #define NLE_BL_DLEVEL 24
 #define NLE_BL_CONDITION 25 /* condition bit mask */
 
-/* #define NLE_ALLOW_SEEDING 1 */
+/* #define NLE_ALLOW_SEEDING 1 */ /* Set in CMakeLists.txt if not disabled. */
 
 typedef struct nle_observation {
     int action;
