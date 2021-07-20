@@ -81,7 +81,7 @@ $ pip install -e ".[dev]"
 $ pre-commit install
 ```
 
-On **Windows**, prebuilt docker images are hosted on our DockerHub. 
+For **Windows**, prebuilt docker images are hosted on our DockerHub. 
 You can test our image based on Ubuntu 18.04 and CUDA 10.2 by running:
 
 ```bash
