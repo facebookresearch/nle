@@ -51,8 +51,8 @@ add_compile_definitions(
   NOMAIL
   NOTPARMDECL
   AVOID_WIN_IOCTL
-  #ANSI_DEFAULT
-  #NO_SIGNAL
+  SCORE_ON_BOTL
+  # ANSI_DEFAULT NO_SIGNAL
   HACKDIR="${HACKDIR}"
   DEFAULT_WINDOW_SYS="tty"
   DLB)
@@ -69,7 +69,7 @@ set(NLE_DAT_GEN ${nle_BINARY_DIR}/dat)
 set(NLE_UTIL_GEN ${nle_BINARY_DIR}/util)
 
 # EXCLUDE_FROM_ALL: Don't install this static library into /usr/local.
-#add_subdirectory(third_party/deboost.context EXCLUDE_FROM_ALL)
+# add_subdirectory(third_party/deboost.context EXCLUDE_FROM_ALL)
 add_subdirectory(util)
 add_subdirectory(dat)
 
@@ -83,19 +83,16 @@ file(
   "sys/unix/unixmain.c"
   "sys/unix/unixres.c"
   "sys/share/unixtty.c"
-  "win/tty/*.c"
-  )
+  "win/tty/*.c")
 
-
-if (0)
+if(1)
   # nethack executable.
   add_executable(nethack ${NETHACK_SRC})
   target_link_libraries(nethack ncurses)
 else()
   # libnethack.so ELF library.
   add_library(nethack OBJECT ${NETHACK_SRC})
-  target_compile_options(nethack
-    PUBLIC -target x86_64-apple-none-elf)
+  target_compile_options(nethack PUBLIC -target x86_64-apple-none-elf)
 
   add_custom_command(
     DEPENDS $<TARGET_OBJECTS:nethack>
@@ -110,9 +107,6 @@ add_dependencies(nethack util dat)
 
 target_include_directories(
   nethack
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${NLE_INC_GEN}
-  /usr/local/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libtmt
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/deboost.context/include)
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${NLE_INC_GEN} /usr/local/include
+         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libtmt
+         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/deboost.context/include)
