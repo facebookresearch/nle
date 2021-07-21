@@ -27,12 +27,14 @@ README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 ![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/master/dat/nle/example_run.gif)
 
 # Papers using the NetHack Learning Environment
-- Izumiya and Simo-Serra [Inventory Management with Attention-Based Meta Actions](https://esslab.jp/~ess/publications/IzumiyaCOG2021.pdf) (Waseda University, CoG 2021)
-- Samvelyan et al. [MiniHack the Planet: A Sandbox for Open-Ended Reinforcement Learning Research](https://openreview.net/forum?id=skFwlyefkWJ) (FAIR, UCL, Oxford, June 2021)
-- Zhang et al. [BeBold: Exploration Beyond the Boundary of Explored Regions](https://arxiv.org/abs/2012.08621) (Berkley, FAIR, Dec 2020)
-- Küttler et al. [The NetHack Learning Environment](https://arxiv.org/abs/2006.13760) (FAIR, Oxford, NYU, Imperial, UCL, NeurIPS 2020)
+- Izumiya and Simo-Serra [Inventory Management with Attention-Based Meta Actions](https://esslab.jp/~ess/publications/IzumiyaCOG2021.pdf) (Waseda University, CoG 2021).
+- Samvelyan et al. [MiniHack the Planet: A Sandbox for Open-Ended Reinforcement Learning Research](https://openreview.net/forum?id=skFwlyefkWJ) (FAIR, UCL, Oxford, June 2021).
+- Zhang et al. [BeBold: Exploration Beyond the Boundary of Explored Regions](https://arxiv.org/abs/2012.08621) (Berkley, FAIR, Dec 2020).
+- Küttler et al. [The NetHack Learning Environment](https://arxiv.org/abs/2006.13760) (FAIR, Oxford, NYU, Imperial, UCL, NeurIPS 2020).
 
-Open a [pull request](https://github.com/facebookresearch/nle/edit/master/README.md) to add papers
+Open a [pull
+request](https://github.com/facebookresearch/nle/edit/master/README.md)
+to add papers.
 
 # Getting started
 
@@ -42,7 +44,7 @@ with other gym / RL environments.
 
 ## Installation
 
-NLE requires `python>=3.5`, `cmake>=3.14` to be installed and available both when building the
+NLE requires `python>=3.5`, `cmake>=3.15` to be installed and available both when building the
 package, and at runtime.
 
 On **MacOS**, one can use `Homebrew` as follows:
@@ -173,7 +175,7 @@ $ python -m nle.scripts.plot
 # Contributing
 
 We welcome contributions to NLE. If you are interested in contributing please
-see [this document](./CONTRIBUTING.md)
+see [this document](./CONTRIBUTING.md).
 
 
 # Architecture
@@ -202,7 +204,7 @@ lower level elements of NLE.
 - [Obstacle Tower](https://github.com/Unity-Technologies/obstacle-tower-env)
 
 # Interview about the environment with Weights&Biases
-[Facebook AI Research’s Tim & Heinrich on democratizing reinforcement learning research](https://www.youtube.com/watch?v=oYSNXTkeCtw)
+[Facebook AI Research’s Tim & Heiner on democratizing reinforcement learning research.](https://www.youtube.com/watch?v=oYSNXTkeCtw)
 
 [![Interview with Weigths&Biases](https://img.youtube.com/vi/oYSNXTkeCtw/0.jpg)](https://www.youtube.com/watch?v=oYSNXTkeCtw)
 
