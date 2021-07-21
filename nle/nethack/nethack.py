@@ -115,7 +115,7 @@ class Nethack:
         # Symlink a nhdat.
         os.symlink(os.path.join(hackdir, "nhdat"), os.path.join(self._vardir, "nhdat"))
         # Touch a few files.
-        for fn in ["perm", "logfile", "xlogfile"]:
+        for fn in ["perm", "record", "logfile", "xlogfile"]:
             os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
         os.mkdir(os.path.join(self._vardir, "save"))
 
