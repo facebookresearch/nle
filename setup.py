@@ -46,6 +46,9 @@ class CMakeBuild(build_ext.build_ext):
 
         generator = "Ninja" if spawn.find_executable("ninja") else "Unix Makefiles"
 
+        use_seeding = os.environ.get("USE_SEEDING", "ON")
+        use_seeding = {"1": "ON", "0": "OFF"}.get(use_seeding, use_seeding.upper())
+
         cmake_cmd = [
             "cmake",
             str(source_path),
@@ -59,13 +62,8 @@ class CMakeBuild(build_ext.build_ext):
             "-DHACKDIR=%s" % hackdir_path,
             "-DPYTHON_INCLUDE_DIR=%s" % sysconfig.get_python_inc(),
             "-DPYTHON_LIBRARY=%s" % sysconfig.get_config_var("LIBDIR"),
+            "-DUSE_SEEDING=%s" % use_seeding,
         ]
-
-        use_seeding = os.environ.get("USE_SEEDING", True)
-        if use_seeding == "OFF":
-            use_seeding = False
-        if not int(use_seeding):
-            cmake_cmd.append("-DUSE_SEEDING=OFF")
 
         build_cmd = ["cmake", "--build", ".", "--parallel"]
         install_cmd = ["cmake", "--install", "."]
