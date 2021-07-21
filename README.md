@@ -2,8 +2,12 @@
 
 --------------------------------------------------------------------------------
 
-[![CircleCI](https://circleci.com/gh/facebookresearch/nle.svg?style=shield)](https://circleci.com/gh/facebookresearch/nle) [![PyPI version](https://img.shields.io/pypi/v/nle.svg)](https://pypi.python.org/pypi/nle/)
- [![Downloads](https://static.pepy.tech/personalized-badge/nle?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/nle)
+[![CircleCI](https://circleci.com/gh/facebookresearch/nle.svg?style=shield)](https://circleci.com/gh/facebookresearch/nle)
+[![GitHub](https://github.com/facebookresearch/nle/actions/workflows/test_and_deploy.yml/badge.svg?branch=master)](https://github.com/facebookresearch/nle/actions/workflows/build_docker.yml)
+[![PyPI version](https://img.shields.io/pypi/v/nle.svg)](https://pypi.python.org/pypi/nle/)
+[![Downloads](https://static.pepy.tech/personalized-badge/nle?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/nle)
+
+
 
 The NetHack Learning Environment (NLE) is a Reinforcement Learning environment presented at [NeurIPS 2020](https://neurips.cc/Conferences/2020).
 NLE is based on [NetHack 3.6.6](https://github.com/NetHack/NetHack/tree/NetHack-3.6.6_PostRelease) and designed to provide a standard RL interface to the game, and comes with tasks that function as a first step to evaluate agents on this new environment.
@@ -168,20 +172,20 @@ $ python -m nle.scripts.plot
 
 # Contributing
 
-We welcome contributions to NLE. If you are interested in contributing please 
-see [this document](./CONTRIBUTING.md) 
+We welcome contributions to NLE. If you are interested in contributing please
+see [this document](./CONTRIBUTING.md)
 
 
 # Architecture
 
-NLE is direct fork of [NetHack](https://github.com/nethack/nethack) and 
+NLE is direct fork of [NetHack](https://github.com/nethack/nethack) and
 therefore contains code that operates on many different levels of abstraction.
-This ranges from low-level game logic, to the higher-level administration of 
+This ranges from low-level game logic, to the higher-level administration of
 repeated nethack games, and finally to binding of these games to Python `gym`
 environment.
 
 If you want to learn more about the architecture of `nle` and how it works
-under the hood, checkout the [architecture document](./doc/nle/ARCHITECTURE.md). 
+under the hood, checkout the [architecture document](./doc/nle/ARCHITECTURE.md).
 This may be a useful starting point for anyone looking to contribute to the
 lower level elements of NLE.
 
