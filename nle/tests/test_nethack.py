@@ -436,16 +436,9 @@ class TestNethackTerminalObservation:
     def test_crop(self, game):
         tty_chars, tty_colors, _, chars, colors = game.reset()
 
-        g_chars = chars.reshape(-1)
-        g_cols = colors.reshape(-1)
-
-        # DUNGEON is [21, 79], TTY is [24, 80]. Crop as follows  to get alignment.
-        t_chars = tty_chars[1:-2, :-1].reshape(-1)
-        t_cols = tty_colors[1:-2, :-1].reshape(-1)
-
-        for g_char, g_col, t_char, t_col in zip(g_chars, g_cols, t_chars, t_cols):
-            assert g_char == t_char
-            assert g_col == t_col
+        # DUNGEON is [21, 79], TTY is [24, 80]. Crop to get alignment.
+        np.testing.assert_array_equal(chars, tty_chars[1:-2, :-1])
+        np.testing.assert_array_equal(colors, tty_colors[1:-2, :-1])
 
 
 class TestNethackMiscObservation:
