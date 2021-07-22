@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 channel = "->"
 
             data = re.sub(
-                r"\\x1b\[([0-9];?)*.", lambda m: (color(m.group(0), 8), str(data))
+                r"\\x1b\[([0-9];?)*.", lambda m: color(m.group(0), 8), str(data)
             )
             data = re.sub(
                 r"(\\x1b\(0)(.*?)(\\x1b\(B)",
