@@ -19,10 +19,10 @@
 #include <bzlib.h>
 #endif
 
-#define STACK_SIZE (1 << 15) // 32KiB
+#define STACK_SIZE (1 << 15) /* 32KiB */
 
 #ifndef __has_feature
-#define __has_feature(x) 0 // Compatibility with non-clang compilers.
+#define __has_feature(x) 0 /* Compatibility with non-clang compilers. */
 #endif
 
 #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
@@ -46,32 +46,35 @@ vt_char_color_extract(TMTCHAR *c)
     signed char color = 0;
     switch (c->a.fg) {
     case (TMT_COLOR_DEFAULT):
-        color =
-            (c->c == 32) ? CLR_BLACK : CLR_GRAY; // ' ' is BLACK else WHITE
+        color = (c->c == ' ') ? CLR_BLACK : CLR_GRAY; /* ' ' is 0 else 7 */
         break;
     case (TMT_COLOR_BLACK):
-        color = (c->a.bold) ? NO_COLOR : CLR_BLACK; // c = 8:0
+        /* "bright black" is dark gray. Non-bright black is black and
+           therefore invisible on the assumed black background. NetHack
+           shouldn't use it. So we assume bright black, which is 8 (also,
+           confusingly, NO_COLOR, but that's an aside). */
+        color = 8;
         break;
     case (TMT_COLOR_RED):
-        color = (c->a.bold) ? CLR_ORANGE : CLR_RED; // c = 9:1
+        color = (c->a.bold) ? CLR_ORANGE : CLR_RED; /* == 9:1 */
         break;
     case (TMT_COLOR_GREEN):
-        color = (c->a.bold) ? CLR_BRIGHT_GREEN : CLR_GREEN; // c = 10:2
+        color = (c->a.bold) ? CLR_BRIGHT_GREEN : CLR_GREEN; /* == 10:2 */
         break;
     case (TMT_COLOR_YELLOW):
-        color = (c->a.bold) ? CLR_YELLOW : CLR_BROWN; // c = 11:3
+        color = (c->a.bold) ? CLR_YELLOW : CLR_BROWN; /* == 11:3 */
         break;
     case (TMT_COLOR_BLUE):
-        color = (c->a.bold) ? CLR_BRIGHT_BLUE : CLR_BLUE; // c = 12:4
+        color = (c->a.bold) ? CLR_BRIGHT_BLUE : CLR_BLUE; /* == 12:4 */
         break;
     case (TMT_COLOR_MAGENTA):
-        color = (c->a.bold) ? CLR_BRIGHT_MAGENTA : CLR_MAGENTA; // c = 13:5
+        color = (c->a.bold) ? CLR_BRIGHT_MAGENTA : CLR_MAGENTA; /* == 13:5 */
         break;
     case (TMT_COLOR_CYAN):
-        color = (c->a.bold) ? CLR_BRIGHT_CYAN : CLR_CYAN; // c = 14:6
+        color = (c->a.bold) ? CLR_BRIGHT_CYAN : CLR_CYAN; /* == 14:6 */
         break;
     case (TMT_COLOR_WHITE):
-        color = (c->a.bold) ? CLR_WHITE : CLR_GRAY; // c = 15:7
+        color = (c->a.bold) ? CLR_WHITE : CLR_GRAY; /* == 15:7 */
         break;
     case (TMT_COLOR_MAX):
         break;
@@ -124,7 +127,7 @@ nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
 
     case TMT_MSG_MOVED:
         if (nle->observation->tty_cursor) {
-            // cast from size_t is safe from overflow, since r,c < 256
+            /* cast from size_t is safe from overflow, since r,c < 256 */
             nle->observation->tty_cursor[0] = (unsigned char) cur->r;
             nle->observation->tty_cursor[1] = (unsigned char) cur->c;
         }

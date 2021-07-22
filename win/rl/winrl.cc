@@ -930,6 +930,11 @@ NetHackRL::rl_print_glyph(winid wid, XCHAR_P x, XCHAR_P y, int glyph,
     // No win_proc_calls entry here.
     if (wid == WIN_MAP) {
         instance->store_glyph(x, y, glyph);
+        if (glyph != nul_glyph && color == CLR_BLACK) {
+            /* This will be 'bright black' (or blue) on tty so we change it to
+             * make NLE's colors and tty_colors stay compatible. */
+            color = iflags.wc2_darkgray ? 8 : CLR_BLUE;
+        }
         instance->store_mapped_glyph(ch, color, special, x, y);
         if (nle_get_obs()->screen_descriptions) {
             instance->store_screen_description(x, y, glyph);
