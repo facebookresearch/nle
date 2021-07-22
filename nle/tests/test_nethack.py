@@ -508,3 +508,16 @@ class TestNethackMiscObservation:
         game.step(ord(" "))
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
+
+
+class TestAuxillaryFunctions:
+    def test_tty_render(self):
+        text = ["DE", "HV"]
+        chars = np.array([[ord(c) for c in line] for line in text])
+        colors = np.array([[1, 2], [3, 14]])
+        cursor = (0, 1)
+
+        expected = (
+            "\n\033[0;31mD\033[4m\033[0;32mE\033[0m\n\033[0;33mH\033[1;36mV\033[0m"
+        )
+        assert expected == nethack.tty_render(chars, colors, cursor)

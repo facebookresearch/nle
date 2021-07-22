@@ -10,4 +10,5 @@ from nle.nethack.nethack import (
     PROGRAM_STATE_SHAPE,
     INTERNAL_SHAPE,
     OBSERVATION_DESC,
+    tty_render,
 )

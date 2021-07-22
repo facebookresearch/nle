@@ -118,6 +118,8 @@ class TestGymEnv:
 
     def test_default_wizard_mode(self, env_name, wizard):
         if wizard:
+            if env_name.startswith("NetHackChallenge-"):
+                pytest.skip("No wizard mode in NetHackChallenge")
             env = gym.make(env_name, wizard=wizard)
             assert "playmode:debug" in env.env._options
         else:
