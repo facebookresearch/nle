@@ -79,7 +79,7 @@ def play():
             ttyrec = os.path.join(FLAGS.savedir, "nle.ttyrec.bz2")
         else:
             ttyrec = "/dev/null"
-        env = nethack.Nethack(ttyrec=ttyrec)
+        env = nethack.Nethack(ttyrec=ttyrec, wizard=FLAGS.wizard)
     else:
         env = gym.make(
             FLAGS.env,
@@ -87,6 +87,7 @@ def play():
             max_episode_steps=FLAGS.max_steps,
             allow_all_yn_questions=True,
             allow_all_modes=True,
+            wizard=FLAGS.wizard,
         )
         if FLAGS.seeds is not None:
             env.seed(FLAGS.seeds)
@@ -116,15 +117,13 @@ def play():
                 print("-" * 8)
                 print(obs["blstats"])
                 if not FLAGS.print_frames_separately:
-                    print("\033[33A")  # Go up 33 lines.
+                    print("\033[33A")  # Go back up.
             else:
                 print("Previous action:", action)
-                _, chars, _, _, blstats, message, *_ = obs
-                msg = bytes(message)
-                print(msg[: msg.index(b"\0")])
-                for line in chars:
-                    print(line.tobytes().decode("utf-8"))
-                print(blstats)
+                obs = dict(zip(nle.nethack.OBSERVATION_DESC.keys(), obs))
+                print(nle.nethack.tty_render(obs["tty_chars"], obs["tty_colors"]))
+                if not FLAGS.print_frames_separately:
+                    print("\033[%dA" % (len(obs["tty_chars"]) + 3))  # Go back up.
 
         action = get_action(env, is_raw_env)
 
@@ -238,6 +237,12 @@ def main():
         "-p",
         action="store_true",
         help="Don't overwrite frames, print them all.",
+    )
+    parser.add_argument(
+        "--wizard",
+        "-D",
+        action="store_true",
+        help="Use wizard mode.",
     )
     global FLAGS
     FLAGS = parser.parse_args()

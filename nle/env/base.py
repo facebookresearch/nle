@@ -35,8 +35,6 @@ FULL_ACTIONS = nethack.USEFUL_ACTIONS
 
 SKIP_EXCEPTIONS = (b"eat", b"attack", b"direction?", b"pray")
 
-TTY_BRIGHT = 8
-
 NLE_SPACE_ITEMS = (
     (
         "glyphs",
@@ -247,6 +245,7 @@ class NLE(gym.Env):
                 If set to True, do not decline menus, text input or auto 'MORE'.
                 If set to False, only skip click through 'MORE' on death.
         """
+        del archivefile  # TODO: Remove once we change the API.
 
         self.character = character
         self._max_episode_steps = max_episode_steps
@@ -541,21 +540,6 @@ This might contain data that shouldn't be available to agents."""
         """
         return self.env.get_current_seeds()
 
-    def get_tty_rendering(self, tty_chars, tty_colors):
-        # TODO: Merge with "full" rendering below. Why do we have both?
-        rows, cols = tty_chars.shape
-        result = ""
-        for i in range(rows):
-            line = "\n"
-            for j in range(cols):
-                line += "\033[%d;3%dm%s" % (
-                    bool(tty_colors[i, j] & TTY_BRIGHT),
-                    tty_colors[i, j] & ~TTY_BRIGHT,
-                    chr(tty_chars[i, j]),
-                )
-            result += line
-        return result + "\033[0m"
-
     def render(self, mode="human"):
         """Renders the state of the environment."""
         chars_index = self._observation_keys.index("chars")
@@ -565,8 +549,7 @@ This might contain data that shouldn't be available to agents."""
             tty_colors_index = self._observation_keys.index("tty_colors")
             tty_chars = obs[tty_chars_index]
             tty_colors = obs[tty_colors_index]
-            rendering = self.get_tty_rendering(tty_chars, tty_colors)
-            print(rendering)
+            print(nethack.tty_render(tty_chars, tty_colors))
             return
         elif mode == "full":
             message_index = self._observation_keys.index("message")
@@ -589,17 +572,7 @@ This might contain data that shouldn't be available to agents."""
             colors_index = self._observation_keys.index("colors")
             chars = self.last_observation[chars_index]
             colors = self.last_observation[colors_index]
-            rows, cols = chars.shape
-            nh_HE = "\033[0m"
-            for r in range(rows):
-                for c in range(cols):
-                    # cf. termcap.c.
-                    start_color = "\033[%d" % bool(colors[r][c] & TTY_BRIGHT)
-                    start_color += ";3%d" % (colors[r][c] & ~TTY_BRIGHT)
-                    start_color += "m"
-
-                    print(start_color + chr(chars[r][c]), end=nh_HE)
-                print("")
+            print(nethack.tty_render(chars, colors))
             return
         elif mode == "ansi":
             chars = self.last_observation[chars_index]

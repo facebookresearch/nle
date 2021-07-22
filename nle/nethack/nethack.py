@@ -77,10 +77,24 @@ def _set_env_vars(options, hackdir, wizkit=None):
         os.environ["WIZKIT"] = os.path.join(hackdir, wizkit)
 
 
+def tty_render(chars, colors):
+    """Return colored string for 2D chars array using 2D colors array."""
+    rows, cols = chars.shape
+    result = ""
+    for i in range(rows):
+        line = "\n"
+        for j in range(cols):
+            line += "\033[%d;3%dm%s" % (
+                # & 8 checks for brightness.
+                bool(colors[i, j] & 8),
+                colors[i, j] & ~8,
+                chr(chars[i, j]),
+            )
+        result += line
+    return result + "\033[0m"
+
+
 # TODO: Not thread-safe for many reasons.
-# TODO: On Linux, we could use dlmopen to use different linker namespaces,
-# which should allow several instances of this. On MacOS, that seems
-# a tough call.
 class Nethack:
     _instances = 0
 

@@ -327,6 +327,7 @@ class NetHackChallenge(NetHackScore):
         **kwargs,
     ):
         actions = nethack.ACTIONS
+        kwargs["wizard"] = False
         super().__init__(
             *args,
             actions=actions,
