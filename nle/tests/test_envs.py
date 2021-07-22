@@ -6,9 +6,9 @@ import random
 import sys
 import tempfile
 
+import gym
 import numpy as np
 import pytest
-import gym
 
 import nle
 import nle.env

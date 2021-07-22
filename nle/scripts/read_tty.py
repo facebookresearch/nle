@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-import struct
 import os
 import re
+import struct
 
 
 def ttyframes(f, tty2=True):

@@ -1,13 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import os
-import pkg_resources
 import shutil
 import tempfile
 
 import numpy as np
+import pkg_resources
 
 from nle import _pynethack
-
 
 DLPATH = os.path.join(os.path.dirname(_pynethack.__file__), "libnethack.so")
 

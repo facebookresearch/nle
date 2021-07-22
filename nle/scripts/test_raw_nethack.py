@@ -1,14 +1,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import contextlib
-import termios
-import timeit
 import random
 import sys
+import termios
+import timeit
 
 import numpy as np
 
 from nle import nethack
-
 
 SELF_PLAY_EPISODES = 2
 

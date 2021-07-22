@@ -24,3 +24,8 @@ repos:
         entry: nle/scripts/run-clang-format
         language: system
         files: ^(src\/nle|include\/nle|win\/rl)\.(c|cc|cxx|cpp|cu|h|hpp|hxx|cuh|proto)$
+-   repo: https://github.com/pycqa/isort
+    rev: 5.8.0
+    hooks:
+      - id: isort
+        name: isort (python)

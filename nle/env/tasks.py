@@ -3,9 +3,8 @@ import enum
 
 import numpy as np
 
-from nle.env import base
 from nle import nethack
-
+from nle.env import base
 
 TASK_ACTIONS = tuple(
     [nethack.MiscAction.MORE]

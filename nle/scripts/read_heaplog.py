@@ -1,8 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 
 import collections
-import sys
 import pprint
+import sys
 
 Entry = collections.namedtuple("Entry", "size hash line file")
 

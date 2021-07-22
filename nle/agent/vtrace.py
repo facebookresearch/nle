@@ -32,7 +32,6 @@ import collections
 import torch
 import torch.nn.functional as F
 
-
 VTraceFromLogitsReturns = collections.namedtuple(
     "VTraceFromLogitsReturns",
     [
