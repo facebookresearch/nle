@@ -542,16 +542,16 @@ This might contain data that shouldn't be available to agents."""
 
     def render(self, mode="human"):
         """Renders the state of the environment."""
-        chars_index = self._observation_keys.index("chars")
+
         if mode == "human":
             obs = self.last_observation
-            tty_chars_index = self._observation_keys.index("tty_chars")
-            tty_colors_index = self._observation_keys.index("tty_colors")
-            tty_chars = obs[tty_chars_index]
-            tty_colors = obs[tty_colors_index]
-            print(nethack.tty_render(tty_chars, tty_colors))
+            tty_chars = obs[self._observation_keys.index("tty_chars")]
+            tty_colors = obs[self._observation_keys.index("tty_colors")]
+            tty_cursor = obs[self._observation_keys.index("tty_cursor")]
+            print(nethack.tty_render(tty_chars, tty_colors, tty_cursor))
             return
-        elif mode == "full":
+
+        if mode == "full":
             message_index = self._observation_keys.index("message")
             message = bytes(self.last_observation[message_index])
             print(message[: message.index(b"\0")])
@@ -569,16 +569,18 @@ This might contain data that shouldn't be available to agents."""
                     )
             except ValueError:  # inv_strs/letters not used.
                 pass
-            colors_index = self._observation_keys.index("colors")
-            chars = self.last_observation[chars_index]
-            colors = self.last_observation[colors_index]
+
+            chars = self.last_observation[self._observation_keys.index("chars")]
+            colors = self.last_observation[self._observation_keys.index("colors")]
             print(nethack.tty_render(chars, colors))
             return
-        elif mode == "ansi":
-            chars = self.last_observation[chars_index]
+
+        if mode in ("ansi", "string"):  # Misnomer: This is the least ANSI of them all.
+            chars = self.last_observation[self._observation_keys.index("chars")]
+            # TODO: Why return a string here but print in the other branches?
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
-        else:
-            return super().render(mode=mode)
+
+        return super().render(mode=mode)
 
     def __repr__(self):
         return "<%s>" % self.__class__.__name__

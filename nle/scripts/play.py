@@ -39,6 +39,10 @@ def no_echo():
         termios.tcsetattr(0, termios.TCSAFLUSH, tt)
 
 
+def go_back(num_lines):
+    print("\033[%dA" % num_lines)
+
+
 def get_action(env, is_raw_env):
     if FLAGS.mode == "random":
         if not is_raw_env:
@@ -117,13 +121,17 @@ def play():
                 print("-" * 8)
                 print(obs["blstats"])
                 if not FLAGS.print_frames_separately:
-                    print("\033[33A")  # Go back up.
+                    go_back(num_lines=33)
             else:
                 print("Previous action:", action)
                 obs = dict(zip(nle.nethack.OBSERVATION_DESC.keys(), obs))
-                print(nle.nethack.tty_render(obs["tty_chars"], obs["tty_colors"]))
+                print(
+                    nle.nethack.tty_render(
+                        obs["tty_chars"], obs["tty_colors"], obs["tty_cursor"]
+                    )
+                )
                 if not FLAGS.print_frames_separately:
-                    print("\033[%dA" % (len(obs["tty_chars"]) + 3))  # Go back up.
+                    go_back(num_lines=len(obs["tty_chars"]) + 3)
 
         action = get_action(env, is_raw_env)
 

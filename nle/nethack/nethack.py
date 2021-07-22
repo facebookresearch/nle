@@ -77,20 +77,36 @@ def _set_env_vars(options, hackdir, wizkit=None):
         os.environ["WIZKIT"] = os.path.join(hackdir, wizkit)
 
 
-def tty_render(chars, colors):
-    """Return colored string for 2D chars array using 2D colors array."""
+def tty_render(chars, colors, cursor=None):
+    """Returns chars as string with ANSI escape sequences.
+
+    Args:
+      chars: A row x columns numpy array of chars.
+      colors: A numpy array of colors (0-15), same shape as chars.
+      cursor: An optional (row, column) index for the cursor,
+        displayed as underlined.
+
+    Returns:
+      A string with chars decorated by ANSI escape sequences.
+    """
     rows, cols = chars.shape
+    if cursor is None:
+        cursor = (-1, -1)
+    cursor = tuple(cursor)
     result = ""
     for i in range(rows):
-        line = "\n"
+        result += "\n"
         for j in range(cols):
-            line += "\033[%d;3%dm%s" % (
+            entry = "\033[%d;3%dm%s" % (
                 # & 8 checks for brightness.
                 bool(colors[i, j] & 8),
                 colors[i, j] & ~8,
                 chr(chars[i, j]),
             )
-        result += line
+            if cursor != (i, j):
+                result += entry
+            else:
+                result += "\033[4m%s\033[0m" % entry
     return result + "\033[0m"
 
 
