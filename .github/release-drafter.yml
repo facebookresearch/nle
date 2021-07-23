@@ -20,7 +20,7 @@ template: |
 
   Install with pip: `pip install nle==$NEXT_PATCH_VERSION`.
 
-  Or pull the docker image: `docker pull fairnle/nle:$NEXT_PATCH_VERSION`.
+  Or pull the Docker image: `docker pull fairnle/nle:$NEXT_PATCH_VERSION`.
 
   See [README.md](https://github.com/facebookresearch/nle/blob/v$NEXT_PATCH_VERSION/README.md) and/or [docker/README.md](https://github.com/facebookresearch/nle/blob/v$NEXT_PATCH_VERSION/docker/README.md) for further instructions.
 

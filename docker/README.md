@@ -1,6 +1,6 @@
 # Docker images for NLE
 
-This directory -- i.e., `docker/` -- contains some docker images that we use for
+This directory -- i.e., `docker/` -- contains some Docker images that we use for
 testing both locally and in CI. They contain dependencies and a pre-built
 version of NLE.
 
@@ -18,9 +18,9 @@ The DockerHub repository also contains pre-built images per each released
 version of `nle`, following a specific templates:
 
 ``` bash
-3.  fairnle/nle-xenial:<nle-version>  # Based on Ubuntu 16.04, CUDA 10.2, cuDNN 7
-3.  fairnle/nle-bionic:<nle-version>  # Based on Ubuntu 18.04, CUDA 10.2, cuDNN 7
-4.  fairnle/nle-focal:<nle-version>   # Based on Ubuntu 20.04, CUDA 11.0, cuDNN 8
+3.  fairnle/nle-xenial:<nle-version>  # based on Ubuntu 16.04, CUDA 10.2, cuDNN 7
+3.  fairnle/nle-bionic:<nle-version>  # based on Ubuntu 18.04, CUDA 10.2, cuDNN 7
+4.  fairnle/nle-focal:<nle-version>   # based on Ubuntu 20.04, CUDA 11.0, cuDNN 8
 3.  fairnle/nle-xenial:latest         # points to latest built version
 3.  fairnle/nle-bionic:latest         # points to latest built version
 4.  fairnle/nle-focal:latest          # points to latest built version
