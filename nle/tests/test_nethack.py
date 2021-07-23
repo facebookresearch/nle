@@ -57,7 +57,7 @@ class TestNetHack:
         chars, blstats = game.reset()
 
         assert chars.shape == (21, 79)
-        assert blstats.shape == (25,)
+        assert blstats.shape == (26,)
 
         game.step(ord("y"))
         game.step(ord("y"))
@@ -436,16 +436,9 @@ class TestNethackTerminalObservation:
     def test_crop(self, game):
         tty_chars, tty_colors, _, chars, colors = game.reset()
 
-        g_chars = chars.reshape(-1)
-        g_cols = colors.reshape(-1)
-
-        # DUNGEON is [21, 79], TTY is [24, 80]. Crop as follows  to get alignment.
-        t_chars = tty_chars[1:-2, :-1].reshape(-1)
-        t_cols = tty_colors[1:-2, :-1].reshape(-1)
-
-        for g_char, g_col, t_char, t_col in zip(g_chars, g_cols, t_chars, t_cols):
-            assert g_char == t_char
-            assert g_col == t_col
+        # DUNGEON is [21, 79], TTY is [24, 80]. Crop to get alignment.
+        np.testing.assert_array_equal(chars, tty_chars[1:-2, :-1])
+        np.testing.assert_array_equal(colors, tty_colors[1:-2, :-1])
 
 
 class TestNethackMiscObservation:
@@ -515,3 +508,16 @@ class TestNethackMiscObservation:
         game.step(ord(" "))
         assert np.all(misc == 0)
         np.testing.assert_array_equal(misc, internal[1:4])
+
+
+class TestAuxillaryFunctions:
+    def test_tty_render(self):
+        text = ["DE", "HV"]
+        chars = np.array([[ord(c) for c in line] for line in text])
+        colors = np.array([[1, 2], [3, 14]])
+        cursor = (0, 1)
+
+        expected = (
+            "\n\033[0;31mD\033[4m\033[0;32mE\033[0m\n\033[0;33mH\033[1;36mV\033[0m"
+        )
+        assert expected == nethack.tty_render(chars, colors, cursor)

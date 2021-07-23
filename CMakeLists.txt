@@ -56,6 +56,15 @@ add_compile_definitions(
   DLB
   NOCWD_ASSUMPTIONS)
 
+option(USE_SEEDING "Use seeding support in NLE" ON)
+
+if(USE_SEEDING)
+  add_compile_definitions(NLE_ALLOW_SEEDING)
+  message("Seeding enabled.")
+else()
+  message("Seeding disabled.")
+endif()
+
 set(NLE_SRC ${nle_SOURCE_DIR}/src)
 set(NLE_INC ${nle_SOURCE_DIR}/include)
 set(NLE_DAT ${nle_SOURCE_DIR}/dat)

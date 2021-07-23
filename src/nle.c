@@ -19,10 +19,10 @@
 #include <bzlib.h>
 #endif
 
-#define STACK_SIZE (1 << 15) // 32KiB
+#define STACK_SIZE (1 << 15) /* 32KiB */
 
 #ifndef __has_feature
-#define __has_feature(x) 0 // Compatibility with non-clang compilers.
+#define __has_feature(x) 0 /* Compatibility with non-clang compilers. */
 #endif
 
 #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
@@ -36,47 +36,29 @@ vt_char_color_extract(TMTCHAR *c)
 {
     /* We pick out the colors in the enum tmt_color_t. These match the order
      * found standard in IBM color graphics, and are the same order as those
-     * found in src/color.h. We take the values from color.h, and choose
-     * default to be bright black (NO_COLOR) as nethack does.
-     *
-     * Finally we indicate whether the color is reverse, by indicating the
-     * sign
-     * of the final integer.
-     */
-    signed char color = 0;
-    switch (c->a.fg) {
-    case (TMT_COLOR_DEFAULT):
-        color =
-            (c->c == 32) ? CLR_BLACK : CLR_GRAY; // ' ' is BLACK else WHITE
-        break;
-    case (TMT_COLOR_BLACK):
-        color = (c->a.bold) ? NO_COLOR : CLR_BLACK; // c = 8:0
-        break;
-    case (TMT_COLOR_RED):
-        color = (c->a.bold) ? CLR_ORANGE : CLR_RED; // c = 9:1
-        break;
-    case (TMT_COLOR_GREEN):
-        color = (c->a.bold) ? CLR_BRIGHT_GREEN : CLR_GREEN; // c = 10:2
-        break;
-    case (TMT_COLOR_YELLOW):
-        color = (c->a.bold) ? CLR_YELLOW : CLR_BROWN; // c = 11:3
-        break;
-    case (TMT_COLOR_BLUE):
-        color = (c->a.bold) ? CLR_BRIGHT_BLUE : CLR_BLUE; // c = 12:4
-        break;
-    case (TMT_COLOR_MAGENTA):
-        color = (c->a.bold) ? CLR_BRIGHT_MAGENTA : CLR_MAGENTA; // c = 13:5
-        break;
-    case (TMT_COLOR_CYAN):
-        color = (c->a.bold) ? CLR_BRIGHT_CYAN : CLR_CYAN; // c = 14:6
-        break;
-    case (TMT_COLOR_WHITE):
-        color = (c->a.bold) ? CLR_WHITE : CLR_GRAY; // c = 15:7
-        break;
-    case (TMT_COLOR_MAX):
-        break;
+     * found in src/color.h.  */
+
+    /* TODO: We no longer need *signed* chars. Let's change the dtype of
+     * tty_chars when we change the API next. */
+
+    signed char color;
+
+    if (c->a.fg == TMT_COLOR_DEFAULT) {
+        /* Need to make a choice for default color. To stay compatible with
+           NetHack, choose black for the "null glyph", gray otherwise. */
+        color = (c->c == ' ') ? CLR_BLACK : CLR_GRAY; /* 0 or 7 */
+    } else if (c->a.fg < TMT_COLOR_MAX) {
+        color = c->a.fg - TMT_COLOR_BLACK + CLR_BLACK; /* TMT color offset. */
+        if (c->a.bold) {
+            color |= BRIGHT;
+        }
+    } else {
+        fprintf(stderr, "Illegal color %d\n", (int) c->a.fg);
+        color = CLR_GRAY;
     }
 
+    /* The above is 0..15. For "reverse" colors (bg/fg swap), let's
+     * use 16..31. */
     if (c->a.reverse) {
         color += CLR_MAX;
     }
@@ -124,7 +106,7 @@ nle_vt_callback(tmt_msg_t m, TMT *vt, const void *a, void *p)
 
     case TMT_MSG_MOVED:
         if (nle->observation->tty_cursor) {
-            // cast from size_t is safe from overflow, since r,c < 256
+            /* cast from size_t is safe from overflow, since r,c < 256 */
             nle->observation->tty_cursor[0] = (unsigned char) cur->r;
             nle->observation->tty_cursor[1] = (unsigned char) cur->c;
         }

@@ -13,6 +13,9 @@
 #  HACKDIR
 #    If set, install NetHack's data files in this directory.
 #
+#  USE_SEEDING
+#    If set, seeding is disabled in all NLE environments.
+#
 import os
 import pathlib
 import subprocess
@@ -43,6 +46,9 @@ class CMakeBuild(build_ext.build_ext):
 
         generator = "Ninja" if spawn.find_executable("ninja") else "Unix Makefiles"
 
+        use_seeding = os.environ.get("USE_SEEDING", "ON")
+        use_seeding = {"1": "ON", "0": "OFF"}.get(use_seeding, use_seeding.upper())
+
         cmake_cmd = [
             "cmake",
             str(source_path),
@@ -56,6 +62,7 @@ class CMakeBuild(build_ext.build_ext):
             "-DHACKDIR=%s" % hackdir_path,
             "-DPYTHON_INCLUDE_DIR=%s" % sysconfig.get_python_inc(),
             "-DPYTHON_LIBRARY=%s" % sysconfig.get_config_var("LIBDIR"),
+            "-DUSE_SEEDING=%s" % use_seeding,
         ]
 
         build_cmd = ["cmake", "--build", ".", "--parallel"]

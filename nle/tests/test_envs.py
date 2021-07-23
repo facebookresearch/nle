@@ -118,6 +118,8 @@ class TestGymEnv:
 
     def test_default_wizard_mode(self, env_name, wizard):
         if wizard:
+            if env_name.startswith("NetHackChallenge-"):
+                pytest.skip("No wizard mode in NetHackChallenge")
             env = gym.make(env_name, wizard=wizard)
             assert "playmode:debug" in env.env._options
         else:
@@ -385,17 +387,14 @@ class TestGymDynamics:
 
 class TestNetHackChallenge:
     def test_no_seed_setting(self):
-        assert not nethack.NLE_ALLOW_SEEDING
-
-        MESSAGE = "Should not try changing seeds"
-
         env = gym.make("NetHackChallenge-v0")
         with pytest.raises(
             RuntimeError, match="NetHackChallenge doesn't allow seed changes"
         ):
             env.seed()
-        with pytest.raises(RuntimeError, match=MESSAGE):
+        with pytest.raises(RuntimeError, match="Should not try changing seeds"):
             env.env.set_initial_seeds(0, 0, True)
 
-        with pytest.raises(RuntimeError, match="Seeding not enabled"):
-            env.env._pynethack.set_initial_seeds(0, 0, True)
+        if not nethack.NLE_ALLOW_SEEDING:
+            with pytest.raises(RuntimeError, match="Seeding not enabled"):
+                env.env._pynethack.set_initial_seeds(0, 0, True)

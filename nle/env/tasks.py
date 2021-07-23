@@ -57,8 +57,8 @@ class NetHackScore(base.NLE):
         blstats_old = last_observation[self._blstats_index]
         blstats_new = observation[self._blstats_index]
 
-        old_time = blstats_old[20]  # moves
-        new_time = blstats_new[20]  # moves
+        old_time = blstats_old[nethack.NLE_BL_TIME]
+        new_time = blstats_new[nethack.NLE_BL_TIME]
 
         if old_time == new_time:
             self._frozen_steps += 1
@@ -208,8 +208,8 @@ class NetHackGold(NetHackScore):
         old_blstats = last_observation[self._blstats_index]
         blstats = observation[self._blstats_index]
 
-        old_gold = old_blstats[13]
-        gold = blstats[13]
+        old_gold = old_blstats[nethack.NLE_BL_GOLD]
+        gold = blstats[nethack.NLE_BL_GOLD]
 
         time_penalty = self._get_time_penalty(last_observation, observation)
 
@@ -273,7 +273,8 @@ class NetHackScout(NetHackScore):
         glyphs = observation[self._glyph_index]
         blstats = observation[self._blstats_index]
 
-        dungeon_num, dungeon_level = blstats[23:25]
+        dungeon_num = blstats[nethack.NLE_BL_DNUM]
+        dungeon_level = blstats[nethack.NLE_BL_DLEVEL]
 
         key = (dungeon_num, dungeon_level)
         explored = np.sum(glyphs != 0)
@@ -326,6 +327,7 @@ class NetHackChallenge(NetHackScore):
         **kwargs,
     ):
         actions = nethack.ACTIONS
+        kwargs["wizard"] = False
         super().__init__(
             *args,
             actions=actions,
@@ -358,7 +360,7 @@ class NetHackChallenge(NetHackScore):
         """Check if time has stopped and no observations has changed long enough
         to trigger an abort."""
 
-        turns = observation[self._blstats_index][20]
+        turns = observation[self._blstats_index][nethack.NLE_BL_TIME]
         if self._turns == turns:
             self._no_progress_count += 1
         else:
