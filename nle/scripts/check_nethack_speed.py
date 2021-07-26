@@ -1,14 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import multiprocessing as mp
 import random
 import sys
 import time
 import timeit
-import multiprocessing as mp
 import traceback
 
-
 from nle import nethack
-
 
 ACTIONS = [nethack.MiscAction.MORE]
 ACTIONS += list(nethack.CompassDirection)

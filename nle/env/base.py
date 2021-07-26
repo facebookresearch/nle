@@ -16,7 +16,6 @@ import numpy as np
 
 from nle import nethack
 
-
 logger = logging.getLogger(__name__)
 
 DUNGEON_SHAPE = nethack.DUNGEON_SHAPE

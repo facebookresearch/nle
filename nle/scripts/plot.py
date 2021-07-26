@@ -45,12 +45,12 @@ python -m nle.scripts.plot path/to/multiple_runs/2020 --xrange 0,1e8 --yrange='-
 """
 
 import argparse
+import random
+from pathlib import Path
+
 import gnuplotlib as gp
 import numpy as np
 import pandas as pd
-import random
-
-from pathlib import Path
 
 
 def str_to_float_pair(s):

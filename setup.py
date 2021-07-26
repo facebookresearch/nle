@@ -20,11 +20,11 @@ import os
 import pathlib
 import subprocess
 import sys
+from distutils import spawn
+from distutils import sysconfig
 
 import setuptools
 from setuptools.command import build_ext
-from distutils import spawn
-from distutils import sysconfig
 
 
 class CMakeBuild(build_ext.build_ext):

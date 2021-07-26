@@ -4,8 +4,8 @@
 import argparse
 import ast
 import contextlib
-import random
 import os
+import random
 import termios
 import time
 import timeit
@@ -15,7 +15,6 @@ import gym
 
 import nle  # noqa: F401
 from nle import nethack
-
 
 _ACTIONS = tuple(
     [nethack.MiscAction.MORE]

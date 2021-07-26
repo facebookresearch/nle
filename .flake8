@@ -6,5 +6,4 @@ max-complexity = 18
 select = B,C,E,F,W,T4,B9
 per-file-ignores = nle/*__init__.py: F401
 exclude =
-    nle/fbs
     win/rl/nle

@@ -5,11 +5,10 @@ import timeit
 import warnings
 
 import numpy as np
-
 import pytest
 
-from nle import nethack, _pynethack
-
+from nle import _pynethack
+from nle import nethack
 
 # MORE + compass directions + long compass directions.
 ACTIONS = [

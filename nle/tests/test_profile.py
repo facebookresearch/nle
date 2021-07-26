@@ -7,11 +7,11 @@
 # to run
 import os
 
+import gym
+import numpy as np
 import pytest
 
-import numpy as np
 import nle  # noqa: F401
-import gym
 
 BASE_KEYS = ["glyphs", "message", "blstats"]
 MAPPED_GLYPH = ["chars", "colors", "specials"]

@@ -9,7 +9,8 @@ A diff output is produced and a sensible exit code is returned.
 Taken originally from https://github.com/Sarcasm/run-clang-format
 """
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import argparse
 import codecs
@@ -22,7 +23,6 @@ import signal
 import subprocess
 import sys
 import traceback
-
 from functools import partial
 
 try:

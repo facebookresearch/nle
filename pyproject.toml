@@ -10,3 +10,27 @@ exclude = '''
   | win/rl/nethack_rl
 )/
 '''
+
+[tool.isort]
+force_single_line = true
+profile = "black"
+skip_glob = "**/__init__.py"
+
+[tool.pylint.messages_control]
+disable = [
+  "missing-class-docstring",
+  "invalid-name",  # pylint is very strict.
+  "missing-class-docstring",
+  "missing-function-docstring",
+  "missing-module-docstring",
+  "c-extension-no-member",
+  "no-member",  # too many false positives.
+]
+[tool.pylint.typecheck]
+generated-members=["numpy.*", "torch.*", "nle._pynethack.*"]
+[tool.pylint.design]
+max-args=15  # Maximum number of arguments for function / method.
+max-attributes=50  # Maximum number of attributes for a class (see R0902).
+max-bool-expr=5  # Maximum number of boolean expressions in an if statement (see R0916).
+max-branches=15  # Maximum number of branch for function / method body.
+max-locals=30  # Maximum number of locals for function / method body.
