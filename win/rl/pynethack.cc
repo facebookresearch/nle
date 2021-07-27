@@ -427,10 +427,10 @@ PYBIND11_MODULE(_pynethack, m)
     // From botl.h.
     mn.attr("BL_MASK_STONE") = py::int_(static_cast<int>(BL_MASK_STONE));
     mn.attr("BL_MASK_SLIME") = py::int_(static_cast<int>(BL_MASK_SLIME));
-    mn.attr("BL_MASK_STRNGL  ") = py::int_(static_cast<int>(BL_MASK_STRNGL));
+    mn.attr("BL_MASK_STRNGL") = py::int_(static_cast<int>(BL_MASK_STRNGL));
     mn.attr("BL_MASK_FOODPOIS") =
         py::int_(static_cast<int>(BL_MASK_FOODPOIS));
-    mn.attr("BL_MASK_TERMILL ") = py::int_(static_cast<int>(BL_MASK_TERMILL));
+    mn.attr("BL_MASK_TERMILL") = py::int_(static_cast<int>(BL_MASK_TERMILL));
     mn.attr("BL_MASK_BLIND") = py::int_(static_cast<int>(BL_MASK_BLIND));
     mn.attr("BL_MASK_DEAF") = py::int_(static_cast<int>(BL_MASK_DEAF));
     mn.attr("BL_MASK_STUN") = py::int_(static_cast<int>(BL_MASK_STUN));
