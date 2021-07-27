@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import os
 import shutil
+import sys
 import tempfile
 
 import numpy as np
@@ -76,6 +77,37 @@ def _set_env_vars(options, hackdir, wizkit=None):
         os.environ["WIZKIT"] = os.path.join(hackdir, wizkit)
 
 
+def _new_dl_linux(vardir):
+    if hasattr(os, "memfd_create"):
+        target = os.memfd_create("nle.so")
+        path = "/proc/self/fd/%i" % target
+        try:
+            shutil.copyfile(DLPATH, path)  # Should use sendfile.
+        except IOError:
+            os.close(target)
+            raise
+        return os.fdopen(target), path
+
+    # Otherwise, no memfd_create. Try with O_TMPFILE via the tempfile module.
+    dl = tempfile.TemporaryFile(suffix="libnethack.so", dir=vardir)
+    path = "/proc/self/fd/%i" % dl.fileno()
+    shutil.copyfile(DLPATH, path)  # Should use sendfile.
+    return dl, path
+
+
+def _new_dl(vardir):
+    """Creates a copied .so file to allow for multiple independent NLE instances"""
+    if sys.platform == "linux":
+        return _new_dl_linux(vardir)
+
+    # MacOS has no memfd_create or O_TMPFILE. Using /dev/fd/{FD} as an argument
+    # to dlopen doesn't work after unlinking from the file system. So let's copy
+    # instead and hope vardir gets properly deleted at some point.
+    dl = tempfile.NamedTemporaryFile(suffix="libnethack.so", dir=vardir)
+    shutil.copyfile(DLPATH, dl.name)  # Might use fcopyfile.
+    return dl, dl.name
+
+
 def tty_render(chars, colors, cursor=None):
     """Returns chars as string with ANSI escape sequences.
 
@@ -148,9 +180,11 @@ class Nethack:
             os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
         os.mkdir(os.path.join(self._vardir, "save"))
 
-        # Hacky AF: Copy our so into this directory to load several copies ...
-        dlpath = os.path.join(self._vardir, "libnethack.so")
-        shutil.copyfile(DLPATH, dlpath)
+        # An assortment of hacks:
+        #   Copy our .so into self._vardir to load several copies of the dl.
+        #   (Or use a memfd_create hack to create a file that gets deleted on
+        #    process exit.)
+        self._dl, dlpath = _new_dl(self._vardir)
 
         if options is None:
             options = NETHACKOPTIONS
@@ -214,6 +248,9 @@ class Nethack:
             os.chdir(self._oldcwd)
         except IOError:
             os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        if self._dl is not None:
+            self._dl.close()
+            self._dl = None
         self._tempdir.cleanup()
 
     def set_initial_seeds(self, core, disp, reseed=False):
