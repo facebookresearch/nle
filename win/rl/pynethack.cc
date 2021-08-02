@@ -651,4 +651,31 @@ PYBIND11_MODULE(_pynethack, m)
                         od.oc_descr ? py::str(od.oc_descr)
                                     : py::object(py::none()));
         });
+
+    py::class_<symdef>(mn, "symdef")
+        .def_static(
+            "from_idx",
+            [](int idx) -> const symdef * {
+                if (idx < 0 || idx >= MAXPCHARS)
+                    throw std::out_of_range(
+                        "Argument should be between 0 and MAXPCHARS ("
+                        + std::to_string(MAXPCHARS) + ") but got "
+                        + std::to_string(idx));
+                return &defsyms[idx];
+            },
+            py::return_value_policy::reference)
+        .def_readonly("sym", &symdef::sym)
+        .def_readonly("explanation", &symdef::explanation)
+#ifdef TEXTCOLOR
+        .def_readonly("color", &symdef::color)
+#endif
+        .def("__repr__", [](const symdef &sd) {
+            // clang-format doesn't like the _s UDL.
+            // clang-format off
+            return "<nethack.symdef sym={!r} explanation={!r}>"_s
+                // clang-format on
+                .format(std::string(1, sd.sym), sd.explanation
+                                                    ? py::str(sd.explanation)
+                                                    : py::object(py::none()));
+        });
 }

@@ -335,6 +335,17 @@ class TestNethackFunctionsAndConstants:
         assert idx == elven_dagger.oc_name_idx
         assert nethack.objdescr.from_idx(idx) is od
 
+    def test_symdef(self):
+        tree_cmap_offset = 18  # Cf. drawing.c.
+        tree_glyph = nethack.GLYPH_CMAP_OFF + tree_cmap_offset
+        sd = nethack.symdef.from_idx(tree_cmap_offset)
+
+        assert tree_cmap_offset == nethack.glyph_to_cmap(tree_glyph)
+        assert sd.sym == ord("#")
+        assert sd.explanation == "tree"
+        assert sd.color == 2  # CLR_GREEN.
+        assert str(sd) == "<nethack.symdef sym='#' explanation='tree'>"
+
 
 class TestNethackGlanceObservation:
     @pytest.fixture
