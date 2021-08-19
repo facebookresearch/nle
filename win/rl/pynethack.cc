@@ -539,6 +539,8 @@ PYBIND11_MODULE(_pynethack, m)
                       &permonst::mflags2) /* more boolean bitflags */
         .def_readonly("mflags3",
                       &permonst::mflags3) /* yet more boolean bitflags */
+        .def_readonly("difficulty",
+                      &permonst::difficulty) /* monster difficulty */
 #ifdef TEXTCOLOR
         .def_readonly("mcolor", &permonst::mcolor) /* color to use */
 #endif
