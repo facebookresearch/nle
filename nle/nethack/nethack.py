@@ -3,6 +3,8 @@ import os
 import shutil
 import sys
 import tempfile
+import warnings
+import weakref
 
 import numpy as np
 import pkg_resources
@@ -108,6 +110,17 @@ def _new_dl(vardir):
     return dl, dl.name
 
 
+def _close(pynethack, dl, tempdir, warn=True):
+    if pynethack is not None:
+        pynethack.close()
+    if dl is not None:
+        dl.close()
+    if tempdir is not None:
+        tempdir.cleanup()
+    if warn:
+        warnings.warn("nethack.Nethack instance not closed", ResourceWarning)
+
+
 def tty_render(chars, colors, cursor=None):
     """Returns chars as string with ANSI escape sequences.
 
@@ -169,10 +182,6 @@ class Nethack:
         self._tempdir = tempfile.TemporaryDirectory(prefix="nle")
         self._vardir = self._tempdir.name
 
-        # Save cwd and restore later. Currently libnethack changes
-        # directory on loading.
-        self._oldcwd = os.getcwd()
-
         # Symlink a nhdat.
         os.symlink(os.path.join(hackdir, "nhdat"), os.path.join(self._vardir, "nhdat"))
         # Touch a few files.
@@ -199,6 +208,10 @@ class Nethack:
         else:
             self._pynethack = _pynethack.Nethack(dlpath, ttyrec, spawn_monsters)
         self._ttyrec = ttyrec
+
+        self._finalizer = weakref.finalize(
+            self, _close, self._pynethack, self._dl, self._tempdir
+        )
 
         self._obs_buffers = {}
 
@@ -243,15 +256,11 @@ class Nethack:
         return self._step_return()
 
     def close(self):
-        self._pynethack.close()
-        try:
-            os.chdir(self._oldcwd)
-        except IOError:
-            os.chdir(os.path.dirname(os.path.realpath(__file__)))
-        if self._dl is not None:
-            self._dl.close()
-            self._dl = None
-        self._tempdir.cleanup()
+        if self._finalizer.detach():
+            _close(self._pynethack, self._dl, self._tempdir, warn=False)
+        self._pynethack = None
+        self._dl = None
+        self._tempdir = None
 
     def set_initial_seeds(self, core, disp, reseed=False):
         self._pynethack.set_initial_seeds(core, disp, reseed)
