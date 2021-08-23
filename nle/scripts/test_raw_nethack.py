@@ -9,7 +9,7 @@ import numpy as np
 
 from nle import nethack
 
-SELF_PLAY_EPISODES = 2
+SELF_PLAY_EPISODES = 0
 
 
 @contextlib.contextmanager
@@ -54,14 +54,18 @@ def main():
     nle.step(ord("\n"))
 
     steps = 0
+    total_start_time = timeit.default_timer()
     start_time = timeit.default_timer()
     start_steps = steps
 
     mean_sps = 0
     sps_n = 0
 
-    for episode in range(0):
-        while True:
+    num_episodes = 100
+    max_episode_length = 1000
+
+    for episode in range(num_episodes):
+        for _ in range(max_episode_length):
             ch = random.choice(ACTIONS)
             _, done = nle.step(ch)
             if done:
@@ -69,7 +73,7 @@ def main():
 
             steps += 1
 
-            if steps % 1000 == 0:
+            if steps % 10000 == 0:
                 end_time = timeit.default_timer()
                 sps = (steps - start_steps) / (end_time - start_time)
                 sps_n += 1
@@ -77,10 +81,15 @@ def main():
                 print("%f SPS" % sps)
                 start_time = end_time
                 start_steps = steps
-        print("Finished episode %i after %i steps." % (episode + 1, steps))
+        if episode % 100 == 0:
+            print("Finished episode %i after %i steps." % (episode + 1, steps))
         nle.reset()
 
-    print("Finished after %i steps. Mean sps: %f" % (steps, mean_sps))
+    total_time = timeit.default_timer() - total_start_time
+    print(
+        "Finished after %i steps (%i episodes) and %.2f sec. Mean sps: %f"
+        % (steps, num_episodes, total_time, steps / total_time)
+    )
 
     for i in range(SELF_PLAY_EPISODES):
         print("Starting self-play episode", i)
