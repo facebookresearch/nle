@@ -556,7 +556,7 @@ typedef unsigned char uchar;
    whole thing, then type a new end for the text. */
 /* #define EDIT_GETLIN */
 
-#define DUMPLOG  /* End-of-game dump logs */
+/* #define DUMPLOG */  /* End-of-game dump logs */
 #ifdef DUMPLOG
 
 #ifndef DUMPLOG_MSG_COUNT
