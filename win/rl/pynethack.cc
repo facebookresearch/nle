@@ -248,6 +248,8 @@ class Nethack
     void
     reset(FILE *ttyrec)
     {
+        py::gil_scoped_release gil;
+
         if (!nle_) {
             nle_ = nle_start(
                 dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_,
