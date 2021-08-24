@@ -248,6 +248,8 @@ class Nethack
     void
     reset(FILE *ttyrec)
     {
+        py::gil_scoped_release gil;
+
         if (!nle_) {
             nle_ = nle_start(
                 dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_,
@@ -282,10 +284,8 @@ PYBIND11_MODULE(_pynethack, m)
              py::arg("spawn_monsters"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
-        .def("reset", py::overload_cast<>(&Nethack::reset),
-             py::call_guard<py::gil_scoped_release>())
-        .def("reset", py::overload_cast<std::string>(&Nethack::reset),
-             py::call_guard<py::gil_scoped_release>())
+        .def("reset", py::overload_cast<>(&Nethack::reset))
+        .def("reset", py::overload_cast<std::string>(&Nethack::reset))
         .def("set_buffers", &Nethack::set_buffers,
              py::arg("glyphs") = py::none(), py::arg("chars") = py::none(),
              py::arg("colors") = py::none(), py::arg("specials") = py::none(),
