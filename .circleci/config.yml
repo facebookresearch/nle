@@ -18,12 +18,13 @@ commands:
   fix-git:
     # circleci normally sets master to the head of the checked branch
     # which is not great, since we use `origin/master` for file diffs.
-    description: Moves checked master branch to origin/master
+    # (Updated for switch to "main" on Sept 2021)
+    description: Moves checked main branch to origin/main
     steps:
       - run:
-          name: Fix repo's master branch
+          name: Fix repo's main branch
           command: |
-            ( [[ "$CIRCLE_BRANCH" != "master" ]] && git branch -f master origin/master ) || true
+            ( [[ "$CIRCLE_BRANCH" != "main" ]] && git branch -f main origin/main ) || true
 
   setup-conda:
     description: Sets up a conda environment
@@ -202,4 +203,4 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main

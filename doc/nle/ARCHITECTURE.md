@@ -1,7 +1,7 @@
 # Architecture
 
 This document is aims to clarify the architecture of NLE, to assist those
-looking to contribute to fundamental development.  
+looking to contribute to fundamental development.
 
 ## Preface
 
@@ -16,10 +16,10 @@ Below we examine the these layers from lowest to highest:
 ### Layer 0: “Original” NetHack Game Logic
 
 - **part of `libnethack.so`**
-- **key directories & files** [`src/`](https://github.com/facebookresearch/nle/blob/master/src),
-[`include/`](https://github.com/facebookresearch/nle/blob/master/include),
-[`dat/`](https://github.com/facebookresearch/nle/blob/master/dat),
-[`src/allmain.c`](https://github.com/facebookresearch/nle/blob/master/src/allmain.c)
+- **key directories & files** [`src/`](https://github.com/facebookresearch/nle/blob/main/src),
+[`include/`](https://github.com/facebookresearch/nle/blob/main/include),
+[`dat/`](https://github.com/facebookresearch/nle/blob/main/dat),
+[`src/allmain.c`](https://github.com/facebookresearch/nle/blob/main/src/allmain.c)
 
 
 * The original nethack game is written purely in C, found mainly in `src` and
@@ -28,18 +28,18 @@ Below we examine the these layers from lowest to highest:
 file to keep track of the internal state of the game, rendering the gamely
 utterly un-threadsafe.
 * The game logic itself starts in  `allmain.c`  where the game is started with
-[`void moveloop(bool resuming)`](https://github.com/facebookresearch/nle/blob/master/src/allmain.c#L23).
+[`void moveloop(bool resuming)`](https://github.com/facebookresearch/nle/blob/main/src/allmain.c#L23).
 This function never returns, instead it runs an infinite loop
-[(line 83)](https://github.com/facebookresearch/nle/blob/master/src/allmain.c#L83),
+[(line 83)](https://github.com/facebookresearch/nle/blob/main/src/allmain.c#L83),
 and may be interrupted either by the player or completing the game.
 
 ### Layer 1: Interacting with NetHack Game Logic: Windows and Window Procs
 
 - **part of `libnethack.so`**
-- **key directories & files** [`win/rl`](https://github.com/facebookresearch/nle/blob/master/win/rl),
-[`win/tty`](https://github.com/facebookresearch/nle/blob/master/win/tty),
-[`src/windows.c`](https://github.com/facebookresearch/nle/blob/master/src/windows.c),
-[`include/winprocs.h`](https://github.com/facebookresearch/nle/blob/master/include/winprocs.h)
+- **key directories & files** [`win/rl`](https://github.com/facebookresearch/nle/blob/main/win/rl),
+[`win/tty`](https://github.com/facebookresearch/nle/blob/main/win/tty),
+[`src/windows.c`](https://github.com/facebookresearch/nle/blob/main/src/windows.c),
+[`include/winprocs.h`](https://github.com/facebookresearch/nle/blob/main/include/winprocs.h)
 
 
 * Periodically the game may need input from the player, or need to return
@@ -47,29 +47,29 @@ something to be displayed to the player. To allow a variety of interfaces to be
 exposed to the player (ie tty, mobile, atari etc), a developer must implement
 and provide a number functions to the game, as a standard contract.
 * The full api is described in
-[`doc/window.doc`](https://github.com/facebookresearch/nle/blob/master/doc/window.doc),
+[`doc/window.doc`](https://github.com/facebookresearch/nle/blob/main/doc/window.doc),
 and is defined in `include/winprocs.h`. The object to be provided to the game is the
 `struct window_procs`, which is (largely) a struct of pointers to functions.
 * Once a developer has implemented this struct, it can be added to the chosen
 `window_procs` in `src/windows.c`, via some macros. Our `window_procs` struct
 is `extern`'d there under the name `rl_procs`.
 * The implementation of `rl_procs` is found in
-[`win/rl/winrl.cc`](https://github.com/facebookresearch/nle/blob/master/win/rl/winrl.cc).  
+[`win/rl/winrl.cc`](https://github.com/facebookresearch/nle/blob/main/win/rl/winrl.cc).
 In this C++ file we implement a `class NetHackRL` that will contain all our
 functions, and then we declare the struct `rl_procs` to point to the appropriate
 methods.
 * Our implementation of the `window_procs` wrap heavily around existing tty
 `window_procs` found in
-[`win/tty/wintty.c`](https://github.com/facebookresearch/nle/blob/master/win/tty/wintty.c)
+[`win/tty/wintty.c`](https://github.com/facebookresearch/nle/blob/main/win/tty/wintty.c)
 but allows us to control the capture of information and when to send it to the
-user.  
+user.
 
 ### Layer 2: Yielding from NetHack Game Logic: Context Switching and the “nethack-stack”
 
 - **part of `libnethack.so`**
-- **key directories & files** [`src/nle.c`](https://github.com/facebookresearch/nle/blob/master/src/nle.c),
-[`include/nle.h`](https://github.com/facebookresearch/nle/blob/master/include/nle.h),
-[`include/nleobs.h`](https://github.com/facebookresearch/nle/blob/master/include/nleobs.h)
+- **key directories & files** [`src/nle.c`](https://github.com/facebookresearch/nle/blob/main/src/nle.c),
+[`include/nle.h`](https://github.com/facebookresearch/nle/blob/main/include/nle.h),
+[`include/nleobs.h`](https://github.com/facebookresearch/nle/blob/main/include/nleobs.h)
 
 
 * In our case the user “playing” the game is not a terminal, but ultimately a
@@ -77,14 +77,14 @@ python program that we want to be able to run and execute at the same time. In
 fact we want to be able to step through nethack and our python code (roughly)
 simultaneously.  For performance reasons we chose to do this all in the same
 thread, stepping through each program in turn. This will require context
-switching for each program.   
+switching for each program.
 * Since our context switching needs to be in C++,  we will use
 `<fcontext/fcontext.h>`, and we will write a “layer” that wraps around the
 nethack game, allocating a stack on the heap to play it (the “nethack-stack“),
 and swapping into it periodically when we need to step through the game. To
 allow the game to yield back to the caller, we also implement a yielding
 function which we will need to insert into the relevant `rl_procs` described
-above.  
+above.
 * Our “layer” is a group of functions found in `src/nle.c`, exposed in
 `include/nle.h`.  Alongside these functions we add the yielding function
 `nle_yield` which will be used to cede control from the nethack-stack, back to
@@ -120,15 +120,15 @@ user.:
 ### Layer 3: Dynamic Library Loading: Resetting the Game
 
 - **library:** libnethackdl.a,
-- **key directories & files:** [`sys/unix/nledl.c`](https://github.com/facebookresearch/nle/blob/master/sys/unix/nledl.c),
-[`include/nledl.h`](https://github.com/facebookresearch/nle/blob/master/include/nledl.h),
-[`sys/unix/rlmain.cc`](https://github.com/facebookresearch/nle/blob/master/sys/unix/rlmain.cc)
+- **key directories & files:** [`sys/unix/nledl.c`](https://github.com/facebookresearch/nle/blob/main/sys/unix/nledl.c),
+[`include/nledl.h`](https://github.com/facebookresearch/nle/blob/main/include/nledl.h),
+[`sys/unix/rlmain.cc`](https://github.com/facebookresearch/nle/blob/main/sys/unix/rlmain.cc)
 
 
 * Now that we have a means of playing the game in `libnethack.so`, we would
 like to reset the game when it finishes.  However, as mentioned above, nethack
 ends a game abruptly by sending a signal to its `moveloop` leaving the libraries
-global state as is.  
+global state as is.
 * Since there is no way to reset this manually, we will need to reset the
 library by loading it ‘from scratch’, using `dlopen` and `dlclose`, so we can play
 again.
@@ -145,11 +145,11 @@ nethack, instead of `nle.h`, and in fact we can test this with the file
 ### Layer 4: Binding to Python: Exposing the Game
 
 - **libraries:** `_pynethack.cpython-37.*`
-- **key directories & files:**[`pynethack.cc`](https://github.com/facebookresearch/nle/blob/master/win/rl/pynethack.cc),
-[`src/monst.c`](https://github.com/facebookresearch/nle/blob/master/src/monst.c),
-[`src/objects.c`](https://github.com/facebookresearch/nle/blob/master/src/objects.c),
-[`src/decl.c`](https://github.com/facebookresearch/nle/blob/master/src/decl.c),
-[`src/drawing.c`](https://github.com/facebookresearch/nle/blob/master/src/drawing.c)
+- **key directories & files:**[`pynethack.cc`](https://github.com/facebookresearch/nle/blob/main/win/rl/pynethack.cc),
+[`src/monst.c`](https://github.com/facebookresearch/nle/blob/main/src/monst.c),
+[`src/objects.c`](https://github.com/facebookresearch/nle/blob/main/src/objects.c),
+[`src/decl.c`](https://github.com/facebookresearch/nle/blob/main/src/decl.c),
+[`src/drawing.c`](https://github.com/facebookresearch/nle/blob/main/src/drawing.c)
 
 
 * Now that we have a means of playing the game, we need to bind our commands to
@@ -165,9 +165,9 @@ These include items found in `src/monst.c`, `src/decl.c`, `src/drawing.c`,
 
 ### Layer 5: Calling from Python: Playing A Copy of the Game
 
-- **libraries:** [`nle`](https://github.com/facebookresearch/nle/blob/master/nle)
-- **key directories & files:** [`nle/nethack/*.py`](https://github.com/facebookresearch/nle/blob/master/nle/nethack),
-[`nle/env/*.py`](https://github.com/facebookresearch/nle/blob/master/nle/env)
+- **libraries:** [`nle`](https://github.com/facebookresearch/nle/blob/main/nle)
+- **key directories & files:** [`nle/nethack/*.py`](https://github.com/facebookresearch/nle/blob/main/nle/nethack),
+[`nle/env/*.py`](https://github.com/facebookresearch/nle/blob/main/nle/env)
 
 
 * The `class nle.nethack.Nethack` is our Python interface to the game. It does

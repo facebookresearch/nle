@@ -3,7 +3,7 @@ name: Lintcheck C/C++
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - "src/nle**.c"
       - "include/nle**.h"
