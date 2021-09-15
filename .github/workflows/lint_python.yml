@@ -4,7 +4,7 @@ name: Lintcheck Python
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - "**.py"
   pull_request:

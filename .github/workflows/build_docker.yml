@@ -12,7 +12,7 @@ on:
       # we use releases instead.
       - "*"
     branches:
-      - master
+      - main
   pull_request:
     paths:
       - "docker/Dockerfile*"
@@ -40,7 +40,7 @@ jobs:
         tags: dev
         tag_with_sha: true
         add_git_labels: true
-        push: ${{ github.ref == 'master' || ( github.event_name == 'release' && github.even.action == 'released' ) }} 
+        push: ${{ github.ref == 'main' || ( github.event_name == 'release' && github.even.action == 'released' ) }}
     - name: Check Version Matches Release Tag (Release Only)
       if: github.event_name == 'release' && github.event.action == 'released'
       run: |

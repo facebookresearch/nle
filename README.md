@@ -1,9 +1,9 @@
-![NetHack Learning Environment (NLE)](https://github.com/facebookresearch/nle/raw/master/dat/nle/logo.png)
+![NetHack Learning Environment (NLE)](https://github.com/facebookresearch/nle/raw/main/dat/nle/logo.png)
 
 --------------------------------------------------------------------------------
 
 [![CircleCI](https://circleci.com/gh/facebookresearch/nle.svg?style=shield)](https://circleci.com/gh/facebookresearch/nle)
-[![GitHub](https://github.com/facebookresearch/nle/actions/workflows/test_and_deploy.yml/badge.svg?branch=master)](https://github.com/facebookresearch/nle/actions/workflows/build_docker.yml)
+[![GitHub](https://github.com/facebookresearch/nle/actions/workflows/test_and_deploy.yml/badge.svg?branch=main)](https://github.com/facebookresearch/nle/actions/workflows/build_docker.yml)
 [![PyPI version](https://img.shields.io/pypi/v/nle.svg)](https://pypi.python.org/pypi/nle/)
 [![Downloads](https://static.pepy.tech/personalized-badge/nle?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/nle)
 
@@ -24,7 +24,7 @@ You can read more about NLE in the [NeurIPS 2020 paper](https://arxiv.org/abs/20
 README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 [NetHack wiki](https://nethackwiki.com).
 
-![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/master/dat/nle/example_run.gif)
+![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/main/dat/nle/example_run.gif)
 
 # Papers using the NetHack Learning Environment
 - Izumiya and Simo-Serra [Inventory Management with Attention-Based Meta Actions](https://esslab.jp/~ess/publications/IzumiyaCOG2021.pdf) (Waseda University, CoG 2021).
@@ -33,7 +33,7 @@ README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 - Küttler et al. [The NetHack Learning Environment](https://arxiv.org/abs/2006.13760) (FAIR, Oxford, NYU, Imperial, UCL, NeurIPS 2020).
 
 Open a [pull
-request](https://github.com/facebookresearch/nle/edit/master/README.md)
+request](https://github.com/facebookresearch/nle/edit/main/README.md)
 to add papers.
 
 # Getting started
