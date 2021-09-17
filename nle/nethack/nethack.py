@@ -195,6 +195,9 @@ class Nethack:
         #    process exit.)
         self._dl, dlpath = _new_dl(self._vardir)
 
+        # Finalize even when the rest of this constructor fails.
+        self._finalizer = weakref.finalize(self, _close, None, self._dl, self._tempdir)
+
         if options is None:
             options = NETHACKOPTIONS
         self._options = list(options) + ["name:" + playername]
@@ -209,6 +212,7 @@ class Nethack:
             self._pynethack = _pynethack.Nethack(dlpath, ttyrec, spawn_monsters)
         self._ttyrec = ttyrec
 
+        self._finalizer.detach()
         self._finalizer = weakref.finalize(
             self, _close, self._pynethack, self._dl, self._tempdir
         )
