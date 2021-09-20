@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import multiprocessing as mp
+import random
 
 import gym
 import pytest
@@ -32,3 +33,26 @@ class TestEnvSubprocess:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+
+ACTIONS = [0, 1, 2]
+
+
+class TestParallelEnvs:
+    def test_two_nles(self):
+        envs = [gym.make("NetHackScore-v0") for _ in range(2)]
+
+        env, *queue = envs
+        env.reset()
+
+        num_resets = 1
+
+        while num_resets < 10:
+            _, _, done, _ = env.step(random.choice(ACTIONS))
+            if done:
+                print("one env done")
+                queue.append(env)
+                env = queue.pop(0)
+                print("about to reset one env")
+                env.reset()
+                num_resets += 1
