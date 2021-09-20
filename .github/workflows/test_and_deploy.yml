@@ -13,6 +13,26 @@ on:
 
 
 jobs:
+  test_license:
+    name: Check license headers
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get changed files
+       id: changed-files
+       uses: tj-actions/changed-files@v1.1.2
+
+    - name: Check copyright header in added files
+    - shell: bash
+    - run: |
+        missing=0
+        for file in "${{ steps.changed-files.outputs.added_files }}"; do
+          if ! egrep -q '(Facebook, Inc(\.|,)? and its affiliates)|([0-9]{4}-present(\.|,)? Facebook)|([0-9]{4}(\.|,)? Facebook)' $file
+          echo "Missing copyright header in $file"
+          missing=$(expr $missing + 1)
+        done
+        exit $missing
+
   test_repo:
     name: Test on ${{ matrix.os }} w/ Py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
@@ -142,4 +162,3 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_TOKEN }}
-...
