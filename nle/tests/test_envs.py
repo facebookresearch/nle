@@ -385,6 +385,22 @@ class TestGymDynamics:
         assert reward == 0.0
 
 
+class TestEnvMisc:
+    """Tests miscellaneous enviroment behavior."""
+
+    @pytest.fixture
+    def env(self):
+        e = gym.make("NetHackScore-v0")
+        try:
+            yield e
+        finally:
+            e.close()
+
+    def test_no_reset(self, env):
+        with pytest.raises(RuntimeError, match="step called without reset()"):
+            env.step(0)
+
+
 class TestNetHackChallenge:
     def test_no_seed_setting(self):
         env = gym.make("NetHackChallenge-v0")
