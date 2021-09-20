@@ -1,6 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import multiprocessing as mp
+import queue
 import random
+import threading
 
 import gym
 import pytest
@@ -50,9 +52,41 @@ class TestParallelEnvs:
         while num_resets < 10:
             _, _, done, _ = env.step(random.choice(ACTIONS))
             if done:
-                print("one env done")
                 queue.append(env)
                 env = queue.pop(0)
-                print("about to reset one env")
                 env.reset()
                 num_resets += 1
+
+    def test_threaded_nles(self, num_envs=10, num_threads=3):
+        readyqueue = queue.SimpleQueue()
+        resetqueue = queue.SimpleQueue()
+
+        def target():
+            while True:
+                env = resetqueue.get()
+                if env is None:
+                    return
+                env.reset()
+                readyqueue.put(env)
+
+        threads = [threading.Thread(target=target) for _ in range(num_threads)]
+        for t in threads:
+            t.start()
+
+        envs = [gym.make("NetHackScore-v0", savedir="") for _ in range(num_envs)]
+        for env in envs:
+            resetqueue.put(env)
+        env = readyqueue.get()
+
+        for _ in range(100):
+            a = random.choice(ACTIONS)
+            _, _, done, _ = env.step(a)
+            if done:
+                resetqueue.put(env)
+                env = readyqueue.get()
+
+        for _ in threads:
+            resetqueue.put(None)
+
+        for t in threads:
+            t.join()
