@@ -73,7 +73,7 @@ Afterwards it's a matter of setting up your environment. We advise using a conda
 environment for this:
 
 ```bash
-$ conda create -n nle python=3.8
+$ conda create -y -n nle python=3.8
 $ conda activate nle
 $ pip install nle
 ```
