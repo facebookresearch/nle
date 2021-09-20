@@ -255,7 +255,7 @@ class NLE(gym.Env):
             actions = FULL_ACTIONS
         self._actions = actions
 
-        self.last_observation = None
+        self.last_observation = ()
 
         try:
             if savedir is None:
