@@ -466,7 +466,9 @@ This might contain data that shouldn't be available to agents."""
         self._episode += 1
         new_ttyrec = self._ttyrec_pattern % self._episode if self.savedir else None
         if self._episode % self._episode_save_cycle == 0:
-            self.last_observation = self.env.reset(new_ttyrec, wizkit_items=wizkit_items)
+            self.last_observation = self.env.reset(
+                new_ttyrec, wizkit_items=wizkit_items
+            )
         else:
             self.last_observation = self.env.reset(None, wizkit_items=wizkit_items)
 
