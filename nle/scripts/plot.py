@@ -147,7 +147,7 @@ def plot_single_ascii(
     plot_options["with"] = "yerrorbars"
     plot_options["terminal"] = "dumb %d %d ansi" % (width, height)
     plot_options["tuplesize"] = 3
-    plot_options["title"] = "averaged %s" % (ykey)
+    plot_options["title"] = "averaged %s" % ykey
     plot_options["xlabel"] = "steps"
 
     if xrange is not None:
@@ -249,7 +249,7 @@ def plot_multiple_ascii(
     plot_options = {}
     plot_options["terminal"] = "dumb %d %d ansi" % (width, height)
     plot_options["tuplesize"] = 2
-    plot_options["title"] = "averaged %s" % (ykey)
+    plot_options["title"] = "averaged %s" % ykey
     plot_options["xlabel"] = "steps"
     plot_options["set"] = "key outside below"
 
