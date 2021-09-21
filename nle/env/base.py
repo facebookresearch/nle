@@ -216,6 +216,7 @@ class NLE(gym.Env):
         allow_all_modes=False,
         space_dict=None,
         spawn_monsters=True,
+        episode_save_cycle=1,
     ):
         """Constructs a new NLE environment.
 
@@ -243,6 +244,9 @@ class NLE(gym.Env):
             allow_all_modes (bool):
                 If set to True, do not decline menus, text input or auto 'MORE'.
                 If set to False, only skip click through 'MORE' on death.
+            episode_save_cycle (int):
+                number of episodes run before a game is saved to a ttyrec file.
+                Default value of 1 will save a ttyrec file for every episode.
         """
         del archivefile  # TODO: Remove once we change the API.
 
@@ -250,6 +254,7 @@ class NLE(gym.Env):
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
         self._allow_all_modes = allow_all_modes
+        self._episode_save_cycle = episode_save_cycle
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -460,7 +465,10 @@ This might contain data that shouldn't be available to agents."""
         """
         self._episode += 1
         new_ttyrec = self._ttyrec_pattern % self._episode if self.savedir else None
-        self.last_observation = self.env.reset(new_ttyrec, wizkit_items=wizkit_items)
+        if self._episode % self._episode_save_cycle == 0:
+            self.last_observation = self.env.reset(new_ttyrec, wizkit_items=wizkit_items)
+        else:
+            self.last_observation = self.env.reset(None, wizkit_items=wizkit_items)
 
         # Only run on the first reset to initialize stats file
         if self._setup_statsfile:
