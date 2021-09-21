@@ -32,6 +32,12 @@ Plot a specific run to a specific window size. (PATH/logs.tsv is found automatic
 python -m nle.scripts.plot path/to/run -x 100 -y 50
 ```
 
+Plot a specific run to a specific target column.
+```
+python -m nle.scripts.plot path/to/multiple_runs/2020 --ykey "total_loss"
+```
+
+
 Plot all runs under a specific directory without a legend matching plots to runs.
 ```
 python -m nle.scripts.plot path/to/multiple_runs --no_legend
@@ -74,6 +80,11 @@ parser.add_argument(
     default="~/torchbeast/latest/logs.tsv",
     help="file to plot or directory to look for log files",
 )
+parser.add_argument("--xkey", default="# Step", type=str, help="x values to plot.")
+parser.add_argument(
+    "--ykey", default="mean_episode_return", type=str, help="y values to plot."
+)
+
 parser.add_argument(
     "-w", "--window", type=int, default=-1, help="override automatic window size."
 )
@@ -88,13 +99,17 @@ parser.add_argument(
     "--xrange",
     type="pair",
     default=None,
-    help="float,float. range of x values to plot. overrides automatic zoom for x axis.",
+    help="""
+    float,float. range of x values to plot. overrides automatic zoom for x axis.
+    """,
 )
 parser.add_argument(
     "--yrange",
     type="pair",
     default=None,
-    help="float,float. range of y values to plot. overrides automatic zoom for y axis.",
+    help="""
+    float,float. range of y values to plot. overrides automatic zoom for y axis.
+    """,
 )
 parser.add_argument(
     "--shuffle",
@@ -103,7 +118,16 @@ parser.add_argument(
 )
 
 
-def plot_single_ascii(target, width, height, window=-1, xrange=None, yrange=None):
+def plot_single_ascii(
+    target,
+    width,
+    height,
+    xkey="# Step",
+    ykey="mean_episode_return",
+    window=-1,
+    xrange=None,
+    yrange=None,
+):
     """
     Plot the target file using the specified width and height.
     If window > 0, use it to specify the window size for rolling averages.
@@ -111,11 +135,11 @@ def plot_single_ascii(target, width, height, window=-1, xrange=None, yrange=None
     """
     print("plotting %s" % str(target))
     df = pd.read_csv(target, sep="\t")
-    steps = np.array(df["# Step"])
+    steps = np.array(df[xkey])
 
     if window < 0:
         window = len(steps) // width + 1
-    window = df["mean_episode_return"].rolling(window=window, min_periods=0)
+    window = df[ykey].rolling(window=window, min_periods=0)
     returns = np.array(window.mean())
     stderrs = np.array(window.std())
 
@@ -123,7 +147,7 @@ def plot_single_ascii(target, width, height, window=-1, xrange=None, yrange=None
     plot_options["with"] = "yerrorbars"
     plot_options["terminal"] = "dumb %d %d ansi" % (width, height)
     plot_options["tuplesize"] = 3
-    plot_options["title"] = "averaged episode return"
+    plot_options["title"] = "averaged %s" % (ykey)
     plot_options["xlabel"] = "steps"
 
     if xrange is not None:
@@ -174,6 +198,8 @@ def plot_multiple_ascii(
     target,
     width,
     height,
+    xkey="# Step",
+    ykey="mean_episode_return",
     window=-1,
     xrange=None,
     yrange=None,
@@ -191,21 +217,21 @@ def plot_multiple_ascii(
     dfs = collect_logs(target)
 
     if window < 0:
-        max_size = max(len(df["# Step"]) for name, df in dfs)
+        max_size = max(len(df[xkey]) for name, df in dfs)
         window = 2 * max_size // width + 1
 
     datasets = []
     for name, df in dfs:
-        steps = np.array(df["# Step"])
+        steps = np.array(df[xkey])
         if window > 1:
-            roll = df["mean_episode_return"].rolling(window=window, min_periods=0)
+            roll = df[ykey].rolling(window=window, min_periods=0)
             try:
                 rewards = np.array(roll.mean())
             except pd.core.base.DataError:
                 print("Error reading file at %s" % name)
                 continue
         else:
-            rewards = np.array(df["mean_episode_return"])
+            rewards = np.array(df[ykey])
         if no_legend:
             datasets.append((steps, rewards))
         else:
@@ -223,7 +249,7 @@ def plot_multiple_ascii(
     plot_options = {}
     plot_options["terminal"] = "dumb %d %d ansi" % (width, height)
     plot_options["tuplesize"] = 2
-    plot_options["title"] = "averaged episode return"
+    plot_options["title"] = "averaged %s" % (ykey)
     plot_options["xlabel"] = "steps"
     plot_options["set"] = "key outside below"
 
@@ -248,9 +274,11 @@ def plot(flags):
                 target,
                 flags.width,
                 flags.height,
-                flags.window,
-                flags.xrange,
-                flags.yrange,
+                xkey=flags.xkey,
+                ykey=flags.ykey,
+                window=flags.window,
+                xrange=flags.xrange,
+                yrange=flags.yrange,
             )
         else:
             raise RuntimeError(
@@ -262,9 +290,11 @@ def plot(flags):
             target / "logs.tsv",
             flags.width,
             flags.height,
-            flags.window,
-            flags.xrange,
-            flags.yrange,
+            xkey=flags.xkey,
+            ykey=flags.ykey,
+            window=flags.window,
+            xrange=flags.xrange,
+            yrange=flags.yrange,
         )
     else:
         # look for runs underneath the specified directory
@@ -272,11 +302,13 @@ def plot(flags):
             target,
             flags.width,
             flags.height,
-            flags.window,
-            flags.xrange,
-            flags.yrange,
-            flags.no_legend,
-            flags.shuffle,
+            xkey=flags.xkey,
+            ykey=flags.ykey,
+            window=flags.window,
+            xrange=flags.xrange,
+            yrange=flags.yrange,
+            no_legend=flags.no_legend,
+            shuffle=flags.shuffle,
         )
 
 
