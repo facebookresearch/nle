@@ -99,17 +99,13 @@ parser.add_argument(
     "--xrange",
     type="pair",
     default=None,
-    help="""
-    float,float. range of x values to plot. overrides automatic zoom for x axis.
-    """,
+    help="float,float. range of x values to plot. overrides automatic zoom for x axis.",
 )
 parser.add_argument(
     "--yrange",
     type="pair",
     default=None,
-    help="""
-    float,float. range of y values to plot. overrides automatic zoom for y axis.
-    """,
+    help="float,float. range of y values to plot. overrides automatic zoom for y axis.",
 )
 parser.add_argument(
     "--shuffle",
