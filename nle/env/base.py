@@ -214,7 +214,6 @@ class NLE(gym.Env):
         wizard=False,
         allow_all_yn_questions=False,
         allow_all_modes=False,
-        space_dict=None,
         spawn_monsters=True,
     ):
         """Constructs a new NLE environment.
@@ -338,8 +337,7 @@ This might contain data that shouldn't be available to agents."""
         # -1 so that it's 0-based on first reset
         self._episode = -1
 
-        if space_dict is None:
-            space_dict = dict(NLE_SPACE_ITEMS)
+        space_dict = dict(NLE_SPACE_ITEMS)
         self.observation_space = gym.spaces.Dict(
             {key: space_dict[key] for key in observation_keys}
         )
