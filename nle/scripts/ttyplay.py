@@ -38,7 +38,7 @@ parser.add_argument(
     "-p", "--peek", action="store_true", help="Peek mode (like tail -f)"
 )
 parser.add_argument(
-    "filename", default="-", type=str, nargs="?", help="tty record file, or - for stdin"
+    "filename", default="", type=str, nargs="?", help="tty record file, or - for stdin"
 )
 parser.add_argument("--start", default=0, type=int, help="Start at a specific frame")
 parser.add_argument(
@@ -182,6 +182,10 @@ def process(f):
 def main():
     global FLAGS
     FLAGS = parser.parse_args()
+
+    if not FLAGS.filename:
+        parser.print_help()
+        return
 
     if FLAGS.filename == "-":
         f = os.fdopen(os.dup(0), "rb")
