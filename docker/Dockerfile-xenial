@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -yq \
         curl \
         flex \
         git \
+        gpg \
         libbz2-dev \
         ninja-build \
         software-properties-common \
@@ -22,10 +23,11 @@ WORKDIR /opt/conda_setup
 
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
     | gpg -dearmor - \
-    | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+    > /etc/apt/trusted.gpg.d/kitware.gpg
 
-RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
-RUN apt-get update && apt-get --allow-unauthenticated install -yq cmake
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ xenial main' \
+        > /etc/apt/sources.list.d/kitware.list
+RUN apt-get update && apt-get install -yq cmake kitware-archive-keyring
 
 RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
      chmod +x miniconda.sh && \
