@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -yq \
         curl \
         flex \
         git \
-        gpg \
         libbz2-dev \
         ninja-build \
         software-properties-common \
@@ -22,7 +21,7 @@ RUN apt-get update && apt-get install -yq \
 WORKDIR /opt/conda_setup
 
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
-        | gpg -dearmor - \
+        | gpg --dearmor - \
         > /etc/apt/trusted.gpg.d/kitware.gpg
 
 RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ xenial main' \
