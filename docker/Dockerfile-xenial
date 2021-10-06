@@ -9,11 +9,11 @@ RUN apt-get update && apt-get install -yq \
         apt-transport-https \
         bison \
         build-essential \
+        ca-certificates \
         cmake \
         curl \
         flex \
         git \
-        gpg \
         libbz2-dev \
         ninja-build \
         software-properties-common \
@@ -22,18 +22,22 @@ RUN apt-get update && apt-get install -yq \
 WORKDIR /opt/conda_setup
 
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
-        | gpg -dearmor - \
-        > /etc/apt/trusted.gpg.d/kitware.gpg
+        | gpg --dearmor - \
+        > /usr/share/keyrings/kitware-archive-keyring.gpg
 
 RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ xenial main' \
         > /etc/apt/sources.list.d/kitware.list
-RUN apt-get update && apt-get install -yq cmake kitware-archive-keyring
+
+RUN apt-get update -o Acquire::https::apt.kitware.com::Verify-Peer=false
+
+RUN apt-get install -yq -o Acquire::https::apt.kitware.com::Verify-Peer=false \
+        cmake kitware-archive-keyring
 
 RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-     chmod +x miniconda.sh && \
-     ./miniconda.sh -b -p /opt/conda && \
-     /opt/conda/bin/conda install -y python=$PYTHON_VERSION && \
-     /opt/conda/bin/conda clean -ya
+        chmod +x miniconda.sh && \
+        ./miniconda.sh -b -p /opt/conda && \
+        /opt/conda/bin/conda install -y python=$PYTHON_VERSION && \
+        /opt/conda/bin/conda clean -ya
 ENV PATH /opt/conda/bin:$PATH
 
 RUN python -m pip install --upgrade pip ipython ipdb
@@ -51,7 +55,7 @@ CMD ["/bin/bash"]
 
 # Docker commands:
 #   docker rm nle -v
-#   docker build -t nle -f docker/Dockerfile .
+#   docker build -t nle -f docker/Dockerfile-xenial .
 #   docker run --rm --name nle nle
 # or
 #   docker run -it --entrypoint /bin/bash nle

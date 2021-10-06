@@ -7,10 +7,6 @@ on:
   push:
     paths:
       - "docker/Dockerfile*"
-    tags-ignore:
-      # We ignore all tags, since paths filters don't work for tags events, and
-      # we use releases instead.
-      - "*"
   release:
     types: [released]
 
