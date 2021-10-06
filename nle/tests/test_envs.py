@@ -116,17 +116,6 @@ class TestGymEnv:
         # You're bright (4th bit, 8) white (7), too.
         assert obs["colors"][y, x] == 8 ^ 7
 
-    def test_default_wizard_mode(self, env_name, wizard):
-        if wizard:
-            if env_name.startswith("NetHackChallenge-"):
-                pytest.skip("No wizard mode in NetHackChallenge")
-            env = gym.make(env_name, wizard=wizard)
-            assert "playmode:debug" in env.env._options
-        else:
-            # do not send a parameter to test a default
-            env = gym.make(env_name)
-            assert "playmode:debug" not in env.env._options
-
 
 class TestWizkit:
     @pytest.fixture(autouse=True)  # will be applied to all tests in class
