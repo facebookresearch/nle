@@ -11,11 +11,6 @@ on:
       # We ignore all tags, since paths filters don't work for tags events, and
       # we use releases instead.
       - "*"
-    branches:
-      - main
-  pull_request:
-    paths:
-      - "docker/Dockerfile*"
   release:
     types: [released]
 
