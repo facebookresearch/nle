@@ -116,6 +116,17 @@ class TestGymEnv:
         # You're bright (4th bit, 8) white (7), too.
         assert obs["colors"][y, x] == 8 ^ 7
 
+    def test_default_wizard_mode(self, env_name, wizard):
+        if wizard:
+            if env_name.startswith("NetHackChallenge-"):
+                pytest.skip("No wizard mode in NetHackChallenge")
+            env = gym.make(env_name, wizard=wizard)
+            assert "playmode:debug" in env.unwrapped.env._options
+        else:
+            # do not send a parameter to test a default
+            env = gym.make(env_name)
+            assert "playmode:debug" not in env.unwrapped.env._options
+
 
 class TestWizkit:
     @pytest.fixture(autouse=True)  # will be applied to all tests in class
@@ -149,7 +160,9 @@ class TestWizkit:
         env = gym.make("NetHack-v0", wizard=True)
         req_items = ["meatball", "apple"]
         env.reset(wizkit_items=req_items)
-        path_to_wizkit = os.path.join(env.env._vardir, nethack.nethack.WIZKIT_FNAME)
+        path_to_wizkit = os.path.join(
+            env.unwrapped.env._vardir, nethack.nethack.WIZKIT_FNAME
+        )
 
         # test file exists
         os.path.exists(path_to_wizkit)
@@ -229,8 +242,6 @@ class TestGymEnvRollout:
         """Tests rollout_len steps (or until termination) of random policy."""
         env = gym.make(env_name, savedir=None)
         assert env.savedir is None
-        assert env._stats_file is None
-        assert env._stats_logger is None
         rollout_env(env, rollout_len)
 
     def test_seed_interface_output(self, env_name, rollout_len):
@@ -248,7 +259,7 @@ class TestGymEnvRollout:
 
         assert env0.get_seeds() == seed_list0
 
-        seed_list1 = env1.seed(*seed_list0)
+        seed_list1 = env1.unwrapped.seed(*seed_list0)
         assert seed_list0 == seed_list1
 
     def test_seed_rollout_seeded(self, env_name, rollout_len):
@@ -261,13 +272,13 @@ class TestGymEnvRollout:
         env0 = gym.make(env_name)
         env1 = gym.make(env_name)
 
-        env0.seed(123456, 789012)
+        env0.unwrapped.seed(123456, 789012)
         obs0 = env0.reset()
         seeds0 = env0.get_seeds()
 
         assert seeds0 == (123456, 789012, False)
 
-        env1.seed(*seeds0)
+        env1.unwrapped.seed(*seeds0)
         obs1 = env1.reset()
         seeds1 = env1.get_seeds()
 
@@ -291,11 +302,11 @@ class TestGymEnvRollout:
             random.randrange(sys.maxsize),
             False,
         )
-        env0.seed(*initial_seeds)
+        env0.unwrapped.seed(*initial_seeds)
         obs0 = env0.reset()
         seeds0 = env0.get_seeds()
 
-        env1.seed(*seeds0)
+        env1.unwrapped.seed(*seeds0)
         obs1 = env1.reset()
         seeds1 = env1.get_seeds()
 
@@ -335,7 +346,7 @@ class TestGymDynamics:
             e.close()
 
     def test_kick_and_quit(self, env):
-        actions = env._actions
+        actions = env.unwrapped._actions  # TODO: Use action space properly.
         env.reset()
         kick = actions.index(nethack.Command.KICK)
         obs, reward, done, _ = env.step(kick)
@@ -343,13 +354,14 @@ class TestGymDynamics:
         env.step(nethack.MiscAction.MORE)
 
         # Hack to quit.
-        env.env.step(nethack.M("q"))
+        env.unwrapped.env.step(nethack.M("q"))
         obs, reward, done, _ = env.step(actions.index(ord("y")))
 
         assert done
         assert reward == 0.0
 
     def test_final_reward(self, env):
+        actions = env.unwrapped._actions  # TODO: Use action space properly.
         obs = env.reset()
 
         for _ in range(100):
@@ -364,11 +376,11 @@ class TestGymDynamics:
         # Hopefully, we got some positive reward by now.
 
         # Get out of any menu / yn_function.
-        env.step(env._actions.index(ord("\r")))
+        env.step(actions.index(ord("\r")))
 
         # Hack to quit.
-        env.env.step(nethack.M("q"))
-        _, reward, done, _ = env.step(env._actions.index(ord("y")))
+        env.unwrapped.env.step(nethack.M("q"))
+        _, reward, done, _ = env.step(actions.index(ord("y")))
 
         assert done
         assert reward == 0.0
@@ -386,8 +398,12 @@ class TestEnvMisc:
             e.close()
 
     def test_no_reset(self, env):
-        with pytest.raises(RuntimeError, match="step called without reset()"):
-            env.step(0)
+        try:
+            with pytest.raises(RuntimeError, match="step called without reset()"):
+                env.step(0)
+        except AssertionError as e:
+            # Gym 0.21 OrderEnforcing wrapper.
+            assert "env.step() before calling" in str(e)
 
 
 class TestNetHackChallenge:
@@ -398,8 +414,8 @@ class TestNetHackChallenge:
         ):
             env.seed()
         with pytest.raises(RuntimeError, match="Should not try changing seeds"):
-            env.env.set_initial_seeds(0, 0, True)
+            env.unwrapped.env.set_initial_seeds(0, 0, True)
 
         if not nethack.NLE_ALLOW_SEEDING:
             with pytest.raises(RuntimeError, match="Seeding not enabled"):
-                env.env._pynethack.set_initial_seeds(0, 0, True)
+                env.unwrapped.env._pynethack.set_initial_seeds(0, 0, True)

@@ -60,7 +60,7 @@ def get_action(env, is_raw_env):
                 if is_raw_env:
                     action = ch
                 else:
-                    action = env._actions.index(ch)
+                    action = env.unwrapped._actions.index(ch)
                 break
             except ValueError:
                 print(
@@ -113,7 +113,9 @@ def play():
             if not is_raw_env:
                 print("-" * 8 + " " * 71)
                 print(f"Previous reward: {str(reward):64s}")
-                act_str = repr(env._actions[action]) if action is not None else ""
+                act_str = ""
+                if action is not None:
+                    act_str = repr(env.unwrapped._actions[action])
                 print(f"Previous action: {str(act_str):64s}")
                 print("-" * 8)
                 env.render(FLAGS.render_mode)
