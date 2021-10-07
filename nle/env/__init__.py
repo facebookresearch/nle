@@ -1,23 +1,34 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import gym
 from gym.envs import registration
 
 from nle.env.base import NLE, DUNGEON_SHAPE
 
-registration.register(id="NetHack-v0", entry_point="nle.env.base:NLE")
+_version = "v0"
 
-registration.register(id="NetHackScore-v0", entry_point="nle.env.tasks:NetHackScore")
-registration.register(
-    id="NetHackStaircase-v0", entry_point="nle.env.tasks:NetHackStaircase"
-)
-registration.register(
-    id="NetHackStaircasePet-v0", entry_point="nle.env.tasks:NetHackStaircasePet"
-)
-registration.register(id="NetHackOracle-v0", entry_point="nle.env.tasks:NetHackOracle")
-registration.register(id="NetHackGold-v0", entry_point="nle.env.tasks:NetHackGold")
-registration.register(id="NetHackEat-v0", entry_point="nle.env.tasks:NetHackEat")
-registration.register(id="NetHackScout-v0", entry_point="nle.env.tasks:NetHackScout")
-registration.register(
-    id="NetHackChallenge-v0", entry_point="nle.env.tasks:NetHackChallenge"
-)
+for name in (
+    "NetHack",
+    "NetHackScore",
+    "NetHackStaircase",
+    "NetHackStaircasePet",
+    "NetHackOracle",
+    "NetHackGold",
+    "NetHackEat",
+    "NetHackScout",
+    "NetHackChallenge",
+):
+    entry_point = "nle.env.tasks:" + name
+    if name == "NetHack":
+        entry_point = "nle.env.base:NLE"
+    kwargs = {}
+    if gym.__version__ >= "0.21":
+        # Starting with version 0.21, gym wraps everything by the
+        # OrderEnforcing wrapper by default (which isn't in gym.wrappers).
+        # This breaks our seed() calls and some other code. Disable.
+        kwargs["order_enforce"] = False
+    registration.register(
+        id="%s-%s" % (name, _version), entry_point=entry_point, **kwargs
+    )
+
 
 __all__ = ["NLE", "DUNGEON_SHAPE"]
