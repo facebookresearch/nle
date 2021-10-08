@@ -54,7 +54,7 @@ CMD ["/bin/bash"]
 
 # Docker commands:
 #   docker rm nle -v
-#   docker build -t nle -f docker/Dockerfile .
-#   docker run --rm --name nle nle
+#   docker build -t nle -f docker/Dockerfile-bionic .
+#   docker run --gpus all --rm --name nle nle
 # or
-#   docker run -it --entrypoint /bin/bash nle
+#   docker run --gpus all -it --entrypoint /bin/bash nle
