@@ -276,7 +276,7 @@ class NetHackScout(NetHackScore):
         dungeon_level = blstats[nethack.NLE_BL_DLEVEL]
 
         key = (dungeon_num, dungeon_level)
-        explored = np.sum(glyphs != 0)
+        explored = np.sum(glyphs != nethack.GLYPH_CMAP_OFF)
         explored_old = 0
         if key in self.dungeon_explored:
             explored_old = self.dungeon_explored[key]

@@ -338,13 +338,20 @@ class TestNethackFunctionsAndConstants:
     def test_symdef(self):
         tree_cmap_offset = 18  # Cf. drawing.c.
         tree_glyph = nethack.GLYPH_CMAP_OFF + tree_cmap_offset
-        sd = nethack.symdef.from_idx(tree_cmap_offset)
+        tree_symdef = nethack.symdef.from_idx(tree_cmap_offset)
 
         assert tree_cmap_offset == nethack.glyph_to_cmap(tree_glyph)
-        assert sd.sym == ord("#")
-        assert sd.explanation == "tree"
-        assert sd.color == 2  # CLR_GREEN.
-        assert str(sd) == "<nethack.symdef sym='#' explanation='tree'>"
+        assert tree_symdef.sym == ord("#")
+        assert tree_symdef.explanation == "tree"
+        assert tree_symdef.color == 2  # CLR_GREEN.
+        assert str(tree_symdef) == "<nethack.symdef sym='#' explanation='tree'>"
+
+        darkroom_glyph = nethack.GLYPH_CMAP_OFF
+        assert nethack.glyph_to_cmap(darkroom_glyph) == 0
+        darkroom_symdef = nethack.symdef.from_idx(0)
+        assert darkroom_symdef.sym == ord(" ")
+        assert darkroom_symdef.explanation == "dark part of a room"
+        assert darkroom_symdef.color == 8  # NO_COLOR
 
 
 class TestNethackGlanceObservation:
