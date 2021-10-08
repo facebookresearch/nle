@@ -8,7 +8,7 @@ You can try out the latest stable version in Ubuntu 18.04 by doing:
 
 ```bash
 $ docker pull fairnle/nle:stable
-$ docker run --rm -it fairnle/nle:stable python  # or bash
+$ docker run --gpus all --rm -it fairnle/nle:stable python  # or bash
 # Then you can simply use the nle package as normal
 ```
 
@@ -35,10 +35,13 @@ version of `nle`, following a specific templates:
 
 # Building images locally
 
-To build any of them (e.g. `Dockerfile-bionic`) do:
+To build and run any of them (e.g. `Dockerfile-bionic`) do:
 
 ```bash
 $ git clone https://github.com/facebookresearch/nle --recursive
 $ cd nle
-$ docker build -f docker/Dockerfile-bionic . -t nle:latest
+$ docker build -f docker/Dockerfile-bionic . -t nle
+$ docker run --gpus all --rm --name nle nle
+# or alternatively
+$ docker run --gpus all -it --entrypoint /bin/bash nle
 ```
