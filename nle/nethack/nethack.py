@@ -28,6 +28,12 @@ SCREEN_DESCRIPTIONS_SHAPE = DUNGEON_SHAPE + (
     _pynethack.nethack.NLE_SCREEN_DESCRIPTION_LENGTH,
 )
 TERMINAL_SHAPE = (_pynethack.nethack.NLE_TERM_LI, _pynethack.nethack.NLE_TERM_CO)
+N_TILE_PIXEL = 16
+PIXEL_SHAPE = (
+    DUNGEON_SHAPE[0] * N_TILE_PIXEL,
+    DUNGEON_SHAPE[1] * N_TILE_PIXEL,
+    3,  # RGB
+)
 
 OBSERVATION_DESC = {
     "glyphs": dict(shape=DUNGEON_SHAPE, dtype=np.int16),
@@ -47,6 +53,7 @@ OBSERVATION_DESC = {
     "tty_colors": dict(shape=TERMINAL_SHAPE, dtype=np.int8),
     "tty_cursor": dict(shape=(2,), dtype=np.uint8),
     "misc": dict(shape=MISC_SHAPE, dtype=np.int32),
+    "pixel": dict(shape=PIXEL_SHAPE, dtype=np.uint),
 }
 
 

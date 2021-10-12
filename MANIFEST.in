@@ -11,6 +11,7 @@ recursive-include util *
 recursive-include win/rl *
 recursive-include win/tty *
 recursive-include third_party *
+recursive-include nle/tiles *
 
 recursive-exclude build *
 exclude nle/dashboard

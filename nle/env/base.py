@@ -15,6 +15,7 @@ import gym
 import numpy as np
 
 from nle import nethack
+from nle.tiles import GlyphMapper
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ DUNGEON_SHAPE = nethack.DUNGEON_SHAPE
 DEFAULT_MSG_PAD = 256
 DEFAULT_INV_PAD = 55
 DEFAULT_INVSTR_PAD = 80
+RGB_MAX_VAL = 255
 
 ASCII_SPACE = ord(" ")
 ASCII_y = ord("y")
@@ -132,6 +134,10 @@ NLE_SPACE_ITEMS = (
             high=np.iinfo(np.int32).max,
             **nethack.OBSERVATION_DESC["misc"],
         ),
+    ),
+    (
+        "pixel",
+        gym.spaces.Box(low=0, high=RGB_MAX_VAL, **nethack.OBSERVATION_DESC["pixel"]),
     ),
 )
 
@@ -287,6 +293,15 @@ class NLE(gym.Env):
 
         self._observation_keys = list(observation_keys)
 
+        # Pixel observations are handled in Python
+        if "pixel" in self._observation_keys:
+            self._pixel_obs = True
+            self._glyph_mapper = GlyphMapper()
+            self._observation_keys.remove("pixel")
+            observation_keys = tuple(self._observation_keys)
+        else:
+            self._pixel_obs = False
+
         if "internal" in self._observation_keys:
             logger.warn(
                 """The 'internal' NLE observation was requested.
@@ -347,10 +362,17 @@ This might contain data that shouldn't be available to agents."""
         self.action_space = gym.spaces.Discrete(len(self._actions))
 
     def _get_observation(self, observation):
-        return {
+        obs_dict = {
             key: observation[i]
             for key, i in zip(self._original_observation_keys, self._original_indices)
         }
+
+        if self._pixel_obs:
+            obs_dict["pixel"] = self._glyph_mapper.to_rgb(
+                observation[self._glyph_index]
+            )
+
+        return obs_dict
 
     def print_action_meanings(self):
         for a_idx, a in enumerate(self._actions):

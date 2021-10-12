@@ -85,6 +85,7 @@ packages = [
     "nle.agent",
     "nle.scripts",
     "nle.tests",
+    "nle.tiles",
 ]
 
 entry_points = {
