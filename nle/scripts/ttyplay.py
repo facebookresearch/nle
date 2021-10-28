@@ -169,7 +169,7 @@ def process(f):
             os.write(
                 1, b"\033[s\033[26;0f\033[37;1mFrame %d+%d:\033[0m " % tuple(frame)
             )  # Save Cursor & Jump to L26
-            os.write(1, INPUTS[ord(data)].encode("ascii"))
+            os.write(1, INPUTS[ord(data)].encode("ascii", "backslashreplace"))
             os.write(1, b" " * 32)
             os.write(1, b" \033[u")  # Jump back Cursor
 
