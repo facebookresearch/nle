@@ -119,41 +119,30 @@ def process(f):
     prev = None
     jump = 0
 
-    # Store the header positions before clear screen commands,
-    # the timestamp before.
+    # Store the header positions, timestamps, and frame numbers before
+    # clear screen commands.
     clrscreen = []
 
     lastpos = 0
-    frame = 0
+    frame = [0, 0]  # Input and output frame.
     for timestamp, length, channel in read_header(
         f, peek=FLAGS.peek, no_input=FLAGS.no_input
     ):
         data = f.read(length)
-        frame += 1
+        frame[channel] += 1
 
-        if frame < FLAGS.start:
-            continue
-
-        if channel == 1:  # Input channel.
-            if FLAGS.print_actions:
-                os.write(
-                    1, b"\033[s\033[26;0f\033[37;1mFrame %d:\033[0m " % frame
-                )  # Save Cursor & Jump to L26
-                os.write(1, INPUTS[ord(data)].encode("ascii"))
-                os.write(1, b" " * 32)
-                os.write(1, b" \033[u")  # Jump back Cursor
+        if frame[0] < FLAGS.start:
             continue
 
         if jump == 0 and prev is not None:
             speed, drift, jump = wait(timestamp - prev, speed, drift)
 
-        if CLRCODE.search(data):
-            clrscreen.append((lastpos, prev))
+        if channel == 0 and CLRCODE.search(data):
+            clrscreen.append((lastpos, prev, [frame[0] - 1, frame[1]]))
             if jump > 0:
                 jump = 0
 
         lastpos = f.seek(0, os.SEEK_CUR)
-
         prev = timestamp
 
         if jump > 0:
@@ -162,11 +151,11 @@ def process(f):
             jump = 0
 
             if not clrscreen:
-                clrscreen.append((0, None))
+                clrscreen.append((0, None, [0, 0]))
 
             while clrscreen and timestamp - prev <= 0.005:
                 # If we can jump, jump at least some amount.
-                lastpos, prev = clrscreen.pop()
+                lastpos, prev, frame = clrscreen.pop()
 
             if lastpos:
                 prev = timestamp  # Don't wait in next iteration
@@ -174,9 +163,17 @@ def process(f):
             f.seek(lastpos, os.SEEK_SET)
             continue
 
-        os.write(1, data)
+        if channel == 0:  # Output.
+            os.write(1, data)
+        elif channel == 1 and FLAGS.print_actions:  # Input.
+            os.write(
+                1, b"\033[s\033[26;0f\033[37;1mFrame %d+%d:\033[0m " % tuple(frame)
+            )  # Save Cursor & Jump to L26
+            os.write(1, INPUTS[ord(data)].encode("ascii"))
+            os.write(1, b" " * 32)
+            os.write(1, b" \033[u")  # Jump back Cursor
 
-        if frame > FLAGS.end:
+        if frame[0] > FLAGS.end:
             return
 
 
