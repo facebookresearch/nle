@@ -1,7 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import datetime
 import os
 import re
 import struct
+import sys
 
 
 def ttyframes(f, tty2=True):
@@ -49,16 +51,16 @@ def getfile(filename):
         return open(filename, "rb")
 
 
-if __name__ == "__main__":
-    import datetime
-    import sys
+def color(s, value):
+    return "\033[%d;3%dm%s\033[0m" % (bool(value & 8), value & ~8, s)
 
-    def color(s, value):
-        return "\033[%d;3%dm%s\033[0m" % (bool(value & 8), value & ~8, s)
 
+def main():
+    frames = [0, 0]
     filename = sys.argv[1]
     with getfile(filename) as f:
         for timestamp, channel, data in ttyframes(f):
+            frames[channel] += 1
             if channel == 0:
                 data = str(data)[2:-1]  # Strip b' and '
                 channel = "<-"
@@ -78,13 +80,22 @@ if __name__ == "__main__":
                 str(data),
             )
 
-            print(
-                "%s %s%s%s%s"
-                % (
-                    datetime.datetime.fromtimestamp(timestamp),
-                    color(channel, 2),
-                    color("{", 11),
-                    data,
-                    color("}", 11),
+            try:
+                print(
+                    "%s %s %s%s%s%s"
+                    % (
+                        color(str(frames), 2),
+                        datetime.datetime.fromtimestamp(timestamp),
+                        color(channel, 2),
+                        color("{", 11),
+                        data,
+                        color("}", 11),
+                    )
                 )
-            )
+            except BrokenPipeError:  # E.g., read_tty.py ... | less -R, quit.
+                # Python flushes stdout on exit, but stdout is gone. Just leave.
+                os._exit(1)
+
+
+if __name__ == "__main__":
+    main()
