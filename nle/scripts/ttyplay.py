@@ -165,10 +165,12 @@ def process(f):
             if not clrscreen:
                 clrscreen.append((0, None))
 
-            while prev is not None and timestamp - prev <= 0.005:
+            while clrscreen and timestamp - prev <= 0.005:
+                # If we can jump, jump at least some amount.
                 lastpos, prev = clrscreen.pop()
+
             if lastpos:
-                prev = timestamp
+                prev = timestamp  # Don't wait in next iteration
 
             f.seek(lastpos, os.SEEK_SET)
             continue
