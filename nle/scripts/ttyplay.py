@@ -33,7 +33,7 @@ parser.add_argument(
 parser.add_argument(
     "-s", "--speed", default=1.0, type=float, help="Set playback speed multiplier"
 )
-parser.add_argument("-a", "--print-actions", action="store_true", help="Print actions")
+parser.add_argument("-i", "--print_inputs", action="store_true", help="Print inputs")
 parser.add_argument(
     "-p", "--peek", action="store_true", help="Peek mode (like tail -f)"
 )
@@ -110,7 +110,7 @@ def read_header(f, peek=False, no_input=False):
 
 
 CLRCODE = re.compile(rb"\033\[2?J")  # https://stackoverflow.com/a/37778152/1136208
-INPUTS = ["KeyPress %i" % i for i in range(255)]
+INPUTS = ["KeyPress %s (%i)" % (repr(chr(i)), i) for i in range(255)]
 
 
 def process(f):
@@ -165,7 +165,7 @@ def process(f):
 
         if channel == 0:  # Output.
             os.write(1, data)
-        elif channel == 1 and FLAGS.print_actions:  # Input.
+        elif channel == 1 and FLAGS.print_inputs:  # Input.
             os.write(
                 1, b"\033[s\033[26;0f\033[37;1mFrame %d+%d:\033[0m " % tuple(frame)
             )  # Save Cursor & Jump to L26
