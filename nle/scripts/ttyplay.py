@@ -52,8 +52,7 @@ def wait(diff, speed, drift=0.0):
     if FLAGS.no_wait:
         return speed, drift, jump
     if FLAGS.fixed_frame_wait:
-        time.sleep(0.2 / speed)
-        return speed, drift, jump
+        diff = 0.2
 
     start = time.time()
 
