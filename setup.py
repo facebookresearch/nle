@@ -92,6 +92,8 @@ entry_points = {
         "nle-play = nle.scripts.play:main",
         "nle-ttyrec = nle.scripts.ttyrec:main",
         "nle-ttyplay = nle.scripts.ttyplay:main",
+        "nle-ttyplay2 = nle.scripts.ttyplay2:main",
+        "nle-read-tty = nle.scripts.read_tty:main",
     ]
 }
 
