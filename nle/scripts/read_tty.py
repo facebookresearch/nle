@@ -1,9 +1,24 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import argparse
 import datetime
 import os
 import re
 import struct
-import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-1",
+    "--no_input",
+    action="store_true",
+    help="Use ttyrec (not ttyrec2) format without input data",
+)
+parser.add_argument(
+    "filename", default="", type=str, nargs="?", help="tty record file, or - for stdin"
+)
+parser.add_argument("--start", default=0, type=int, help="Start at a specific frame")
+parser.add_argument(
+    "--end", default=float("inf"), type=int, help="Quit after a specific frame count"
+)
 
 
 def ttyframes(f, tty2=True):
@@ -55,11 +70,79 @@ def color(s, value):
     return "\033[%d;3%dm%s\033[0m" % (bool(value & 8), value & ~8, s)
 
 
+CTRL_COLOR = 8  # Dark gray.
+DEC_COLOR = 4  # Dark blue.
+DEC_DATA_COLOR = 3  # Dark yellow.
+
+FRAMECNT_COLOR = 2  # Dark green.
+TIMESTAMP_COLOR = 7  # "Normal" color.
+CHANNEL_COLOR = 2  # Dark green.
+BRACES_COLOR = 11  # Bright yellow.
+
+
+# "Select Graphic Rendition" sequence.
+COLOR_REGEX = re.compile(
+    r"""
+(?P<begin>
+  (\\x1b\[)  # CSI (Control Sequence Introducer)
+  (?P<bright>[0-9])
+  ;3
+  (?P<color>[0-9])
+  m
+)
+(?P<data> .*?)
+(?P<end> \\x1b\[0m)
+""",
+    re.X,
+)
+
+# Generic control sequence
+CTRL_REGEX = re.compile(r"\\x1b\[ ([0-9];?) *.", re.X)
+
+# DEC Special Graphics
+DEC_REGEX = re.compile(
+    r"""
+(?P<begin> \\x1b\(0)
+(?P<data> .*?)
+(?P<end> \\x1b\(B)
+""",
+    re.X,
+)
+
+
+def _colorsub(m):
+    """Substitute color in `COLOR_REGEX`."""
+    bright = int(m.group("bright"))
+    value = int(m.group("color"))
+    if bright:
+        value |= 8
+    return m.group("begin") + color(m.group("data"), value) + m.group("end")
+
+
+def _ctrlsub(m):
+    return color(m.group(0), CTRL_COLOR)
+
+
+def _decsub(m):
+    """Substitute for `DEC_REGEX`."""
+    return (
+        color(m.group("begin"), DEC_COLOR)
+        + color(m.group("data"), DEC_DATA_COLOR)
+        + color(m.group("end"), DEC_COLOR)
+    )
+
+
 def main():
+    global FLAGS
+    FLAGS = parser.parse_args()
+
+    if not FLAGS.filename:
+        parser.print_help()
+        return
+
     frames = [0, 0]
-    filename = sys.argv[1]
-    with getfile(filename) as f:
-        for timestamp, channel, data in ttyframes(f):
+    with getfile(FLAGS.filename) as f:
+        for timestamp, channel, data in ttyframes(f, tty2=not FLAGS.no_input):
             frames[channel] += 1
             if channel == 0:
                 data = str(data)[2:-1]  # Strip b' and '
@@ -69,27 +152,22 @@ def main():
                 data = action
                 channel = "->"
 
-            data = re.sub(
-                r"\\x1b\[([0-9];?)*.", lambda m: color(m.group(0), 8), str(data)
-            )
-            data = re.sub(
-                r"(\\x1b\(0)(.*?)(\\x1b\(B)",
-                lambda m: (
-                    color(m.group(1), 4) + color(m.group(2), 3) + color(m.group(3), 4)
-                ),
-                str(data),
-            )
+            data = re.sub(COLOR_REGEX, _colorsub, str(data))
+            data = re.sub(CTRL_REGEX, _ctrlsub, str(data))
+            data = re.sub(DEC_REGEX, _decsub, str(data))
 
             try:
                 print(
                     "%s %s %s%s%s%s"
                     % (
-                        color(str(frames), 2),
-                        datetime.datetime.fromtimestamp(timestamp),
-                        color(channel, 2),
-                        color("{", 11),
+                        color(str(frames), FRAMECNT_COLOR),
+                        color(
+                            datetime.datetime.fromtimestamp(timestamp), TIMESTAMP_COLOR
+                        ),
+                        color(channel, CHANNEL_COLOR),
+                        color("{", BRACES_COLOR),
                         data,
-                        color("}", 11),
+                        color("}", BRACES_COLOR),
                     )
                 )
             except BrokenPipeError:  # E.g., read_tty.py ... | less -R, quit.
