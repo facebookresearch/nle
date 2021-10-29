@@ -84,7 +84,7 @@ DEC_DATA_COLOR = 3  # Dark yellow.
 FRAMECNT_COLOR = 2  # Dark green.
 TIMESTAMP_COLOR = 7  # "Normal" color.
 CHANNEL_COLOR = 2  # Dark green.
-BRACES_COLOR = 11  # Bright yellow.
+BRACES_COLOR = [11, 4]  # Output: Bright yellow, input: dark blue.
 
 
 # "Select Graphic Rendition" sequence.
@@ -163,11 +163,11 @@ def main():
                 return
 
             if channel == 0:
-                channel = "<-"
+                arrow = "<-"
             elif channel == 1:
                 char, *_ = struct.unpack("<B", data)
                 data = chr(char).encode("ascii", "backslashreplace")
-                channel = "->"
+                arrow = "->"
 
             data = str(data)[2:-1]  # Strip b' and '
 
@@ -186,10 +186,10 @@ def main():
                         color(
                             datetime.datetime.fromtimestamp(timestamp), TIMESTAMP_COLOR
                         ),
-                        color(channel, CHANNEL_COLOR),
-                        color("{", BRACES_COLOR),
+                        color(arrow, CHANNEL_COLOR),
+                        color("{", BRACES_COLOR[channel]),
                         data,
-                        color("}", BRACES_COLOR),
+                        color("}", BRACES_COLOR[channel]),
                     )
                 )
             except BrokenPipeError:  # E.g., read_tty.py ... | less -R, quit.
