@@ -19,6 +19,10 @@ parser.add_argument(
     action="store_false",
     help="Don't display control sequence introducer with unicode symbol",
 )
+parser.add_argument("--start", default=0, type=int, help="Start at a specific frame")
+parser.add_argument(
+    "--end", default=float("inf"), type=int, help="Quit after a specific frame count"
+)
 parser.add_argument(
     "filename", default="", type=str, nargs="?", help="tty record file, or - for stdin"
 )
@@ -151,6 +155,13 @@ def main():
     with getfile(FLAGS.filename) as f:
         for timestamp, channel, data in ttyframes(f, tty2=not FLAGS.no_input):
             frames[channel] += 1
+
+            if frames[0] < FLAGS.start:
+                continue
+
+            if frames[0] > FLAGS.end:
+                return
+
             if channel == 0:
                 data = str(data)[2:-1]  # Strip b' and '
                 channel = "<-"
