@@ -163,14 +163,13 @@ def main():
                 return
 
             if channel == 0:
-                data = str(data)[2:-1]  # Strip b' and '
                 channel = "<-"
             elif channel == 1:
-                action, *_ = struct.unpack("<B", data)
-                data = action
+                char, *_ = struct.unpack("<B", data)
+                data = chr(char).encode("ascii", "backslashreplace")
                 channel = "->"
 
-            data = str(data)
+            data = str(data)[2:-1]  # Strip b' and '
 
             data = re.sub(COLOR_REGEX, _colorsub, data)
             data = re.sub(CTRL_REGEX, _ctrlsub, data)

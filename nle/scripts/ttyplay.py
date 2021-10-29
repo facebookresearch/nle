@@ -110,7 +110,7 @@ def read_header(f, peek=False, no_input=False):
 
 
 CLRCODE = re.compile(rb"\033\[2?J")  # https://stackoverflow.com/a/37778152/1136208
-INPUTS = ["KeyPress %s (%i)" % (repr(chr(i)), i) for i in range(255)]
+INPUTS = ["Input %s (%i)" % (repr(chr(i)), i) for i in range(255)]
 
 
 def process(f):
