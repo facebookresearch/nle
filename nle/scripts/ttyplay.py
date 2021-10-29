@@ -131,10 +131,12 @@ def process(f):
         data = f.read(length)
         frame[channel] += 1
 
-        if frame[0] < FLAGS.start:
-            continue
-
-        if jump == 0 and prev is not None:
+        # Wait for delta between frame timestamps, unless we are jumping
+        # ahead or we are at the start. Also don't wait when we want to
+        # skip some frames via --start. Note that we still render them.
+        # We could also only start rendering from the last CLRSCREEN
+        # before FLAGS.start, which would be potentially faster.
+        if jump == 0 and prev is not None and frame[0] >= FLAGS.start:
             speed, drift, jump = wait(timestamp - prev, speed, drift)
 
         if channel == 0 and CLRCODE.search(data):
