@@ -13,11 +13,14 @@ parser.add_argument(
     help="Use ttyrec (not ttyrec2) format without input data",
 )
 parser.add_argument(
-    "filename", default="", type=str, nargs="?", help="tty record file, or - for stdin"
+    "-c",
+    "--no_unicode_csi",
+    dest="unicode_csi",
+    action="store_false",
+    help="Don't display control sequence introducer with unicode symbol",
 )
-parser.add_argument("--start", default=0, type=int, help="Start at a specific frame")
 parser.add_argument(
-    "--end", default=float("inf"), type=int, help="Quit after a specific frame count"
+    "filename", default="", type=str, nargs="?", help="tty record file, or - for stdin"
 )
 
 
@@ -109,6 +112,10 @@ DEC_REGEX = re.compile(
     re.X,
 )
 
+CSI_REGEX = re.compile(r"\\x1b\[")
+
+CSI_UNICODE = "⌘"
+
 
 def _colorsub(m):
     """Substitute color in `COLOR_REGEX`."""
@@ -152,9 +159,14 @@ def main():
                 data = action
                 channel = "->"
 
-            data = re.sub(COLOR_REGEX, _colorsub, str(data))
-            data = re.sub(CTRL_REGEX, _ctrlsub, str(data))
-            data = re.sub(DEC_REGEX, _decsub, str(data))
+            data = str(data)
+
+            data = re.sub(COLOR_REGEX, _colorsub, data)
+            data = re.sub(CTRL_REGEX, _ctrlsub, data)
+            data = re.sub(DEC_REGEX, _decsub, data)
+
+            if FLAGS.unicode_csi:
+                data = re.sub(CSI_REGEX, CSI_UNICODE, data)
 
             try:
                 print(
