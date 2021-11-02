@@ -4,6 +4,11 @@
 from nle.nethack import actions
 from nle.scripts import ttyplay
 
-if __name__ == "__main__":
+
+def main():
     ttyplay.INPUTS = actions._ACTIONS_DICT
     ttyplay.main()
+
+
+if __name__ == "__main__":
+    main()
