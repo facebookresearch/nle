@@ -190,7 +190,6 @@ class NLE(gym.Env):
     def __init__(
         self,
         savedir=None,
-        archivefile=None,
         character="mon-hum-neu-mal",
         max_episode_steps=5000,
         observation_keys=(
@@ -243,8 +242,6 @@ class NLE(gym.Env):
                 If set to True, do not decline menus, text input or auto 'MORE'.
                 If set to False, only skip click through 'MORE' on death.
         """
-        del archivefile  # TODO: Remove once we change the API.
-
         self.character = character
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
