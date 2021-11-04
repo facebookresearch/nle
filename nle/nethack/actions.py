@@ -30,7 +30,7 @@ class TextCharacters(enum.IntEnum):
     NUM_7 = ord("7")
     NUM_8 = ord("8")
     NUM_9 = ord("9")
-    DOLLAR = ord("$")  # TODO: Add SEE* actions instead (see PR #177).
+    DOLLAR = ord("$")  # Also SEEGOLD.
 
 
 class CompassCardinalDirection(enum.IntEnum):
@@ -184,6 +184,34 @@ class Command(enum.IntEnum):
     ZAP = ord("z")  # zap a wand
 
 
+# Wizard commands. Only the ones with keyboard shortcuts defined here.
+# Cf. https://nethackwiki.com/wiki/Wizard_mode#Commands
+class WizardCommand(enum.IntEnum):
+    # levelchange	change experience level
+    # lightsources	show mobile light sources
+    # panic	panic test
+    # polyself	polymorph self
+    # seenv	show seen vectors
+    # stats	show memory statistics
+    # terrain	show current level (more options than in normal play)
+    # timeout	look at timeout queue
+    # vanquished	disclose counts of dead monsters sorted in various ways
+    # vision	show vision array
+    # wizbury	buries adjacent objects
+    WIZDETECT = C("e")  # reveal hidden things within a small radius
+    WIZGENESIS = C("g")  # create a monster
+    WIZIDENTIFY = C("i")  # identify all items in inventory
+    # wizintrinsic	give yourself any intrinsic for 30 turns
+    WIZLEVELPORT = C("v")  # teleport to another level
+    # wizmakemap	recreate the current dungeon level
+    WIZMAP = C("f")  # map the level
+    # wizrumorcheck	validate first and last rumor for true and false set
+    # wizsmell	smell a monster
+    WIZWHERE = C("o")  # same as OVERVIEW
+    WIZWISH = C("w")  # wish for something
+    # wmode	show wall modes
+
+
 ACTIONS = tuple(
     list(CompassDirection)
     + list(CompassDirectionLonger)
@@ -220,7 +248,6 @@ _USEFUL_ACTIONS = list(ACTIONS)
 for action in NON_RL_ACTIONS + tuple(TextCharacters):
     _USEFUL_ACTIONS.remove(action)
 _USEFUL_ACTIONS.append(TextCharacters.SPACE)
-_USEFUL_ACTIONS.append(TextCharacters.DOLLAR)
 USEFUL_ACTIONS = tuple(_USEFUL_ACTIONS)
 del _USEFUL_ACTIONS
 
