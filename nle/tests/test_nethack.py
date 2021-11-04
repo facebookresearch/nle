@@ -543,7 +543,6 @@ class TestAuxillaryFunctions:
 class TestNethackActions:
     def test_all_ascii(self):
         for c in range(32, 127):
-            if c in (ord("%"), ord("]"), ord("{"), ord("|"), ord("}"), ord("~")):
-                # Not a NetHack command.
+            if chr(c) in "%]{|}~":  # Not a NetHack command.
                 continue
             nethack.action_id_to_type(c)
