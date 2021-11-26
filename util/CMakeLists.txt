@@ -56,6 +56,11 @@ add_custom_command(
   COMMAND $<TARGET_FILE:makedefs> ARGS -p)
 
 add_custom_command(
+  DEPENDS tilemap
+  OUTPUT ${NLE_SRC_GEN}/tile.c
+  COMMAND $<TARGET_FILE:tilemap>)
+
+add_custom_command(
   OUTPUT ${NLE_UTIL_GEN}/dgn_parser.c ${NLE_UTIL_GEN}/dgn_comp.h
   COMMAND bison -y --defines=${NLE_UTIL_GEN}/dgn_comp.h -o
           ${NLE_UTIL_GEN}/dgn_parser.c ${NLE_UTIL}/dgn_comp.y
@@ -80,6 +85,13 @@ add_custom_command(
   DEPENDS ${NLE_UTIL}/lev_comp.l)
 
 add_custom_target(util DEPENDS ${MAKEDEFS_HEADERS} recover)
+
+add_executable(tilemap ${NLE_WIN}/share/tilemap.c)
+target_include_directories(tilemap PUBLIC ${NLE_INC} ${NLE_INC_GEN})
+add_dependencies(tilemap util)
+
+add_library(tile OBJECT ${NLE_SRC_GEN}/tile.c)
+target_include_directories(tile PUBLIC ${NLE_INC} ${NLE_INC_GEN})
 
 # NOTE: util is dependent on these two
 add_dependencies(lev_comp util)

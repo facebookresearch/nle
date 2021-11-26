@@ -353,6 +353,11 @@ class TestNethackFunctionsAndConstants:
         assert darkroom_symdef.explanation == "dark part of a room"
         assert darkroom_symdef.color == 8  # NO_COLOR
 
+    def test_glyph2tile(self):
+        assert nethack.glyph2tile[nethack.GLYPH_MON_OFF] == 0
+        assert nethack.glyph2tile[nethack.GLYPH_PET_OFF] == 0
+        assert nethack.glyph2tile[nethack.GLYPH_DETECT_OFF] == 0
+
 
 class TestNethackGlanceObservation:
     @pytest.fixture
