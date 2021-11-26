@@ -22,7 +22,7 @@ set(MAKEDEFS_HEADERS ${NLE_INC_GEN}/date.h ${NLE_INC_GEN}/onames.h
 
 set(DLB_SRC dlb_main.c ${NLE_SRC}/dlb.c panic.c ${NLE_SRC}/alloc.c)
 
-file(MAKE_DIRECTORY ${NLE_INC_GEN})
+file(MAKE_DIRECTORY ${NLE_INC_GEN} ${NLE_SRC_GEN})
 
 add_executable(makedefs ${MAKEDEFS_SRC})
 target_include_directories(makedefs PRIVATE ${NLE_INC} ${NLE_INC_GEN}
