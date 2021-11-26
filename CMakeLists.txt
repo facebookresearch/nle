@@ -54,7 +54,8 @@ add_compile_definitions(
   HACKDIR="${HACKDIR}"
   DEFAULT_WINDOW_SYS="rl"
   DLB
-  NOCWD_ASSUMPTIONS)
+  NOCWD_ASSUMPTIONS
+  NLE_USE_TILES)
 
 option(USE_SEEDING "Use seeding support in NLE" ON)
 
@@ -70,6 +71,8 @@ set(NLE_INC ${nle_SOURCE_DIR}/include)
 set(NLE_DAT ${nle_SOURCE_DIR}/dat)
 set(NLE_UTIL ${nle_SOURCE_DIR}/util)
 set(NLE_DOC ${nle_SOURCE_DIR}/doc)
+set(NLE_SSYS ${nle_SOURCE_DIR}/sys/share)
+set(NLE_WIN ${nle_SOURCE_DIR}/win)
 
 set(NLE_SRC_GEN ${nle_BINARY_DIR}/src)
 set(NLE_INC_GEN ${nle_BINARY_DIR}/include)
@@ -127,7 +130,7 @@ add_dependencies(rlmain util) # For pm.h.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/pybind11)
 pybind11_add_module(_pynethack win/rl/pynethack.cc src/monst.c src/decl.c
                     src/drawing.c src/objects.c)
-target_link_libraries(_pynethack PUBLIC nethackdl)
+target_link_libraries(_pynethack PUBLIC nethackdl tile)
 set_target_properties(_pynethack PROPERTIES CXX_STANDARD 14)
 target_include_directories(_pynethack PUBLIC ${NLE_INC_GEN})
 add_dependencies(_pynethack util) # For pm.h.
