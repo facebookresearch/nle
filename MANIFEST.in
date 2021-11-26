@@ -16,5 +16,4 @@ recursive-include third_party *
 recursive-exclude build *
 exclude nle/dashboard
 exclude nle/scripts/nh-clean-install.sh
-exclude nle/scripts/run-clang-format.py
 exclude nle/scripts/line-changed.sh
