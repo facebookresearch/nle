@@ -1,4 +1,4 @@
-Following Files.nh, this is a listing of all files that NLE adds to the NetHack
+Following Files.nh, this is a listing of some files that NLE adds to the NetHack
 distribution.
 
 .:
@@ -63,7 +63,7 @@ __init__.py  actions.py  nethack.py  print_message.py  ptyprocess.py
 nle/scripts:
 (files for the nle.scripts module)
 __init__.py         check_nethack_speed.py  collect_env.py  lint_changed.sh
-nh-clean-install    play.py                 plot.py         run-clang-format
+nh-clean-install    play.py                 plot.py
 test_raw_nethack.py ttyplay.py              ttyrec.py
 
 nle/tests:
