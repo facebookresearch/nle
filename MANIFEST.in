@@ -9,6 +9,7 @@ recursive-include src *
 recursive-include sys *
 recursive-include util *
 recursive-include win/rl *
+recursive-include win/share *
 recursive-include win/tty *
 recursive-include third_party *
 
