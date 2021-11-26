@@ -36,6 +36,12 @@ def main():
         pm = nle.nethack.permonst(i)
         print(pm.mname, m.mvflags)
 
+    for i in range(nle.nethack.NUMMONS):
+        pm = nle.nethack.permonst(i)
+        if pm.mname == "minotaur":
+            print(mv[i].died, pm.mname, "has/have died")
+            break
+
     # Important! Otherwise, the next reset() will core dump.
     _ctypes.dlclose(dl._handle)
 
