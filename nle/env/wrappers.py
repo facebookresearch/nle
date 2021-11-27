@@ -11,21 +11,19 @@ class CTypesAPIWrapper(gym.Wrapper):
         super().__init__(env)
         self.env = env
         self.dll = None
-        self.dll_ref = None
 
     def get_dll(self):
         if self.dll is None:
             self.dll = ctypes.CDLL(self.env.unwrapped.env.dlpath)
             weakref.finalize(self.dll, _ctypes.dlclose, self.dll._handle)
-            self.dll_ref = weakref.ref(self.dll)
         return self.dll
 
     def reset(self, **kwargs):
-        if self.dll_ref is not None:
+        if self.dll is not None:
+            ref = weakref.ref(self.dll)
             self.dll = None
-            if self.dll_ref() is not None:
+            if ref() is not None:
                 raise RuntimeError("References to Nethack DLL present at reset")
-            self.dll_ref = None
         return self.env.reset(**kwargs)
 
     def seed(self, core=None, disp=None, reseed=False):
