@@ -278,15 +278,17 @@ class Nethack
     void
     reset(FILE *ttyrec)
     {
+        nle_settings settings = { "", spawn_monsters_ };
+
         py::gil_scoped_release gil;
 
         if (!nle_) {
-            nle_ = nle_start(
-                dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_,
-                use_seed_init ? &seed_init_ : nullptr, spawn_monsters_);
+            nle_ =
+                nle_start(dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_,
+                          use_seed_init ? &seed_init_ : nullptr, &settings);
         } else
             nle_reset(nle_, &obs_, ttyrec,
-                      use_seed_init ? &seed_init_ : nullptr, spawn_monsters_);
+                      use_seed_init ? &seed_init_ : nullptr, &settings);
         use_seed_init = false;
 
         if (obs_.done)
