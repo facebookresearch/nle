@@ -7,7 +7,7 @@
 #include "nledl.h"
 
 void
-nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
+nledl_init(nledl_ctx *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
            int spawn_monsters)
 {
     nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
@@ -39,7 +39,7 @@ nledl_init(nle_ctx_t *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
 }
 
 void
-nledl_close(nle_ctx_t *nledl)
+nledl_close(nledl_ctx *nledl)
 {
     void (*end)(void *);
 
@@ -54,7 +54,7 @@ nledl_close(nle_ctx_t *nledl)
     dlerror();
 }
 
-nle_ctx_t *
+nledl_ctx *
 nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec,
           nle_seeds_init_t *seed_init, int spawn_monsters)
 {
@@ -67,8 +67,8 @@ nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec,
     return nledl;
 };
 
-nle_ctx_t *
-nle_step(nle_ctx_t *nledl, nle_obs *obs)
+nledl_ctx *
+nle_step(nledl_ctx *nledl, nle_obs *obs)
 {
     if (!nledl || !nledl->dlhandle || !nledl->nle_ctx) {
         fprintf(stderr, "Illegal nledl_ctx\n");
@@ -81,9 +81,9 @@ nle_step(nle_ctx_t *nledl, nle_obs *obs)
 }
 
 /* TODO: For a standard reset, we don't need the full close in nle.c.
- * E.g., we could re-use the stack buffer and the nle_ctx_t. */
+ * E.g., we could re-use the stack buffer and the nledl_ctx. */
 void
-nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
+nle_reset(nledl_ctx *nledl, nle_obs *obs, FILE *ttyrec,
           nle_seeds_init_t *seed_init, int spawn_monsters)
 {
     nledl_close(nledl);
@@ -97,7 +97,7 @@ nle_reset(nle_ctx_t *nledl, nle_obs *obs, FILE *ttyrec,
 }
 
 void
-nle_end(nle_ctx_t *nledl)
+nle_end(nledl_ctx *nledl)
 {
     nledl_close(nledl);
     free(nledl);
@@ -105,7 +105,7 @@ nle_end(nle_ctx_t *nledl)
 
 #ifdef NLE_ALLOW_SEEDING
 void
-nle_set_seed(nle_ctx_t *nledl, unsigned long core, unsigned long disp,
+nle_set_seed(nledl_ctx *nledl, unsigned long core, unsigned long disp,
              char reseed)
 {
     void (*set_seed)(void *, unsigned long, unsigned long, char);
@@ -122,7 +122,7 @@ nle_set_seed(nle_ctx_t *nledl, unsigned long core, unsigned long disp,
 }
 
 void
-nle_get_seed(nle_ctx_t *nledl, unsigned long *core, unsigned long *disp,
+nle_get_seed(nledl_ctx *nledl, unsigned long *core, unsigned long *disp,
              char *reseed)
 {
     void (*get_seed)(void *, unsigned long *, unsigned long *, char *);

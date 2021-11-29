@@ -33,7 +33,7 @@ class ScopedTC
 };
 
 void
-play(nle_ctx_t *nle, nle_obs *obs)
+play(nledl_ctx *nle, nle_obs *obs)
 {
     char i;
     while (!obs->done) {
@@ -54,7 +54,7 @@ play(nle_ctx_t *nle, nle_obs *obs)
 }
 
 void
-randplay(nle_ctx_t *nle, nle_obs *obs)
+randplay(nledl_ctx *nle, nle_obs *obs)
 {
     int actions[] = {
         13, 107, 108, 106, 104, 117, 110, 98, 121,
@@ -73,7 +73,7 @@ randplay(nle_ctx_t *nle, nle_obs *obs)
 }
 
 void
-randgame(nle_ctx_t *nle, nle_obs *obs, const int no_episodes)
+randgame(nledl_ctx *nle, nle_obs *obs, const int no_episodes)
 {
     for (int i = 0; i < no_episodes; ++i) {
         randplay(nle, obs);
@@ -115,7 +115,7 @@ main(int argc, char **argv)
         fopen("nle.ttyrec.bz2", "a"), fclose);
 
     ScopedTC tc;
-    nle_ctx_t *nle =
+    nledl_ctx *nle =
         nle_start("libnethack.so", &obs, ttyrec.get(), nullptr, 1);
     if (argc > 1 && argv[1][0] == 'r') {
         randgame(nle, &obs, 3);
