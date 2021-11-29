@@ -71,13 +71,11 @@ HACKDIR = pkg_resources.resource_filename("nle", "nethackdir")
 WIZKIT_FNAME = "wizkit.txt"
 
 
-def _set_env_vars(options, hackdir, wizkit=None):
+def _set_env_vars(options, wizkit=None):
     # TODO: Investigate not using environment variables for this.
     os.environ["NETHACKOPTIONS"] = ",".join(options)
-    os.environ["HACKDIR"] = hackdir
-    os.environ["TERM"] = "ansi"
     if wizkit is not None:
-        os.environ["WIZKIT"] = os.path.join(hackdir, wizkit)
+        os.environ["WIZKIT"] = wizkit
 
 
 def _new_dl_linux(vardir):
@@ -194,7 +192,7 @@ class Nethack:
         #   Copy our .so into self._vardir to load several copies of the dl.
         #   (Or use a memfd_create hack to create a file that gets deleted on
         #    process exit.)
-        self._dl, dlpath = _new_dl(self._vardir)
+        self._dl, self.dlpath = _new_dl(self._vardir)
 
         # Finalize even when the rest of this constructor fails.
         self._finalizer = weakref.finalize(self, _close, None, self._dl, self._tempdir)
@@ -206,11 +204,15 @@ class Nethack:
             self._options.append("playmode:debug")
         self._wizard = wizard
 
-        _set_env_vars(self._options, self._vardir)
+        _set_env_vars(self._options)
         if ttyrec is None:
-            self._pynethack = _pynethack.Nethack(dlpath, spawn_monsters)
+            self._pynethack = _pynethack.Nethack(
+                self.dlpath, self._vardir, spawn_monsters
+            )
         else:
-            self._pynethack = _pynethack.Nethack(dlpath, ttyrec, spawn_monsters)
+            self._pynethack = _pynethack.Nethack(
+                self.dlpath, ttyrec, self._vardir, spawn_monsters
+            )
         self._ttyrec = ttyrec
 
         self._finalizer.detach()
@@ -248,7 +250,10 @@ class Nethack:
             if not self._wizard:
                 raise ValueError("Set wizard=True to use the wizkit option.")
             self._write_wizkit_file(wizkit_items)
-            _set_env_vars(self._options, self._vardir, wizkit=WIZKIT_FNAME)
+            _set_env_vars(
+                self._options,
+                wizkit=os.path.join(self._vardir, WIZKIT_FNAME),
+            )
         else:
             _set_env_vars(self._options, self._vardir)
         if new_ttyrec is None:

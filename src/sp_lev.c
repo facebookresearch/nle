@@ -4715,11 +4715,11 @@ struct sp_coder *coder;
 }
 
 /*
- * nle_spawn_monsters variable here indicates whether to spawn monsters
- * randomly in procedurally generated mazes (true by default).
- * The variable is defined in nle.c.
+ * nle_spawn_monsters() indicates whether to spawn monsters randomly
+ * after every step with some probability (true by default).
  */
-extern int nle_spawn_monsters;
+extern int FDECL(nle_spawn_monsters, ());
+
 
 void
 spo_mazewalk(coder)
@@ -4792,7 +4792,7 @@ struct sp_coder *coder;
 
     walkfrom(x, y, OV_i(ftyp));
     /* Change for NLE: Optionally disable monster spawning */
-    if (OV_i(fstocked) && nle_spawn_monsters)
+    if (OV_i(fstocked) && nle_spawn_monsters())
         fill_empty_maze();
 
     opvar_free(mcoord);

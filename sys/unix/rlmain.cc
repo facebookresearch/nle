@@ -115,7 +115,8 @@ main(int argc, char **argv)
     std::unique_ptr<FILE, int (*)(FILE *)> ttyrec(
         fopen("nle.ttyrec.bz2", "a"), fclose);
 
-    nle_settings settings = { "", 1 };
+    nle_settings settings;
+    strncpy(settings.hackdir, getenv("HACKDIR"), sizeof(settings.hackdir));
 
     ScopedTC tc;
     nledl_ctx *nle =
