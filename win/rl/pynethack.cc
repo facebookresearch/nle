@@ -90,19 +90,27 @@ checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 class Nethack
 {
   public:
-    Nethack(std::string dlpath, std::string ttyrec, bool spawn_monsters)
-        : dlpath_(std::move(dlpath)), obs_{},
-          ttyrec_(std::fopen(ttyrec.c_str(), "a")),
-          spawn_monsters_(spawn_monsters)
+    Nethack(std::string dlpath, std::string ttyrec, std::string hackdir,
+            bool spawn_monsters)
+        : Nethack(std::move(dlpath), std::move(hackdir), spawn_monsters)
     {
+        ttyrec_ = std::fopen(ttyrec.c_str(), "a");
         if (!ttyrec_) {
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
             throw py::error_already_set();
         }
     }
-    Nethack(std::string dlpath, bool spawn_monsters)
+
+    Nethack(std::string dlpath, std::string hackdir, bool spawn_monsters)
         : dlpath_(std::move(dlpath)), obs_{}, spawn_monsters_(spawn_monsters)
     {
+        if (hackdir.size() > sizeof(settings_.hackdir) - 1) {
+            throw std::length_error("hackdir too long");
+        }
+
+        strncpy(settings_.hackdir, hackdir.c_str(),
+                sizeof(settings_.hackdir));
+        settings_.spawn_monsters = spawn_monsters;
     }
 
     ~Nethack()
@@ -112,6 +120,7 @@ class Nethack
             fclose(ttyrec_);
         }
     }
+
     void
     step(int action)
     {
@@ -122,6 +131,7 @@ class Nethack
         obs_.action = action;
         nle_ = nle_step(nle_, &obs_);
     }
+
     bool
     done()
     {
@@ -278,17 +288,15 @@ class Nethack
     void
     reset(FILE *ttyrec)
     {
-        nle_settings settings = { "", spawn_monsters_ };
-
         py::gil_scoped_release gil;
 
         if (!nle_) {
             nle_ =
                 nle_start(dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_,
-                          use_seed_init ? &seed_init_ : nullptr, &settings);
+                          use_seed_init ? &seed_init_ : nullptr, &settings_);
         } else
             nle_reset(nle_, &obs_, ttyrec,
-                      use_seed_init ? &seed_init_ : nullptr, &settings);
+                      use_seed_init ? &seed_init_ : nullptr, &settings_);
         use_seed_init = false;
 
         if (obs_.done)
@@ -303,6 +311,7 @@ class Nethack
     bool spawn_monsters_ = true;
     nledl_ctx *nle_ = nullptr;
     std::FILE *ttyrec_ = nullptr;
+    nle_settings settings_;
 };
 
 PYBIND11_MODULE(_pynethack, m)
@@ -310,10 +319,11 @@ PYBIND11_MODULE(_pynethack, m)
     m.doc() = "The NetHack Learning Environment";
 
     py::class_<Nethack>(m, "Nethack")
-        .def(py::init<std::string, std::string, bool>(), py::arg("dlpath"),
-             py::arg("ttyrec"), py::arg("spawn_monsters"))
-        .def(py::init<std::string, bool>(), py::arg("dlpath"),
+        .def(py::init<std::string, std::string, std::string, bool>(),
+             py::arg("dlpath"), py::arg("ttyrec"), py::arg("hackdir"),
              py::arg("spawn_monsters"))
+        .def(py::init<std::string, std::string, bool>(), py::arg("dlpath"),
+             py::arg("hackdir"), py::arg("spawn_monsters"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
         .def("reset", py::overload_cast<>(&Nethack::reset))

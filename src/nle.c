@@ -144,7 +144,7 @@ init_nle(FILE *ttyrec, nle_obs *obs)
     return nle;
 }
 
-static char nle_path[4096];
+nle_settings settings;
 
 /* TODO: Consider copying the relevant parts of main() in unixmain.c. */
 void
@@ -163,38 +163,29 @@ mainloop(fcontext_transfer_t ctx_transfer)
                                 stack->ssize);
 #endif
 
-    const char *p;
+    int len = strnlen(settings.hackdir, sizeof(settings.hackdir));
 
-    p = nh_getenv("HACKDIR");
-    if (!p || !*p) {
-        error("HACKDIR not set");
-        return;
-    }
-
-    int len = strlen(p);
-    if (len >= sizeof nle_path - 1) {
+    if (len >= sizeof(settings.hackdir) - 1) {
         error("HACKDIR too long");
         return;
     }
-
-    strncpy(nle_path, p, sizeof nle_path - 1);
-    if (nle_path[len - 1] != '/') {
-        nle_path[len] = '/';
-        nle_path[len + 1] = '\0';
+    if (settings.hackdir[len - 1] != '/') {
+        settings.hackdir[len] = '/';
+        settings.hackdir[len + 1] = '\0';
     } else {
-        nle_path[len] = '\0';
+        settings.hackdir[len] = '\0';
     }
 
-    fqn_prefix[SYSCONFPREFIX] = nle_path;
-    fqn_prefix[CONFIGPREFIX] = nle_path;
-    fqn_prefix[HACKPREFIX] = nle_path;
-    fqn_prefix[SAVEPREFIX] = nle_path;
-    fqn_prefix[LEVELPREFIX] = nle_path;
-    fqn_prefix[BONESPREFIX] = nle_path;
-    fqn_prefix[SCOREPREFIX] = nle_path;
-    fqn_prefix[LOCKPREFIX] = nle_path;
-    fqn_prefix[TROUBLEPREFIX] = nle_path;
-    fqn_prefix[DATAPREFIX] = nle_path;
+    fqn_prefix[SYSCONFPREFIX] = settings.hackdir;
+    fqn_prefix[CONFIGPREFIX] = settings.hackdir;
+    fqn_prefix[HACKPREFIX] = settings.hackdir;
+    fqn_prefix[SAVEPREFIX] = settings.hackdir;
+    fqn_prefix[LEVELPREFIX] = settings.hackdir;
+    fqn_prefix[BONESPREFIX] = settings.hackdir;
+    fqn_prefix[SCOREPREFIX] = settings.hackdir;
+    fqn_prefix[LOCKPREFIX] = settings.hackdir;
+    fqn_prefix[TROUBLEPREFIX] = settings.hackdir;
+    fqn_prefix[DATAPREFIX] = settings.hackdir;
 
     char *argv[1] = { "nethack" };
 
@@ -358,6 +349,12 @@ nle_done(int how)
     nle->observation->how_done = how;
 }
 
+int
+nle_spawn_monsters()
+{
+    return settings.spawn_monsters;
+}
+
 nle_seeds_init_t *nle_seeds_init;
 
 /* See rng.c. */
@@ -370,12 +367,6 @@ extern int FDECL(set_random, (unsigned long, int FDECL((*fn), (int) )));
    as seed for the random number generator */
 extern unsigned long NDECL(sys_random_seed);
 
-/*
- * Bool indicating whether to spawn monsters randomly after every step with
- * some probability (1 by def). For more info, see
- * https://nethackwiki.com/wiki/Monster_creation#Random_generation
- */
-int nle_spawn_monsters = 1;
 /*
  * Initializes the random number generator.
  * Originally in hacklib.c.
@@ -395,15 +386,16 @@ init_random(int FDECL((*fn), (int) ))
 
 nle_ctx_t *
 nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init,
-          int spawn_monsters)
+          nle_settings *settings_p)
 {
     /* Set CO and LI to control ttyrec output size. */
     CO = NLE_TERM_CO;
     LI = NLE_TERM_LI;
 
+    settings = *settings_p;
+
     nle_ctx_t *nle = init_nle(ttyrec, obs);
     nle_seeds_init = seed_init;
-    nle_spawn_monsters = spawn_monsters;
 
     nle->stack = create_fcontext_stack(STACK_SIZE);
     nle->generatorcontext =

@@ -8,7 +8,7 @@
 
 void
 nledl_init(nledl_ctx *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
-           int spawn_monsters)
+           nle_settings *settings)
 {
     nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
 
@@ -19,9 +19,9 @@ nledl_init(nledl_ctx *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
 
     dlerror(); /* Clear any existing error */
 
-    void *(*start)(nle_obs *, FILE *, nle_seeds_init_t *, int);
+    void *(*start)(nle_obs *, FILE *, nle_seeds_init_t *, nle_settings *);
     start = dlsym(nledl->dlhandle, "nle_start");
-    nledl->nle_ctx = start(obs, nledl->ttyrec, seed_init, spawn_monsters);
+    nledl->nle_ctx = start(obs, nledl->ttyrec, seed_init, settings);
 
     char *error = dlerror();
     if (error != NULL) {
@@ -63,7 +63,7 @@ nle_start(const char *dlpath, nle_obs *obs, FILE *ttyrec,
     nledl->ttyrec = ttyrec;
     strncpy(nledl->dlpath, dlpath, sizeof(nledl->dlpath));
 
-    nledl_init(nledl, obs, seed_init, settings->spawn_monsters);
+    nledl_init(nledl, obs, seed_init, settings);
     return nledl;
 };
 
@@ -93,7 +93,7 @@ nle_reset(nledl_ctx *nledl, nle_obs *obs, FILE *ttyrec,
 
     // TODO: Consider refactoring nledl.h such that we expose this init
     // function but drop reset.
-    nledl_init(nledl, obs, seed_init, settings->spawn_monsters);
+    nledl_init(nledl, obs, seed_init, settings);
 }
 
 void
