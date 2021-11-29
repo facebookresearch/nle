@@ -78,4 +78,17 @@ typedef struct {
 #endif
 } nle_seeds_init_t;
 
+typedef struct nle_settings {
+    /*
+     *  Path to NetHack's game files.
+     */
+    char hackdir[4096];
+    /*
+     * Bool indicating whether to spawn monsters randomly after every step
+     * with some probability (1 by def). For more info, see
+     * https://nethackwiki.com/wiki/Monster_creation#Random_generation
+     */
+    int spawn_monsters;
+} nle_settings;
+
 #endif /* NLEOBS_H */
