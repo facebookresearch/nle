@@ -299,7 +299,7 @@ class Nethack
     nle_seeds_init_t seed_init_;
     bool use_seed_init = false;
     bool spawn_monsters_ = true;
-    nle_ctx_t *nle_ = nullptr;
+    nledl_ctx *nle_ = nullptr;
     std::FILE *ttyrec_ = nullptr;
 };
 
