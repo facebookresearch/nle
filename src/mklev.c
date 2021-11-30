@@ -646,6 +646,9 @@ clear_level_structures()
     clear_regions();
 }
 
+/* Added for NLE. */
+extern char* nle_getenv(const char *);
+
 STATIC_OVL void
 makelevel()
 {
@@ -761,7 +764,7 @@ makelevel()
     {
         register int u_depth = depth(&u.uz);
 
-        if (wizard && nh_getenv("SHOPTYPE"))
+        if (wizard && nle_getenv("SHOPTYPE"))
             mkroom(SHOPBASE);
         else if (u_depth > 1 && u_depth < depth(&medusa_level)
                  && nroom >= room_threshold && rn2(u_depth) < 3)

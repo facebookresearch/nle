@@ -85,6 +85,7 @@ typedef struct nle_settings {
      */
     char hackdir[4096];
     char options[32768];
+    char wizkit[4096];
     /*
      * Bool indicating whether to spawn monsters randomly after every step
      * with some probability (1 by def). For more info, see

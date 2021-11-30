@@ -104,7 +104,8 @@ class Nethack
 
     Nethack(std::string dlpath, std::string hackdir,
             std::string nethackoptions, bool spawn_monsters)
-        : dlpath_(std::move(dlpath)), obs_{}, spawn_monsters_(spawn_monsters)
+        : dlpath_(std::move(dlpath)), obs_{}, settings_{},
+          spawn_monsters_(spawn_monsters)
     {
         if (hackdir.size() > sizeof(settings_.hackdir) - 1) {
             throw std::length_error("hackdir too long");
@@ -291,6 +292,15 @@ class Nethack
         return static_cast<game_end_types>(obs_.how_done);
     }
 
+    void
+    set_wizkit(std::string wizkit)
+    {
+        if (wizkit.size() > sizeof(settings_.wizkit)) {
+            throw std::length_error("wizkit too long");
+        }
+        strncpy(settings_.wizkit, wizkit.c_str(), sizeof(settings_.wizkit));
+    }
+
   private:
     void
     reset(FILE *ttyrec)
@@ -329,10 +339,10 @@ PYBIND11_MODULE(_pynethack, m)
         .def(py::init<std::string, std::string, std::string, std::string,
                       bool>(),
              py::arg("dlpath"), py::arg("ttyrec"), py::arg("hackdir"),
-             py::arg("nethackoptions"), py::arg("spawn_monsters"))
+             py::arg("nethackoptions"), py::arg("spawn_monsters") = true)
         .def(py::init<std::string, std::string, std::string, bool>(),
              py::arg("dlpath"), py::arg("hackdir"), py::arg("nethackoptions"),
-             py::arg("spawn_monsters"))
+             py::arg("spawn_monsters") = true)
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
         .def("reset", py::overload_cast<>(&Nethack::reset))
@@ -356,7 +366,8 @@ PYBIND11_MODULE(_pynethack, m)
         .def("set_seeds", &Nethack::set_seeds)
         .def("get_seeds", &Nethack::get_seeds)
         .def("in_normal_game", &Nethack::in_normal_game)
-        .def("how_done", &Nethack::how_done);
+        .def("how_done", &Nethack::how_done)
+        .def("set_wizkit", &Nethack::set_wizkit);
 
     py::module mn = m.def_submodule(
         "nethack", "Collection of NetHack constants and functions");

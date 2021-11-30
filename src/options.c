@@ -656,7 +656,7 @@ char *
 nh_getenv(ev)
 const char *ev;
 {
-    fprintf(stderr, "NetHack: getenv(%s)\n", ev);
+    fprintf(stderr, "Warning: NetHack asked for env variable %s\n", ev);
 
     char *getev = getenv(ev);
 

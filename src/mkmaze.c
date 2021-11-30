@@ -986,7 +986,8 @@ const char *s;
 
     /* SPLEVTYPE format is "level-choice,level-choice"... */
     if (wizard && *protofile && sp && sp->rndlevs) {
-        char *ep = getenv("SPLEVTYPE"); /* not nh_getenv */
+        /* char *ep = getenv("SPLEVTYPE"); */ /* not nh_getenv */
+        char *ep = 0;  /* For NLE. */
         if (ep) {
             /* rindex always succeeds due to code in prior block */
             int len = (int) ((rindex(protofile, '-') - protofile) + 1);

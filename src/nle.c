@@ -376,7 +376,18 @@ nle_getenv(const char *name)
     if (strcmp(name, "NETHACKOPTIONS") == 0) {
         return settings.options;
     }
+    /* Don't return anything for "SHOPTYPE" or "SPLEVTYPE". */
     return (char *) 0;
+}
+
+FILE *
+nle_fopen_wizkit_file()
+{
+    size_t len = strnlen(settings.wizkit, sizeof(settings.wizkit));
+    if (!len) {
+        return (FILE *) 0;
+    }
+    return fmemopen(settings.wizkit, len, "r");
 }
 
 /*
