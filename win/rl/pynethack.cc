@@ -563,7 +563,7 @@ PYBIND11_MODULE(_pynethack, m)
             py::return_value_policy::reference)
         .def_static(
             "from_oc_class",
-            [](int olet) -> const class_sym * {
+            [](char olet) -> const class_sym * {
                 if (olet < 0 || olet >= MAXOCLASSES)
                     throw std::out_of_range(
                         "Argument should be between 0 and MAXOCLASSES ("
