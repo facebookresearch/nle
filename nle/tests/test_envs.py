@@ -160,20 +160,9 @@ class TestWizkit:
         env = gym.make("NetHack-v0", wizard=True)
         req_items = ["meatball", "apple"]
         env.reset(wizkit_items=req_items)
-        path_to_wizkit = os.path.join(env.env._vardir, nethack.nethack.WIZKIT_FNAME)
 
-        # test file exists
-        os.path.exists(path_to_wizkit)
-
-        # test that file content corresponds to what you requested
-        with open(path_to_wizkit, "r") as f:
-            for item, line in zip(req_items, f):
-                assert item == line.strip()
-
+        # TODO: Test inventory here.
         env.reset(wizkit_items=req_items)
-        with open(path_to_wizkit, "r") as f:
-            lines = f.readlines()
-        assert len(lines) == len(req_items)
         del env
 
 

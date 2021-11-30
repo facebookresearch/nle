@@ -2013,6 +2013,8 @@ int src;
     }
     /* fall through to standard names */
 
+    return (FILE *) 0;  /* NLE: Stop here, don't read .nethackrc etc. */
+
 #if defined(MICRO) || defined(MAC) || defined(__BEOS__) || defined(WIN32)
     set_configfile_name(fqname(default_configfile, CONFIGPREFIX, 0));
     if ((fp = fopenp(configfile, "r")) != (FILE *) 0) {
@@ -2939,6 +2941,8 @@ int src;
     return rv;
 }
 
+extern FILE* nle_fopen_wizkit_file();
+
 STATIC_OVL FILE *
 fopen_wizkit_file()
 {
@@ -3064,7 +3068,7 @@ read_wizkit()
 {
     FILE *fp;
 
-    if (!wizard || !(fp = fopen_wizkit_file()))
+    if (!wizard || !(fp = nle_fopen_wizkit_file()))
         return;
 
     program_state.wizkit_wishing = 1;

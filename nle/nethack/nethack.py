@@ -68,13 +68,6 @@ NETHACKOPTIONS = (
 )
 
 HACKDIR = pkg_resources.resource_filename("nle", "nethackdir")
-WIZKIT_FNAME = "wizkit.txt"
-
-
-def _set_env_vars(options, wizkit=None):
-    # TODO: Investigate not using environment variables for this.
-    if wizkit is not None:
-        os.environ["WIZKIT"] = wizkit
 
 
 def _new_dl_linux(vardir):
@@ -203,7 +196,6 @@ class Nethack:
             self._options.append("playmode:debug")
         self._wizard = wizard
         self._nethackoptions = ",".join(self._options)
-        _set_env_vars(self._options)
         if ttyrec is None:
             self._pynethack = _pynethack.Nethack(
                 self.dlpath, self._vardir, self._nethackoptions, spawn_monsters
@@ -238,23 +230,12 @@ class Nethack:
         self._pynethack.step(action)
         return self._step_return(), self._pynethack.done()
 
-    def _write_wizkit_file(self, wizkit_items):
-        # TODO ideally we need to check the validity of the requested items
-        with open(os.path.join(self._vardir, WIZKIT_FNAME), "w") as f:
-            for item in wizkit_items:
-                f.write("%s\n" % item)
-
     def reset(self, new_ttyrec=None, wizkit_items=None):
         if wizkit_items is not None:
             if not self._wizard:
                 raise ValueError("Set wizard=True to use the wizkit option.")
-            self._write_wizkit_file(wizkit_items)
-            _set_env_vars(
-                self._options,
-                wizkit=os.path.join(self._vardir, WIZKIT_FNAME),
-            )
-        else:
-            _set_env_vars(self._options, self._vardir)
+            # TODO ideally we need to check the validity of the requested items
+            self._pynethack.set_wizkit("\n".join(wizkit_items))
         if new_ttyrec is None:
             self._pynethack.reset()
         else:

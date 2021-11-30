@@ -85,6 +85,9 @@ int roomtype;
         }
 }
 
+/* Added for NLE. */
+extern char* nle_getenv(const char *);
+
 STATIC_OVL void
 mkshop()
 {
@@ -95,7 +98,7 @@ mkshop()
     /* first determine shoptype */
     if (wizard) {
 #ifndef MAC
-        ep = nh_getenv("SHOPTYPE");
+        ep = nle_getenv("SHOPTYPE");
         if (ep) {
             if (*ep == 'z' || *ep == 'Z') {
                 mkzoo(ZOO);
