@@ -61,8 +61,9 @@ class Nethack
 {
   public:
     Nethack(std::string dlpath, std::string ttyrec, std::string hackdir,
-            bool spawn_monsters)
-        : Nethack(std::move(dlpath), std::move(hackdir), spawn_monsters)
+            std::string nethackoptions, bool spawn_monsters)
+        : Nethack(std::move(dlpath), std::move(hackdir),
+                  std::move(nethackoptions), spawn_monsters)
     {
         ttyrec_ = std::fopen(ttyrec.c_str(), "a");
         if (!ttyrec_) {
@@ -71,15 +72,21 @@ class Nethack
         }
     }
 
-    Nethack(std::string dlpath, std::string hackdir, bool spawn_monsters)
+    Nethack(std::string dlpath, std::string hackdir,
+            std::string nethackoptions, bool spawn_monsters)
         : dlpath_(std::move(dlpath)), obs_{}, spawn_monsters_(spawn_monsters)
     {
         if (hackdir.size() > sizeof(settings_.hackdir) - 1) {
             throw std::length_error("hackdir too long");
         }
+        if (nethackoptions.size() > sizeof(settings_.options)) {
+            throw std::length_error("nethackoptions too long");
+        }
 
         strncpy(settings_.hackdir, hackdir.c_str(),
                 sizeof(settings_.hackdir));
+        strncpy(settings_.options, nethackoptions.c_str(),
+                sizeof(settings_.options));
         settings_.spawn_monsters = spawn_monsters;
     }
 
@@ -289,11 +296,13 @@ PYBIND11_MODULE(_pynethack, m)
     m.doc() = "The NetHack Learning Environment";
 
     py::class_<Nethack>(m, "Nethack")
-        .def(py::init<std::string, std::string, std::string, bool>(),
+        .def(py::init<std::string, std::string, std::string, std::string,
+                      bool>(),
              py::arg("dlpath"), py::arg("ttyrec"), py::arg("hackdir"),
+             py::arg("nethackoptions"), py::arg("spawn_monsters"))
+        .def(py::init<std::string, std::string, std::string, bool>(),
+             py::arg("dlpath"), py::arg("hackdir"), py::arg("nethackoptions"),
              py::arg("spawn_monsters"))
-        .def(py::init<std::string, std::string, bool>(), py::arg("dlpath"),
-             py::arg("hackdir"), py::arg("spawn_monsters"))
         .def("step", &Nethack::step, py::arg("action"))
         .def("done", &Nethack::done)
         .def("reset", py::overload_cast<>(&Nethack::reset))

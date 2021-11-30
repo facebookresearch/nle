@@ -83,6 +83,7 @@ typedef struct nle_settings {
      *  Path to NetHack's game files.
      */
     char hackdir[4096];
+    char options[32768];
     /*
      * Bool indicating whether to spawn monsters randomly after every step
      * with some probability (1 by def). For more info, see

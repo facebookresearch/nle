@@ -642,6 +642,9 @@ boolean val_allowed;
                       && !strncmpi(opt_name, user_string, len));
 }
 
+/* Added for NLE. */
+extern char * nle_getenv(const char *);
+
 /* most environment variables will eventually be printed in an error
  * message if they don't work, and most error message paths go through
  * BUFSZ buffers, which could be overflowed by a maliciously long
@@ -653,6 +656,8 @@ char *
 nh_getenv(ev)
 const char *ev;
 {
+    fprintf(stderr, "NetHack: getenv(%s)\n", ev);
+
     char *getev = getenv(ev);
 
     if (getev && strlen(getev) <= (BUFSZ / 2))
@@ -786,7 +791,7 @@ initoptions_init()
      * config file/environment variable below.
      */
     /* this detects the IBM-compatible console on most 386 boxes */
-    if ((opts = nh_getenv("TERM")) && !strncmp(opts, "AT", 2)) {
+    if ((opts = nle_getenv("TERM")) && !strncmp(opts, "AT", 2)) {
         if (!symset[PRIMARY].explicitly)
             load_symset("IBMGraphics", PRIMARY);
         if (!symset[ROGUESET].explicitly)
@@ -800,7 +805,7 @@ initoptions_init()
 #if defined(UNIX) || defined(VMS)
 #ifdef TTY_GRAPHICS
     /* detect whether a "vt" terminal can handle alternate charsets */
-    if ((opts = nh_getenv("TERM"))
+    if ((opts = nle_getenv("TERM"))
         /* [could also check "xterm" which emulates vtXXX by default] */
         && !strncmpi(opts, "vt", 2)
         && AS && AE && index(AS, '\016') && index(AE, '\017')) {
@@ -842,7 +847,7 @@ initoptions_finish()
 {
     nhsym sym = 0;
 #ifndef MAC
-    char *opts = getenv("NETHACKOPTIONS");
+    char *opts = nle_getenv("NETHACKOPTIONS");
 
     if (!opts)
         opts = getenv("HACKOPTIONS");
