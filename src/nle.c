@@ -367,6 +367,18 @@ extern int FDECL(set_random, (unsigned long, int FDECL((*fn), (int) )));
    as seed for the random number generator */
 extern unsigned long NDECL(sys_random_seed);
 
+char *
+nle_getenv(const char *name)
+{
+    if (strcmp(name, "TERM") == 0) {
+        return "ansi";
+    }
+    if (strcmp(name, "NETHACKOPTIONS") == 0) {
+        return settings.options;
+    }
+    return (char *) 0;
+}
+
 /*
  * Initializes the random number generator.
  * Originally in hacklib.c.

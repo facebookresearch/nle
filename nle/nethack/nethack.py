@@ -73,7 +73,6 @@ WIZKIT_FNAME = "wizkit.txt"
 
 def _set_env_vars(options, wizkit=None):
     # TODO: Investigate not using environment variables for this.
-    os.environ["NETHACKOPTIONS"] = ",".join(options)
     if wizkit is not None:
         os.environ["WIZKIT"] = wizkit
 
@@ -203,15 +202,15 @@ class Nethack:
         if wizard:
             self._options.append("playmode:debug")
         self._wizard = wizard
-
+        self._nethackoptions = ",".join(self._options)
         _set_env_vars(self._options)
         if ttyrec is None:
             self._pynethack = _pynethack.Nethack(
-                self.dlpath, self._vardir, spawn_monsters
+                self.dlpath, self._vardir, self._nethackoptions, spawn_monsters
             )
         else:
             self._pynethack = _pynethack.Nethack(
-                self.dlpath, ttyrec, self._vardir, spawn_monsters
+                self.dlpath, ttyrec, self._vardir, self._nethackoptions, spawn_monsters
             )
         self._ttyrec = ttyrec
 
