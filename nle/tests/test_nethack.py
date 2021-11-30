@@ -275,9 +275,15 @@ class TestNethackFunctionsAndConstants:
         assert nethack.NHW_MESSAGE == 1
         assert hasattr(nethack, "MAXWIN")
 
-        cs = nethack.class_sym.from_oc_class(nethack.WAND_CLASS)
+        # Slightly irritating to need `chr` here.
+        cs = nethack.class_sym.from_oc_class(chr(nethack.WAND_CLASS))
         assert cs.sym == "/"
         assert cs.explain == "wand"
+
+        obj = nethack.objclass(0)
+        cs = nethack.class_sym.from_oc_class(obj.oc_class)
+        assert cs.sym == "]"
+        assert cs.explain == "strange object"
 
     def test_permonst(self):
         mon = nethack.permonst(0)
