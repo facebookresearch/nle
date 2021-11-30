@@ -561,6 +561,17 @@ PYBIND11_MODULE(_pynethack, m)
                 return &def_monsyms[let];
             },
             py::return_value_policy::reference)
+        .def_static(
+            "from_oc_class",
+            [](int olet) -> const class_sym * {
+                if (olet < 0 || olet >= MAXOCLASSES)
+                    throw std::out_of_range(
+                        "Argument should be between 0 and MAXOCLASSES ("
+                        + std::to_string(MAXOCLASSES) + ") but got "
+                        + std::to_string(olet));
+                return &def_oc_syms[olet];
+            },
+            py::return_value_policy::reference)
         .def_readonly("sym", &class_sym::sym)
         .def_readonly("name", &class_sym::name)
         .def_readonly("explain", &class_sym::explain)
