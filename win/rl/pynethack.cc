@@ -92,8 +92,8 @@ class Nethack
   public:
     Nethack(std::string dlpath, std::string ttyrec, bool spawn_monsters)
         : dlpath_(std::move(dlpath)), obs_{},
-          ttyrec_(std::fopen(ttyrec.c_str(), "a")),
-          spawn_monsters_(spawn_monsters)
+          spawn_monsters_(spawn_monsters),
+          ttyrec_(std::fopen(ttyrec.c_str(), "a"))
     {
         if (!ttyrec_) {
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
