@@ -1,7 +1,9 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+cff-version: 1.2.0
+title: "The NetHack Learning Environment"
 authors:
   - name: "The NetHack DevTeam"
   - name: "The NLE team"
-cff-version: 1.2.0
 message: "If you want to cite NLE (as opposed to NetHack itself), please cite the preferred-citation paper."
 preferred-citation:
   authors:
@@ -26,4 +28,3 @@ preferred-citation:
     name: "Neural Information Processing Systems (NeurIPS)"
   publisher:
     name: "Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)"
-title: "The NetHack Learning Environment"
