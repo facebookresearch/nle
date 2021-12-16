@@ -1,0 +1,30 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+cff-version: 1.2.0
+title: "The NetHack Learning Environment"
+authors:
+  - name: "The NetHack DevTeam"
+  - name: "The NLE team"
+message: "If you want to cite NLE (as opposed to NetHack itself), please cite the preferred-citation paper."
+preferred-citation:
+  authors:
+    - family-names: Küttler
+      given-names: Heinrich
+    - family-names: Nardelli
+      given-names: Nantas
+    - family-names: Miller
+      given-names: Alexander H.
+    - family-names: Raileanu
+      given-names: Roberta
+    - family-names: Selvatici
+      given-names: Marco
+    - family-names: Grefenstette
+      given-names: Edward
+    - family-names: Rocktäschel
+      given-names: Tim
+  title: "The NetHack Learning Environment"
+  type: inproceedings
+  year: 2020
+  conference:
+    name: "Neural Information Processing Systems (NeurIPS)"
+  publisher:
+    name: "Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)"
