@@ -104,8 +104,7 @@ class Nethack
 
     Nethack(std::string dlpath, std::string hackdir,
             std::string nethackoptions, bool spawn_monsters)
-        : dlpath_(std::move(dlpath)), obs_{}, settings_{},
-          spawn_monsters_(spawn_monsters)
+        : dlpath_(std::move(dlpath)), obs_{}, settings_{}
     {
         if (hackdir.size() > sizeof(settings_.hackdir) - 1) {
             throw std::length_error("hackdir too long");
@@ -325,7 +324,6 @@ class Nethack
     std::vector<py::object> py_buffers_;
     nle_seeds_init_t seed_init_;
     bool use_seed_init = false;
-    bool spawn_monsters_ = true;
     nledl_ctx *nle_ = nullptr;
     std::FILE *ttyrec_ = nullptr;
     nle_settings settings_;
