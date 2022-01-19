@@ -165,6 +165,16 @@ class TestWizkit:
         env.reset(wizkit_items=req_items)
         del env
 
+    def test_max_steps(self, max_episode_steps=10):
+        env = gym.make(
+            "NetHack-v0",
+            wizard=True,
+            max_episode_steps=max_episode_steps,
+            allow_all_yn_questions=True,
+            allow_all_modes=True,
+        )
+        rollout_env(env, 2 * max_episode_steps)
+
 
 @pytest.mark.parametrize("env_name", [e for e in get_nethack_env_ids() if "Score" in e])
 class TestBasicGymEnv:
