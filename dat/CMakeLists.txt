@@ -74,15 +74,7 @@ endforeach(filename)
 # Dat files that are not inputs to any tools.
 set(ALL_DAT_NOTGEN ${ALL_DAT_NOTGEN} license symbols)
 
-# TODO(NN): try to glob .lev automatically
-#
-# NOTE: Using:
-#
-# install(DIRECTORY ${NH_DAT_GEN} DESTINATION ${INSTDIR} FILES_MATCHING PATTERN
-# "*.lev")
-#
-# results in `$HACKDIR/dat/*.lev` due to CWD. I've tried to get it to work, but
-# given up after a couple of hours.
+# Result of running lev_comp.
 set(LEVS_GEN
     Arc-fila.lev
     Arc-filb.lev
@@ -257,10 +249,9 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E echo "WIZARDS=*" > sysconf)
 
 # Defensive dependencies for when we also build NetHack with make/make install.
-list(TRANSFORM DATDLB PREPEND ${NH_DAT_GEN}/ OUTPUT_VARIABLE
-                                              NH_DAT_GEN_DATDLB)
+list(TRANSFORM DATDLB PREPEND ${NH_DAT_GEN}/ OUTPUT_VARIABLE NH_DAT_GEN_DATDLB)
 list(TRANSFORM LEVS_GEN PREPEND ${NH_DAT_GEN}/ OUTPUT_VARIABLE
-                                                NH_DAT_GEN_LEVS_GEN)
+                                               NH_DAT_GEN_LEVS_GEN)
 
 add_custom_command(
   DEPENDS dlb ${NH_DAT_GEN_DATDLB} ${NH_DAT_GEN_LEVS_GEN}
