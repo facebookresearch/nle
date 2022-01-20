@@ -48,7 +48,7 @@ set(DATDLB
     quest.dat
     rumors)
 
-file(MAKE_DIRECTORY ${NLE_DAT_GEN})
+file(MAKE_DIRECTORY ${NH_DAT_GEN})
 
 # Inputs to makedef and lev_comp (and transitive inputs to dgn_comp and dlb).
 set(ALL_DAT_NOTGEN
@@ -68,7 +68,7 @@ set(ALL_DAT_NOTGEN
 
 # makedef and friends like having their inputs in the same directory.
 foreach(filename ${ALL_DAT_NOTGEN})
-  configure_file(${NLE_DAT}/${filename} ${filename} COPYONLY)
+  configure_file(${NH_DAT}/${filename} ${filename} COPYONLY)
 endforeach(filename)
 
 # Dat files that are not inputs to any tools.
@@ -78,7 +78,7 @@ set(ALL_DAT_NOTGEN ${ALL_DAT_NOTGEN} license symbols)
 #
 # NOTE: Using:
 #
-# install(DIRECTORY ${NLE_DAT_GEN} DESTINATION ${INSTDIR} FILES_MATCHING PATTERN
+# install(DIRECTORY ${NH_DAT_GEN} DESTINATION ${INSTDIR} FILES_MATCHING PATTERN
 # "*.lev")
 #
 # results in `$HACKDIR/dat/*.lev` due to CWD. I've tried to get it to work, but
@@ -232,7 +232,7 @@ add_custom_command(
 
 # Hack: Depend on date.h to avoid race.
 add_custom_command(
-  DEPENDS $<TARGET_FILE:makedefs> ${NLE_INC_GEN}/date.h
+  DEPENDS $<TARGET_FILE:makedefs> ${NH_INC_GEN}/date.h
   OUTPUT options
   COMMAND $<TARGET_FILE:makedefs> ARGS -v)
 
@@ -240,7 +240,7 @@ add_custom_command(
 # be defensive about the paths (matters if NetHack's make install was run).
 add_custom_command(
   DEPENDS $<TARGET_FILE:makedefs> $<TARGET_FILE:dgn_comp>
-          ${NLE_DAT_GEN}/dungeon.def ${NLE_DAT_GEN}/bogusmon
+          ${NH_DAT_GEN}/dungeon.def ${NH_DAT_GEN}/bogusmon
   OUTPUT dungeon dungeon.pdf
   COMMAND $<TARGET_FILE:makedefs> ARGS -e
   COMMAND $<TARGET_FILE:dgn_comp> ARGS dungeon.pdf)
@@ -257,18 +257,18 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E echo "WIZARDS=*" > sysconf)
 
 # Defensive dependencies for when we also build NetHack with make/make install.
-list(TRANSFORM DATDLB PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
-                                              NLE_DAT_GEN_DATDLB)
-list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
-                                                NLE_DAT_GEN_LEVS_GEN)
+list(TRANSFORM DATDLB PREPEND ${NH_DAT_GEN}/ OUTPUT_VARIABLE
+                                              NH_DAT_GEN_DATDLB)
+list(TRANSFORM LEVS_GEN PREPEND ${NH_DAT_GEN}/ OUTPUT_VARIABLE
+                                                NH_DAT_GEN_LEVS_GEN)
 
 add_custom_command(
-  DEPENDS dlb ${NLE_DAT_GEN_DATDLB} ${NLE_DAT_GEN_LEVS_GEN}
+  DEPENDS dlb ${NH_DAT_GEN_DATDLB} ${NH_DAT_GEN_LEVS_GEN}
   OUTPUT nhdat
   COMMAND LC_ALL=C $<TARGET_FILE:dlb> ARGS cf nhdat ${DATDLB} ${LEVS_GEN})
 
 set(ALL_DAT_GEN nhdat perm record logfile xlogfile sysconf)
-list(TRANSFORM ALL_DAT_GEN PREPEND ${NLE_DAT_GEN}/)
+list(TRANSFORM ALL_DAT_GEN PREPEND ${NH_DAT_GEN}/)
 
 add_custom_target(dat ALL DEPENDS ${ALL_DAT_GEN} ${ALL_DAT_NOTGEN})
 
