@@ -12,11 +12,11 @@ RUN apt-get update && apt-get install -yq \
         libncurses5-dev \
         ninja-build
 
-COPY . /opt/nle/
+COPY . /opt/nethack/
 
-RUN rm -rf /opt/nle/build
+RUN rm -rf /opt/nethack/build
 
-WORKDIR /opt/nle/build
+WORKDIR /opt/nethack/build
 
 RUN cmake .. -GNinja && ninja && cmake --install .
 
