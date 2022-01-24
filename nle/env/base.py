@@ -190,7 +190,6 @@ class NLE(gym.Env):
     def __init__(
         self,
         savedir=None,
-        archivefile=None,
         character="mon-hum-neu-mal",
         max_episode_steps=5000,
         observation_keys=(
@@ -243,8 +242,6 @@ class NLE(gym.Env):
                 If set to True, do not decline menus, text input or auto 'MORE'.
                 If set to False, only skip click through 'MORE' on death.
         """
-        del archivefile  # TODO: Remove once we change the API.
-
         self.character = character
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
@@ -277,12 +274,6 @@ class NLE(gym.Env):
                 logger.info("Created savedir: %s", self.savedir)
             else:
                 logger.info("Not saving any NLE data.")
-
-        # TODO: Fix stats_file logic.
-        # self._setup_statsfile = self.savedir is not None
-        self._setup_statsfile = False
-        self._stats_file = None
-        self._stats_logger = None
 
         self._observation_keys = list(observation_keys)
 
@@ -404,41 +395,10 @@ This might contain data that shouldn't be available to agents."""
             done = True
 
         info = {}
-        # TODO: fix stats
-        # if end_status:
-        #     # stats = self._collect_stats(last_observation, end_status)
-        #     # stats = stats._asdict()
-        #     # stats = {}
-        #     # info["stats"] = stats
-        #
-        #    # if self._stats_logger is not None:
-        #     #     self._stats_logger.writerow(stats)
-
         info["end_status"] = end_status
         info["is_ascended"] = self.env.how_done() == nethack.ASCENDED
 
         return self._get_observation(observation), reward, done, info
-
-    def _collect_stats(self, message, end_status):
-        """Updates a stats dict tracking several env stats."""
-        # Using class rather than instance to allow tasks to reuse this with
-        # super()
-        # return NLE.Stats(
-        #     end_status=int(end_status),
-        #     score=_get(message, "Blstats.score", required=True),
-        #     time=_get(message, "Blstats.time", required=True),
-        #     steps=self._steps,
-        #     hp=_get(message, "Blstats.hitpoints", required=True),
-        #     exp=_get(message, "Blstats.experience_points", required=True),
-        #     exp_lev=_get(message, "Blstats.experience_level", required=True),
-        #     gold=_get(message, "Blstats.gold", required=True),
-        #     hunger=_get(message, "You.uhunger", required=True),
-        #     # killer_name=self._killer_name,
-        #     deepest_lev=_get(message, "Internal.deepest_lev_reached", required=True),
-        #     episode=self._episode,
-        #     seeds=self.get_seeds(),
-        #     ttyrec=self.env._process.filename,
-        # )
 
     def _in_moveloop(self, observation):
         program_state = observation[self._program_state_index]
@@ -472,8 +432,6 @@ This might contain data that shouldn't be available to agents."""
             if add_header:
                 self._stats_logger.writeheader()
         self._setup_statsfile = False
-
-        # self._killer_name = "UNK"
 
         self._steps = 0
 
@@ -609,9 +567,6 @@ This might contain data that shouldn't be available to agents."""
             if observation[self._internal_index][3]:  # xwaitforspace
                 observation, done = self.env.step(ASCII_SPACE)
                 continue
-
-            # TODO: Think about killer_name.
-            # if self._killer_name == "UNK"
 
             internal = observation[self._internal_index]
             in_yn_function = internal[1]
