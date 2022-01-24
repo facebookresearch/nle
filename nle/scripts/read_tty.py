@@ -1,9 +1,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import argparse
+import atexit
 import datetime
 import os
 import re
+import signal
 import struct
+import subprocess
+import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -25,6 +29,12 @@ parser.add_argument(
 )
 parser.add_argument(
     "filename", default="", type=str, nargs="?", help="tty record file, or - for stdin"
+)
+parser.add_argument(
+    "--no_pager",
+    dest="use_pager",
+    action="store_false",
+    help="Don't pipe data to less",
 )
 
 
@@ -151,6 +161,9 @@ def main():
         parser.print_help()
         return
 
+    if FLAGS.use_pager:
+        setup_pager()
+
     frames = [0, 0]
     with getfile(FLAGS.filename) as f:
         for timestamp, channel, data in ttyframes(f, tty2=not FLAGS.no_input):
@@ -178,23 +191,62 @@ def main():
             if FLAGS.unicode_csi:
                 data = re.sub(CSI_REGEX, CSI_UNICODE, data)
 
-            try:
-                print(
-                    "%s %s %s%s%s%s"
-                    % (
-                        color(str(frames), FRAMECNT_COLOR),
-                        color(
-                            datetime.datetime.fromtimestamp(timestamp), TIMESTAMP_COLOR
-                        ),
-                        color(arrow, CHANNEL_COLOR),
-                        color("{", BRACES_COLOR[channel]),
-                        data,
-                        color("}", BRACES_COLOR[channel]),
-                    )
+            print(
+                "%s %s %s%s%s%s"
+                % (
+                    color(str(frames), FRAMECNT_COLOR),
+                    color(datetime.datetime.fromtimestamp(timestamp), TIMESTAMP_COLOR),
+                    color(arrow, CHANNEL_COLOR),
+                    color("{", BRACES_COLOR[channel]),
+                    data,
+                    color("}", BRACES_COLOR[channel]),
                 )
-            except BrokenPipeError:  # E.g., read_tty.py ... | less -R, quit.
-                # Python flushes stdout on exit, but stdout is gone. Just leave.
-                os._exit(1)
+            )
+
+
+def setup_pager():
+    """Pager logic. Compare pager.c in git."""
+    if not os.isatty(1):
+        return
+
+    pager_env = os.environ.copy()
+    pager_env["LESS"] = "FRX"
+    pager = subprocess.Popen(["less"], bufsize=0, stdin=subprocess.PIPE, env=pager_env)
+    os.dup2(pager.stdin.fileno(), 1)
+    if os.isatty(2):
+        os.dup2(pager.stdin.fileno(), 2)
+    pager.stdin.close()
+
+    def close_pager_fds():
+        os.close(1)
+        os.close(2)
+
+    def wait_for_pager_atexit():
+        sys.stdout.flush()
+        sys.stderr.flush()
+        close_pager_fds()
+        pager.wait()
+
+    signos = (
+        signal.SIGINT,
+        signal.SIGHUP,
+        signal.SIGTERM,
+        signal.SIGQUIT,
+        signal.SIGPIPE,
+    )
+
+    handlers = {signo: signal.getsignal(signo) for signo in signos}
+
+    def wait_for_pager_signal(signo, frame):
+        close_pager_fds()
+        pager.wait()
+        for signo, handler in handlers.items():
+            signal.signal(signo, handler)
+        signal.raise_signal(signo)
+
+    for signo in signos:
+        signal.signal(signo, wait_for_pager_signal)
+    atexit.register(wait_for_pager_atexit)
 
 
 if __name__ == "__main__":
