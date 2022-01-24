@@ -137,11 +137,9 @@ class NetHackStaircasePet(NetHackStaircase):
             blstats = observation[self._blstats_index]
             x, y = blstats[:2]
 
-            neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2].reshape(-1).tolist()
-            # TODO: vectorize
-            for glyph in neighbors:
-                if nethack.glyph_is_pet(glyph):
-                    return self.StepStatus.TASK_SUCCESSFUL
+            neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2]
+            if np.any(nethack.glyph_is_pet(neighbors)):
+                return self.StepStatus.TASK_SUCCESSFUL
         return self.StepStatus.RUNNING
 
 
