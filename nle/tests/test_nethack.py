@@ -368,6 +368,104 @@ class TestNethackFunctionsAndConstants:
         assert nethack.glyph2tile[nethack.GLYPH_PET_OFF] == 0
         assert nethack.glyph2tile[nethack.GLYPH_DETECT_OFF] == 0
 
+    def test_glyph_is(self):
+        assert nethack.glyph_is_monster(nethack.GLYPH_MON_OFF)
+        assert nethack.glyph_is_pet(nethack.GLYPH_PET_OFF)
+        assert nethack.glyph_is_invisible(nethack.GLYPH_INVIS_OFF)
+        assert nethack.glyph_is_detected_monster(nethack.GLYPH_DETECT_OFF)
+        assert nethack.glyph_is_body(nethack.GLYPH_BODY_OFF)
+        assert nethack.glyph_is_ridden_monster(nethack.GLYPH_RIDDEN_OFF)
+        assert nethack.glyph_is_object(nethack.GLYPH_OBJ_OFF)
+        assert nethack.glyph_is_cmap(nethack.GLYPH_CMAP_OFF)
+        # No glyph_is_explode, glyph_is_zap in NH.
+        assert nethack.glyph_is_swallow(nethack.GLYPH_SWALLOW_OFF)
+        assert nethack.glyph_is_warning(nethack.GLYPH_WARNING_OFF)
+        assert nethack.glyph_is_statue(nethack.GLYPH_STATUE_OFF)
+
+        vec = np.array(
+            [
+                nethack.GLYPH_MON_OFF,
+                nethack.GLYPH_PET_OFF,
+                nethack.GLYPH_INVIS_OFF,
+                nethack.GLYPH_DETECT_OFF,
+                nethack.GLYPH_BODY_OFF,
+                nethack.GLYPH_RIDDEN_OFF,
+                nethack.GLYPH_OBJ_OFF,
+                nethack.GLYPH_CMAP_OFF,
+                nethack.GLYPH_EXPLODE_OFF,
+                nethack.GLYPH_ZAP_OFF,
+                nethack.GLYPH_SWALLOW_OFF,
+                nethack.GLYPH_WARNING_OFF,
+                nethack.GLYPH_STATUE_OFF,
+            ],
+            dtype=np.int32,
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_monster(vec),
+            np.isin(
+                vec,
+                [
+                    nethack.GLYPH_MON_OFF,
+                    nethack.GLYPH_PET_OFF,
+                    nethack.GLYPH_DETECT_OFF,
+                    nethack.GLYPH_RIDDEN_OFF,
+                ],
+            ),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_pet(vec),
+            np.isin(vec, [nethack.GLYPH_PET_OFF]),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_invisible(vec),
+            np.isin(vec, [nethack.GLYPH_INVIS_OFF]),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_detected_monster(vec),
+            np.isin(vec, [nethack.GLYPH_DETECT_OFF]),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_body(vec),
+            np.isin(vec, [nethack.GLYPH_BODY_OFF]),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_ridden_monster(vec),
+            np.isin(vec, [nethack.GLYPH_RIDDEN_OFF]),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_object(vec),
+            np.isin(
+                vec,
+                [
+                    nethack.GLYPH_BODY_OFF,
+                    nethack.GLYPH_OBJ_OFF,
+                    nethack.GLYPH_STATUE_OFF,
+                ],
+            ),
+        )
+        np.testing.assert_array_equal(  # Explosions are cmaps?
+            nethack.glyph_is_cmap(vec),
+            np.isin(vec, [nethack.GLYPH_CMAP_OFF, nethack.GLYPH_EXPLODE_OFF]),
+        )
+        # No glyph_is_explode, glyph_is_zap in NH.
+        np.testing.assert_array_equal(
+            nethack.glyph_is_swallow(vec),
+            np.isin(vec, [nethack.GLYPH_SWALLOW_OFF]),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_warning(vec),
+            np.isin(vec, [nethack.GLYPH_WARNING_OFF]),
+        )
+        np.testing.assert_array_equal(
+            nethack.glyph_is_statue(vec),
+            np.isin(vec, [nethack.GLYPH_STATUE_OFF]),
+        )
+
+        # Test some non-offset value too.
+        assert nethack.glyph_is_warning(
+            (nethack.GLYPH_WARNING_OFF + nethack.GLYPH_STATUE_OFF) // 2
+        )
+
 
 class TestNethackGlanceObservation:
     @pytest.fixture

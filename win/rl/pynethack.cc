@@ -535,31 +535,40 @@ PYBIND11_MODULE(_pynethack, m)
         py::int_(MG_OBJPILE); /* more than one stack of objects */
     mn.attr("MG_BW_LAVA") = py::int_(MG_BW_LAVA); /* 'black & white lava' */
 
-    // Expose macros as Python functions.
+    // Expose macros as Python functions, with optional vectorization.
     mn.def("glyph_is_monster",
-           [](int glyph) { return glyph_is_monster(glyph); });
-    mn.def("glyph_is_normal_monster",
-           [](int glyph) { return glyph_is_normal_monster(glyph); });
-    mn.def("glyph_is_pet", [](int glyph) { return glyph_is_pet(glyph); });
-    mn.def("glyph_is_body", [](int glyph) { return glyph_is_body(glyph); });
+           py::vectorize([](int glyph) { return glyph_is_monster(glyph); }));
+    mn.def("glyph_is_normal_monster", py::vectorize([](int glyph) {
+               return glyph_is_normal_monster(glyph);
+           }));
+    mn.def("glyph_is_pet",
+           py::vectorize([](int glyph) { return glyph_is_pet(glyph); }));
+    mn.def("glyph_is_body",
+           py::vectorize([](int glyph) { return glyph_is_body(glyph); }));
     mn.def("glyph_is_statue",
-           [](int glyph) { return glyph_is_statue(glyph); });
-    mn.def("glyph_is_ridden_monster",
-           [](int glyph) { return glyph_is_ridden_monster(glyph); });
-    mn.def("glyph_is_detected_monster",
-           [](int glyph) { return glyph_is_detected_monster(glyph); });
-    mn.def("glyph_is_invisible",
-           [](int glyph) { return glyph_is_invisible(glyph); });
-    mn.def("glyph_is_normal_object",
-           [](int glyph) { return glyph_is_normal_object(glyph); });
+           py::vectorize([](int glyph) { return glyph_is_statue(glyph); }));
+    mn.def("glyph_is_ridden_monster", py::vectorize([](int glyph) {
+               return glyph_is_ridden_monster(glyph);
+           }));
+    mn.def("glyph_is_detected_monster", py::vectorize([](int glyph) {
+               return glyph_is_detected_monster(glyph);
+           }));
+    mn.def("glyph_is_invisible", py::vectorize([](int glyph) {
+               return glyph_is_invisible(glyph);
+           }));
+    mn.def("glyph_is_normal_object", py::vectorize([](int glyph) {
+               return glyph_is_normal_object(glyph);
+           }));
     mn.def("glyph_is_object",
-           [](int glyph) { return glyph_is_object(glyph); });
-    mn.def("glyph_is_trap", [](int glyph) { return glyph_is_trap(glyph); });
-    mn.def("glyph_is_cmap", [](int glyph) { return glyph_is_cmap(glyph); });
+           py::vectorize([](int glyph) { return glyph_is_object(glyph); }));
+    mn.def("glyph_is_trap",
+           py::vectorize([](int glyph) { return glyph_is_trap(glyph); }));
+    mn.def("glyph_is_cmap",
+           py::vectorize([](int glyph) { return glyph_is_cmap(glyph); }));
     mn.def("glyph_is_swallow",
-           [](int glyph) { return glyph_is_swallow(glyph); });
+           py::vectorize([](int glyph) { return glyph_is_swallow(glyph); }));
     mn.def("glyph_is_warning",
-           [](int glyph) { return glyph_is_warning(glyph); });
+           py::vectorize([](int glyph) { return glyph_is_warning(glyph); }));
 
 #ifdef NLE_USE_TILES
     mn.attr("glyph2tile") =
