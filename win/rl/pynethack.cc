@@ -656,14 +656,24 @@ PYBIND11_MODULE(_pynethack, m)
                    + "' explain='" + std::string(cs.explain) + "'>";
         });
 
-    mn.def("glyph_to_mon", [](int glyph) { return glyph_to_mon(glyph); });
-    mn.def("glyph_to_obj", [](int glyph) { return glyph_to_obj(glyph); });
-    mn.def("glyph_to_trap", [](int glyph) { return glyph_to_trap(glyph); });
-    mn.def("glyph_to_cmap", [](int glyph) { return glyph_to_cmap(glyph); });
-    mn.def("glyph_to_swallow",
-           [](int glyph) { return glyph_to_swallow(glyph); });
-    mn.def("glyph_to_warning",
-           [](int glyph) { return glyph_to_warning(glyph); });
+    mn.def("glyph_to_mon", py::vectorize([](int glyph) -> int {
+               return glyph_to_mon(glyph);
+           }));
+    mn.def("glyph_to_obj", py::vectorize([](int glyph) -> int {
+               return glyph_to_obj(glyph);
+           }));
+    mn.def("glyph_to_trap", py::vectorize([](int glyph) -> int {
+               return glyph_to_trap(glyph);
+           }));
+    mn.def("glyph_to_cmap", py::vectorize([](int glyph) -> int {
+               return glyph_to_cmap(glyph);
+           }));
+    mn.def("glyph_to_swallow", py::vectorize([](int glyph) -> int {
+               return glyph_to_swallow(glyph);
+           }));
+    mn.def("glyph_to_warning", py::vectorize([](int glyph) -> int {
+               return glyph_to_warning(glyph);
+           }));
 
     py::class_<objclass>(
         mn, "objclass",
