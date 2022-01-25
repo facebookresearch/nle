@@ -52,7 +52,7 @@ class TestProfile:
         steps = 1000
 
         np.random.seed(seeds)
-        actions = np.random.choice(len(env._actions), size=steps)
+        actions = np.random.choice(env.action_space.n, size=steps)
 
         def seed():
             if not nle.nethack.NLE_ALLOW_SEEDING:

@@ -121,11 +121,11 @@ class TestGymEnv:
             if env_name.startswith("NetHackChallenge-"):
                 pytest.skip("No wizard mode in NetHackChallenge")
             env = gym.make(env_name, wizard=wizard)
-            assert "playmode:debug" in env.env._options
+            assert "playmode:debug" in env.nethack.options
         else:
             # do not send a parameter to test a default
             env = gym.make(env_name)
-            assert "playmode:debug" not in env.env._options
+            assert "playmode:debug" not in env.nethack.options
 
 
 class TestWizkit:
@@ -229,8 +229,6 @@ class TestGymEnvRollout:
         """Tests rollout_len steps (or until termination) of random policy."""
         env = gym.make(env_name, savedir=None)
         assert env.savedir is None
-        assert env._stats_file is None
-        assert env._stats_logger is None
         rollout_env(env, rollout_len)
 
     def test_seed_interface_output(self, env_name, rollout_len):
@@ -335,16 +333,15 @@ class TestGymDynamics:
             e.close()
 
     def test_kick_and_quit(self, env):
-        actions = env._actions
         env.reset()
-        kick = actions.index(nethack.Command.KICK)
+        kick = env.actions.index(nethack.Command.KICK)
         obs, reward, done, _ = env.step(kick)
         assert b"In what direction? " in bytes(obs["message"])
         env.step(nethack.MiscAction.MORE)
 
         # Hack to quit.
-        env.env.step(nethack.M("q"))
-        obs, reward, done, _ = env.step(actions.index(ord("y")))
+        env.nethack.step(nethack.M("q"))
+        obs, reward, done, _ = env.step(env.actions.index(ord("y")))
 
         assert done
         assert reward == 0.0
@@ -364,11 +361,11 @@ class TestGymDynamics:
         # Hopefully, we got some positive reward by now.
 
         # Get out of any menu / yn_function.
-        env.step(env._actions.index(ord("\r")))
+        env.step(env.actions.index(ord("\r")))
 
         # Hack to quit.
-        env.env.step(nethack.M("q"))
-        _, reward, done, _ = env.step(env._actions.index(ord("y")))
+        env.nethack.step(nethack.M("q"))
+        _, reward, done, _ = env.step(env.actions.index(ord("y")))
 
         assert done
         assert reward == 0.0
@@ -398,8 +395,8 @@ class TestNetHackChallenge:
         ):
             env.seed()
         with pytest.raises(RuntimeError, match="Should not try changing seeds"):
-            env.env.set_initial_seeds(0, 0, True)
+            env.nethack.set_initial_seeds(0, 0, True)
 
         if not nethack.NLE_ALLOW_SEEDING:
             with pytest.raises(RuntimeError, match="Seeding not enabled"):
-                env.env._pynethack.set_initial_seeds(0, 0, True)
+                env.nethack._pynethack.set_initial_seeds(0, 0, True)

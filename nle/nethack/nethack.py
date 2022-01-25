@@ -191,11 +191,11 @@ class Nethack:
 
         if options is None:
             options = NETHACKOPTIONS
-        self._options = list(options) + ["name:" + playername]
+        self.options = list(options) + ["name:" + playername]
         if wizard:
-            self._options.append("playmode:debug")
+            self.options.append("playmode:debug")
         self._wizard = wizard
-        self._nethackoptions = ",".join(self._options)
+        self._nethackoptions = ",".join(self.options)
         if ttyrec is None:
             self._pynethack = _pynethack.Nethack(
                 self.dlpath, self._vardir, self._nethackoptions, spawn_monsters
