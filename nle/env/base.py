@@ -1,6 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import collections
-import csv
 import enum
 import logging
 import os
@@ -419,19 +418,6 @@ This might contain data that shouldn't be available to agents."""
         self._episode += 1
         new_ttyrec = self._ttyrec_pattern % self._episode if self.savedir else None
         self.last_observation = self.env.reset(new_ttyrec, wizkit_items=wizkit_items)
-
-        # Only run on the first reset to initialize stats file
-        if self._setup_statsfile:
-            filename = os.path.join(self.savedir, "stats.csv")
-            add_header = not os.path.exists(filename)
-
-            self._stats_file = open(filename, "a", 1)  # line buffered.
-            self._stats_logger = csv.DictWriter(
-                self._stats_file, fieldnames=self.Stats._fields
-            )
-            if add_header:
-                self._stats_logger.writeheader()
-        self._setup_statsfile = False
 
         self._steps = 0
 
