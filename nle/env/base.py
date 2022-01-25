@@ -188,6 +188,7 @@ class NLE(gym.Env):
 
     def __init__(
         self,
+        save_ttyrec_every=0,
         savedir=None,
         character="mon-hum-neu-mal",
         max_episode_steps=5000,
@@ -213,15 +214,16 @@ class NLE(gym.Env):
         allow_all_yn_questions=False,
         allow_all_modes=False,
         spawn_monsters=True,
-        episode_save_cycle=1,
     ):
         """Constructs a new NLE environment.
 
         Args:
-            savedir (str or None): path to save ttyrecs (game recordings) into.
-                Defaults to None, which doesn't save any data. Otherwise,
-                interpreted as a path to a new or existing directory.
-                If "" (empty string), NLE choses a unique directory name.
+            save_ttyrec_every: Integer, if 0, no ttyrecs (game recordings) will
+                be saved. Otherwise, save a ttyrec every Nth episode.
+            savedir (str or None): Path to save ttyrecs (game recordings) into,
+                if save_ttyrec_every is nonzero. If nonempty string, interpreted
+                as a path to a new or existing directory.
+                If "" (empty string) or None, NLE choses a unique directory name.
             character (str): name of character. Defaults to "mon-hum-neu-mal".
             max_episode_steps (int): maximum amount of steps allowed before the
                 game is forcefully quit. In such cases, ``info["end_status"]``
@@ -241,15 +243,14 @@ class NLE(gym.Env):
             allow_all_modes (bool):
                 If set to True, do not decline menus, text input or auto 'MORE'.
                 If set to False, only skip click through 'MORE' on death.
-            episode_save_cycle (int):
-                number of episodes run before a game is saved to a ttyrec file.
-                Default value of 1 will save a ttyrec file for every episode.
+            spawn_monsters: If False, disables normal NetHack behavior to randomly
+                create monsters.
         """
         self.character = character
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
         self._allow_all_modes = allow_all_modes
-        self._episode_save_cycle = episode_save_cycle
+        self._save_ttyrec_every = save_ttyrec_every
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -258,7 +259,7 @@ class NLE(gym.Env):
         self.last_observation = ()
 
         try:
-            if savedir is None:
+            if not save_ttyrec_every:
                 self.savedir = None
             elif savedir:
                 self.savedir = os.path.abspath(savedir)
@@ -281,8 +282,8 @@ class NLE(gym.Env):
 
         if "internal" in self._observation_keys:
             logger.warn(
-                """The 'internal' NLE observation was requested.
-This might contain data that shouldn't be available to agents."""
+                "The 'internal' NLE observation was requested. "
+                "This might contain data that shouldn't be available to agents."
             )
 
         # Observations we always need.
@@ -419,13 +420,13 @@ This might contain data that shouldn't be available to agents."""
                 `self.observation_space`.
         """
         self._episode += 1
-        new_ttyrec = self._ttyrec_pattern % self._episode if self.savedir else None
-        if self._episode % self._episode_save_cycle == 0:
-            self.last_observation = self.env.reset(
-                new_ttyrec, wizkit_items=wizkit_items
-            )
+        if self.savedir and self._episode % self._save_ttyrec_every == 0:
+            new_ttyrec = self._ttyrec_pattern % self._episode
         else:
-            self.last_observation = self.env.reset(None, wizkit_items=wizkit_items)
+            new_ttyrec = None
+        self.last_observation = self.nethack.reset(
+            new_ttyrec, wizkit_items=wizkit_items
+        )
 
         self._steps = 0
 
