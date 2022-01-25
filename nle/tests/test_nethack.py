@@ -55,8 +55,8 @@ class TestNetHack:
 
         chars, blstats = game.reset()
 
-        assert chars.shape == (21, 79)
-        assert blstats.shape == (26,)
+        assert chars.shape == nethack.DUNGEON_SHAPE
+        assert blstats.shape == nethack.BLSTATS_SHAPE
 
         game.step(ord("y"))
         game.step(ord("y"))

@@ -3,7 +3,7 @@
 #define NLEOBS_H
 
 #define NLE_MESSAGE_SIZE 256
-#define NLE_BLSTATS_SIZE 26
+#define NLE_BLSTATS_SIZE 27
 #define NLE_PROGRAM_STATE_SIZE 6
 #define NLE_INTERNAL_SIZE 9
 #define NLE_MISC_SIZE 3
@@ -13,7 +13,7 @@
 #define NLE_TERM_CO 80
 #define NLE_TERM_LI 24
 
-/* blstats indices, see also botl.c */
+/* blstats indices, see also botl.c and statusfields in botl.h. */
 #define NLE_BL_X 0
 #define NLE_BL_Y 1
 #define NLE_BL_STR25 2  /* strength 3..25 */
@@ -40,6 +40,7 @@
 #define NLE_BL_DNUM 23
 #define NLE_BL_DLEVEL 24
 #define NLE_BL_CONDITION 25 /* condition bit mask */
+#define NLE_BL_ALIGN 26
 
 /* #define NLE_ALLOW_SEEDING 1 */ /* Set in CMakeLists.txt if not disabled. */
 /* #define NLE_USE_TILES 1 */     /* Set in CMakeLists.txt. */

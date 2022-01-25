@@ -559,6 +559,7 @@ NetHackRL::update_blstats()
     blstats_[NLE_BL_DNUM] = u.uz.dnum;      /* dungeon number */
     blstats_[NLE_BL_DLEVEL] = u.uz.dlevel;  /* level number */
     blstats_[NLE_BL_CONDITION] = condition_bits_; /* condition bit mask */
+    blstats_[NLE_BL_ALIGN] = u.ualign.type;       /* character alignment */
 }
 
 void
