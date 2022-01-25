@@ -73,8 +73,8 @@ parser.add_argument("--disable_cuda", action="store_true",
                     help="Disable CUDA.")
 parser.add_argument("--use_lstm", action="store_true",
                     help="Use LSTM in agent model.")
-parser.add_argument("--episode_save_cycle", default=1, type=int,
-                    metavar="N", help="Cycle of episodes to save ttyrec.")
+parser.add_argument("--save_ttyrec_every", default=1000, type=int,
+                    metavar="N", help="Save ttyrec every N episodes.")
 
 
 # Loss settings.
@@ -157,7 +157,7 @@ def act(
         logging.info("Actor %i started.", actor_index)
 
         gym_env = create_env(
-            flags.env, savedir=flags.rundir, episode_save_cycle=flags.episode_save_cycle
+            flags.env, savedir=flags.rundir, save_ttyrec_every=flags.save_ttyrec_every
         )
         env = ResettingEnvironment(gym_env)
         env_output = env.initial()
@@ -434,7 +434,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         logging.info("Not using CUDA.")
         flags.device = torch.device("cpu")
 
-    env = create_env(flags.env, episode_save_cycle=flags.episode_save_cycle)
+    env = create_env(flags.env)
     observation_space = env.observation_space
     action_space = env.action_space
     del env  # End this before forking.
@@ -596,7 +596,7 @@ def test(flags, num_episodes=10):
     flags.savedir = os.path.expandvars(os.path.expanduser(flags.savedir))
     checkpointpath = os.path.join(flags.savedir, "latest", "model.tar")
 
-    gym_env = create_env(flags.env, episode_save_cycle=flags.episode_save_cycle)
+    gym_env = create_env(flags.env, save_ttyrec_every=flags.save_ttyrec_every)
     env = ResettingEnvironment(gym_env)
     model = Net(gym_env.observation_space, gym_env.action_space.n, flags.use_lstm)
     model.eval()

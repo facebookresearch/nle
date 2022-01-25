@@ -2,6 +2,7 @@
 #
 # Copyright (c) Facebook, Inc. and its affiliates.
 import os
+import pathlib
 import random
 import sys
 import tempfile
@@ -217,7 +218,7 @@ class TestGymEnvRollout:
     def test_rollout(self, env_name, rollout_len):
         """Tests rollout_len steps (or until termination) of random policy."""
         with tempfile.TemporaryDirectory() as savedir:
-            env = gym.make(env_name, savedir=savedir)
+            env = gym.make(env_name, save_ttyrec_every=1, savedir=savedir)
             rollout_env(env, rollout_len)
             env.close()
 
@@ -369,6 +370,17 @@ class TestGymDynamics:
 
         assert done
         assert reward == 0.0
+
+    def test_ttyrec_every(self):
+        path = pathlib.Path(".")
+        env = gym.make("NetHackScore-v0", save_ttyrec_every=2, savedir=str(path))
+        for episode in range(10):
+            env.reset()
+            if episode % 2 != 0:
+                continue
+            contents = set(str(p) for p in path.iterdir())
+            assert len(contents) == episode // 2 + 1
+            assert "nle.%i.%i.ttyrec.bz2" % (os.getpid(), episode) in contents
 
 
 class TestEnvMisc:
