@@ -407,6 +407,7 @@ PYBIND11_MODULE(_pynethack, m)
     mn.attr("NLE_BL_DNUM") = py::int_(NLE_BL_DNUM);
     mn.attr("NLE_BL_DLEVEL") = py::int_(NLE_BL_DLEVEL);
     mn.attr("NLE_BL_CONDITION") = py::int_(NLE_BL_CONDITION);
+    mn.attr("NLE_BL_ALIGN") = py::int_(NLE_BL_ALIGN);
 
     mn.attr("NLE_ALLOW_SEEDING") =
 #ifdef NLE_ALLOW_SEEDING
