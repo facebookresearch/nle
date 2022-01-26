@@ -192,6 +192,13 @@ class Nethack:
         if options is None:
             options = NETHACKOPTIONS
         self.options = list(options) + ["name:" + playername]
+        if playername.split("-", 1)[1:] == ["@"]:
+            # Random role. Unless otherwise specified, randomize
+            # race/gender/alignment too.
+            for key in ("race", "gender", "align"):
+                if not any(o for o in options if o.startswith(key + ":")):
+                    self.options.append("%s:random" % key)
+
         if wizard:
             self.options.append("playmode:debug")
         self._wizard = wizard
