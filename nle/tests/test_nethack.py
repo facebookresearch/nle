@@ -206,6 +206,26 @@ class TestNetHackFurther:
         with pytest.raises(RuntimeError, match=r"set_buffers called after reset()"):
             game._pynethack.set_buffers()
 
+    def test_nethack_random_character(self):
+        game = nethack.Nethack(playername="Hugo-@")
+        assert "race:random" in game.options
+        assert "gender:random" in game.options
+        assert "align:random" in game.options
+
+        game = nethack.Nethack(playername="Jurgen-wiz-gno-cha-mal")
+        assert "race:random" not in game.options
+        assert "gender:random" not in game.options
+        assert "align:random" not in game.options
+
+        game = nethack.Nethack(
+            playername="Albert-@",
+            options=list(nethack.NETHACKOPTIONS) + ["align:lawful"],
+        )
+        assert "race:random" in game.options
+        assert "gender:random" in game.options
+        assert "align:random" not in game.options
+        assert "align:lawful" in game.options
+
 
 class TestNethackSomeObs:
     @pytest.fixture
