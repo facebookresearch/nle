@@ -200,6 +200,12 @@ class TestNetHackFurther:
         with pytest.raises(IOError):
             game.reset("")
 
+    def test_set_buffers_after_reset(self):
+        game = nethack.Nethack()
+        game.reset()
+        with pytest.raises(RuntimeError, match=r"set_buffers called after reset()"):
+            game._pynethack.set_buffers()
+
 
 class TestNethackSomeObs:
     @pytest.fixture
