@@ -1,5 +1,4 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
-import collections
 import enum
 import logging
 import os
@@ -165,26 +164,6 @@ class NLE(gym.Env):
         ABORTED = -1
         RUNNING = 0
         DEATH = 1
-
-    Stats = collections.namedtuple(
-        "Stats",
-        (
-            "end_status",
-            "score",
-            "time",
-            "steps",
-            "hp",
-            "exp",
-            "exp_lev",
-            "gold",
-            "hunger",
-            # "killer_name",
-            "deepest_lev",
-            "episode",
-            "seeds",
-            "ttyrec",
-        ),
-    )
 
     def __init__(
         self,
@@ -549,7 +528,7 @@ class NLE(gym.Env):
     def _reward_fn(self, last_observation, action, observation, end_status):
         """Reward function. Difference between previous score and new score."""
         if not self.nethack.in_normal_game():
-            # Before game started or after it ended stats are zero.
+            # Before game started and after it ended blstats are zero.
             return 0.0
         old_score = last_observation[self._blstats_index][nethack.NLE_BL_SCORE]
         score = observation[self._blstats_index][nethack.NLE_BL_SCORE]

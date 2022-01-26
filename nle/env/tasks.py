@@ -199,7 +199,7 @@ class NetHackGold(NetHackScore):
         del end_status  # Unused
         del action  # Unused
         if not self.nethack.in_normal_game():
-            # Before game started or after it ended stats are zero.
+            # Before game started and after it ended blstats are zero.
             return 0.0
 
         old_blstats = last_observation[self._blstats_index]
@@ -231,7 +231,7 @@ class NetHackEat(NetHackScore):
         del action  # Unused
 
         if not self.nethack.in_normal_game():
-            # Before game started or after it ended stats are zero.
+            # Before game started and after it ended blstats are zero.
             return 0.0
 
         old_internal = last_observation[self._internal_index]
@@ -263,7 +263,7 @@ class NetHackScout(NetHackScore):
         del action  # Unused
 
         if not self.nethack.in_normal_game():
-            # Before game started or after it ended stats are zero.
+            # Before game started and after it ended blstats are zero.
             return 0.0
 
         reward = 0
