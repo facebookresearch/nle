@@ -248,15 +248,13 @@ class NLE(gym.Env):
 
         if actions is None:
             actions = FULL_ACTIONS
-        self._actions = actions
+        self.actions = actions
 
         self.last_observation = ()
 
         try:
             if savedir is None:
                 self.savedir = None
-                self._stats_file = None
-                self._stats_logger = None
             elif savedir:
                 self.savedir = os.path.abspath(savedir)
                 os.makedirs(self.savedir)
@@ -312,7 +310,7 @@ This might contain data that shouldn't be available to agents."""
         else:
             ttyrec = None
 
-        self.env = nethack.Nethack(
+        self.nethack = nethack.Nethack(
             observation_keys=self._observation_keys,
             options=options,
             playername="Agent-" + self.character,
@@ -320,7 +318,7 @@ This might contain data that shouldn't be available to agents."""
             wizard=wizard,
             spawn_monsters=spawn_monsters,
         )
-        self._close_env = weakref.finalize(self, self.env.close)
+        self._close_nethack = weakref.finalize(self, self.nethack.close)
 
         self._random = random.SystemRandom()
 
@@ -332,7 +330,7 @@ This might contain data that shouldn't be available to agents."""
             {key: space_dict[key] for key in observation_keys}
         )
 
-        self.action_space = gym.spaces.Discrete(len(self._actions))
+        self.action_space = gym.spaces.Discrete(len(self.actions))
 
     def _get_observation(self, observation):
         return {
@@ -341,7 +339,7 @@ This might contain data that shouldn't be available to agents."""
         }
 
     def print_action_meanings(self):
-        for a_idx, a in enumerate(self._actions):
+        for a_idx, a in enumerate(self.actions):
             print(a_idx, a)
 
     def _check_abort(self, observation):
@@ -367,7 +365,7 @@ This might contain data that shouldn't be available to agents."""
         # Careful: By default we re-use Numpy arrays, so copy before!
         last_observation = tuple(a.copy() for a in self.last_observation)
 
-        observation, done = self.env.step(self._actions[action])
+        observation, done = self.nethack.step(self.actions[action])
         is_game_over = observation[self._program_state_index][0] == 1
         if is_game_over or not self._allow_all_modes:
             observation, done = self._perform_known_steps(
@@ -395,7 +393,7 @@ This might contain data that shouldn't be available to agents."""
 
         info = {}
         info["end_status"] = end_status
-        info["is_ascended"] = self.env.how_done() == nethack.ASCENDED
+        info["is_ascended"] = self.nethack.how_done() == nethack.ASCENDED
 
         return self._get_observation(observation), reward, done, info
 
@@ -417,7 +415,9 @@ This might contain data that shouldn't be available to agents."""
         """
         self._episode += 1
         new_ttyrec = self._ttyrec_pattern % self._episode if self.savedir else None
-        self.last_observation = self.env.reset(new_ttyrec, wizkit_items=wizkit_items)
+        self.last_observation = self.nethack.reset(
+            new_ttyrec, wizkit_items=wizkit_items
+        )
 
         self._steps = 0
 
@@ -430,7 +430,7 @@ This might contain data that shouldn't be available to agents."""
             # monster at the 0th turn and gets asked to name it.
             # Hence the defensive iteration above.
             # TODO: Detect this 'in_getlin' situation and handle it.
-            self.last_observation, done = self.env.step(ASCII_SPACE)
+            self.last_observation, done = self.nethack.step(ASCII_SPACE)
             assert not done, "Game ended unexpectedly"
         else:
             warnings.warn(
@@ -441,7 +441,7 @@ This might contain data that shouldn't be available to agents."""
         return self._get_observation(self.last_observation)
 
     def close(self):
-        self._close_env()
+        self._close_nethack()
         super().close()
 
     def seed(self, core=None, disp=None, reseed=False):
@@ -470,7 +470,7 @@ This might contain data that shouldn't be available to agents."""
             core = self._random.randrange(sys.maxsize)
         if disp is None:
             disp = self._random.randrange(sys.maxsize)
-        self.env.set_initial_seeds(core, disp, reseed)
+        self.nethack.set_initial_seeds(core, disp, reseed)
         return (core, disp, reseed)
 
     def get_seeds(self):
@@ -479,7 +479,7 @@ This might contain data that shouldn't be available to agents."""
         Returns:
             (tuple): Current NetHack (core, disp, reseed) state.
         """
-        return self.env.get_current_seeds()
+        return self.nethack.get_current_seeds()
 
     def render(self, mode="human"):
         """Renders the state of the environment."""
@@ -539,7 +539,7 @@ This might contain data that shouldn't be available to agents."""
 
     def _reward_fn(self, last_observation, action, observation, end_status):
         """Reward function. Difference between previous score and new score."""
-        if not self.env.in_normal_game():
+        if not self.nethack.in_normal_game():
             # Before game started or after it ended stats are zero.
             return 0.0
         old_score = last_observation[self._blstats_index][nethack.NLE_BL_SCORE]
@@ -551,7 +551,7 @@ This might contain data that shouldn't be available to agents."""
     def _perform_known_steps(self, observation, done, exceptions=True):
         while not done:
             if observation[self._internal_index][3]:  # xwaitforspace
-                observation, done = self.env.step(ASCII_SPACE)
+                observation, done = self.nethack.step(ASCII_SPACE)
                 continue
 
             internal = observation[self._internal_index]
@@ -559,7 +559,7 @@ This might contain data that shouldn't be available to agents."""
             in_getlin = internal[2]
 
             if in_getlin:  # Game asking for a line of text. We don't do that.
-                observation, done = self.env.step(ASCII_ESC)
+                observation, done = self.nethack.step(ASCII_ESC)
                 continue
 
             if in_yn_function:  # Game asking for a single character.
@@ -577,7 +577,7 @@ This might contain data that shouldn't be available to agents."""
                         break
 
                 # Otherwise, auto-decline.
-                observation, done = self.env.step(ASCII_ESC)
+                observation, done = self.nethack.step(ASCII_ESC)
 
             break
 
@@ -596,7 +596,7 @@ This might contain data that shouldn't be available to agents."""
         # Quit the game.
         actions = [0x80 | ord("q"), ord("y")]  # M-q y
         for a in actions:
-            observation, done = self.env.step(a)
+            observation, done = self.nethack.step(a)
 
         # Answer final questions.
         observation, done = self._perform_known_steps(

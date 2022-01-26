@@ -198,7 +198,7 @@ class NetHackGold(NetHackScore):
         """Difference between previous gold and new gold."""
         del end_status  # Unused
         del action  # Unused
-        if not self.env.in_normal_game():
+        if not self.nethack.in_normal_game():
             # Before game started or after it ended stats are zero.
             return 0.0
 
@@ -230,7 +230,7 @@ class NetHackEat(NetHackScore):
         del end_status  # Unused
         del action  # Unused
 
-        if not self.env.in_normal_game():
+        if not self.nethack.in_normal_game():
             # Before game started or after it ended stats are zero.
             return 0.0
 
@@ -262,7 +262,7 @@ class NetHackScout(NetHackScore):
         del end_status  # Unused
         del action  # Unused
 
-        if not self.env.in_normal_game():
+        if not self.nethack.in_normal_game():
             # Before game started or after it ended stats are zero.
             return 0.0
 
@@ -344,9 +344,9 @@ class NetHackChallenge(NetHackScore):
         def f(*args, **kwargs):
             raise RuntimeError("Should not try changing seeds")
 
-        self.env.set_initial_seeds = f
-        self.env.set_current_seeds = f
-        self.env.get_current_seeds = f
+        self.nethack.set_initial_seeds = f
+        self.nethack.set_current_seeds = f
+        self.nethack.get_current_seeds = f
 
     def reset(self, *args, **kwargs):
         self._turns = None
