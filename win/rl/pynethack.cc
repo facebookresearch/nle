@@ -178,6 +178,9 @@ class Nethack
                 py::object screen_descriptions, py::object tty_chars,
                 py::object tty_colors, py::object tty_cursor, py::object misc)
     {
+        if (nle_)
+            throw std::runtime_error("set_buffers called after reset()");
+
         std::vector<ssize_t> dungeon{ ROWNO, COLNO - 1 };
         obs_.glyphs = checked_conversion<int16_t>(glyphs, dungeon);
         obs_.chars = checked_conversion<uint8_t>(chars, dungeon);
