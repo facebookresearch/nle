@@ -226,6 +226,15 @@ class TestNetHackFurther:
         assert "align:random" not in game.options
         assert "align:lawful" in game.options
 
+        game = nethack.Nethack(
+            playername="Rachel",
+            options=list(nethack.NETHACKOPTIONS) + ["gender:female"],
+        )
+        assert "race:random" not in game.options
+        assert "gender:random" not in game.options
+        assert "align:random" not in game.options
+        assert "gender:female" in game.options
+
 
 class TestNethackSomeObs:
     @pytest.fixture

@@ -192,7 +192,7 @@ class Nethack:
         if options is None:
             options = NETHACKOPTIONS
         self.options = list(options) + ["name:" + playername]
-        if playername.split("-", 1)[1] == "@":
+        if next(iter(playername.split("-", 1)[1:]), None) == "@":
             # Random role. Unless otherwise specified, randomize
             # race/gender/alignment too.
             for key in ("race", "gender", "align"):
