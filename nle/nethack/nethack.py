@@ -196,7 +196,7 @@ class Nethack:
             # Random role. Unless otherwise specified, randomize
             # race/gender/alignment too.
             for key in ("race", "gender", "align"):
-                if not next((o for o in options if o.startswith(key + ":")), False):
+                if not any(o for o in options if o.startswith(key + ":")):
                     self.options.append("%s:random" % key)
 
         if wizard:
