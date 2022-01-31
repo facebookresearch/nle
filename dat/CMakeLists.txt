@@ -74,15 +74,7 @@ endforeach(filename)
 # Dat files that are not inputs to any tools.
 set(ALL_DAT_NOTGEN ${ALL_DAT_NOTGEN} license symbols)
 
-# TODO(NN): try to glob .lev automatically
-#
-# NOTE: Using:
-#
-# install(DIRECTORY ${NLE_DAT_GEN} DESTINATION ${INSTDIR} FILES_MATCHING PATTERN
-# "*.lev")
-#
-# results in `$HACKDIR/dat/*.lev` due to CWD. I've tried to get it to work, but
-# given up after a couple of hours.
+# Result of running lev_comp.
 set(LEVS_GEN
     Arc-fila.lev
     Arc-filb.lev
@@ -208,46 +200,46 @@ set(LEVS_GEN
 add_custom_command(
   DEPENDS makedefs bogusmon.txt engrave.txt epitaph.txt
   OUTPUT bogusmon epitaph engrave
-  COMMAND $<TARGET_FILE:makedefs> ARGS -s)
+  COMMAND makedefs ARGS -s)
 
 add_custom_command(
   DEPENDS makedefs data.base
   OUTPUT data
-  COMMAND $<TARGET_FILE:makedefs> ARGS -d)
+  COMMAND makedefs ARGS -d)
 
 add_custom_command(
   DEPENDS makedefs rumors.tru rumors.fal
   OUTPUT rumors
-  COMMAND $<TARGET_FILE:makedefs> ARGS -r)
+  COMMAND makedefs ARGS -r)
 
 add_custom_command(
   DEPENDS makedefs quest.txt
   OUTPUT quest.dat
-  COMMAND $<TARGET_FILE:makedefs> ARGS -q)
+  COMMAND makedefs ARGS -q)
 
 add_custom_command(
   DEPENDS makedefs oracles.txt
   OUTPUT oracles
-  COMMAND $<TARGET_FILE:makedefs> ARGS -h)
+  COMMAND makedefs ARGS -h)
 
 # Hack: Depend on date.h to avoid race.
 add_custom_command(
   DEPENDS makedefs ${NLE_INC_GEN}/date.h
   OUTPUT options
-  COMMAND $<TARGET_FILE:makedefs> ARGS -v)
+  COMMAND makedefs ARGS -v)
 
 # Hack: Depend on bogusmon to avoid race wrt. makedef's grep.tmp file.
 add_custom_command(
   DEPENDS makedefs dgn_comp dungeon.def bogusmon
   OUTPUT dungeon dungeon.pdf
-  COMMAND $<TARGET_FILE:makedefs> ARGS -e
-  COMMAND $<TARGET_FILE:dgn_comp> ARGS dungeon.pdf)
+  COMMAND makedefs ARGS -e
+  COMMAND dgn_comp ARGS dungeon.pdf)
 
 add_custom_command(
   DEPENDS lev_comp
   OUTPUT ${LEVS_GEN}
-  COMMAND $<TARGET_FILE:lev_comp> ${SPECIAL_LEVELS}
-  COMMAND $<TARGET_FILE:lev_comp> ${QUEST_LEVELS})
+  COMMAND lev_comp ${SPECIAL_LEVELS}
+  COMMAND lev_comp ${QUEST_LEVELS})
 
 add_custom_command(
   OUTPUT perm record logfile xlogfile COMMAND ${CMAKE_COMMAND} -E touch perm
