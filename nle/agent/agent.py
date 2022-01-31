@@ -120,7 +120,7 @@ def nested_map(f, n):
 
 
 def compute_baseline_loss(advantages):
-    return 0.5 * torch.sum(advantages ** 2)
+    return 0.5 * torch.sum(advantages**2)
 
 
 def compute_entropy_loss(logits):
@@ -796,7 +796,7 @@ class NetHackNet(nn.Module):
         out_dim += self.H * self.W * Y
 
         # CNN crop model.
-        out_dim += self.crop_dim ** 2 * Y
+        out_dim += self.crop_dim**2 * Y
 
         self.embed_blstats = nn.Sequential(
             nn.Linear(self.blstats_size, self.k_dim),

@@ -69,9 +69,9 @@ class NetHackScore(base.NLE):
             if self._frozen_steps > 0:
                 penalty += self.penalty_step
         elif self.penalty_mode == "exp":
-            penalty += 2 ** self._frozen_steps * self.penalty_step
+            penalty += 2**self._frozen_steps * self.penalty_step
         elif self.penalty_mode == "square":
-            penalty += self._frozen_steps ** 2 * self.penalty_step
+            penalty += self._frozen_steps**2 * self.penalty_step
         elif self.penalty_mode == "linear":
             penalty += self._frozen_steps * self.penalty_step
         elif self.penalty_mode == "always":
