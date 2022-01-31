@@ -1,15 +1,13 @@
 repos:
 -   repo: https://github.com/ambv/black
-    rev: 21.6b0
+    rev: 22.1.0
     hooks:
     - id: black
       language_version: python3.8
-      exclude: scripts/plotting/.*
 -   repo: https://gitlab.com/pycqa/flake8
     rev: '3.9.2'
     hooks:
     - id: flake8
-      exclude: scripts/plotting/.*
       additional_dependencies: [flake8-bugbear]
       args: ["--show-source"]
 -   repo: https://github.com/cheshirekow/cmake-format-precommit
