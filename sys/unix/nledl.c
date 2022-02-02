@@ -10,7 +10,16 @@ void
 nledl_init(nledl_ctx *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
            nle_settings *settings)
 {
-    nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
+    void *handle = dlopen(nledl->dlpath, RTLD_LAZY | RTLD_NOLOAD);
+    if (handle) {
+        dlclose(handle);
+        fprintf(stderr,
+                "failure in nledl_init: library %s is already loaded\n",
+                nledl->dlpath);
+        exit(EXIT_FAILURE);
+    }
+
+    nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY | RTLD_FIRST);
 
     if (!nledl->dlhandle) {
         fprintf(stderr, "%s\n", dlerror());
@@ -50,7 +59,6 @@ nledl_close(nledl_ctx *nledl)
         fprintf(stderr, "Error in dlclose: %s\n", dlerror());
         exit(EXIT_FAILURE);
     }
-
     dlerror();
 }
 

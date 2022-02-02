@@ -35,7 +35,6 @@ class ScopedTC
 void
 play(nledl_ctx *nle, nle_obs *obs, nle_settings *settings)
 {
-    char i;
     while (!obs->done) {
         for (int r = 0; r < ROWNO; ++r) {
             for (int c = 0; c < COLNO - 1; ++c)
