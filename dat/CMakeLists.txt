@@ -253,12 +253,6 @@ list(TRANSFORM DATDLB PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
 list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
                                                 NLE_DAT_GEN_LEVS_GEN)
 
-# Defensive dependencies for when we also build NetHack with make/make install.
-list(TRANSFORM DATDLB PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
-                                              NLE_DAT_GEN_DATDLB)
-list(TRANSFORM LEVS_GEN PREPEND ${NLE_DAT_GEN}/ OUTPUT_VARIABLE
-                                                NLE_DAT_GEN_LEVS_GEN)
-
 add_custom_command(
   DEPENDS dlb ${NLE_DAT_GEN_DATDLB} ${NLE_DAT_GEN_LEVS_GEN}
   OUTPUT nhdat
