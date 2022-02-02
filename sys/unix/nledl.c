@@ -19,7 +19,7 @@ nledl_init(nledl_ctx *nledl, nle_obs *obs, nle_seeds_init_t *seed_init,
         exit(EXIT_FAILURE);
     }
 
-    nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY | RTLD_FIRST);
+    nledl->dlhandle = dlopen(nledl->dlpath, RTLD_LAZY);
 
     if (!nledl->dlhandle) {
         fprintf(stderr, "%s\n", dlerror());
@@ -59,6 +59,7 @@ nledl_close(nledl_ctx *nledl)
         fprintf(stderr, "Error in dlclose: %s\n", dlerror());
         exit(EXIT_FAILURE);
     }
+
     dlerror();
 }
 
