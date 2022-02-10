@@ -106,7 +106,7 @@ class DL
             phoff += hdr_->e_phentsize;
         }
 
-        baseaddr_ = (uint8_t *) hdr_ - PAGE_START(offset);
+        baseaddr_ = (uint8_t *) hdr_ - offset;
 
 #elif __APPLE__
         hdr_ = (macho_header *) dlinfo.dli_fbase;

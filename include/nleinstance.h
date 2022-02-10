@@ -2,8 +2,8 @@
 
 #pragma once
 
-/*#define NLE_RESET_DLOPENCLOSE*/ /* Enables the old behaviour: reset by
-                                     dlclose & dl-re-open. */
+/* #define NLE_RESET_DLOPENCLOSE */ /* Enables the old behaviour: reset by
+                                       dlclose & dl-re-open. */
 
 #ifndef NLE_RESET_DLOPENCLOSE
 #include "dloverride.h"
