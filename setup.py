@@ -42,7 +42,7 @@ class CMakeBuild(build_ext.build_ext):
         hackdir_path = os.getenv("HACKDIR", output_path.joinpath("nethackdir"))
 
         os.makedirs(self.build_temp, exist_ok=True)
-        build_type = "Debug"  # if self.debug else "Release"
+        build_type = "Debug" if self.debug else "Release"
 
         generator = "Ninja" if spawn.find_executable("ninja") else "Unix Makefiles"
 

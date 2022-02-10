@@ -1,16 +1,20 @@
 /* Copyright (c) Facebook, Inc. and its affiliates. */
 
-/* Mechanism to reset a loaded dynamic library. */
+/*
+ * Mechanism to reset a loaded dynamic library.
+ */
+
+#pragma once
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <assert.h>
 #include <stdio.h>
 
 #include <dlfcn.h>
-#include <errno.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

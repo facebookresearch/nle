@@ -6,9 +6,10 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "nleinstance.h"
+
 extern "C" {
 #include "hack.h"
-#include "nledl.h"
 }
 
 class ScopedTC
@@ -33,7 +34,7 @@ class ScopedTC
 };
 
 void
-play(nledl_ctx *nle, nle_obs *obs, nle_settings *settings)
+play(Instance &nle, nle_obs *obs, nle_settings *settings)
 {
     while (!obs->done) {
         for (int r = 0; r < ROWNO; ++r) {
@@ -47,13 +48,13 @@ play(nledl_ctx *nle, nle_obs *obs, nle_settings *settings)
         std::cout << std::endl;
         read(STDIN_FILENO, &obs->action, 1);
         if (obs->action == 'r')
-            nle_reset(nle, obs, nullptr, nullptr, settings);
-        nle = nle_step(nle, obs);
+            nle.reset(obs, nullptr, nullptr, settings);
+        nle.step(obs);
     }
 }
 
 void
-randplay(nledl_ctx *nle, nle_obs *obs)
+randplay(Instance &nle, nle_obs *obs)
 {
     int actions[] = {
         13, 107, 108, 106, 104, 117, 110, 98, 121,
@@ -63,7 +64,7 @@ randplay(nledl_ctx *nle, nle_obs *obs)
 
     for (int i = 0; !obs->done && i < 10000; ++i) {
         obs->action = actions[rand() % n];
-        nle = nle_step(nle, obs);
+        nle.step(obs);
     }
     if (!obs->done) {
         std::cerr << "Episode didn't end after 10000 steps, aborting."
@@ -72,13 +73,13 @@ randplay(nledl_ctx *nle, nle_obs *obs)
 }
 
 void
-randgame(nledl_ctx *nle, nle_obs *obs, const int no_episodes,
+randgame(Instance &nle, nle_obs *obs, const int no_episodes,
          nle_settings *settings)
 {
     for (int i = 0; i < no_episodes; ++i) {
         randplay(nle, obs);
         if (i < no_episodes - 1)
-            nle_reset(nle, obs, nullptr, nullptr, settings);
+            nle.reset(obs, nullptr, nullptr, settings);
     }
 }
 
@@ -118,14 +119,14 @@ main(int argc, char **argv)
     strncpy(settings.hackdir, getenv("HACKDIR"), sizeof(settings.hackdir));
 
     ScopedTC tc;
-    nledl_ctx *nle =
-        nle_start("libnethack.so", &obs, ttyrec.get(), nullptr, &settings);
+
+    Instance nle("libnethack.so", &obs, ttyrec.get(), nullptr, &settings);
     if (argc > 1 && argv[1][0] == 'r') {
         randgame(nle, &obs, 3, &settings);
     } else {
         play(nle, &obs, &settings);
-        nle_reset(nle, &obs, nullptr, nullptr, &settings);
+        nle.reset(&obs, nullptr, nullptr, &settings);
         play(nle, &obs, &settings);
     }
-    nle_end(nle);
+    nle.close();
 }

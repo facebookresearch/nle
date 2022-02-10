@@ -119,11 +119,13 @@ target_link_directories(nethack PUBLIC /usr/local/lib)
 
 target_link_libraries(nethack PUBLIC m fcontext bz2)
 
-# rlmain C++ (test) binary add_executable(rlmain "sys/unix/rlmain.cc")
-# set_target_properties(rlmain PROPERTIES CXX_STANDARD 11)
-# target_link_libraries(rlmain PUBLIC nethackdl)
-# target_include_directories(rlmain PUBLIC ${NLE_INC_GEN})
-# add_dependencies(rlmain util) # For pm.h.
+# rlmain C++ (test) binary
+add_executable(rlmain "sys/unix/rlmain.cc")
+set_target_properties(rlmain PROPERTIES CXX_STANDARD 14)
+target_link_libraries(rlmain PUBLIC dl)
+target_include_directories(rlmain PUBLIC ${NLE_INC_GEN}
+                                         ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_dependencies(rlmain util) # For pm.h.
 
 # pybind11 python library.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/pybind11)
