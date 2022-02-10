@@ -119,17 +119,11 @@ target_link_directories(nethack PUBLIC /usr/local/lib)
 
 target_link_libraries(nethack PUBLIC m fcontext bz2)
 
-# dlopen wrapper library
-add_library(nethackdl STATIC "sys/unix/nledl.c")
-target_include_directories(nethackdl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(nethackdl PUBLIC dl)
-
-# rlmain C++ (test) binary
-add_executable(rlmain "sys/unix/rlmain.cc")
-set_target_properties(rlmain PROPERTIES CXX_STANDARD 11)
-target_link_libraries(rlmain PUBLIC nethackdl)
-target_include_directories(rlmain PUBLIC ${NLE_INC_GEN})
-add_dependencies(rlmain util) # For pm.h.
+# rlmain C++ (test) binary add_executable(rlmain "sys/unix/rlmain.cc")
+# set_target_properties(rlmain PROPERTIES CXX_STANDARD 11)
+# target_link_libraries(rlmain PUBLIC nethackdl)
+# target_include_directories(rlmain PUBLIC ${NLE_INC_GEN})
+# add_dependencies(rlmain util) # For pm.h.
 
 # pybind11 python library.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/pybind11)
@@ -141,7 +135,8 @@ pybind11_add_module(
   src/drawing.c
   src/objects.c
   $<TARGET_OBJECTS:tile>)
-target_link_libraries(_pynethack PUBLIC nethackdl)
+target_link_libraries(_pynethack PUBLIC dl)
 set_target_properties(_pynethack PROPERTIES CXX_STANDARD 14)
-target_include_directories(_pynethack PUBLIC ${NLE_INC_GEN})
+target_include_directories(
+  _pynethack PUBLIC ${NLE_INC_GEN} ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_dependencies(_pynethack util) # For pm.h.

@@ -419,12 +419,12 @@ nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init,
 
     nle_ctx_t *nle = init_nle(ttyrec, obs);
     nle_seeds_init = seed_init;
+    current_nle_ctx = nle;
 
     nle->stack = create_fcontext_stack(STACK_SIZE);
     nle->generatorcontext =
         make_fcontext(nle->stack.sptr, nle->stack.ssize, mainloop);
 
-    current_nle_ctx = nle;
     fcontext_transfer_t t = jump_fcontext(nle->generatorcontext, NULL);
     nle->generatorcontext = t.ctx;
     nle->done = (t.data == NULL);
