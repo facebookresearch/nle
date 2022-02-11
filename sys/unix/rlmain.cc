@@ -116,11 +116,26 @@ main(int argc, char **argv)
         fopen("nle.ttyrec.bz2", "a"), fclose);
 
     nle_settings settings;
-    strncpy(settings.hackdir, getenv("HACKDIR"), sizeof(settings.hackdir));
+    char *hackdir = getenv("HACKDIR");
+
+    if (hackdir)
+        strncpy(settings.hackdir, hackdir, sizeof(settings.hackdir));
+    else
+        throw std::runtime_error(
+            "Set HACKDIR env variable to NetHack installation");
 
     ScopedTC tc;
 
-    Instance nle("libnethack.so", &obs, ttyrec.get(), nullptr, &settings);
+    char *cwd = getcwd(nullptr, 0); /* glibc's allocating version. */
+    std::string path(cwd);
+    free(cwd);
+
+    if (path.back() != '/')
+        path.append("/");
+
+    path.append("libnethack.so");
+
+    Instance nle(path, &obs, ttyrec.get(), nullptr, &settings);
     if (argc > 1 && argv[1][0] == 'r') {
         randgame(nle, &obs, 3, &settings);
     } else {
