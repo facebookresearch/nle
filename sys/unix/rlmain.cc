@@ -115,7 +115,7 @@ main(int argc, char **argv)
     std::unique_ptr<FILE, int (*)(FILE *)> ttyrec(
         fopen("nle.ttyrec.bz2", "a"), fclose);
 
-    nle_settings settings;
+    nle_settings settings{};
     char *hackdir = getenv("HACKDIR");
 
     if (hackdir)
@@ -139,9 +139,10 @@ main(int argc, char **argv)
     if (argc > 1 && argv[1][0] == 'r') {
         randgame(nle, &obs, 3, &settings);
     } else {
-        play(nle, &obs, &settings);
-        nle.reset(&obs, nullptr, nullptr, &settings);
-        play(nle, &obs, &settings);
+        for (int i = 0; i < 10; ++i) {
+            play(nle, &obs, &settings);
+            nle.reset(&obs, nullptr, nullptr, &settings);
+        }
     }
     nle.close();
 }

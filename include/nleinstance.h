@@ -23,10 +23,9 @@ class Instance
              nle_seeds_init_t *seeds_init, nle_settings *settings)
         : dl_(dlpath.c_str(), "nle_start")
     {
-        dl_.for_changing_sections([&](const auto *seg) {
-            segments_.emplace_back(dl_.mem_size(seg));
-            memcpy(&segments_.back()[0], dl_.mem_addr(seg),
-                   dl_.mem_size(seg));
+        dl_.for_rw_regions([&](const auto &reg) {
+            regions_.emplace_back(dl_.mem_size(reg));
+            memcpy(&regions_.back()[0], dl_.mem_addr(reg), dl_.mem_size(reg));
         });
 
         start_ = dl_.func<void *, nle_obs *, FILE *, nle_seeds_init_t *,
@@ -61,9 +60,9 @@ class Instance
     {
         end_(nle_ctx_);
 
-        auto it = segments_.begin();
-        dl_.for_changing_sections([&](const auto *seg) {
-            memcpy(dl_.mem_addr(seg), it->data(), dl_.mem_size(seg));
+        auto it = regions_.begin();
+        dl_.for_rw_regions([&](const auto &reg) {
+            memcpy(dl_.mem_addr(reg), it->data(), dl_.mem_size(reg));
             ++it;
         });
         nle_ctx_ = start_(obs, ttyrec, seeds_init, settings);
@@ -98,7 +97,7 @@ class Instance
     void (*get_seed_)(void *, unsigned long *, unsigned long *, char *);
     void (*set_seed_)(void *, unsigned long, unsigned long, char);
 
-    std::vector<std::vector<uint8_t> > segments_;
+    std::vector<std::vector<uint8_t> > regions_;
 };
 #else /* NLE_RESET_DLOPENCLOSE */
 class Instance

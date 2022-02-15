@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -64,6 +65,85 @@ struct macho_section : public section {
 
 #endif /* __linux__, __APPLE__ */
 
+#ifdef __linux__
+struct Region {
+    uint8_t *data;
+    size_t size;
+    bool rw;
+
+    uint8_t *
+    l() const
+    {
+        return data;
+    }
+    uint8_t *
+    r() const
+    {
+        return data + size;
+    }
+
+    bool
+    intersects(const Region &s) const
+    {
+        return !(r() <= s.l() || s.r() <= l());
+    }
+
+    bool
+    operator<(const Region &s) const
+    {
+        return data < s.data;
+    }
+};
+
+std::vector<Region>
+make_disjoint(const std::vector<Region> &regions)
+{
+    std::vector<uint8_t *> starts;
+    std::vector<uint8_t *> ends;
+
+    std::vector<Region> result;
+
+    for (auto it = regions.rbegin(); it != regions.rend(); ++it) {
+        starts.push_back(it->l());
+        ends.push_back(it->r());
+    }
+
+    std::sort(starts.begin(), starts.end(), std::greater<>());
+    std::sort(ends.begin(), ends.end(), std::greater<>());
+
+    int overlap = 1;
+    uint8_t *start = starts.back();
+    starts.pop_back();
+    uint8_t *end;
+    bool active;
+
+    while (!ends.empty()) {
+        active = overlap > 0;
+
+        if (!starts.empty() && starts.back() <= ends.back()) {
+            ++overlap;
+            end = starts.back();
+            starts.pop_back();
+        } else {
+            --overlap;
+            end = ends.back();
+            ends.pop_back();
+        }
+
+        if (active && start < end) {
+            result.push_back(Region{ start, (size_t) (end - start), false });
+        }
+        start = end;
+    }
+
+    if (!starts.empty()) {
+        throw std::runtime_error("Intervals required");
+    }
+
+    return result;
+}
+#endif
+
 class DL
 {
   public:
@@ -101,12 +181,33 @@ class DL
             if (ph->p_type == PT_LOAD) {
                 offset = std::min(offset, (size_t) ph->p_vaddr);
             }
-            segs_.push_back(ph);
-
+            phs_.push_back(ph);
             phoff += hdr_->e_phentsize;
         }
 
         baseaddr_ = (uint8_t *) hdr_ - offset;
+
+        std::vector<Region> overlapping_regions;
+
+        for (const Elf_Phdr *ph : phs_) {
+            overlapping_regions.push_back(
+                Region{ baseaddr_ + ph->p_vaddr, ph->p_memsz, false });
+        }
+
+        regions_ = make_disjoint(overlapping_regions);
+
+        for (const Elf_Phdr *ph : phs_) {
+            Region region{ baseaddr_ + ph->p_vaddr, ph->p_memsz,
+                           ph->p_flags & PF_W ? true : false };
+
+            for (Region &s : regions_) {
+                if (region.intersects(s)) {
+                    s.rw = region.rw;
+                } else if (region.l() < s.r()) {
+                    break;
+                }
+            }
+        }
 
 #elif __APPLE__
         hdr_ = (macho_header *) dlinfo.dli_fbase;
@@ -158,7 +259,12 @@ class DL
         if (handle_)
             dlclose(handle_);
         handle_ = std::exchange(dl.handle_, nullptr);
+#ifdef __linux__
+        phs_ = std::move(dl.phs_);
+        regions_ = std::move(dl.regions_);
+#elif __APPLE__
         segs_ = std::move(dl.segs_);
+#endif
         hdr_ = dl.hdr_;
         baseaddr_ = dl.baseaddr_;
         return *this;
@@ -166,14 +272,19 @@ class DL
 
 #ifdef __linux__
     bool
-    is_overridable(const Elf_Phdr *ph) const
+    is_rw(const Elf_Phdr *ph) const
     {
         return ph->p_type == PT_LOAD && ph->p_flags & PF_R
                && ph->p_flags & PF_W;
     }
+    bool
+    is_rw(const Region &region) const
+    {
+        return region.rw;
+    }
 #elif __APPLE__
     bool
-    is_overridable(const macho_segment_command *seg) const
+    is_rw(const macho_segment_command *seg) const
     {
         return strcmp(seg->segname, SEG_DATA) == 0;
     }
@@ -181,11 +292,15 @@ class DL
 
     template <typename F>
     void
-    for_changing_sections(F &&f)
+    for_rw_regions(F &&f)
     {
-        for (const auto *seg : segs_) {
-            if (is_overridable(seg))
-                f(seg);
+#ifdef __linux__
+        for (const auto &region : regions_) {
+#elif __APPLE__
+        for (const auto &region : segs_) {
+#endif
+            if (is_rw(region))
+                f(region);
         }
     }
 
@@ -204,13 +319,23 @@ class DL
     uint8_t *
     mem_addr(const Elf_Phdr *ph) const
     {
-        size_t start = PAGE_END((size_t) (baseaddr_ + ph->p_vaddr));
+        size_t start = (size_t) (baseaddr_ + ph->p_vaddr);
         return (uint8_t *) start;
     }
     size_t
     mem_size(const Elf_Phdr *ph) const
     {
         return ph->p_memsz;
+    }
+    uint8_t *
+    mem_addr(const Region &region) const
+    {
+        return region.data;
+    }
+    size_t
+    mem_size(const Region &region) const
+    {
+        return region.size;
     }
 #elif __APPLE__
     uint8_t *
@@ -228,8 +353,9 @@ class DL
   private:
     void *handle_{ nullptr };
 #ifdef __linux__
-    std::vector<const Elf_Phdr *> segs_;
     const Elf_Ehdr *hdr_;
+    std::vector<const Elf_Phdr *> phs_;
+    std::vector<Region> regions_;
 #elif __APPLE__
     std::vector<const macho_segment_command *> segs_;
     const macho_header *hdr_;

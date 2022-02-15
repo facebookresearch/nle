@@ -79,7 +79,7 @@ checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 
     py::buffer_info buf = array.request();
 
-    if (buf.ndim != shape.size())
+    if ((size_t) buf.ndim != shape.size())
         throw std::runtime_error("array has wrong number of dims");
     if (!std::equal(shape.begin(), shape.end(), buf.shape.begin()))
         throw std::runtime_error("Array has wrong shape");
@@ -638,7 +638,7 @@ PYBIND11_MODULE(_pynethack, m)
                         "Argument should be between 0 and MAXMCLASSES ("
                         + std::to_string(MAXMCLASSES) + ") but got "
                         + std::to_string(let));
-                return &def_monsyms[let];
+                return &def_monsyms[(size_t) let];
             },
             py::return_value_policy::reference)
         .def_static(
@@ -649,7 +649,7 @@ PYBIND11_MODULE(_pynethack, m)
                         "Argument should be between 0 and MAXOCLASSES ("
                         + std::to_string(MAXOCLASSES) + ") but got "
                         + std::to_string(olet));
-                return &def_oc_syms[olet];
+                return &def_oc_syms[(size_t) olet];
             },
             py::return_value_policy::reference)
         .def_readonly("sym", &class_sym::sym)
