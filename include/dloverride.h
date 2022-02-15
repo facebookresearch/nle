@@ -230,12 +230,24 @@ class DL
                 continue;
 
             const auto *seg = (macho_segment_command *) cmd;
+
             if (seg->nsects)
                 segs_.push_back(seg);
             cmd = (const load_command *) (((uint8_t *) cmd) + cmd->cmdsize);
         }
 
         baseaddr_ = (uint8_t *) hdr_ - segs_[0]->vmaddr;
+
+        for (const auto *seg : segs_) {
+            fprintf(
+                stderr,
+                "Found a segment '%s' with %u sections at offset %#010lx. "
+                "cmdsize: %u. vmaddr: %#010llx. vmsize: 0x%llx. "
+                "Should be at %p->%p\n",
+                seg->segname, seg->nsects, (uint8_t *) cmd - (uint8_t *) hdr_,
+                cmd->cmdsize, seg->vmaddr, seg->vmsize, mem_addr(seg),
+                mem_addr(seg) + mem_size(seg));
+        }
 #endif /* __linux__, __APPLE__ */
     }
 

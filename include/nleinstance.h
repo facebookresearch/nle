@@ -24,8 +24,12 @@ class Instance
         : dl_(dlpath.c_str(), "nle_start")
     {
         dl_.for_rw_regions([&](const auto &reg) {
+            fprintf(stderr, "memcpy out of [%p, %p)\n", dl_.mem_addr(reg),
+                    dl_.mem_addr(reg) + dl_.mem_size(reg));
+
             regions_.emplace_back(dl_.mem_size(reg));
             memcpy(&regions_.back()[0], dl_.mem_addr(reg), dl_.mem_size(reg));
+            fprintf(stderr, "1 memcpy done\n");
         });
 
         start_ = dl_.func<void *, nle_obs *, FILE *, nle_seeds_init_t *,
@@ -62,6 +66,9 @@ class Instance
 
         auto it = regions_.begin();
         dl_.for_rw_regions([&](const auto &reg) {
+            fprintf(stderr, "memcpy into [%p, %p)\n", dl_.mem_addr(reg),
+                    dl_.mem_addr(reg) + dl_.mem_size(reg));
+
             memcpy(dl_.mem_addr(reg), it->data(), dl_.mem_size(reg));
             ++it;
         });
