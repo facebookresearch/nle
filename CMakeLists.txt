@@ -157,6 +157,7 @@ add_library(
   SHARED ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/converter.c
          ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/stripgfx.c)
 set_target_properties(converter PROPERTIES C_STANDARD 11 SUFFIX ".so")
+target_compile_options(converter PRIVATE -Wall -Wextra -pedantic -Werror)
 target_include_directories(
   converter 
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libtmt
