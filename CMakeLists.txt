@@ -101,8 +101,12 @@ file(
   "sys/unix/unixmain.c"
   "sys/unix/unixres.c"
   "win/tty/*.c"
-  "win/rl/winrl.cc"
-  "third_party/libtmt/tmt.c")
+  "win/rl/winrl.cc")
+
+# terminal emulator library
+file(GLOB TMT_SRC "third_party/libtmt/*")
+add_library(tmt STATIC ${TMT_SRC})
+set_target_properties(tmt PROPERTIES C_STANDARD 11 SUFFIX ".so")
 
 # libnethack library
 add_library(nethack SHARED ${NETHACK_SRC})
@@ -117,7 +121,8 @@ target_link_directories(nethack PUBLIC /usr/local/lib)
 # Careful with -DMONITOR_HEAP: Ironically, it fails to fclose FILE* heaplog.
 # target_compile_definitions(nethack PUBLIC "$<$<CONFIG:DEBUG>:MONITOR_HEAP>")
 
-target_link_libraries(nethack PUBLIC m fcontext bz2)
+target_link_libraries(nethack PUBLIC m fcontext bz2 tmt)
+
 
 # dlopen wrapper library
 add_library(nethackdl STATIC "sys/unix/nledl.c")
@@ -131,7 +136,7 @@ target_link_libraries(rlmain PUBLIC nethackdl)
 target_include_directories(rlmain PUBLIC ${NLE_INC_GEN})
 add_dependencies(rlmain util) # For pm.h.
 
-# pybind11 python library.
+# pybind11 core python library.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/pybind11)
 pybind11_add_module(
   _pynethack
