@@ -150,3 +150,21 @@ target_link_libraries(_pynethack PUBLIC nethackdl)
 set_target_properties(_pynethack PROPERTIES CXX_STANDARD 14)
 target_include_directories(_pynethack PUBLIC ${NLE_INC_GEN})
 add_dependencies(_pynethack util) # For pm.h.
+
+# ttyrec converter library
+add_library(
+  converter 
+  SHARED ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/converter.c
+         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/stripgfx.c)
+set_target_properties(converter PROPERTIES C_STANDARD 11 SUFFIX ".so")
+target_include_directories(
+  converter 
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libtmt
+         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter)
+target_link_libraries(converter PUBLIC bz2 tmt)
+
+# ttyrec reader executable
+add_executable(ttyrec_reader "third_party/converter/reader.c")
+set_target_properties(ttyrec_reader PROPERTIES C_STANDARD 11)
+target_link_libraries(ttyrec_reader PUBLIC converter)
+target_include_directories(ttyrec_reader PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter)
