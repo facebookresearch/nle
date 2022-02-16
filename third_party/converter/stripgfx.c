@@ -317,29 +317,32 @@ static unsigned char dec_graphics[MAXPCHARS] = {
   0x00
 };
 
-static unsigned char IBM_r_oc_syms[18] = {  /* a la EPYX Rogue */
-/* 0*/ '\0',
-  0x00,
-  0x18,                         /* weapon: up arrow */
-  /*  0x0a, */ 0x00,
-  /* armor:  Vert rect with o */
-  /*  0x09, */ 0x00,
-  /* ring:   circle with arrow */
-  /* 5 */ 0x0c,
-  /* amulet: "female" symbol */
-  0x00,
-  0x05,                         /* food:   club (as in cards) */
-  0xad,                         /* potion: upside down '!' */
-  0x0e,                         /* scroll: musical note */
-/*10*/ 0x00,
-  0xe7,                         /* wand:   greek tau */
-  0x0f,                         /* gold:   yes it's the same as gems */
-  0x0f,                         /* gems:   fancy '*' */
-  0x00,
-/*15*/ 0x00,
-  0x00,
-  0x00
-};
+// Unused Variable (--Werror) Kept for Info
+//
+// static unsigned char IBM_r_oc_syms[18] = {  /* a la EPYX Rogue */
+// /* 0*/ '\0',
+//   0x00,
+//   0x18,                         /* weapon: up arrow */
+//   /*  0x0a, */ 0x00,
+//   /* armor:  Vert rect with o */
+//   /*  0x09, */ 0x00,
+//   /* ring:   circle with arrow */
+//   /* 5 */ 0x0c,
+//   /* amulet: "female" symbol */
+//   0x00,
+//   0x05,                         /* food:   club (as in cards) */
+//   0xad,                         /* potion: upside down '!' */
+//   0x0e,                         /* scroll: musical note */
+// /*10*/ 0x00,
+//   0xe7,                         /* wand:   greek tau */
+//   0x0f,                         /* gold:   yes it's the same as gems */
+//   0x0f,                         /* gems:   fancy '*' */
+//   0x00,
+// /*15*/ 0x00,
+//   0x00,
+//   0x00
+// };
+
 /* clang-format on */
 
 void populate_gfx_arrays() {
