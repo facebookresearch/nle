@@ -80,6 +80,7 @@ class CMakeBuild(build_ext.build_ext):
 
 packages = [
     "nle",
+    "nle.dataset",
     "nle.env",
     "nle.nethack",
     "nle.agent",

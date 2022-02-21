@@ -104,9 +104,8 @@ file(
   "win/rl/winrl.cc")
 
 # terminal emulator library
-file(GLOB TMT_SRC "third_party/libtmt/*")
-add_library(tmt STATIC ${TMT_SRC})
-set_target_properties(tmt PROPERTIES C_STANDARD 11 SUFFIX ".so")
+add_library(tmt STATIC "third_party/libtmt/tmt.c")
+set_target_properties(tmt PROPERTIES C_STANDARD 11)
 
 # libnethack library
 add_library(nethack SHARED ${NETHACK_SRC})
@@ -122,7 +121,6 @@ target_link_directories(nethack PUBLIC /usr/local/lib)
 # target_compile_definitions(nethack PUBLIC "$<$<CONFIG:DEBUG>:MONITOR_HEAP>")
 
 target_link_libraries(nethack PUBLIC m fcontext bz2 tmt)
-
 
 # dlopen wrapper library
 add_library(nethackdl STATIC "sys/unix/nledl.c")
@@ -153,19 +151,24 @@ add_dependencies(_pynethack util) # For pm.h.
 
 # ttyrec converter library
 add_library(
-  converter 
-  SHARED ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/converter.c
-         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/stripgfx.c)
-set_target_properties(converter PROPERTIES C_STANDARD 11 SUFFIX ".so")
-target_compile_options(converter PRIVATE -Wall -Wextra -pedantic -Werror)
+  converter SHARED ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/converter.c
+                   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/stripgfx.c)
 target_include_directories(
-  converter 
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libtmt
-         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter)
+  converter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libtmt
+                   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter)
 target_link_libraries(converter PUBLIC bz2 tmt)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  target_compile_options(converter PRIVATE -Wall -Wextra -pedantic -Werror)
+endif()
 
 # ttyrec reader executable
-add_executable(ttyrec_reader "third_party/converter/reader.c")
-set_target_properties(ttyrec_reader PROPERTIES C_STANDARD 11)
+add_executable(ttyrec_reader EXCLUDE_FROM_ALL "third_party/converter/reader.c")
 target_link_libraries(ttyrec_reader PUBLIC converter)
-target_include_directories(ttyrec_reader PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter)
+target_include_directories(
+  ttyrec_reader PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter)
+
+pybind11_add_module(_pyconverter third_party/converter/pyconverter.cc)
+target_link_libraries(_pyconverter PUBLIC converter)
+set_target_properties(_pyconverter PROPERTIES CXX_STANDARD 14)
+target_include_directories(
+  _pyconverter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter)
