@@ -23,12 +23,12 @@ int main(void) {
   Conversion* c = conversion_create(ROWS, COLS, 0, 0, 0);
   if (!c) return EXIT_FAILURE;
 
-  char chars[LEN * ROWS * COLS];
+  unsigned char chars[LEN * ROWS * COLS];
   signed char colors[LEN * ROWS * COLS];
-  int16_t curs[LEN * 2];
+  unsigned char curs[LEN * 2];
   int64_t timestamp[LEN];
   
-  char inputs[LEN];
+  unsigned char inputs[LEN];
 
 
   if (conversion_load_ttyrec(c, fdopen(STDIN_FILENO, "r")) != 0)

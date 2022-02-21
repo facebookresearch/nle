@@ -192,11 +192,11 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
   if (!term_rows) term_rows = rows;
   if (!term_cols) term_cols = cols;
   assert(rows <= term_rows && cols <= term_cols);
-  c->chars = (CharPtr){0};
+  c->chars = (UnsignedCharPtr){0};
   c->colors = (SignedCharPtr){0};
-  c->cursors = (Int16Ptr){0};
+  c->cursors = (UInt16Ptr){0};
   c->timestamps = (Int64Ptr){0};
-  c->inputs = (CharPtr){0};
+  c->inputs = (UnsignedCharPtr){0};
   c->remaining = 0;
   c->buf = NULL;
   c->vt = tmt_open(term_rows, term_cols, callback, c, NULL);
@@ -209,11 +209,11 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
   return c;
 }
 
-void conversion_set_buffers(Conversion *c, char *chars, size_t chars_size,
+void conversion_set_buffers(Conversion *c, unsigned char *chars, size_t chars_size,
                             signed char * colors, size_t colors_size,
-                            int16_t *cursors, size_t cursors_size,
+                            uint16_t *cursors, size_t cursors_size,
                             int64_t *timestamps, size_t timestamps_size,
-                            char *inputs, size_t inputs_size) {
+                            unsigned char *inputs, size_t inputs_size) {
   assert(chars_size % (c->rows * c->cols) == 0);
   c->remaining = chars_size / (c->rows * c->cols);
 
@@ -222,13 +222,13 @@ void conversion_set_buffers(Conversion *c, char *chars, size_t chars_size,
 
   assert(timestamps_size == c->remaining);
 
-  c->chars = (CharPtr){chars, chars, chars + chars_size};
+  c->chars = (UnsignedCharPtr){chars, chars, chars + chars_size};
   c->colors = (SignedCharPtr){colors, colors, colors + colors_size};
-  c->cursors = (Int16Ptr){cursors, cursors, cursors + cursors_size};
+  c->cursors = (UInt16Ptr){cursors, cursors, cursors + cursors_size};
   c->timestamps =
       (Int64Ptr){timestamps, timestamps, timestamps + timestamps_size};
   c->inputs =
-      (CharPtr){inputs, inputs, inputs + inputs_size};
+      (UnsignedCharPtr){inputs, inputs, inputs + inputs_size};
 }
 
 int conversion_load_ttyrec(Conversion *c, FILE *f) {
