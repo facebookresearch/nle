@@ -33,11 +33,11 @@ typedef struct SignedCharPtr {
   signed char *end;
 } SignedCharPtr;
 
-typedef struct UInt16Ptr {
-  uint16_t *ptr;
-  uint16_t *cur;
-  uint16_t *end;
-} UInt16Ptr;
+typedef struct Int16Ptr {
+  int16_t *ptr;
+  int16_t *cur;
+  int16_t *end;
+} Int16Ptr;
 
 typedef struct Int64Ptr {
   int64_t *ptr;
@@ -58,7 +58,7 @@ typedef struct Conversion {
 
   UnsignedCharPtr chars;       /* Array to fill chars in */
   SignedCharPtr colors; /* Array to fill colors in */
-  UInt16Ptr cursors;    /* Array to fill current cursor positions in */
+  Int16Ptr cursors;    /* Array to fill current cursor positions in */
   Int64Ptr timestamps; /* Array to fill timestamp values in */
   UnsignedCharPtr inputs; /* Array to fill inputs values in */
 
@@ -74,7 +74,7 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
                               size_t term_cols, int is_v2);
 void conversion_set_buffers(Conversion *c, unsigned char *chars, size_t chars_size,
                             signed char *colors, size_t colors_size,
-                            uint16_t *curcurs, size_t curcurs_size,
+                            int16_t *curcurs, size_t curcurs_size,
                             int64_t *timestamps, size_t timestamps_size,
                             unsigned char *inputs, size_t inputs_size);
 int conversion_load_ttyrec(Conversion *c, FILE *f);

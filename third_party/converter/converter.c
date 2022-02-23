@@ -194,7 +194,7 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
   assert(rows <= term_rows && cols <= term_cols);
   c->chars = (UnsignedCharPtr){0};
   c->colors = (SignedCharPtr){0};
-  c->cursors = (UInt16Ptr){0};
+  c->cursors = (Int16Ptr){0};
   c->timestamps = (Int64Ptr){0};
   c->inputs = (UnsignedCharPtr){0};
   c->remaining = 0;
@@ -211,7 +211,7 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
 
 void conversion_set_buffers(Conversion *c, unsigned char *chars, size_t chars_size,
                             signed char * colors, size_t colors_size,
-                            uint16_t *cursors, size_t cursors_size,
+                            int16_t *cursors, size_t cursors_size,
                             int64_t *timestamps, size_t timestamps_size,
                             unsigned char *inputs, size_t inputs_size) {
   assert(chars_size % (c->rows * c->cols) == 0);
@@ -224,7 +224,7 @@ void conversion_set_buffers(Conversion *c, unsigned char *chars, size_t chars_si
 
   c->chars = (UnsignedCharPtr){chars, chars, chars + chars_size};
   c->colors = (SignedCharPtr){colors, colors, colors + colors_size};
-  c->cursors = (UInt16Ptr){cursors, cursors, cursors + cursors_size};
+  c->cursors = (Int16Ptr){cursors, cursors, cursors + cursors_size};
   c->timestamps =
       (Int64Ptr){timestamps, timestamps, timestamps + timestamps_size};
   c->inputs =

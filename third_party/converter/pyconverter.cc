@@ -125,7 +125,7 @@ class Converter
             unroll * rows_ * cols_,
             checked_conversion<int8_t>(colors, { unroll, rows_, cols_ }),
             unroll * rows_ * cols_,
-            checked_conversion<uint16_t>(cursors, { unroll, 2 }), unroll * 2,
+            checked_conversion<int16_t>(cursors, { unroll, 2 }), unroll * 2,
             checked_conversion<int64_t>(timestamps, { unroll }), unroll,
             checked_conversion<uint8_t>(inputs, { unroll }), unroll);
 
