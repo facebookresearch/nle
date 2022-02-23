@@ -64,25 +64,36 @@ checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 {
     if (h.is_none())
         return nullptr;
-    py::array array = py::array::ensure(h);
-    if (!array)
-        throw std::runtime_error("Numpy array required");
+    if (!py::isinstance<py::array>(h))
+        throw std::invalid_argument("Numpy array required");
 
+    py::array array = py::array::ensure(h);
     // We don't use py::array_t<T> (or <T, 0>) above as that still
     // causes conversions to "larger" types.
-
-    // TODO: Better error messages here and below.
     if (!array.dtype().is(py::dtype::of<T>()))
-        throw std::runtime_error("Numpy array of right type required");
+        throw std::invalid_argument("Buffer dtype mismatch.");
 
     py::buffer_info buf = array.request();
 
-    if (buf.ndim != shape.size())
-        throw std::runtime_error("array has wrong number of dims");
-    if (!std::equal(shape.begin(), shape.end(), buf.shape.begin()))
-        throw std::runtime_error("Array has wrong shape");
+    if (buf.ndim != shape.size()) {
+        std::ostringstream ss;
+        ss << "Array has wrong number of dimensions (expected "
+           << shape.size() << ", got " << buf.ndim << ")";
+        throw std::invalid_argument(ss.str());
+    }
+    if (!std::equal(shape.begin(), shape.end(), buf.shape.begin())) {
+        std::ostringstream ss;
+        ss << "Array has wrong shape (expected [ ";
+        for (auto i : shape)
+            ss << i << " ";
+        ss << "], got [ ";
+        for (auto i : buf.shape)
+            ss << i << " ";
+        ss << "])";
+        throw std::invalid_argument(ss.str());
+    }
     if (!(array.flags() & py::array::c_style))
-        throw std::runtime_error("Array isn't C contiguous");
+        throw std::invalid_argument("Array isn't C contiguous");
 
     return static_cast<T *>(buf.ptr);
 }
