@@ -58,7 +58,7 @@ class TestConverter:
     def test_no_memleak(self):
         chars = np.zeros((SEQ_LENGTH, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((SEQ_LENGTH, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((SEQ_LENGTH, 2), dtype=np.uint16)
+        cursors = np.zeros((SEQ_LENGTH, 2), dtype=np.int16)
         timestamps = np.zeros((SEQ_LENGTH,), dtype=np.int64)
         actions = np.zeros((SEQ_LENGTH), dtype=np.uint8)
         ttyrec = getfilename(TTYREC_2020)
@@ -81,7 +81,7 @@ class TestConverter:
 
         chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((seq_length, 2), dtype=np.uint16)
+        cursors = np.zeros((seq_length, 2), dtype=np.int16)
         timestamps = np.zeros((seq_length,), dtype=np.int64)
         actions = np.zeros((seq_length), dtype=np.uint8)
 
@@ -96,7 +96,7 @@ class TestConverter:
 
         chars = np.zeros((SEQ_LENGTH, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((SEQ_LENGTH, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((SEQ_LENGTH, 2), dtype=np.uint16)
+        cursors = np.zeros((SEQ_LENGTH, 2), dtype=np.int16)
         timestamps = np.zeros((SEQ_LENGTH,), dtype=np.int64)
         actions = np.zeros((SEQ_LENGTH), dtype=np.uint8)
 
@@ -147,7 +147,7 @@ class TestConverter:
 
         chars = np.zeros((10, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((10, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((11, 2), dtype=np.uint16)
+        cursors = np.zeros((11, 2), dtype=np.int16)
         actions = np.zeros((10), dtype=np.uint8)
         timestamps = np.zeros((10,), dtype=np.int64)
         with pytest.raises(
@@ -158,7 +158,7 @@ class TestConverter:
 
         chars = np.zeros((10, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((10, ROWS, COLUMNS - 1), dtype=np.int8)
-        cursors = np.zeros((10, 2), dtype=np.uint16)
+        cursors = np.zeros((10, 2), dtype=np.int16)
         with pytest.raises(
             ValueError,
             match=re.escape(
@@ -169,7 +169,7 @@ class TestConverter:
 
         chars = np.zeros((10, ROWS - 1, COLUMNS), dtype=np.uint8)
         colors = np.zeros((10, ROWS - 1, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((10, 2), dtype=np.uint16)
+        cursors = np.zeros((10, 2), dtype=np.int16)
         with pytest.raises(
             ValueError,
             match=re.escape(
@@ -180,7 +180,7 @@ class TestConverter:
 
         chars = np.zeros((11, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((11, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((11, 2), dtype=np.uint16)
+        cursors = np.zeros((11, 2), dtype=np.int16)
         actions = np.zeros((10), dtype=np.uint8)
         timestamps = np.zeros((10,), dtype=np.int64)
         with pytest.raises(
@@ -191,7 +191,7 @@ class TestConverter:
 
         chars = np.zeros((10, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((10, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((10, 3), dtype=np.uint16)
+        cursors = np.zeros((10, 3), dtype=np.int16)
         with pytest.raises(
             ValueError,
             match=re.escape("Array has wrong shape (expected [ 10 2 ], got [ 10 3 ])"),
@@ -199,7 +199,7 @@ class TestConverter:
             converter.convert(chars, colors, cursors, timestamps, actions)
 
         chars = np.zeros((10, ROWS, COLUMNS, 7), dtype=np.uint8)
-        cursors = np.zeros((10, 2), dtype=np.uint16)
+        cursors = np.zeros((10, 2), dtype=np.int16)
         with pytest.raises(
             ValueError,
             match=r"Array has wrong number of dimensions \(expected 3, got 4\)",
@@ -207,7 +207,7 @@ class TestConverter:
             converter.convert(chars, colors, cursors, timestamps, actions)
 
         chars = np.zeros((10, ROWS, COLUMNS), dtype=np.uint8)
-        cursors = np.zeros((10, 2, 1), dtype=np.uint16)
+        cursors = np.zeros((10, 2, 1), dtype=np.int16)
         with pytest.raises(
             ValueError,
             match=r"Array has wrong number of dimensions \(expected 2, got 3\)",
@@ -225,7 +225,7 @@ class TestConverter:
             converter.convert(chars, colors, cursors, timestamps, actions)
 
         chars = "Hello"
-        cursors = np.zeros((10, 2), dtype=np.uint16)
+        cursors = np.zeros((10, 2), dtype=np.int16)
         with pytest.raises(ValueError, match=r"Numpy array required"):
             converter.convert(chars, colors, cursors, timestamps, actions)
 
@@ -244,7 +244,7 @@ class TestConverter:
 
         chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((seq_length, 2), dtype=np.uint16)
+        cursors = np.zeros((seq_length, 2), dtype=np.int16)
         actions = np.zeros((seq_length), dtype=np.uint8)
         timestamps = np.zeros((seq_length,), dtype=np.int64)
 
@@ -263,7 +263,7 @@ class TestConverter:
 
         chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
-        cursors = np.zeros((seq_length, 2), dtype=np.uint16)
+        cursors = np.zeros((seq_length, 2), dtype=np.int16)
         actions = np.zeros((seq_length), dtype=np.uint8)
         timestamps = np.zeros((seq_length,), dtype=np.int64)
 
