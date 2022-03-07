@@ -49,7 +49,7 @@
     TMTLINE *l = CLINE(vt);     \
     TMTCHAR *t = vt->tabs->chars
 
-#define HANDLER(name) static void name (TMT *vt) { COMMON_VARS; 
+#define HANDLER(name) static void name (TMT *vt) { COMMON_VARS;
 
 struct TMT{
     TMTPOINT curs, oldcurs;
@@ -67,7 +67,7 @@ struct TMT{
     size_t nmb;
     char mb[BUF_MAX + 1];
 
-    size_t pars[PAR_MAX];   
+    size_t pars[PAR_MAX];
     size_t npar;
     size_t arg;
     enum {S_NUL, S_ESC, S_ARG} state;
@@ -148,7 +148,7 @@ scrdn(TMT *vt, size_t r, size_t n)
         memmove(vt->screen.lines + r + n, vt->screen.lines + r,
                 (vt->screen.nline - n - r) * sizeof(TMTLINE *));
         memcpy(vt->screen.lines + r, buf, n * sizeof(TMTLINE *));
-    
+
         clearlines(vt, r, n);
         dirtylines(vt, r, vt->screen.nline);
     }
@@ -430,6 +430,8 @@ writecharatcurs(TMT *vt, wchar_t w)
     }
 }
 
+/* TODO(heiner): Consider removing these functions and all mentions
+ * of wchars. */
 static inline size_t
 testmbchar(TMT *vt)
 {
@@ -455,21 +457,12 @@ tmt_write(TMT *vt, const char *s, size_t n)
     for (size_t p = 0; p < n; p++){
         if (handlechar(vt, s[p]))
             continue;
-        else if (vt->acs)
-            writecharatcurs(vt, tacs(vt, (unsigned char)s[p]));
-        else if (vt->nmb >= BUF_MAX)
-            writecharatcurs(vt, getmbchar(vt));
-        else{
-            switch (testmbchar(vt)){
-                case (size_t)-1: writecharatcurs(vt, getmbchar(vt)); break;
-                case (size_t)-2: vt->mb[vt->nmb++] = s[p];           break;
-            }
-
-            if (testmbchar(vt) <= MB_LEN_MAX)
-                writecharatcurs(vt, getmbchar(vt));
-        }
+        else
+            writecharatcurs(vt, s[p]);
     }
 
+    /* TODO(heiner): Consider dropping notify, callbacks, dirtiness
+     * as we don't use them here. */
     notify(vt, vt->dirty, memcmp(&oc, &vt->curs, sizeof(oc)) != 0);
 }
 

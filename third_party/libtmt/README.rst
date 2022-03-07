@@ -1,4 +1,6 @@
 
+(Modified for hackrl to remove wide characters.)
+
 ============================================
 libtmt - a simple terminal emulation library
 ============================================
