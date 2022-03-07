@@ -30,6 +30,7 @@ TTYREC_2018 = "2018-09-27.00_20_39.ttyrec.bz2"
 #  https://alt.org/nethack/trd/?file=https://s3.amazonaws.com/altorg/ttyrec/CodeMagic/2020-10-16.00:11:28.ttyrec.bz2  # noqa: B950
 # This ttyrec uses DECGraphics (https://en.wikipedia.org/wiki/DEC_Special_Graphics)
 TTYREC_DECGRAPHICS = "2020-10-16.00_11_28.ttyrec.bz2"
+TTYREC_DECGRAPHICS_FRAME_5 = "2020-10-16.00_11_28.frame.5.txt"
 
 SEQ_LENGTH = 20
 ROWS = 25
@@ -237,7 +238,7 @@ class TestConverter:
         with pytest.raises(ValueError, match=r"Numpy array required"):
             converter.convert(chars, colors, cursors, timestamps, actions)
 
-    def _test_ibm_graphics(self):
+    def test_ibm_graphics(self):
         seq_length = 10
         converter = Converter(ROWS, COLUMNS)
 
@@ -253,4 +254,24 @@ class TestConverter:
         with open(getfilename(TTYREC_IBMGRAPHICS_FRAME_10)) as f:
             for row, line in enumerate(f):
                 actual = chars[-1][row].tobytes().decode("utf-8").rstrip()
+                assert actual == line.rstrip()
+
+    def test_dec_graphics(self):
+        seq_length = 10
+        COLUMNS = 120
+        converter = Converter(ROWS, COLUMNS)
+
+        chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
+        colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
+        cursors = np.zeros((seq_length, 2), dtype=np.uint16)
+        actions = np.zeros((seq_length), dtype=np.uint8)
+        timestamps = np.zeros((seq_length,), dtype=np.int64)
+
+        converter.load_ttyrec(getfilename(TTYREC_DECGRAPHICS))
+        assert converter.convert(chars, colors, cursors, timestamps, actions) == 0
+
+        with open(getfilename(TTYREC_DECGRAPHICS_FRAME_5)) as f:
+            for row, line in enumerate(f):
+                actual = chars[5][row].tobytes().decode("utf-8").rstrip()
+                # print(actual)
                 assert actual == line.rstrip()

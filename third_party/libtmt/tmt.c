@@ -70,10 +70,10 @@ struct TMT{
     size_t pars[PAR_MAX];
     size_t npar;
     size_t arg;
-    enum {S_NUL, S_ESC, S_ARG} state;
+    enum {S_NUL, S_ESC, S_ARG, S_DEC} state;
 };
 
-static TMTATTRS defattrs = {.fg = TMT_COLOR_DEFAULT, .bg = TMT_COLOR_DEFAULT};
+static TMTATTRS defattrs = {.fg = TMT_COLOR_DEFAULT, .bg = TMT_COLOR_DEFAULT, .dec = 0};
 static void writecharatcurs(TMT *vt, wchar_t w);
 
 static wchar_t
@@ -273,7 +273,8 @@ handlechar(TMT *vt, char i)
     DO(S_ESC, "H",          t[c->c].c = L'*')
     DO(S_ESC, "7",          vt->oldcurs = vt->curs; vt->oldattrs = vt->attrs)
     DO(S_ESC, "8",          vt->curs = vt->oldcurs; vt->attrs = vt->oldattrs)
-    ON(S_ESC, "+*()",       vt->ignored = true; vt->state = S_ARG)
+    ON(S_ESC, "(",          vt->state = S_DEC)
+    ON(S_ESC, "+*)",        vt->ignored = true; vt->state = S_ARG)
     DO(S_ESC, "c",          tmt_reset(vt))
     ON(S_ESC, "[",          vt->state = S_ARG)
     ON(S_ARG, "\x1b",       vt->state = S_ESC)
@@ -310,6 +311,9 @@ handlechar(TMT *vt, char i)
     DO(S_ARG, "s",          vt->oldcurs = vt->curs; vt->oldattrs = vt->attrs)
     DO(S_ARG, "u",          vt->curs = vt->oldcurs; vt->attrs = vt->oldattrs)
     DO(S_ARG, "@",          ich(vt))
+    ON(S_DEC, "\x1b",       vt->state = S_ESC)
+    DO(S_DEC, "0",          vt->attrs.dec = true)
+    DO(S_DEC, "B",          vt->attrs.dec = false)
 
     return resetparser(vt), false;
 }

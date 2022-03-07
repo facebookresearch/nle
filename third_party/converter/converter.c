@@ -285,7 +285,7 @@ void write_to_buffers(Conversion *conv) {
     for (size_t c = 0; c < conv->cols; ++c) {
       assert(conv->chars.cur < conv->chars.end);
       assert(scr->lines[r]->chars[c].c < 256);
-      *conv->chars.cur++ = strip_gfx(scr->lines[r]->chars[c].c);
+      *conv->chars.cur++ = strip_gfx(scr->lines[r]->chars[c].c, scr->lines[r]->chars[c].a.dec);
       *conv->colors.cur++ = vt_char_color_extract(&(scr->lines[r]->chars[c]));
     }
   }
