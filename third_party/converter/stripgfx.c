@@ -11,7 +11,6 @@
 
 unsigned char gfx_dec_map[256];
 unsigned char gfx_ibm_map[256];
-unsigned int state = 0;
 
 /* clang-format off */
 static unsigned char no_graphics[MAXPCHARS] = {
@@ -348,7 +347,6 @@ static unsigned char dec_graphics[MAXPCHARS] = {
 void populate_gfx_arrays() {
   int i;
 
-  state = 0;
 
   memset(gfx_ibm_map, 0, 256);
   memset(gfx_dec_map, 0, 256);
@@ -373,33 +371,11 @@ void populate_gfx_arrays() {
 }
 
 unsigned char
-strip_gfx(unsigned char inchar)
+strip_gfx(unsigned char inchar, int use_dec)
 {
+  if (use_dec && gfx_dec_map[inchar])
+    return gfx_dec_map[inchar];
   if (gfx_ibm_map[inchar])
     return gfx_ibm_map[inchar];
-
-  if ((inchar == 0x0E) && (state == 0))
-    {
-      state = 1;
-      return 0x00;
-    }
-
-  if ((inchar == 0x0F) && (state == 1))
-    {
-      state = 0;
-      return inchar;
-    }
-
-  if ((inchar == 0x1B) && (state == 1))
-    {
-      state = 0;
-      return inchar;
-    }
-
-  if (gfx_dec_map[inchar] && (state == 1))
-    {
-      return gfx_dec_map[inchar];
-    }
-
   return inchar;
 }

@@ -87,6 +87,7 @@ struct TMTATTRS{
     bool invisible;
     tmt_color_t fg;
     tmt_color_t bg;
+    bool dec;
 };
 
 typedef struct TMTCHAR TMTCHAR;
