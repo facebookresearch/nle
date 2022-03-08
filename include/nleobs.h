@@ -85,6 +85,7 @@ typedef struct nle_settings {
      *  Path to NetHack's game files.
      */
     char hackdir[4096];
+    char scoreprefix[4096];
     char options[32768];
     char wizkit[4096];
     /*

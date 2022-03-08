@@ -225,6 +225,9 @@ class TestGymEnvRollout:
             assert os.path.exists(
                 os.path.join(savedir, "nle.%i.0.ttyrec.bz2" % os.getpid())
             )
+            assert os.path.exists(
+                os.path.join(savedir, "nle.%i.xlogfile" % os.getpid())
+            )
 
     def test_rollout_no_archive(self, env_name, rollout_len):
         """Tests rollout_len steps (or until termination) of random policy."""
@@ -319,7 +322,7 @@ class TestGymEnvRollout:
 class TestGymDynamics:
     """Tests a few game dynamics."""
 
-    @pytest.fixture(autouse=True)  # will be applied to all tests in class
+    @pytest.fixture(autouse=True)  # Will be applied to all tests in class.
     def make_cwd_tmp(self, tmpdir):
         """Makes cwd point to the test's tmpdir."""
         with tmpdir.as_cwd():
@@ -373,14 +376,26 @@ class TestGymDynamics:
 
     def test_ttyrec_every(self):
         path = pathlib.Path(".")
-        env = gym.make("NetHackScore-v0", save_ttyrec_every=2, savedir=str(path))
+        env = gym.make("NetHackChallenge-v0", save_ttyrec_every=2, savedir=str(path))
+        pid = os.getpid()
         for episode in range(10):
             env.reset()
+            for c in [ord(" "), ord(" "), ord("<"), ord("y")]:
+                _, _, done, *_ = env.step(env.actions.index(c))
+            assert done
+
             if episode % 2 != 0:
                 continue
             contents = set(str(p) for p in path.iterdir())
-            assert len(contents) == episode // 2 + 1
-            assert "nle.%i.%i.ttyrec.bz2" % (os.getpid(), episode) in contents
+            # `contents` includes xlogfile and ttyrecs.
+            assert len(contents) - 1 == episode // 2 + 1
+            assert "nle.%i.%i.ttyrec.bz2" % (pid, episode) in contents
+            assert "nle.%i.xlogfile" % pid in contents
+
+        with open("nle.%i.xlogfile" % pid, "r") as f:
+            entries = f.readlines()
+
+        assert len(entries) == 10
 
 
 class TestEnvMisc:

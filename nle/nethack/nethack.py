@@ -159,6 +159,7 @@ class Nethack:
         wizard=False,
         hackdir=HACKDIR,
         spawn_monsters=True,
+        scoreprefix="",
     ):
         self._copy = copy
 
@@ -175,9 +176,15 @@ class Nethack:
 
         # Symlink a nhdat.
         os.symlink(os.path.join(hackdir, "nhdat"), os.path.join(self._vardir, "nhdat"))
-        # Touch a few files.
-        for fn in ["perm", "record", "logfile", "xlogfile"]:
+
+        # Touch files, so lock_file() in files.c passes.
+        for fn in ["perm", "record", "logfile"]:
             os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
+        if scoreprefix:
+            os.close(os.open(scoreprefix + "xlogfile", os.O_CREAT))
+        else:
+            os.close(os.open(os.path.join(self._vardir, "xlogfile"), os.O_CREAT))
+
         os.mkdir(os.path.join(self._vardir, "save"))
 
         # An assortment of hacks:
@@ -209,7 +216,12 @@ class Nethack:
             )
         else:
             self._pynethack = _pynethack.Nethack(
-                self.dlpath, ttyrec, self._vardir, self._nethackoptions, spawn_monsters
+                self.dlpath,
+                ttyrec,
+                self._vardir,
+                self._nethackoptions,
+                spawn_monsters,
+                scoreprefix,
             )
         self._ttyrec = ttyrec
 
