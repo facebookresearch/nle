@@ -292,8 +292,11 @@ class NLE(gym.Env):
                 self.savedir, "nle.%i.%%i.ttyrec.bz2" % os.getpid()
             )
             ttyrec = self._ttyrec_pattern % 0
+            # Create an xlogfile with the same format of name.
+            scoreprefix = ttyrec.replace("0.ttyrec.bz2", "")
         else:
             ttyrec = None
+            scoreprefix = None
 
         self.nethack = nethack.Nethack(
             observation_keys=self._observation_keys,
@@ -302,6 +305,7 @@ class NLE(gym.Env):
             ttyrec=ttyrec,
             wizard=wizard,
             spawn_monsters=spawn_monsters,
+            scoreprefix=scoreprefix,
         )
         self._close_nethack = weakref.finalize(self, self.nethack.close)
 

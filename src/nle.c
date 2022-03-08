@@ -176,13 +176,16 @@ mainloop(fcontext_transfer_t ctx_transfer)
         settings.hackdir[len] = '\0';
     }
 
+    char *scoreprefix = (settings.scoreprefix[0] != '\0')
+                            ? settings.scoreprefix
+                            : settings.hackdir;
     fqn_prefix[SYSCONFPREFIX] = settings.hackdir;
     fqn_prefix[CONFIGPREFIX] = settings.hackdir;
     fqn_prefix[HACKPREFIX] = settings.hackdir;
     fqn_prefix[SAVEPREFIX] = settings.hackdir;
     fqn_prefix[LEVELPREFIX] = settings.hackdir;
     fqn_prefix[BONESPREFIX] = settings.hackdir;
-    fqn_prefix[SCOREPREFIX] = settings.hackdir;
+    fqn_prefix[SCOREPREFIX] = scoreprefix;
     fqn_prefix[LOCKPREFIX] = settings.hackdir;
     fqn_prefix[TROUBLEPREFIX] = settings.hackdir;
     fqn_prefix[DATAPREFIX] = settings.hackdir;

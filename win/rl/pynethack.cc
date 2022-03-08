@@ -91,7 +91,8 @@ class Nethack
 {
   public:
     Nethack(std::string dlpath, std::string ttyrec, std::string hackdir,
-            std::string nethackoptions, bool spawn_monsters)
+            std::string nethackoptions, bool spawn_monsters,
+            std::string scoreprefix)
         : Nethack(std::move(dlpath), std::move(hackdir),
                   std::move(nethackoptions), spawn_monsters)
     {
@@ -100,6 +101,16 @@ class Nethack
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
             throw py::error_already_set();
         }
+
+        if (ttyrec.size() > sizeof(settings_.scoreprefix) - 1) {
+            throw std::length_error("ttyrec filepath too long");
+        }
+
+        if (scoreprefix.size() > sizeof(settings_.scoreprefix) - 1) {
+            throw std::length_error("scoreprefix too long");
+        }
+        strncpy(settings_.scoreprefix, scoreprefix.c_str(),
+                scoreprefix.length());
     }
 
     Nethack(std::string dlpath, std::string hackdir,
@@ -338,9 +349,10 @@ PYBIND11_MODULE(_pynethack, m)
 
     py::class_<Nethack>(m, "Nethack")
         .def(py::init<std::string, std::string, std::string, std::string,
-                      bool>(),
+                      bool, std::string>(),
              py::arg("dlpath"), py::arg("ttyrec"), py::arg("hackdir"),
-             py::arg("nethackoptions"), py::arg("spawn_monsters") = true)
+             py::arg("nethackoptions"), py::arg("spawn_monsters") = true,
+             py::arg("scoreprefix") = "")
         .def(py::init<std::string, std::string, std::string, bool>(),
              py::arg("dlpath"), py::arg("hackdir"), py::arg("nethackoptions"),
              py::arg("spawn_monsters") = true)

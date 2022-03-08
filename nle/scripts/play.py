@@ -86,6 +86,7 @@ def play():
     else:
         env = gym.make(
             FLAGS.env,
+            save_ttyrec_every=2,
             savedir=FLAGS.savedir,
             max_episode_steps=FLAGS.max_steps,
             allow_all_yn_questions=True,
