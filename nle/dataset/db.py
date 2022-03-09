@@ -79,11 +79,14 @@ def getmeta(conn=None):
         return conn.execute("SELECT * FROM meta").fetchone()
 
 
-def getroot(conn=None):
-    root, _, _ = getmeta(conn)
-    return root
+def getroot(dataset_name, conn=None):
+    with db(conn) as conn:
+        return conn.execute(
+            "SELECT root FROM roots WHERE dataset_name=?", (dataset_name,)
+        ).fetchone()
 
 
+#  TODO: fix
 def setroot(root):
     root = os.path.abspath(root)
     with db(rw=True) as conn:
@@ -130,33 +133,32 @@ def update(rowid, conn=None, **update_values):
     update_batch([rowid], [update_values], conn=conn)
 
 
-def create(root):
-    root = os.path.abspath(root)
+def create_empty(filename=DB):
     ctime = time.time()
 
-    with db(new=True) as conn:
+    with db(filename=filename, new=True) as conn:
         logging.info("Creating '%s' ...", DB)
         c = conn.cursor()
 
         c.execute(
             """CREATE TABLE meta
-            (root text, ctime real, mtime real)"""
+            (
+                time REAL,
+                mtime REAL
+            )"""
         )
-        c.execute("INSERT INTO meta VALUES (?,?,?)", (root, ctime, ctime))
+        c.execute("INSERT INTO meta VALUES (?, ?)", (ctime, ctime))
 
         c.execute(
             """CREATE TABLE ttyrecs
             (
                 path        TEXT,
+                part        INTEGER,
                 size        INTEGER,
                 mtime       REAL,
-                user        TEXT,
-                frames      INTEGER DEFAULT -1,
-                start_time  INTEGER,
-                end_time    INTEGER,
-                is_clean_bl INTEGER DEFAULT 0,
-                is_error    INTEGER DEFAULT 0,
-                gameid      INTEGER
+                gameid      INTEGER,
+                unique (path, mtime)
+                unique (gameid, part)
             )"""
         )
 
@@ -164,13 +166,8 @@ def create(root):
             """CREATE TABLE games
             (
                 gameid      INTEGER PRIMARY KEY AUTOINCREMENT,
-                user        TEXT,
-                name        TEXT,
-                points      INTEGER,
-                race        TEXT,
-                death       TEXT,
-                turns       INTEGER,
                 version     TEXT,
+                points      INTEGER,
                 deathdnum   INTEGER,
                 deathlev    INTEGER,
                 maxlvl      INTEGER,
@@ -181,31 +178,138 @@ def create(root):
                 birthdate   INTEGER,
                 uid         INTEGER,
                 role        TEXT,
+                race        TEXT,
                 gender      TEXT,
                 align       TEXT,
-                conduct     INTEGER,
-                achieve     INTEGER,
-                nconducts   INTEGER,
-                nachieves   INTEGER,
+                name        TEXT,
+                death       TEXT,
+                conduct     TEXT,
+                turns       INTEGER,
+                achieve     TEXT,
                 realtime    INTEGER,
                 starttime   INTEGER,
                 endtime     INTEGER,
-                gamedelta   INTEGER,
                 gender0     TEXT,
                 align0      TEXT,
-                flags       INTEGER
+                flags       TEXT
+            )
+            """
+        )
+
+        c.execute(
+            """CREATE TABLE datasets
+            (
+                gameid        TEXT,
+                dataset_name  TEXT
+            )
+            """
+        )
+
+        c.execute(
+            """CREATE TABLE roots
+            (
+                dataset_name  TEXT,
+                root          TEXT,
+                unique (dataset_name)
             )"""
         )
 
-        def gen():
-            for path in glob.iglob(root + "/*/*.ttyrec.bz2"):
-                relpath = os.path.relpath(path, root)
-                user = os.path.split(relpath)[0]
-                yield (relpath, os.path.getsize(path), os.path.getmtime(path), user)
+        conn.commit()
+    logging.info(
+        "Created Empty '%s'. Size: %.2f MB",
+        DB,
+        os.path.getsize(DB) / 1024**2,
+    )
 
-        c.executemany(
-            "INSERT INTO ttyrecs (path, size, mtime, user) VALUES (?,?,?,?)", gen()
-        )
+
+def add_nle_data(path, name, filename=DB):
+    with db(filename=filename, rw=True) as conn:
+        logging.info("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
+        root = os.path.abspath(path)
+
+        c = conn.cursor()
+        stime = time.time()
+
+        c.execute("INSERT INTO roots VALUES (?,?)", (name, root))
+
+        xlogfiles = list(glob.iglob(path + "/*/*.xlogfile"))
+        for xlog in xlogfiles:
+
+            stem = xlog.replace(".xlogfile", ".*.ttyrec.bz2")
+            episodes = {int(name.split(".")[-3]): name for name in glob.iglob(stem)}
+
+            ttyrecs = []
+
+            def gen_games():
+                cols = [
+                    ("version", str),
+                    ("points", int),
+                    ("deathdnum", int),
+                    ("deathlev", int),
+                    ("maxlvl", int),
+                    ("hp", int),
+                    ("maxhp", int),
+                    ("deaths", int),
+                    ("deathdate", int),
+                    ("birthdate", int),
+                    ("uid", int),
+                    ("role", str),
+                    ("race", str),
+                    ("gender", str),
+                    ("align", str),
+                    ("name", str),
+                    ("death", str),
+                    ("conduct", str),
+                    ("turns", int),
+                    ("achieve", str),
+                    ("realtime", int),
+                    ("starttime", int),
+                    ("endtime", int),
+                    ("gender0", str),
+                    ("align0", str),
+                    ("flags", str),
+                ]
+
+                with open(xlog, "r") as f:
+                    for i, line in enumerate(f.readlines()):
+                        if i not in episodes:
+                            # NB: xlogfile may have more rows than in directory
+                            #  due to 'save_ttyrec_every' option in env.py
+                            continue
+
+                        ttyrecs.append(episodes[i])
+                        game = dict(word.split("=") for word in line.split("\t"))
+                        if "while" in game:
+                            game["death"] += " while " + game["while"]
+                        yield tuple(to_type(game[key]) for key, to_type in cols)
+
+            qs = "( NULL, " + ",".join(["?"] * 26) + ")"
+            c.executemany("INSERT INTO games VALUES " + qs, gen_games())
+
+            c.execute(
+                "SELECT gameid FROM games ORDER BY gameid DESC LIMIT "
+                + str(len(ttyrecs))
+            )
+            gameids = [g[0] for g in reversed(c.fetchall())]
+
+            def gen_ttyrecs():
+                for path, gameid in zip(ttyrecs, gameids):
+                    relpath = os.path.relpath(path, root)
+                    yield (
+                        relpath,
+                        0,
+                        os.path.getsize(path),
+                        os.path.getmtime(path),
+                        gameid,
+                    )
+
+            c.executemany("INSERT INTO ttyrecs VALUES (?,?,?,?,?)", gen_ttyrecs())
+
+            def gen_dataset():
+                for g in gameids:
+                    yield g, name
+
+            c.executemany("INSERT INTO datasets VALUES (?,?)", gen_dataset())
 
         mtime = time.time()
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
@@ -213,9 +317,9 @@ def create(root):
         conn.commit()
 
     logging.info(
-        "Created '%s' in %.2f sec. Size: %.2f MB",
+        "Updated '%s' in %.2f sec. Size: %.2f MB",
         DB,
-        mtime - ctime,
+        mtime - stime,
         os.path.getsize(DB) / 1024**2,
     )
 
