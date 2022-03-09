@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import threading
+from collections import defaultdict
 from functools import partial
 
 import numpy as np
@@ -14,7 +15,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def convert_frames(
-    converter, chars, colors, curs, timestamps, actions, resets, rowids, load_fn
+    converter, chars, colors, curs, timestamps, actions, resets, gameids, load_fn
 ):
     """Convert frames for a single batch entry.
 
@@ -26,7 +27,7 @@ def convert_frames(
     :param actions: Array of actions at t in response to output at t
         - np.array(np.uint8) [ SEQ ]
     :param resets: Array of resets -  np.array(np.uint8) [ SEQ ]
-    :param rowids: Array of the rowid of each frame - np.array(np.int32) [ SEQ ]
+    :param gameids: Array of the gameid of each frame - np.array(np.int32) [ SEQ ]
     :param load_fn: A callback that loads the next file into a converter:
         sig: load_fn(converter) -> bool is_success
 
@@ -39,7 +40,7 @@ def convert_frames(
         end = np.shape(chars)[0] - remaining
 
         resets[1:end] = 0
-        rowids[:end] = converter.rowid
+        gameids[:end] = converter.gameid
         if remaining == 0:
             return
 
@@ -50,7 +51,7 @@ def convert_frames(
         timestamps = timestamps[-remaining:]
         actions = actions[-remaining:]
         resets = resets[-remaining:]
-        rowids = rowids[-remaining:]
+        gameids = gameids[-remaining:]
         if load_fn(converter):
             if converter.part == 0:
                 resets[0] = 1
@@ -61,7 +62,7 @@ def convert_frames(
             timestamps.fill(0)
             actions.fill(0)
             resets.fill(0)
-            rowids.fill(0)
+            gameids.fill(0)
             return
 
 
@@ -83,7 +84,7 @@ def _ttyrec_generator(
     timestamps = torch.zeros((batch_size, seq_length), dtype=torch.int64)
     actions = torch.zeros((batch_size, seq_length), dtype=torch.uint8)
     resets = torch.zeros((batch_size, seq_length), dtype=torch.uint8)
-    rowids = torch.zeros((batch_size, seq_length), dtype=torch.int32)
+    gameids = torch.zeros((batch_size, seq_length), dtype=torch.int32)
 
     npchars = chars.numpy()
     npcolors = colors.numpy()
@@ -91,13 +92,13 @@ def _ttyrec_generator(
     nptimestamps = timestamps.numpy()
     npactions = actions.numpy()
     npresets = resets.numpy()
-    nprowids = rowids.numpy()
+    npgameids = gameids.numpy()
 
     if torch.cuda.is_available():
         for tensor in [chars, colors, cursors, timestamps, actions, resets]:
             tensor.pin_memory()
 
-    # Load initial rowids.
+    # Load initial gameids.
     converters = [
         converter.Converter(rows, cols, read_inputs=read_actions)
         for _ in range(batch_size)
@@ -106,9 +107,9 @@ def _ttyrec_generator(
 
     # Convert (at least one minibatch)
     _convert_frames = partial(convert_frames, load_fn=load_fn)
-    nprowids[0, -1] = 1  # basically creating a "do-while" loop by setting an indicator
+    npgameids[0, -1] = 1  # basically creating a "do-while" loop by setting an indicator
     while np.any(
-        nprowids[:, -1] != 0
+        npgameids[:, -1] != 0
     ):  # loop until only padding is found, i.e. end of data
         list(
             map_fn(
@@ -120,7 +121,7 @@ def _ttyrec_generator(
                 nptimestamps,
                 npactions,
                 npresets,
-                nprowids,
+                npgameids,
             )
         )
 
@@ -130,7 +131,7 @@ def _ttyrec_generator(
             ("tty_cursors", cursors),
             ("timestamps", timestamps),
             ("done", resets.bool()),
-            ("rowids", rowids),
+            ("gameids", gameids),
         ]
         if read_actions:
             key_vals.append(("actions", actions))
@@ -145,13 +146,14 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
 
     def __init__(
         self,
+        dataset_name,
         batch_size=128,
         seq_length=100,
         rows=24,
         cols=80,
         dbfilename=db.DB,
         threadpool=None,
-        rowids=None,
+        gameids=None,
         shuffle=False,
         read_actions=False,
         sql_subset=None,
@@ -164,90 +166,131 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
 
         self.shuffle = shuffle
         self.sql_subset = sql_subset
-        if sql_subset is None:
-            self.sql_subset = "SELECT rowid, path FROM ttyrecs"
 
-        self._rows = {}
+        core_sql = """
+            SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path, games.*
+            FROM ttyrecs
+            INNER JOIN games on games.gameid=datasets.gameid
+            LEFT JOIN datasets ON ttyrecs.gameid=datasets.gameid
+            WHERE datasets.dataset_name=?
+        """
+
+        if sql_subset is None:
+            self.sql_subset = core_sql
+
+        self._games = defaultdict(list)
+        self._meta = defaultdict(list)
         with db.connect(dbfilename) as conn:
             c = conn.cursor()
-            for row in c.execute(self.sql_subset).fetchall():
-                r_id = row[0]
-                if r_id not in self._rows:
-                    self._rows[r_id] = []  # {"paths": [], "meta": []}
-                self._rows[r_id].append(row[1:])
-            self._rootpath = db.getroot(conn)
 
-        if rowids is None:
-            rowids = list(self._rows.keys())
-        self._rowids = rowids
+            for row in c.execute(self.sql_subset, (dataset_name,)).fetchall():
+                # A row is made up of [ gameid, part, path, meta1, meta2... metaN].
+                self._games[row[0]].append(row[1:3])
+                self._meta[row[0]].append(row[3:])
+
+            # Guarantee order is [part0, ..., partN] for multi-part games.
+            for files in self._games.values():
+                files.sort()
+
+            self._meta_cols = [desc[0] for desc in c.description]
+            self._rootpath = db.getroot(dataset_name, conn)
+
+        if gameids is None:
+            gameids = self._games.keys()
+
+        self._gameid = gameids
         self._threadpool = threadpool
         self._map = partial(self._threadpool.map, timeout=60) if threadpool else map
 
-    def get_paths(self, rowid):
-        return [r[0] for r in self._rows[rowid]]
+    def get_paths(self, gameid):
+        return [path for _, path in self._games[gameid]]
 
-    def get_meta(self, rowid):
-        return [r[1:] for r in self._rows[rowid]]
+    def get_meta(self, gameid):
+        return self._meta[gameid]
 
-    def _make_load_fn(self, rowids):
-        """Make a closure to load the next rowid from the db into the converter."""
+    def get_meta_columns(self):
+        return self._meta_cols
+
+    def _make_load_fn(self, gameids):
+        """Make a closure to load the next gameid from the db into the converter."""
         lock = threading.Lock()
         count = [0]
 
         def _load_fn(converter):
-            """Take the next part of the current row if available, else new row.
+            """Take the next part of the current game if available, else new game.
             Return True if load successful, else False."""
-            rowid = converter.rowid
+            gameid = converter.gameid
             part = converter.part + 1
 
-            if rowid == 0 or part >= len(self.get_paths(rowid)):
+            files = self.get_paths(gameid)
+            if gameid == 0 or part >= len(files):
                 with lock:
                     i = count[0]
                     count[0] += 1
 
-                if i >= len(rowids):
+                if i >= len(gameids):
                     return False
 
-                rowid = rowids[i]
+                gameid = gameids[i]
+                files = self.get_paths(gameid)
                 part = 0
 
-            filename = self.get_paths(rowid)[part]
+            filename = files[part]
             filepath = os.path.join(self._rootpath, filename)
-            converter.load_ttyrec(filepath, rowid=rowid, part=part)
+            converter.load_ttyrec(filepath, gameid=gameid, part=part)
             return True
 
         return _load_fn
 
     def __iter__(self):
-        rowids = list(self._rowids)
+        gameids = list(self._gameids)
         if self.shuffle:
-            np.random.shuffle(rowids)
+            np.random.shuffle(gameids)
 
         return _ttyrec_generator(
             self.batch_size,
             self.seq_length,
             self.rows,
             self.cols,
-            self._make_load_fn(rowids),
+            self._make_load_fn(gameids),
             self._map,
             self.read_actions,
         )
 
-    def get_ttyrecs(self, rowids, chunk_size=None):
+    def get_ttyrecs(self, gameids, chunk_size=None):
         """Fetch data from a single episode, chunked into a sequence of tensors."""
         seq_length = chunk_size or self.seq_length
         mbs = []
         for mb in _ttyrec_generator(
-            len(rowids),
+            len(gameids),
             seq_length,
             self.rows,
             self.cols,
-            self._make_load_fn(rowids),
+            self._make_load_fn(gameids),
             self._map,
             self.read_actions,
         ):
             mbs.append({k: t.clone().detach() for k, t in mb.items()})
         return mbs
 
-    def get_ttyrec(self, rowid, chunk_size=None):
-        return self.get_ttyrecs([rowid], chunk_size)
+    def get_ttyrec(self, gameid, chunk_size=None):
+        return self.get_ttyrecs([gameid], chunk_size)
+
+
+def add_directory(path, name, filename=db.DB):
+    if not os.path.isfile(filename):
+        db.create_empty(filename)
+    db.add_nle_data(path, dataset_name, filename)
+
+
+if __name__ == "__main__":
+    path = "/private/home/ehambro/fair/workspaces/autoascend-submission/nle_data"
+    dataset_name = "big"
+    # dataset = add_directory(path, dataset_name)
+
+    dataset = TtyrecDataset(dataset_name)
+
+    import psutil
+
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss)  # in bytes
