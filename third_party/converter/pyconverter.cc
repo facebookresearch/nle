@@ -84,7 +84,7 @@ class Converter
     }
 
     void
-    load_ttyrec(const std::string filename, size_t rowid, size_t part)
+    load_ttyrec(const std::string filename, size_t gameid, size_t part)
     {
         if (ttyrec_ == nullptr)
             ttyrec_ = fopen(filename.c_str(), "r");
@@ -101,7 +101,7 @@ class Converter
                                      + "'");
         }
 
-        rowid_ = rowid;
+        gameid_ = gameid;
         part_ = part;
         filename_ = std::move(filename);
     }
@@ -155,9 +155,9 @@ class Converter
     }
 
     size_t
-    rowid()
+    gameid()
     {
-        return rowid_;
+        return gameid_;
     }
 
     size_t
@@ -179,7 +179,7 @@ class Converter
     std::string filename_;
     // These attributes are purely for human readable id of what is loaded
     size_t part_ = 0;
-    size_t rowid_ = 0;
+    size_t gameid_ = 0;
 };
 
 PYBIND11_MODULE(_pyconverter, m)
@@ -191,7 +191,7 @@ PYBIND11_MODULE(_pyconverter, m)
              py::arg("rows"), py::arg("cols"), py::arg("term_rows") = 0,
              py::arg("term_cols") = 0, py::arg("read_inputs") = false)
         .def("load_ttyrec", &Converter::load_ttyrec, py::arg("filename"),
-             py::arg("rowid") = 0, py::arg("part") = 0)
+             py::arg("gameid") = 0, py::arg("part") = 0)
         .def("convert", &Converter::convert, py::arg("chars"),
              py::arg("colors"), py::arg("cursors"), py::arg("timestamps"),
              py::arg("inputs"))
@@ -203,5 +203,5 @@ PYBIND11_MODULE(_pyconverter, m)
         .def_readonly("read_inputs", &Converter::read_inputs_)
         .def_property_readonly("filename", &Converter::filename)
         .def_property_readonly("part", &Converter::part)
-        .def_property_readonly("rowid", &Converter::rowid);
+        .def_property_readonly("gameid", &Converter::gameid);
 }
