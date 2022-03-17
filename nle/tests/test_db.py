@@ -42,7 +42,6 @@ def mockdata(tmpdir_factory):  # Create mock data.
         os.chdir(newcwd)
         if not newcwd.join("ttyrecs.db").exists():
             db.create(".")
-            db.sort()
             with db.db(rw=True) as conn:
                 c = conn.cursor()
                 c.execute(
