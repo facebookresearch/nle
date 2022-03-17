@@ -8,8 +8,8 @@ from functools import partial
 import numpy as np
 import torch
 
-import nle.dataset.converter as converter
 import nle.dataset.db as db
+from nle import _pyconverter as converter
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -128,7 +128,7 @@ def _ttyrec_generator(
         key_vals = [
             ("tty_chars", chars),
             ("tty_colors", colors),
-            ("tty_cursors", cursors),
+            ("tty_cursor", cursors),
             ("timestamps", timestamps),
             ("done", resets.bool()),
             ("gameids", gameids),
@@ -148,15 +148,16 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
         self,
         dataset_name,
         batch_size=128,
-        seq_length=100,
+        seq_length=32,
         rows=24,
         cols=80,
         dbfilename=db.DB,
         threadpool=None,
         gameids=None,
-        shuffle=False,
+        shuffle=True,
         read_actions=False,
-        sql_subset=None,
+        loop_forever=False,
+        custom_sql=None,
     ):
         self.batch_size = batch_size
         self.seq_length = seq_length
@@ -165,7 +166,8 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
         self.read_actions = read_actions
 
         self.shuffle = shuffle
-        self.sql_subset = sql_subset
+        self.custom_sql = custom_sql
+        self.loop_forever = loop_forever
 
         core_sql = """
             SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path
@@ -173,15 +175,20 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
             INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
             WHERE datasets.dataset_name=?"""
 
-        if sql_subset is None:
-            self.sql_subset = core_sql
-
         self._games = defaultdict(list)
         self._meta = defaultdict(list)
         with db.connect(dbfilename) as conn:
             c = conn.cursor()
 
-            for row in c.execute(self.sql_subset, (dataset_name,)).fetchall():
+            if custom_sql is not None:
+                query = c.execute(custom_sql)
+            elif dataset_name == "altorg":
+                # Perf hack: removing sanitizing speeds up query
+                query = c.execute(core_sql.replace("?", "altorg"))
+            else:
+                query = c.execute(core_sql, (dataset_name,))
+
+            for row in query.fetchall():
                 # A row is made up of [ gameid, part, path, meta1, meta2... metaN].
                 # if row[0] in gameids:
                 self._games[row[0]].append(row[1:3])
@@ -227,10 +234,10 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
                     i = count[0]
                     count[0] += 1
 
-                if i >= len(gameids):
+                if (not self.loop_forever) and i >= len(gameids):
                     return False
 
-                gameid = gameids[i]
+                gameid = gameids[i % len(gameids)]
                 files = self.get_paths(gameid)
                 part = 0
 
