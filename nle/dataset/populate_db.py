@@ -76,7 +76,7 @@ def add_altorg_directory(path, name, filename=db.DB):
 
         c = conn.cursor()
 
-        db.createdataset(name, root, conn=c, commit=False)
+        db.create_dataset(name, root, conn=c, commit=False)
 
         for xlogfile in glob.iglob(path + "/xlogfile.*"):
             sep = ":" if xlogfile.endswith(".txt") else "\t"
@@ -87,8 +87,8 @@ def add_altorg_directory(path, name, filename=db.DB):
             """
             c.executemany(insert_sql, game_gen)
 
-            gameids = db.getmostrecentgames(c.rowcount, conn=c)
-            db.addgames(name, *gameids, conn=c, commit=False)
+            gameids = db.get_most_recent_games(c.rowcount, conn=c)
+            db.add_games(name, *gameids, conn=c, commit=False)
             logging.info("Found %i games in '%s'" % (len(gameids), xlogfile))
 
         ttyrecs_dict = collections.defaultdict(list)
@@ -96,7 +96,7 @@ def add_altorg_directory(path, name, filename=db.DB):
             ttyrecs_dict[ttyrec.split("/")[-2].lower()].append(ttyrec)
 
         games_dict = collections.defaultdict(list)
-        for pname, gameid, start, end in db.getgames(name, conn=c):
+        for pname, gameid, start, end in db.get_games(name, conn=c):
             games_dict[pname.lower()].append((gameid, start, end))
 
         logging.info("Matching up ttyrecs to games...")
@@ -114,7 +114,7 @@ def add_altorg_directory(path, name, filename=db.DB):
             if pname not in ttyrecs_dict:
                 empty_games.extend(gid for gid, _, _ in games_dict[pname])
 
-        db.purgeemptygames(conn=c, commit=False)
+        db.purge_empty_games(conn=c, commit=False)
 
         mtime = time.time()
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
@@ -124,7 +124,7 @@ def add_altorg_directory(path, name, filename=db.DB):
         logging.info("Optimizing DB...")
 
         db.vacuum(conn=conn)
-        games_added = db.countgames(name, conn=conn)
+        games_added = db.count_games(name, conn=conn)
 
     logging.info(
         "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i",
@@ -144,7 +144,7 @@ def add_nledata_directory(path, name, filename=db.DB):
 
         c = conn.cursor()
 
-        db.createdataset(name, root, conn=c, commit=False)
+        db.create_dataset(name, root, conn=c, commit=False)
 
         for xlogfile in glob.iglob(path + "/*/*.xlogfile"):
 
@@ -165,8 +165,8 @@ def add_nledata_directory(path, name, filename=db.DB):
             """
             c.executemany(insert_sql, game_gen)
 
-            gameids = db.getmostrecentgames(c.rowcount, conn=c)
-            db.addgames(name, *gameids, conn=conn, commit=False)
+            gameids = db.get_most_recent_games(c.rowcount, conn=c)
+            db.add_games(name, *gameids, conn=conn, commit=False)
 
             valid_resets = list(resets)[: len(gameids)]
             ttyrecs = [
@@ -179,7 +179,7 @@ def add_nledata_directory(path, name, filename=db.DB):
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
 
         conn.commit()
-        games_added = db.countgames(name, conn=conn)
+        games_added = db.count_games(name, conn=conn)
 
     logging.info(
         "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i",

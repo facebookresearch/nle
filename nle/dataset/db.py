@@ -62,7 +62,7 @@ def vacuum(conn=None):
         conn.execute("VACUUM")
 
 
-def getrow(rowid="1", conn=None):
+def get_row(rowid="1", conn=None):
     with db(conn) as conn:
         result = conn.execute(
             "SELECT rowid, * FROM ttyrecs WHERE rowid = ?", (rowid,)
@@ -72,19 +72,19 @@ def getrow(rowid="1", conn=None):
         return result
 
 
-def getmeta(conn=None):
+def get_meta(conn=None):
     with db(conn) as conn:
         return conn.execute("SELECT * FROM meta").fetchone()
 
 
-def getroot(dataset_name, conn=None):
+def get_root(dataset_name, conn=None):
     with db(conn) as conn:
         return conn.execute(
             "SELECT root FROM roots WHERE dataset_name=?", (dataset_name,)
         ).fetchone()
 
 
-def setroot(dataset_name, root):
+def set_root(dataset_name, root):
     root = os.path.abspath(root)
     with db(rw=True) as conn:
         conn.execute(
@@ -94,21 +94,21 @@ def setroot(dataset_name, root):
         conn.commit()
 
 
-def getrandom(n=1, conn=None):
+def get_random(n=1, conn=None):
     with db(conn) as conn:
         last = length(conn)
         for _ in range(int(n)):
             rowid = random.randint(1, last)
-            yield getrow(rowid, conn)
+            yield get_row(rowid, conn)
 
 
-def getmostrecentgames(n=1, conn=None):
+def get_most_recent_games(n=1, conn=None):
     with db(conn=conn) as conn:
         c = conn.execute("SELECT gameid FROM games ORDER BY gameid DESC LIMIT ?", (n,))
         return [g[0] for g in c.fetchall()]
 
 
-def countgames(dataset_name, conn=None):
+def count_games(dataset_name, conn=None):
     with db(conn=conn) as conn:
         c = conn.execute(
             "SELECT COUNT(datasets.gameid) FROM datasets WHERE datasets.dataset_name=?",
@@ -117,7 +117,7 @@ def countgames(dataset_name, conn=None):
         return c.fetchone()[0]
 
 
-def getgames(dataset_name, conn=None):
+def get_games(dataset_name, conn=None):
     with db(conn=conn) as conn:
         c = conn.execute(
             "SELECT games.name, games.gameid, games.starttime, games.endtime "
@@ -130,7 +130,7 @@ def getgames(dataset_name, conn=None):
             yield row
 
 
-def addgames(dataset_name, *gameids, conn=None, commit=True):
+def add_games(dataset_name, *gameids, conn=None, commit=True):
     with db(conn, rw=True) as conn:
         conn.executemany(
             "INSERT INTO datasets VALUES (?, ?)",
@@ -141,7 +141,7 @@ def addgames(dataset_name, *gameids, conn=None, commit=True):
             conn.commit()
 
 
-def dropgames(dataset_name, *gameids, conn=None, commit=True):
+def drop_games(dataset_name, *gameids, conn=None, commit=True):
     with db(conn, rw=True) as conn:
         conn.executemany(
             "DELETE FROM datasets WHERE gameid=? AND dataset_name=?",
@@ -152,7 +152,7 @@ def dropgames(dataset_name, *gameids, conn=None, commit=True):
             conn.commit()
 
 
-def purgeemptygames(conn=None, commit=True):
+def purge_empty_games(conn=None, commit=True):
     select = "SELECT DISTINCT(gameid) FROM ttyrecs"
     with db(conn, rw=True) as conn:
         conn.execute("DELETE FROM datasets WHERE NOT gameid IN (%s)" % select)
@@ -162,7 +162,7 @@ def purgeemptygames(conn=None, commit=True):
             conn.commit()
 
 
-def createdataset(dataset_name, root, conn=None, commit=True):
+def create_dataset(dataset_name, root, conn=None, commit=True):
     with db(conn, rw=True) as conn:
         conn.execute("INSERT INTO roots VALUES (?, ?)", (dataset_name, root))
         conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
@@ -170,7 +170,7 @@ def createdataset(dataset_name, root, conn=None, commit=True):
             conn.commit()
 
 
-def deletedataset(dataset_name, conn=None, commit=True):
+def delete_dataset(dataset_name, conn=None, commit=True):
     with db(conn, rw=True) as conn:
         conn.execute("DELETE datasets WHERE dataset_name=?", (dataset_name,))
         conn.execute("DELETE roots WHERE dataset_name=?", (dataset_name,))

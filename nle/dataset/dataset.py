@@ -192,7 +192,7 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
                 files.sort()
 
             self._meta_cols = [desc[0] for desc in c.description]
-            self._rootpath = db.getroot(dataset_name, conn)
+            self._rootpath = db.get_root(dataset_name, conn)
 
         if gameids is None:
             gameids = self._games.keys()
@@ -289,6 +289,6 @@ if __name__ == "__main__":
     dataset_name = "altorg"
     dataset = add_directory(path, dataset_name)
 
-    logging.info("%s" % db.countgames(dataset_name))
+    logging.info("%s" % db.count_games(dataset_name))
     dataset = TtyrecDataset(dataset_name)
     logging.info("%s" % len(dataset._gameids))
