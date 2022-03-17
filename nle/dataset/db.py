@@ -5,9 +5,40 @@ import os
 import random
 import sqlite3
 import time
+from collections import defaultdict
+from datetime import datetime
+from datetime import timezone
 
 DB = "ttyrecs.db"
 
+XLOGFILE_COLUMNS = [
+    ("version", str),
+    ("points", int),
+    ("deathdnum", int),
+    ("deathlev", int),
+    ("maxlvl", int),
+    ("hp", int),
+    ("maxhp", int),
+    ("deaths", int),
+    ("deathdate", int),
+    ("birthdate", int),
+    ("uid", int),
+    ("role", str),
+    ("race", str),
+    ("gender", str),
+    ("align", str),
+    ("name", str),
+    ("death", str),
+    ("conduct", str),
+    ("turns", int),
+    ("achieve", str),
+    ("realtime", int),
+    ("starttime", int),
+    ("endtime", int),
+    ("gender0", str),
+    ("align0", str),
+    ("flags", str),
+]
 
 logging.basicConfig(
     format=(
@@ -59,8 +90,8 @@ def ls(conn=None):
             yield row
 
 
-def vacuum():
-    with db(rw=True) as conn:
+def vacuum(conn=None):
+    with db(conn=conn, rw=True) as conn:
         conn.execute("VACUUM")
 
 
@@ -86,11 +117,13 @@ def getroot(dataset_name, conn=None):
         ).fetchone()
 
 
-#  TODO: fix
-def setroot(root):
+def setroot(dataset_name, root):
     root = os.path.abspath(root)
     with db(rw=True) as conn:
-        conn.execute("UPDATE meta SET root = ?, mtime = ?", (root, time.time()))
+        conn.execute(
+            "UPDATE roots SET root = ? WHERE dataset_name = ?", (root, dataset_name)
+        )
+        conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
         conn.commit()
 
 
@@ -102,38 +135,84 @@ def getrandom(n=1, conn=None):
             yield getrow(rowid, conn)
 
 
-def markerror(rowid, rc, conn=None):
-    with db(rw=True) as conn:
-        conn.execute(
-            "UPDATE ttyrecs SET is_error = ?, mtime = ? WHERE rowid = ?",
-            (rc, time.time(), rowid),
+def getmostrecentgames(n=1, conn=None):
+    with db(conn=conn) as conn:
+        c = conn.execute("SELECT gameid FROM games ORDER BY gameid DESC LIMIT ?", (n,))
+        return [g[0] for g in c.fetchall()]
+
+
+def countgames(dataset_name, conn=None):
+    with db(conn=conn) as conn:
+        c = conn.execute(
+            "SELECT COUNT(datasets.gameid) FROM datasets WHERE datasets.dataset_name=?",
+            (dataset_name,),
         )
-        conn.commit()
+        return c.fetchone()[0]
 
 
-def update_batch(rowids, update_dicts, conn=None):
-    assert len(rowids) == len(update_dicts)
-    fields = update_dicts[0].keys()
-    assert all(d.keys() == fields for d in update_dicts)
+def getgames(dataset_name, conn=None):
+    with db(conn=conn) as conn:
+        c = conn.execute(
+            "SELECT games.name, games.gameid, games.starttime, games.endtime "
+            "FROM games "
+            "JOIN datasets ON games.gameid=datasets.gameid "
+            "WHERE datasets.dataset_name=?",
+            (dataset_name,),
+        )
+        for row in c:
+            yield row
 
-    field_string = ",".join([f"{field} = ?" for field in fields])
-    sql_string = f"UPDATE ttyrecs SET {field_string}, mtime = ? WHERE rowid = ?"
 
-    def gen():
-        for rowid, update in zip(rowids, update_dicts):
-            values = [update[f] for f in fields]
-            yield tuple(values) + (time.time(), rowid)
-
+def addgames(dataset_name, *gameids, conn=None, commit=True):
     with db(conn, rw=True) as conn:
-        conn.executemany(sql_string, gen())
-        conn.commit()
+        conn.executemany(
+            "INSERT INTO datasets VALUES (?, ?)",
+            zip(gameids, [dataset_name] * len(gameids)),
+        )
+        conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
+        if commit:
+            conn.commit()
 
 
-def update(rowid, conn=None, **update_values):
-    update_batch([rowid], [update_values], conn=conn)
+def dropgames(dataset_name, *gameids, conn=None, commit=True):
+    with db(conn, rw=True) as conn:
+        conn.executemany(
+            "DELETE FROM datasets WHERE gameid=? AND dataset_name=?",
+            zip(gameids, [dataset_name] * len(gameids)),
+        )
+        conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
+        if commit:
+            conn.commit()
 
 
-def create_empty(filename=DB):
+def purgeemptygames(conn=None, commit=True):
+    select = "SELECT DISTINCT(gameid) FROM ttyrecs"
+    with db(conn, rw=True) as conn:
+        conn.execute("DELETE FROM datasets WHERE NOT gameid IN (%s)" % select)
+        conn.execute("DELETE FROM games WHERE NOT gameid IN (%s)" % select)
+        conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
+        if commit:
+            conn.commit()
+
+
+def createdataset(dataset_name, root, conn=None, commit=True):
+    with db(conn, rw=True) as conn:
+        conn.execute("INSERT INTO roots VALUES (?, ?)", (dataset_name, root))
+        conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
+        if commit:
+            conn.commit()
+
+
+def deletedataset(dataset_name, conn=None, commit=True):
+    with db(conn, rw=True) as conn:
+        conn.execute("DELETE datasets WHERE dataset_name=?", (dataset_name,))
+        conn.execute("DELETE roots WHERE dataset_name=?", (dataset_name,))
+        conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
+        if commit:
+            conn.commit()
+
+
+def create(filename=DB):
     ctime = time.time()
 
     with db(filename=filename, new=True) as conn:
@@ -157,15 +236,14 @@ def create_empty(filename=DB):
                 size        INTEGER,
                 mtime       REAL,
                 gameid      INTEGER,
-                unique (path, mtime)
-                unique (gameid, part)
+                PRIMARY KEY (gameid, part, path)
             )"""
         )
 
         c.execute(
             """CREATE TABLE games
             (
-                gameid      INTEGER PRIMARY KEY AUTOINCREMENT,
+                gameid      INTEGER PRIMARY KEY,
                 version     TEXT,
                 points      INTEGER,
                 deathdnum   INTEGER,
@@ -199,8 +277,9 @@ def create_empty(filename=DB):
         c.execute(
             """CREATE TABLE datasets
             (
-                gameid        TEXT,
-                dataset_name  TEXT
+                gameid        INTEGER,
+                dataset_name  TEXT,
+                PRIMARY KEY (gameid, dataset_name)
             )
             """
         )
@@ -208,9 +287,8 @@ def create_empty(filename=DB):
         c.execute(
             """CREATE TABLE roots
             (
-                dataset_name  TEXT,
-                root          TEXT,
-                unique (dataset_name)
+                dataset_name  TEXT PRIMARY KEY,
+                root          TEXT
             )"""
         )
 
@@ -222,170 +300,183 @@ def create_empty(filename=DB):
     )
 
 
-def add_nle_data(path, name, filename=DB):
+def assign_ttyrecs_to_games(ttyrecs, games):
+    assigned = []  # (path, file_starttime, gameid, game_starttime, game_endtime)
+    for t in ttyrecs:
+        s_time = t.split("/")[-1][:-11]
+        try:
+            s_time = (
+                datetime.fromisoformat(s_time).replace(tzinfo=timezone.utc).timestamp()
+            )
+        except ValueError:
+            logging.info("Failed to process: '%s'" % t)
+            continue
+        assigned.append([t, s_time, -1, -1, -1])
+    assigned.sort(key=lambda x: x[1])
+    games.sort(key=lambda x: x[1])
+
+    gg, tt = 0, 0
+    while gg < len(games) and tt < len(assigned):
+        if assigned[tt][1] > games[gg][2]:
+            gg += 1
+        else:
+            assigned[tt][2] = games[gg][0]
+            assigned[tt][3] = games[gg][1]
+            assigned[tt][4] = games[gg][2]
+            tt += 1
+
+    return [(ttyrec, gameid) for ttyrec, _, gameid, _, _ in assigned if gameid > 0]
+
+
+def add_altorg_directory(path, name, filename=DB):
     with db(filename=filename, rw=True) as conn:
+
         logging.info("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
         root = os.path.abspath(path)
-
-        c = conn.cursor()
         stime = time.time()
 
-        c.execute("INSERT INTO roots VALUES (?,?)", (name, root))
+        c = conn.cursor()
 
-        xlogfiles = list(glob.iglob(path + "/*/*.xlogfile"))
-        for xlog in xlogfiles:
+        createdataset(name, root, conn=c, commit=False)
 
-            stem = xlog.replace(".xlogfile", ".*.ttyrec.bz2")
-            episodes = {int(name.split(".")[-3]): name for name in glob.iglob(stem)}
+        for xlogfile in glob.iglob(path + "/xlogfile.*"):
+            sep = ":" if xlogfile.endswith(".txt") else "\t"
+            game_gen = game_data_generator(xlogfile, separator=sep)
+            insert_sql = f"""
+                INSERT INTO games
+                VALUES (NULL, {','.join('?' for _ in XLOGFILE_COLUMNS)} )
+            """
+            c.executemany(insert_sql, game_gen)
 
-            ttyrecs = []
+            gameids = getmostrecentgames(c.rowcount, conn=c)
+            addgames(name, *gameids, conn=c, commit=False)
+            logging.info("Found %i games in '%s'" % (len(gameids), xlogfile))
 
-            def gen_games():
-                cols = [
-                    ("version", str),
-                    ("points", int),
-                    ("deathdnum", int),
-                    ("deathlev", int),
-                    ("maxlvl", int),
-                    ("hp", int),
-                    ("maxhp", int),
-                    ("deaths", int),
-                    ("deathdate", int),
-                    ("birthdate", int),
-                    ("uid", int),
-                    ("role", str),
-                    ("race", str),
-                    ("gender", str),
-                    ("align", str),
-                    ("name", str),
-                    ("death", str),
-                    ("conduct", str),
-                    ("turns", int),
-                    ("achieve", str),
-                    ("realtime", int),
-                    ("starttime", int),
-                    ("endtime", int),
-                    ("gender0", str),
-                    ("align0", str),
-                    ("flags", str),
-                ]
+        ttyrecs_dict = defaultdict(list)
+        for ttyrec in glob.iglob(path + "/*/*.ttyrec.bz2"):
+            ttyrecs_dict[ttyrec.split("/")[-2].lower()].append(ttyrec)
 
-                with open(xlog, "r") as f:
-                    for i, line in enumerate(f.readlines()):
-                        if i not in episodes:
-                            # NB: xlogfile may have more rows than in directory
-                            #  due to 'save_ttyrec_every' option in env.py
-                            continue
+        games_dict = defaultdict(list)
+        for pname, gameid, start, end in getgames(name, conn=c):
+            games_dict[pname.lower()].append((gameid, start, end))
 
-                        ttyrecs.append(episodes[i])
-                        game = dict(word.split("=") for word in line.split("\t"))
-                        if "while" in game:
-                            game["death"] += " while " + game["while"]
-                        yield tuple(to_type(game[key]) for key, to_type in cols)
+        logging.info("Matching up ttyrecs to games...")
 
-            qs = "( NULL, " + ",".join(["?"] * 26) + ")"
-            c.executemany("INSERT INTO games VALUES " + qs, gen_games())
+        empty_games = []
+        for pname in ttyrecs_dict.keys():
+            assigned = assign_ttyrecs_to_games(ttyrecs_dict[pname], games_dict[pname])
+            if assigned:
+                ttyrecs, gameids = zip(*assigned)
+                ttyrec_gen = ttyrec_data_generator(ttyrecs, gameids, root)
+                c.executemany("INSERT INTO ttyrecs VALUES (?,?,?,?,?)", ttyrec_gen)
+            elif games_dict[pname]:
+                empty_games.extend(gid for gid, _, _ in games_dict[pname])
+        for pname in games_dict:
+            if pname not in ttyrecs_dict:
+                empty_games.extend(gid for gid, _, _ in games_dict[pname])
 
-            c.execute(
-                "SELECT gameid FROM games ORDER BY gameid DESC LIMIT "
-                + str(len(ttyrecs))
-            )
-            gameids = [g[0] for g in reversed(c.fetchall())]
-
-            def gen_ttyrecs():
-                for path, gameid in zip(ttyrecs, gameids):
-                    relpath = os.path.relpath(path, root)
-                    yield (
-                        relpath,
-                        0,
-                        os.path.getsize(path),
-                        os.path.getmtime(path),
-                        gameid,
-                    )
-
-            c.executemany("INSERT INTO ttyrecs VALUES (?,?,?,?,?)", gen_ttyrecs())
-
-            def gen_dataset():
-                for g in gameids:
-                    yield g, name
-
-            c.executemany("INSERT INTO datasets VALUES (?,?)", gen_dataset())
+        purgeemptygames(conn=c, commit=False)
 
         mtime = time.time()
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
 
         conn.commit()
 
+        logging.info("Optimizing DB...")
+
+        vacuum(conn=conn)
+        games_added = countgames(name, conn=conn)
+
     logging.info(
-        "Updated '%s' in %.2f sec. Size: %.2f MB",
+        "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i",
         DB,
         mtime - stime,
         os.path.getsize(DB) / 1024**2,
+        games_added,
     )
 
 
-def sort():
-    stime = time.time()
-    with db(rw=True) as conn:
+def add_nledata_directory(path, name, filename=DB):
+    with db(filename=filename, rw=True) as conn:
+
+        logging.info("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
+        root = os.path.abspath(path)
+        stime = time.time()
+
         c = conn.cursor()
 
-        c.execute(
-            """CREATE TABLE ordered_ttyrecs
-            (
-                path        TEXT,
-                size        INTEGER,
-                mtime       REAL,
-                user        TEXT,
-                frames      INTEGER DEFAULT -1,
-                start_time  INTEGER,
-                end_time    INTEGER,
-                is_clean_bl INTEGER DEFAULT 0,
-                is_error    INTEGER DEFAULT 0,
-                gameid      INTEGER
-            )
-            """
-        )
-        c.execute(
-            """INSERT INTO ordered_ttyrecs
-            (
-                path,
-                size,
-                mtime,
-                user,
-                frames,
-                start_time,
-                end_time,
-                is_clean_bl,
-                is_error,
-                gameid
-            )
-            SELECT
-                path,
-                size,
-                mtime,
-                user,
-                frames,
-                start_time,
-                end_time,
-                is_clean_bl,
-                is_error,
-                gameid
+        createdataset(name, root, conn=c, commit=False)
 
-            FROM ttyrecs ORDER BY path"""
-        )
-        c.execute("DROP TABLE ttyrecs")
-        c.execute("ALTER TABLE ordered_ttyrecs RENAME TO ttyrecs")
+        for xlogfile in glob.iglob(path + "/*/*.xlogfile"):
+
+            stem = xlogfile.replace(".xlogfile", ".*.ttyrec.bz2")
+            resets = set(int(i.split(".")[-3]) for i in glob.iglob(stem))
+
+            def filter(gen):
+                # NB: xlogfile may have more rows than in directory
+                #     due to 'save_ttyrec_every' option in env.py
+                for line_no, line in enumerate(gen):
+                    if line_no in resets:
+                        yield line
+
+            game_gen = game_data_generator(xlogfile, filter=filter)
+            insert_sql = f"""
+                INSERT INTO games
+                VALUES (NULL, {','.join('?' for _ in XLOGFILE_COLUMNS)} )
+            """
+            c.executemany(insert_sql, game_gen)
+
+            gameids = getmostrecentgames(c.rowcount, conn=c)
+            addgames(name, *gameids, conn=conn, commit=False)
+
+            valid_resets = list(resets)[: len(gameids)]
+            ttyrecs = [
+                stem.replace("*", str(r)) for r in sorted(valid_resets, reverse=True)
+            ]
+            ttyrec_gen = ttyrec_data_generator(ttyrecs, gameids, root)
+            c.executemany("INSERT INTO ttyrecs VALUES (?,?,?,?,?)", ttyrec_gen)
 
         mtime = time.time()
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
 
         conn.commit()
-
-    vacuum()
+        games_added = countgames(name, conn=conn)
 
     logging.info(
-        "Sorted '%s' in %.2f sec. Size: %.2f MB",
-        DB,
-        time.time() - stime,
-        os.path.getsize(DB) / 1024**2,
+        "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i",
+        filename,
+        mtime - stime,
+        os.path.getsize(filename) / 1024**2,
+        games_added,
     )
+
+
+def ttyrec_data_generator(ttyrecs, gameids, root):
+    last_gameid = None
+    for path, gameid in zip(ttyrecs, gameids):
+        if gameid != last_gameid:
+            part = 0
+        relpath = os.path.relpath(path, root)
+        yield (
+            relpath,
+            part,
+            os.path.getsize(path),
+            os.path.getmtime(path),
+            gameid,
+        )
+        part += 1
+        last_gameid = gameid
+
+
+def game_data_generator(xlogfile, filter=lambda x: x, separator="\t"):
+    with open(xlogfile, "rb") as f:
+        for line in filter(f.readlines()):
+            game_data = defaultdict(lambda: -1)
+            for words in line.decode("latin-1").split(separator):
+                key, *var = words.split("=")
+                game_data[key] = "=".join(var)
+
+            if "while" in game_data:
+                game_data["death"] += " while " + game_data["while"]
+
+            yield tuple(ctype(game_data[key]) for key, ctype in XLOGFILE_COLUMNS)

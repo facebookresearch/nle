@@ -168,12 +168,10 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
         self.sql_subset = sql_subset
 
         core_sql = """
-            SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path, games.*
+            SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path
             FROM ttyrecs
-            INNER JOIN games on games.gameid=datasets.gameid
-            LEFT JOIN datasets ON ttyrecs.gameid=datasets.gameid
-            WHERE datasets.dataset_name=?
-        """
+            INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
+            WHERE datasets.dataset_name=?"""
 
         if sql_subset is None:
             self.sql_subset = core_sql
@@ -185,6 +183,7 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
 
             for row in c.execute(self.sql_subset, (dataset_name,)).fetchall():
                 # A row is made up of [ gameid, part, path, meta1, meta2... metaN].
+                # if row[0] in gameids:
                 self._games[row[0]].append(row[1:3])
                 self._meta[row[0]].append(row[3:])
 
@@ -198,7 +197,7 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
         if gameids is None:
             gameids = self._games.keys()
 
-        self._gameid = gameids
+        self._gameids = list(gameids)
         self._threadpool = threadpool
         self._map = partial(self._threadpool.map, timeout=60) if threadpool else map
 
@@ -279,18 +278,17 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
 
 def add_directory(path, name, filename=db.DB):
     if not os.path.isfile(filename):
-        db.create_empty(filename)
-    db.add_nle_data(path, dataset_name, filename)
+        db.create(filename)
+    # db.add_nledata_directory(path, dataset_name, filename)
+    db.add_altorg_directory(path, dataset_name, filename)
 
 
 if __name__ == "__main__":
     path = "/private/home/ehambro/fair/workspaces/autoascend-submission/nle_data"
-    dataset_name = "big"
-    # dataset = add_directory(path, dataset_name)
+    path = "/scratch/ehambro/altorg/altorg/111720"
+    dataset_name = "altorg"
+    dataset = add_directory(path, dataset_name)
 
+    logging.info("%s" % db.countgames(dataset_name))
     dataset = TtyrecDataset(dataset_name)
-
-    import psutil
-
-    process = psutil.Process(os.getpid())
-    print(process.memory_info().rss)  # in bytes
+    logging.info("%s" % len(dataset._gameids))
