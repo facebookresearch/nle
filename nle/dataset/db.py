@@ -1,7 +1,6 @@
 import contextlib
 import logging
 import os
-import random
 import sqlite3
 import time
 
@@ -35,21 +34,12 @@ def connect(filename=DB, new=False, rw=None, **kwargs):
     return sqlite3.connect("file:" + filename, uri=True, **kwargs)
 
 
-def length(conn=None, count=False):
-    with db(conn) as conn:
-        if count:
-            return conn.execute("SELECT COUNT(rowid) FROM ttyrecs").fetchone()[0]
-        return conn.execute("SELECT MAX(rowid) FROM ttyrecs").fetchone()[0]
-
-
 def ls(conn=None):
     with db(conn) as conn:
         c = conn.cursor()
         c.execute("SELECT * FROM meta")
-        root, ctime, mtime = c.fetchone()
+        ctime, mtime = c.fetchone()
         logging.info(
-            "root path: %s, ctime: %s, mtime: %s",
-            root,
             time.ctime(ctime),
             time.ctime(mtime),
         )
@@ -81,7 +71,7 @@ def get_root(dataset_name, conn=None):
     with db(conn) as conn:
         return conn.execute(
             "SELECT root FROM roots WHERE dataset_name=?", (dataset_name,)
-        ).fetchone()
+        ).fetchone()[0]
 
 
 def set_root(dataset_name, root):
@@ -92,14 +82,6 @@ def set_root(dataset_name, root):
         )
         conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
         conn.commit()
-
-
-def get_random(n=1, conn=None):
-    with db(conn) as conn:
-        last = length(conn)
-        for _ in range(int(n)):
-            rowid = random.randint(1, last)
-            yield get_row(rowid, conn)
 
 
 def get_most_recent_games(n=1, conn=None):

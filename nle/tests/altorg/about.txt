@@ -1,0 +1,16 @@
+# Altorg Test Directory
+
+This is a directory to mimic the real directory structure of the alt.org dataset, 
+purely to test the process of adding the directory to the dataset 
+(see nle/tests/test_populate_db.py)
+
+Ttyrecs are replaced with (almost) empty files to save on space in git. 
+We add multiple differnt xlogfiles (as is common for NetHack v3.4.3 and v3.6+)
+one with multiple games in it.  
+
+In the v3.4.3 case (xlogfile.txt) we remove some games from the xlogfile, to 
+test whether the dataset will ignore ttyrecs that are either starting too 
+early to be part of the game, or starting too late.
+
+NB: Do not try to "run" this dataset - the ttyrecs aren't real.
+

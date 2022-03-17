@@ -33,32 +33,35 @@ class TestDataset:
             yield tp
 
     def test_setup(self, conn):  # noqa: F811
-        files = [db.getrow(f"{i+1}", conn=conn)[1] for i in range(9)]
+        files = [db.get_row(f"{i+1}", conn=conn)[1] for i in range(9)]
         names = ["aaa", "bbb", "ccc"]
         assert files == [f"{a}/{b}.ttyrec.bz2" for a in names for b in names]
 
-    def test_dataset_rowids(self, db_exists, pool):
-        rowids = np.random.choice(9, 9, replace=False) + 1
-        data = dataset.TtyrecDataset(batch_size=9, threadpool=pool, rowids=rowids)
+    def test_dataset_gameids(self, db_exists, pool):
+        gameids = np.random.choice(7, 7, replace=False) + 1
+        data = dataset.TtyrecDataset(
+            "basictest", batch_size=7, threadpool=pool, gameids=gameids
+        )
         mb = next(iter(data))
-        files = mb["rowids"]
+        files = mb["gameids"]
         assert len(mb) == 6
 
-        np.testing.assert_array_equal(np.unique(files.numpy()[:, 0]), np.arange(1, 10))
+        np.testing.assert_array_equal(np.unique(files.numpy()[:, 0]), np.arange(1, 8))
 
     def test_minibatches(self, db_exists, pool):
         data = dataset.TtyrecDataset(
+            "basictest",
             seq_length=50,
             batch_size=4,
             threadpool=pool,
-            rowids=range(1, 10),
+            gameids=range(1, 8),
             shuffle=False,
         )
-        # starting rowids = [TTYREC, TTYREC, TTYREC, TTYREC2]
+        # starting gameids = [TTYREC, TTYREC, TTYREC, TTYREC2]
 
         mb = next(iter(data))
         for name, array in mb.items():
-            if name in ("rowids",):
+            if name in ("gameids",):
                 continue
             # Test first three rows are the same, and differ from from fourth
             np.testing.assert_array_equal(array[0], array[1])
@@ -74,7 +77,7 @@ class TestDataset:
         # Check the data at location is the same. Note reset occurs for batch 4
         seq = 10
         for name, array in mb.items():
-            if name in ("done", "rowids"):
+            if name in ("done", "gameids"):
                 continue
             np.testing.assert_array_equal(array[3][:seq], array[3][reset : reset + seq])
 
@@ -83,7 +86,12 @@ class TestDataset:
 
     def test_get_ttyrec(self, db_exists, pool):
         data = dataset.TtyrecDataset(
-            seq_length=100, batch_size=1, rowids=[4, 5], threadpool=pool
+            "basictest",
+            seq_length=100,
+            batch_size=1,
+            gameids=[4, 5],
+            threadpool=pool,
+            shuffle=False,
         )
 
         mb = next(iter(data))
@@ -105,11 +113,17 @@ class TestDataset:
                 np.testing.assert_equal(c.numpy()[0, reset:], 0)
 
     def test_char_frame(self, db_exists, pool):
-        # rowids [1,2,3] are all the same tty_rec, rowid 4 is different
-        rowids = [1, 2, 3, 4, 1, 2, 3, 4]
+        # gameids [1,2,3] are all the same tty_rec, rowid 4 is different
+        gameids = [1, 2, 3, 4, 1, 2, 3, 4]
         seq_length = 20
         data = dataset.TtyrecDataset(
-            seq_length=seq_length, rows=25, batch_size=3, rowids=rowids, threadpool=pool
+            "basictest",
+            seq_length=seq_length,
+            rows=25,
+            batch_size=3,
+            gameids=gameids,
+            threadpool=pool,
+            shuffle=False,
         )
 
         with open(getfilename(FINALFRAME), "r") as f:
@@ -157,15 +171,23 @@ class TestDataset:
                 raise AssertionError  # this should have ended!
 
     def test_start_and_end(self, db_exists):
-        # rowids [1,2,3] are all the same tty_rec, rowid 4 is different
-        data_1 = dataset.TtyrecDataset(seq_length=100, batch_size=3, rowids=range(1, 4))
-        data_2 = dataset.TtyrecDataset(seq_length=100, batch_size=1, rowids=[4, 4, 4])
+        # gameids [1,2,3] are all the same tty_rec, rowid 4 is different
+        data_1 = dataset.TtyrecDataset(
+            "basictest",
+            seq_length=100,
+            batch_size=3,
+            gameids=range(1, 4),
+            shuffle=False,
+        )
+        data_2 = dataset.TtyrecDataset(
+            "basictest", seq_length=100, batch_size=1, gameids=[4, 4, 4], shuffle=False
+        )
 
         mb1 = next(iter(data_1))
         mb2 = next(iter(data_2))
 
         for k in mb1:
-            if k == "rowids":
+            if k == "gameids":
                 continue
             array1 = mb1[k]
             array2 = mb2[k]
@@ -176,29 +198,32 @@ class TestDataset:
                 AssertionError, np.testing.assert_array_equal, array1[0], array2[0]
             )
 
-    @pytest.mark.parametrize("batch_size", [2, 5, 9])
+    @pytest.mark.parametrize("batch_size", [2, 5, 7])
     def test_no_looping(self, db_exists, pool, batch_size):
-        # We expect as many done as datapoint - batchsize) Expected behaviour:
+        # We expect as many done as (len(gameids) - batchsize)
         data = dataset.TtyrecDataset(
+            "basictest",
             seq_length=100,
             batch_size=batch_size,
             threadpool=pool,
-            rowids=range(1, 10),
+            gameids=range(1, 8),
         )
         done = 0
         for mb in data:
             done += np.sum(mb["done"].numpy() == 1)
-            if done > 9 - batch_size:
+            if done > 7 - batch_size:
                 break
-        assert done == 9 - batch_size
+        assert done == 7 - batch_size
 
-    @pytest.mark.parametrize("batch_size", [1, 5, 9])
+    @pytest.mark.parametrize("batch_size", [1, 3, 6])
     def test_shuffle(self, db_exists, batch_size):
         data = dataset.TtyrecDataset(
+            "basictest",
             seq_length=1000,
             batch_size=batch_size,
             threadpool=None,
-            rowids=range(1, 10),
+            gameids=(1, 2, 3, 4, 5, 6, 7),
+            shuffle=False,
         )
 
         def get_data():
@@ -230,13 +255,30 @@ class TestDataset:
             np.testing.assert_array_equal(a1, a5)
 
     def test_sql(self, db_exists, pool):
-        sql = "SELECT rowid, path FROM ttyrecs WHERE rowid >= 6 ORDER BY rowid"
+        sql = """
+           SELECT ttyrecs.gameid, part, path
+           FROM ttyrecs
+           INNER JOIN datasets
+           ON datasets.gameid = ttyrecs.gameid
+           WHERE datasets.dataset_name = 'basictest'
+           AND ttyrecs.gameid >= 6 ORDER BY ttyrecs.gameid ASC
+        """
         data = dataset.TtyrecDataset(
-            seq_length=100, batch_size=2, threadpool=pool, sql_subset=sql
+            "basictest",
+            seq_length=100,
+            batch_size=2,
+            threadpool=pool,
+            shuffle=False,
+            custom_sql=sql,
         )
 
         data2 = dataset.TtyrecDataset(
-            seq_length=100, batch_size=2, threadpool=pool, rowids=[6, 7, 8, 9]
+            "basictest",
+            seq_length=100,
+            batch_size=2,
+            threadpool=pool,
+            gameids=[6, 7],
+            shuffle=False,
         )
 
         for _, (mb1, mb2) in enumerate(zip(data, data2)):
@@ -244,27 +286,40 @@ class TestDataset:
                 np.testing.assert_array_equal(mb1[k], mb2[k])
 
     def test_multipart_game(self, db_exists, pool):
-        # sql1 -> select by game: all of user "ccc" ttyrecs (7, 8, 9) as one game
-        # eg: [(1, /path/to/A), (1, /path/to/B), (1, /path/to/C)]
-        sql1 = (
-            "SELECT games.gameid, ttyrecs.path FROM ttyrecs "
-            "INNER JOIN games ON ttyrecs.gameid=games.gameid "
-        )
+        # This test selects a multipart game
+
+        # sql1 -> select all of user "ccc" ttyrecs (3 ttyrecs, gameid 7) as one game
+        # eg: [(7, 0, /path/to/A), (7, 1, /path/to/B), (7, 2, /path/to/C)]
+        sql1 = """
+            SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path
+            FROM ttyrecs
+            INNER JOIN games ON ttyrecs.gameid=games.gameid
+            INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
+            WHERE datasets.dataset_name='basictest'
+            AND games.name="ccc"
+            """
         data1 = dataset.TtyrecDataset(
-            seq_length=100, batch_size=1, threadpool=pool, sql_subset=sql1
+            "basictest", seq_length=100, batch_size=1, threadpool=pool, custom_sql=sql1
         )
 
         # sql2 -> select by ttyrec: all of user "ccc" ttyrecs (7, 8, 9)
-        # eg: [(7, /path/to/A), (8, /path/to/B), (9, /path/to/C)]
-        sql2 = 'SELECT rowid, path FROM ttyrecs WHERE user="ccc" ORDER BY rowid'
+        # eg: [(0, 7, /path/to/A), (1, 7, /path/to/B), (2, 7, /path/to/C)]
+        sql2 = """SELECT ttyrecs.part, ttyrecs.gameid, ttyrecs.path
+            FROM ttyrecs
+            INNER JOIN games ON ttyrecs.gameid=games.gameid
+            INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
+            WHERE datasets.dataset_name='basictest'
+            AND games.name="ccc"
+            ORDER BY ttyrecs.part
+            """
         data2 = dataset.TtyrecDataset(
-            seq_length=100, batch_size=1, threadpool=pool, sql_subset=sql2
+            "basictest", seq_length=100, batch_size=1, threadpool=pool, custom_sql=sql2
         )
 
         for _, (mb1, mb2) in enumerate(zip(data1, data2)):
             for k in mb1.keys():
-                if k == "rowids":
-                    assert np.all(np.isin(mb1[k], [0, 1]))
+                if k == "gameids":
+                    assert np.all(np.isin(mb1[k], [0, 7]))
                 elif k == "done":
                     np.testing.assert_equal(mb1[k], np.zeros_like(mb1[k]))
                 else:
@@ -273,15 +328,18 @@ class TestDataset:
     def test_dataset_metadata(self, db_exists, pool):
         # Test we can retrieve metadata from database and access it later
         # Everything after the gameid, path should be stored as a list in metadata
-        sql1 = (
-            "SELECT games.gameid, ttyrecs.path, games.death, games.points, "
-            "ttyrecs.rowid FROM ttyrecs INNER JOIN games "
-            "ON ttyrecs.gameid=games.gameid "
-        )
+        sql1 = """
+            SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path, games.death, games.points
+            FROM ttyrecs
+            INNER JOIN games ON ttyrecs.gameid=games.gameid
+            INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
+            WHERE datasets.dataset_name='basictest'
+            AND games.name="ccc"
+            """
         data1 = dataset.TtyrecDataset(
-            seq_length=100, batch_size=1, threadpool=pool, sql_subset=sql1
+            "basictest", seq_length=100, batch_size=1, threadpool=pool, custom_sql=sql1
         )
-        rowids = next(iter(data1))["rowids"]
-        for i, ttyrec in enumerate([7, 8, 9]):
-            rowid = rowids.numpy()[0][0]
-            assert data1.get_meta(rowid)[i] == ("ascended", 999, ttyrec)
+        gameids = next(iter(data1))["gameids"]
+        for i, _ in enumerate([7, 8, 9]):
+            rowid = gameids.numpy()[0][0]
+            assert data1.get_meta(rowid)[i] == ("ascended", 999)
