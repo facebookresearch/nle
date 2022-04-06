@@ -128,8 +128,10 @@ class Converter
             checked_conversion<int16_t>(cursors, { unroll, 2 }), unroll * 2,
             checked_conversion<int64_t>(timestamps, { unroll }), unroll,
             checked_conversion<uint8_t>(inputs, { unroll }), unroll);
-
-        status = conversion_convert_frames(conversion_);
+        {
+            py::gil_scoped_release release;
+            status = conversion_convert_frames(conversion_);
+        }
         if (status == -1) {
             // TODO : Better error messages
             throw std::runtime_error("Error in file.");
