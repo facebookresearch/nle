@@ -6,7 +6,6 @@ from collections import defaultdict
 from functools import partial
 
 import numpy as np
-import torch
 
 import nle.dataset.db as db
 from nle import _pyconverter as converter
@@ -78,25 +77,24 @@ def _ttyrec_generator(
 
     """
     # Instantiate tensors and pin.
-    chars = torch.zeros((batch_size, seq_length, rows, cols), dtype=torch.uint8)
-    colors = torch.zeros((batch_size, seq_length, rows, cols), dtype=torch.int8)
-    cursors = torch.zeros((batch_size, seq_length, 2), dtype=torch.int16)
-    timestamps = torch.zeros((batch_size, seq_length), dtype=torch.int64)
-    actions = torch.zeros((batch_size, seq_length), dtype=torch.uint8)
-    resets = torch.zeros((batch_size, seq_length), dtype=torch.uint8)
-    gameids = torch.zeros((batch_size, seq_length), dtype=torch.int32)
+    chars = np.zeros((batch_size, seq_length, rows, cols), dtype=np.uint8)
+    colors = np.zeros((batch_size, seq_length, rows, cols), dtype=np.int8)
+    cursors = np.zeros((batch_size, seq_length, 2), dtype=np.int16)
+    timestamps = np.zeros((batch_size, seq_length), dtype=np.int64)
+    actions = np.zeros((batch_size, seq_length), dtype=np.uint8)
+    resets = np.zeros((batch_size, seq_length), dtype=np.uint8)
+    gameids = np.zeros((batch_size, seq_length), dtype=np.int32)
 
-    npchars = chars.numpy()
-    npcolors = colors.numpy()
-    npcursors = cursors.numpy()
-    nptimestamps = timestamps.numpy()
-    npactions = actions.numpy()
-    npresets = resets.numpy()
-    npgameids = gameids.numpy()
-
-    if torch.cuda.is_available():
-        for tensor in [chars, colors, cursors, timestamps, actions, resets]:
-            tensor.pin_memory()
+    key_vals = [
+        ("tty_chars", chars),
+        ("tty_colors", colors),
+        ("tty_cursor", cursors),
+        ("timestamps", timestamps),
+        ("done", resets),
+        ("gameids", gameids),
+    ]
+    if read_actions:
+        key_vals.append(("actions", actions))
 
     # Load initial gameids.
     converters = [
@@ -107,39 +105,28 @@ def _ttyrec_generator(
 
     # Convert (at least one minibatch)
     _convert_frames = partial(convert_frames, load_fn=load_fn)
-    npgameids[0, -1] = 1  # basically creating a "do-while" loop by setting an indicator
+    gameids[0, -1] = 1  # basically creating a "do-while" loop by setting an indicator
     while np.any(
-        npgameids[:, -1] != 0
+        gameids[:, -1] != 0
     ):  # loop until only padding is found, i.e. end of data
         list(
             map_fn(
                 _convert_frames,
                 converters,
-                npchars,
-                npcolors,
-                npcursors,
-                nptimestamps,
-                npactions,
-                npresets,
-                npgameids,
+                chars,
+                colors,
+                cursors,
+                timestamps,
+                actions,
+                resets,
+                gameids,
             )
         )
-
-        key_vals = [
-            ("tty_chars", chars),
-            ("tty_colors", colors),
-            ("tty_cursor", cursors),
-            ("timestamps", timestamps),
-            ("done", resets.bool()),
-            ("gameids", gameids),
-        ]
-        if read_actions:
-            key_vals.append(("actions", actions))
 
         yield dict(key_vals)
 
 
-class TtyrecDataset(torch.utils.data.IterableDataset):
+class TtyrecDataset:
     """Dataset object to allow iteration through the ttyrecs found in our ttyrec
     database.
     """
@@ -276,7 +263,7 @@ class TtyrecDataset(torch.utils.data.IterableDataset):
             self._map,
             self.read_actions,
         ):
-            mbs.append({k: t.clone().detach() for k, t in mb.items()})
+            mbs.append({k: t.copy() for k, t in mb.items()})
         return mbs
 
     def get_ttyrec(self, gameid, chunk_size=None):
