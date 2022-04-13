@@ -4,7 +4,6 @@ import contextlib
 
 import numpy as np
 import pytest
-import torch
 from test_converter import COLSROWS
 from test_converter import FINALFRAME
 from test_converter import FINALFRAMECOLORS
@@ -46,7 +45,7 @@ class TestDataset:
         files = mb["gameids"]
         assert len(mb) == 6
 
-        np.testing.assert_array_equal(np.unique(files.numpy()[:, 0]), np.arange(1, 8))
+        np.testing.assert_array_equal(np.unique(files[:, 0]), np.arange(1, 8))
 
     def test_minibatches(self, db_exists, pool):
         data = dataset.TtyrecDataset(
@@ -105,12 +104,12 @@ class TestDataset:
             for c in chunks:
                 for k in c:
                     groups[k].append(c[k])
-            concat_chunks = {k: torch.cat(t, 1) for k, t in groups.items()}
+            concat_chunks = {k: np.concatenate(t, axis=1) for k, t in groups.items()}
             for k in mb.keys():
                 c = concat_chunks[k]
                 m = mb[k][0]
-                np.testing.assert_array_equal(c.numpy()[0, :reset], m.numpy()[:reset])
-                np.testing.assert_equal(c.numpy()[0, reset:], 0)
+                np.testing.assert_array_equal(c[0, :reset], m[:reset])
+                np.testing.assert_equal(c[0, reset:], 0)
 
     def test_char_frame(self, db_exists, pool):
         # gameids [1,2,3] are all the same tty_rec, rowid 4 is different
@@ -141,7 +140,7 @@ class TestDataset:
         i = 0
         for mb in data:
             chars, colors, curs, ts, done, _ = mb.values()
-            batch_ids, seq_ids = np.where(done.numpy() == 1)
+            batch_ids, seq_ids = np.where(done == 1)
             seq = seq_length if not seq_ids.any() else seq_ids[0]
             for j in range(seq):
                 np.testing.assert_array_equal(colsrows[i][0], curs[:, j, 1])
@@ -155,11 +154,11 @@ class TestDataset:
                 np.testing.assert_array_equal(batch_ids, np.arange(3))
                 np.testing.assert_array_equal(seq_ids, seq_ids[0])
 
-                final_frame = chars[0][seq_ids[0] - 1].numpy()
+                final_frame = chars[0][seq_ids[0] - 1]
                 char_frame = [
                     row.tobytes().decode("utf-8").rstrip() for row in final_frame
                 ]
-                color_frame = colors[0][seq_ids[0] - 1].numpy()
+                color_frame = colors[0][seq_ids[0] - 1]
 
                 for actual, expected in zip(char_frame, lines):
                     assert actual == expected
@@ -210,7 +209,7 @@ class TestDataset:
         )
         done = 0
         for mb in data:
-            done += np.sum(mb["done"].numpy() == 1)
+            done += np.sum(mb["done"] == 1)
             if done > 7 - batch_size:
                 break
         assert done == 7 - batch_size
@@ -230,8 +229,8 @@ class TestDataset:
             """Get all the data from minibatches and concat into full data batches"""
             mbs = []
             for mb in data:
-                mbs.append([t.clone().detach() for t in mb.values()])
-            return [torch.cat(tensor_list, dim=1) for tensor_list in zip(*mbs)]
+                mbs.append([t for t in mb.values()])
+            return [np.concatenate(array_list, axis=1) for array_list in zip(*mbs)]
 
         b1 = get_data()
         b2 = get_data()
@@ -341,5 +340,5 @@ class TestDataset:
         )
         gameids = next(iter(data1))["gameids"]
         for i, _ in enumerate([7, 8, 9]):
-            rowid = gameids.numpy()[0][0]
+            rowid = gameids[0][0]
             assert data1.get_meta(rowid)[i] == ("ascended", 999)
