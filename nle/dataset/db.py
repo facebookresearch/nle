@@ -134,11 +134,11 @@ def drop_games(dataset_name, *gameids, conn=None, commit=True):
             conn.commit()
 
 
-def purge_empty_games(conn=None, commit=True):
-    select = "SELECT DISTINCT(gameid) FROM ttyrecs"
+def delete_games_with_select(select, not_in=False, conn=None, commit=True):
+    _not = "NOT" if not_in else ""
     with db(conn, rw=True) as conn:
-        conn.execute("DELETE FROM datasets WHERE NOT gameid IN (%s)" % select)
-        conn.execute("DELETE FROM games WHERE NOT gameid IN (%s)" % select)
+        conn.execute("DELETE FROM datasets WHERE %s gameid IN (%s)" % (_not, select))
+        conn.execute("DELETE FROM games WHERE %s gameid IN (%s)" % (_not, select))
         conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
         if commit:
             conn.commit()
