@@ -9,6 +9,7 @@ import numpy as np
 
 import nle.dataset.db as db
 from nle import _pyconverter as converter
+from nle.dataset import populate_db
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -270,18 +271,13 @@ class TtyrecDataset:
         return self.get_ttyrecs([gameid], chunk_size)
 
 
-def add_directory(path, name, filename=db.DB):
-    if not os.path.isfile(filename):
-        db.create(filename)
-    # db.add_nledata_directory(path, dataset_name, filename)
-    db.add_altorg_directory(path, dataset_name, filename)
-
-
 if __name__ == "__main__":
     path = "/private/home/ehambro/fair/workspaces/autoascend-submission/nle_data"
     path = "/scratch/ehambro/altorg/altorg/111720"
     dataset_name = "altorg"
-    dataset = add_directory(path, dataset_name)
+    if not os.path.isfile(db.DB):
+        db.create(db.DB)
+    populate_db.add_altorg_directory(path, dataset_name, db.DB)
 
     logging.info("%s" % db.count_games(dataset_name))
     dataset = TtyrecDataset(dataset_name)
