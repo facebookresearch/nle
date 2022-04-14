@@ -50,6 +50,8 @@ def altorg_filename_to_timestamp(filename):
 
 
 def assign_ttyrecs_to_games(ttyrecs, games):
+    """Algorithm to assig a players ttyrecs to their games, knowing that only one game
+    can be played at any one time."""
     assigned = []  # (path, file_creationtime, gameid, game_starttime, game_endtime)
     for t in ttyrecs:
         s_time = altorg_filename_to_timestamp(t)
@@ -69,6 +71,9 @@ def assign_ttyrecs_to_games(ttyrecs, games):
             # We allow a 5min window, since the ttyrec creation time and xlogfile
             # starttime can differ slightly. However ttyrec starts well before
             # this game start, so check next ttyrec.
+
+            # Design choice: We will add the ttyrec with a gameid of 0
+            # so that it will not be picked up when selecting by dataset="altorg"
             assigned[tt][2] = 0
             assigned[tt][3] = games[gg][1]
             assigned[tt][4] = games[gg][2]
@@ -84,17 +89,51 @@ def assign_ttyrecs_to_games(ttyrecs, games):
 
 
 def add_altorg_directory(path, name, filename=db.DB):
-    with db.db(filename=filename, rw=True) as conn:
+    """This function can be used to add the `altorg` dataset to a database.
 
+    Once the altorg dataset has been downloaded, this function will parse its
+    contents and create the dataset.
+
+    The altorg directory structure should look like:
+
+        altorg/
+        ├── user1/
+        │   ├── 2019-07-25.22:03:29.ttyrec.bz2
+        │   └── 2019-07-30.16:06:23.ttyrec.bz2
+        ├── user2/
+        │   ├── 2019-07-25.22:03:29.ttyrec.bz2
+        │   └── 2019-07-30.16:06:23.ttyrec.bz2
+        ...
+        ├── xlogfile.1
+        ├── xlogfile.2
+        ...
+        ├── about.txt
+        └── blacklist.txt
+
+    Note that unlike `nle` ttyrecs, altorg episodes may be split into parts.
+    We use a simple algorith based on the file creation times and xlogfile times
+    for the start and end of games to try to assign ttyrecs to games, knowing
+    a player can only ever be playing on game on altorg at a time.
+
+    This algorithm should be deterministic and always return the same dataset
+    from an empty database, regardless of environment.
+
+    """
+
+    with db.db(filename=filename, rw=True) as conn:
         logging.info("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
+
         root = os.path.abspath(path)
         stime = time.time()
-
         c = conn.cursor()
 
+        # 1. Check if the dataset name exists, and add the root.
         db.create_dataset(name, root, conn=c, commit=False)
 
-        for xlogfile in reversed(sorted(glob.iglob(path + "/xlogfile.*"))):
+        # 2. Add games from xlogfile to `games` table, then `datasets` table.
+        for xlogfile in reversed(
+            sorted(glob.iglob(str(os.path.join(path, "xlogfile.*"))))
+        ):
             sep = ":" if xlogfile.endswith(".txt") else "\t"
             game_gen = game_data_generator(xlogfile, separator=sep)
             insert_sql = f"""
@@ -107,20 +146,27 @@ def add_altorg_directory(path, name, filename=db.DB):
             db.add_games(name, *gameids, conn=c, commit=False)
             logging.info("Found %i games in '%s'" % (len(gameids), xlogfile))
 
+        # 3. Find all the (unblacklisted) ttyrecs belonging to each player
+        #    and all the games belonging to each player.
+        with open(os.path.join(path, "blacklist.txt"), "r") as f:
+            blacklisted_ttyrecs = set(str(os.path.join(path, p)) for p in f.readlines())
+
         ttyrecs_dict = collections.defaultdict(list)
         for ttyrec in glob.iglob(path + "/*/*.ttyrec.bz2"):
+            if ttyrec in blacklisted_ttyrecs:
+                continue
             ttyrecs_dict[ttyrec.split("/")[-2].lower()].append(ttyrec)
 
         games_dict = collections.defaultdict(list)
         for pname, gameid, start, end in db.get_games(name, conn=c):
             games_dict[pname.lower()].append((gameid, start, end))
 
+        # 4. Attempt assign each player's ttyrecs to each player's games.
+        #    If successful, insert into `ttyrecs` table
         logging.info("Matching up ttyrecs to games...")
-
         empty_games = []
         for pname in ttyrecs_dict.keys():
             assigned = assign_ttyrecs_to_games(ttyrecs_dict[pname], games_dict[pname])
-
             if assigned:
                 ttyrecs, gameids = zip(*assigned)
                 ttyrec_gen = ttyrec_data_generator(ttyrecs, gameids, root)
@@ -131,15 +177,15 @@ def add_altorg_directory(path, name, filename=db.DB):
             if pname not in ttyrecs_dict:
                 empty_games.extend(gid for gid, _, _ in games_dict[pname])
 
+        # 5. Purge 'empty' games from `datasets` and `games` table.
         db.purge_empty_games(conn=c, commit=False)
 
         mtime = time.time()
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
 
+        # 6. Commit and wrap up (optimize the db).
         conn.commit()
-
         logging.info("Optimizing DB...")
-
         db.vacuum(conn=conn)
         games_added = db.count_games(name, conn=conn)
 
@@ -153,38 +199,64 @@ def add_altorg_directory(path, name, filename=db.DB):
 
 
 def add_nledata_directory(path, name, filename=db.DB):
-    with db.db(filename=filename, rw=True) as conn:
+    """This function can be used to add any `nle_data` dataset to a database.
 
+    Full games that are generated by an env such as:
+
+        `gym.make("NetHackChallenge-v0", savedir="", save_ttyrec_every=k)`
+
+    come with the following structure:
+
+    The directory structure should look like:
+
+        nle_data/
+        ├── 20220414-112633_sdfd83ns/
+        │   ├── nle.3968599.0.ttyrec.bz2
+        │   ├── nle.3968599.k.ttyrec.bz2
+        │   └── nle.3968599.xlogfile
+        └── <date>-<time>_<random>/
+            ├── nle.<process-id>.0.ttyrec.bz2
+            ├── nle.<process-id>.k.ttyrec.bz2
+            └── nle.<process-id>.xlogfile
+
+    This algorithm should be deterministic and always return the same dataset
+    from an empty database, regardless of environment.
+    """
+    with db.db(filename=filename, rw=True) as conn:
         logging.info("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
+
         root = os.path.abspath(path)
         stime = time.time()
-
         c = conn.cursor()
 
+        # 1. Check if the dataset name exists, and add the root.
         db.create_dataset(name, root, conn=c, commit=False)
 
+        # 2. For each xlogfile, read the games and take only the games that
+        #   correspond to the ttyrecs in the enclosing directory.
         for xlogfile in sorted(glob.iglob(path + "/*/*.xlogfile")):
-
             stem = xlogfile.replace(".xlogfile", ".*.ttyrec.bz2")
+
             resets = set(int(i.split(".")[-3]) for i in glob.iglob(stem))
 
             def filter(gen):
-                # NB: xlogfile may have more rows than in directory
-                #     due to 'save_ttyrec_every' option in env.py
+                # The `xlogfile` may have more rows than files in directory
+                # due to 'save_ttyrec_every' option in env.py, so filter these out.
                 for line_no, line in enumerate(gen):
                     if line_no in resets:
                         yield line
 
+            # 3. Add games to `games` and `datasets` table.
             game_gen = game_data_generator(xlogfile, filter=filter)
             insert_sql = f"""
                 INSERT INTO games
                 VALUES (NULL, {','.join('?' for _ in XLOGFILE_COLUMNS)} )
             """
             c.executemany(insert_sql, game_gen)
-
             gameids = db.get_most_recent_games(c.rowcount, conn=c)
             db.add_games(name, *gameids, conn=conn, commit=False)
 
+            # 4. Add ttyrecs to `ttyrecs` table.
             valid_resets = list(resets)[: len(gameids)]
             ttyrecs = [
                 stem.replace("*", str(r)) for r in sorted(valid_resets, reverse=True)
@@ -196,6 +268,7 @@ def add_nledata_directory(path, name, filename=db.DB):
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
 
         conn.commit()
+        db.vacuum(conn=conn)
         games_added = db.count_games(name, conn=conn)
 
     logging.info(

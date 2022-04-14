@@ -12,5 +12,9 @@ In the v3.4.3 case (xlogfile.txt) we remove some games from the xlogfile, to
 test whether the dataset will ignore ttyrecs that are either starting too 
 early to be part of the game, or starting too late.
 
+Finally we add one name to the `blacklist.txt` which should be excluded.
+This is done, because some ttyrec files have encoding problems, and should be 
+skipped. 
+
 NB: Do not try to "run" this dataset - the ttyrecs aren't real.
 
