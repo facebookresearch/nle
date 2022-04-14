@@ -72,7 +72,7 @@ class TestConverter:
 
         memory_list = memory_usage((convert_n_times, (100,), {}))
         # After warmup the last few iterations should be constant memory
-        memory_array = np.array(memory_list[3:])
+        memory_array = np.array(memory_list[5:])
         memory_change = (memory_array / memory_array[0]) - 1
         assert max(memory_change) < 0.001  # 0.1 per cent
 
