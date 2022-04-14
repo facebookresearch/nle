@@ -151,7 +151,7 @@ add_dependencies(_pynethack util) # For pm.h.
 
 # ttyrec converter library
 add_library(
-  converter SHARED ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/converter.c
+  converter STATIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/converter.c
                    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/converter/stripgfx.c)
 target_include_directories(
   converter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libtmt
