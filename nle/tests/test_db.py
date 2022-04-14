@@ -139,7 +139,7 @@ class TestDB:
         for i, row in enumerate(db.ls(conn)):
             rowid, path = row
             assert int(rowid) == i + 1
-        assert i + 1 == 29
+        assert i + 1 == 28
 
     def test_vacuum(self):
         db.vacuum()
