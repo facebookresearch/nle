@@ -137,6 +137,7 @@ def drop_games(dataset_name, *gameids, conn=None, commit=True):
 def delete_games_with_select(select, not_in=False, conn=None, commit=True):
     _not = "NOT" if not_in else ""
     with db(conn, rw=True) as conn:
+        conn.execute("DELETE FROM ttyrecs WHERE %s gameid IN (%s)" % (_not, select))
         conn.execute("DELETE FROM datasets WHERE %s gameid IN (%s)" % (_not, select))
         conn.execute("DELETE FROM games WHERE %s gameid IN (%s)" % (_not, select))
         conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
@@ -228,7 +229,7 @@ def create(filename=DB):
             (
                 gameid        INTEGER,
                 dataset_name  TEXT,
-                PRIMARY KEY (gameid, dataset_name)
+                PRIMARY KEY   (dataset_name, gameid)
             )
             """
         )

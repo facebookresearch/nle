@@ -254,21 +254,18 @@ class TestDataset:
             np.testing.assert_array_equal(a1, a5)
 
     def test_sql(self, db_exists, pool):
+
         sql = """
-           SELECT ttyrecs.gameid, part, path
-           FROM ttyrecs
-           INNER JOIN datasets
-           ON datasets.gameid = ttyrecs.gameid
-           WHERE datasets.dataset_name = 'basictest'
-           AND ttyrecs.gameid >= 6 ORDER BY ttyrecs.gameid ASC
-        """
+            SELECT gameid FROM datasets
+            WHERE gameid >=6 AND dataset_name='basictest'
+            """
         data = dataset.TtyrecDataset(
             "basictest",
             seq_length=100,
             batch_size=2,
             threadpool=pool,
             shuffle=False,
-            custom_sql=sql,
+            subselect_sql=sql,
         )
 
         data2 = dataset.TtyrecDataset(
@@ -279,6 +276,10 @@ class TestDataset:
             gameids=[6, 7],
             shuffle=False,
         )
+        data.populate_metadata()
+        data2.populate_metadata()
+        assert len(data.get_meta(6)) == 27
+        assert data.get_meta(6) == data2.get_meta(6)
 
         for _, (mb1, mb2) in enumerate(zip(data, data2)):
             for k in mb1.keys():
@@ -287,33 +288,31 @@ class TestDataset:
     def test_multipart_game(self, db_exists, pool):
         # This test selects a multipart game
 
-        # sql1 -> select all of user "ccc" ttyrecs (3 ttyrecs, gameid 7) as one game
+        # Use sql select all of user "ccc" ttyrecs (3 ttyrecs, gameid 7) as one game
         # eg: [(7, 0, /path/to/A), (7, 1, /path/to/B), (7, 2, /path/to/C)]
-        sql1 = """
-            SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path
-            FROM ttyrecs
-            INNER JOIN games ON ttyrecs.gameid=games.gameid
-            INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
-            WHERE datasets.dataset_name='basictest'
-            AND games.name="ccc"
-            """
+        sql1 = "SELECT gameid FROM games WHERE games.name='ccc'"
         data1 = dataset.TtyrecDataset(
-            "basictest", seq_length=100, batch_size=1, threadpool=pool, custom_sql=sql1
+            "basictest",
+            seq_length=100,
+            batch_size=1,
+            threadpool=pool,
+            subselect_sql=sql1,
         )
 
-        # sql2 -> select by ttyrec: all of user "ccc" ttyrecs (7, 8, 9)
+        # Hack data2 to treat of user "ccc" ttyrecs (7, 8, 9) as separate games
         # eg: [(0, 7, /path/to/A), (1, 7, /path/to/B), (2, 7, /path/to/C)]
-        sql2 = """SELECT ttyrecs.part, ttyrecs.gameid, ttyrecs.path
-            FROM ttyrecs
-            INNER JOIN games ON ttyrecs.gameid=games.gameid
-            INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
-            WHERE datasets.dataset_name='basictest'
-            AND games.name="ccc"
-            ORDER BY ttyrecs.part
-            """
         data2 = dataset.TtyrecDataset(
-            "basictest", seq_length=100, batch_size=1, threadpool=pool, custom_sql=sql2
+            "basictest",
+            seq_length=100,
+            batch_size=1,
+            threadpool=pool,
+            subselect_sql=sql1,
         )
+        ccc_gameid = data2._gameids[0]
+        data2._games[1000] = [data2._games[ccc_gameid][0]]
+        data2._games[2000] = [data2._games[ccc_gameid][1]]
+        data2._games[3000] = [data2._games[ccc_gameid][2]]
+        data2._gameids = [1000, 2000, 3000]
 
         for _, (mb1, mb2) in enumerate(zip(data1, data2)):
             for k in mb1.keys():
@@ -328,17 +327,26 @@ class TestDataset:
         # Test we can retrieve metadata from database and access it later
         # Everything after the gameid, path should be stored as a list in metadata
         sql1 = """
-            SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path, games.death, games.points
-            FROM ttyrecs
-            INNER JOIN games ON ttyrecs.gameid=games.gameid
-            INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
+            SELECT games.gameid FROM games
+            INNER JOIN datasets
+            ON datasets.gameid = games.gameid
             WHERE datasets.dataset_name='basictest'
             AND games.name="ccc"
             """
         data1 = dataset.TtyrecDataset(
-            "basictest", seq_length=100, batch_size=1, threadpool=pool, custom_sql=sql1
+            "basictest",
+            seq_length=100,
+            batch_size=1,
+            threadpool=pool,
+            subselect_sql=sql1,
         )
+        data1.populate_metadata()
         gameids = next(iter(data1))["gameids"]
-        for i, _ in enumerate([7, 8, 9]):
+        for _ in [7, 8, 9]:
             rowid = gameids[0][0]
-            assert data1.get_meta(rowid)[i] == ("ascended", 999)
+            # These are SQLiteRows, which can be accessed
+            # lists or dictionaries.
+            assert data1.get_meta(rowid)[17] == "ascended"
+            assert data1.get_meta(rowid)["death"] == "ascended"
+            assert data1.get_meta(rowid)[2] == 999
+            assert data1.get_meta(rowid)["points"] == 999

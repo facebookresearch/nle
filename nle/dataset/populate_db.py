@@ -50,7 +50,7 @@ def altorg_filename_to_timestamp(filename):
 
 
 def assign_ttyrecs_to_games(ttyrecs, games):
-    """Algorithm to assig a players ttyrecs to their games, knowing that only one game
+    """Algorithm to assign a players ttyrecs to their games, knowing that only one game
     can be played at any one time."""
     assigned = []  # (path, file_creationtime, gameid, game_starttime, game_endtime)
     for t in ttyrecs:
@@ -72,9 +72,10 @@ def assign_ttyrecs_to_games(ttyrecs, games):
             # starttime can differ slightly. However ttyrec starts well before
             # this game start, so check next ttyrec.
 
-            # Design choice: We will add the ttyrec with a gameid of 0
+            # Design choice: We will add the ttyrec with a -ve gameid
             # so that it will not be picked up when selecting by dataset="altorg"
-            assigned[tt][2] = 0
+            # but will still exist in the database
+            assigned[tt][2] = -games[gg][0]
             assigned[tt][3] = games[gg][1]
             assigned[tt][4] = games[gg][2]
             tt += 1
