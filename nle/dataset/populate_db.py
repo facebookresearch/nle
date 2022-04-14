@@ -178,12 +178,21 @@ def add_altorg_directory(path, name, filename=db.DB):
                 empty_games.extend(gid for gid, _, _ in games_dict[pname])
 
         # 5. Purge 'empty' games from `datasets` and `games` table.
-        db.purge_empty_games(conn=c, commit=False)
+        games_with_ttyrecs = """SELECT DISTINCT(gameid) FROM ttyrecs"""
+        db.delete_games_with_select(
+            games_with_ttyrecs, not_in=True, conn=conn, commit=False
+        )
+
+        # 6. Purge short games where the player quit almost immediately.
+        start_scummed_games = """
+           SELECT gameid FROM games
+           WHERE (turns <=10 AND (death = "escaped" OR death ="quit"))"""
+        db.delete_games_with_select(start_scummed_games, conn=conn, commit=False)
 
         mtime = time.time()
         c.execute("UPDATE meta SET mtime = ?", (mtime,))
 
-        # 6. Commit and wrap up (optimize the db).
+        # 7. Commit and wrap up (optimize the db).
         conn.commit()
         logging.info("Optimizing DB...")
         db.vacuum(conn=conn)
