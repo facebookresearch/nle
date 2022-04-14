@@ -1,5 +1,6 @@
 import logging
 import os
+import sqlite3
 import sys
 import threading
 from collections import defaultdict
@@ -77,7 +78,6 @@ def _ttyrec_generator(
        map_fn(fn, *iterables) -> <generator> (can use built-in map)
 
     """
-    # Instantiate tensors and pin.
     chars = np.zeros((batch_size, seq_length, rows, cols), dtype=np.uint8)
     colors = np.zeros((batch_size, seq_length, rows, cols), dtype=np.int8)
     cursors = np.zeros((batch_size, seq_length, 2), dtype=np.int16)
@@ -145,7 +145,8 @@ class TtyrecDataset:
         shuffle=True,
         read_actions=False,
         loop_forever=False,
-        custom_sql=None,
+        subselect_sql=None,
+        subselect_sql_args=None,
     ):
         self.batch_size = batch_size
         self.seq_length = seq_length
@@ -154,44 +155,57 @@ class TtyrecDataset:
         self.read_actions = read_actions
 
         self.shuffle = shuffle
-        self.custom_sql = custom_sql
+        self.subselect_sql = subselect_sql
         self.loop_forever = loop_forever
 
+        sql_args = (dataset_name,)
         core_sql = """
             SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path
             FROM ttyrecs
             INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
             WHERE datasets.dataset_name=?"""
 
+        meta_sql = """
+            SELECT games.*
+            FROM games
+            INNER JOIN datasets ON games.gameid=datasets.gameid
+            WHERE datasets.dataset_name=?"""
+
+        if subselect_sql:
+            path_select = """
+                SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path
+                FROM ttyrecs
+                WHERE ttyrecs.gameid IN (%s)"""
+            core_sql = path_select % subselect_sql
+
+            meta_select = """
+                SELECT games.*
+                FROM games
+                WHERE games.gameid IN (%s)"""
+            meta_sql = meta_select % subselect_sql
+            sql_args = subselect_sql_args if subselect_sql_args else tuple()
+
         self._games = defaultdict(list)
-        self._meta = defaultdict(list)
-        with db.connect(dbfilename) as conn:
+        self._meta = None  # Populate lazily.
+        self.dbfilename = dbfilename
+        with db.connect(self.dbfilename) as conn:
             c = conn.cursor()
 
-            if custom_sql is not None:
-                query = c.execute(custom_sql)
-            elif dataset_name == "altorg":
-                # Perf hack: removing sanitizing speeds up query
-                query = c.execute(core_sql.replace("?", "altorg"))
-            else:
-                query = c.execute(core_sql, (dataset_name,))
-
-            for row in query.fetchall():
-                # A row is made up of [ gameid, part, path, meta1, meta2... metaN].
-                # if row[0] in gameids:
+            for row in c.execute(core_sql, sql_args):
                 self._games[row[0]].append(row[1:3])
-                self._meta[row[0]].append(row[3:])
 
             # Guarantee order is [part0, ..., partN] for multi-part games.
             for files in self._games.values():
                 files.sort()
 
-            self._meta_cols = [desc[0] for desc in c.description]
             self._rootpath = db.get_root(dataset_name, conn)
 
         if gameids is None:
             gameids = self._games.keys()
 
+        self._core_sql = core_sql
+        self._meta_sql = meta_sql
+        self._sql_args = sql_args
         self._gameids = list(gameids)
         self._threadpool = threadpool
         self._map = partial(self._threadpool.map, timeout=60) if threadpool else map
@@ -200,10 +214,25 @@ class TtyrecDataset:
         return [path for _, path in self._games[gameid]]
 
     def get_meta(self, gameid):
-        return self._meta[gameid]
+        if self._meta is None:
+            self.populate_metadata()
+        if gameid not in self._meta:
+            return None
+        return self._meta[gameid][0]
 
     def get_meta_columns(self):
+        if self._meta is None:
+            self.populate_metadata()
         return self._meta_cols
+
+    def populate_metadata(self):
+        self._meta = defaultdict(list)
+        with db.connect(self.dbfilename) as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            for row in c.execute(self._meta_sql, self._sql_args):
+                self._meta[row[0]].append(row)
+            self._meta_cols = [desc[0] for desc in c.description]
 
     def _make_load_fn(self, gameids):
         """Make a closure to load the next gameid from the db into the converter."""
@@ -277,7 +306,7 @@ if __name__ == "__main__":
     dataset_name = "altorg"
     if not os.path.isfile(db.DB):
         db.create(db.DB)
-    populate_db.add_altorg_directory(path, dataset_name, db.DB)
+        populate_db.add_altorg_directory(path, dataset_name, db.DB)
 
     logging.info("%s" % db.count_games(dataset_name))
     dataset = TtyrecDataset(dataset_name)
