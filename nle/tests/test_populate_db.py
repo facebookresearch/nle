@@ -61,7 +61,7 @@ class TestPopulateDB:
             assert actual == tuple(expected)
 
     def test_dump_nle_db(self, conn):  # NOQA: F811
-        # Test that populating with a mock altorg directory generates
+        # Test that populating with an nle_data directory generates
         # the right database (effectively an integration test)
 
         cmd = """
