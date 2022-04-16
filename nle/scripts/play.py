@@ -16,6 +16,8 @@ import gym
 import nle  # noqa: F401
 from nle import nethack
 
+import nle.visualization.utils as vis_utils
+
 _ACTIONS = tuple(
     [nethack.MiscAction.MORE]
     + list(nethack.CompassDirection)
@@ -143,6 +145,10 @@ def play():
         else:
             obs, reward, done, info = env.step(action)
         steps += 1
+
+        glyphs = obs['glyphs']
+        print("glyphs: ", glyphs)
+        vis_utils.draw_glyph(glyphs)
 
         if is_raw_env:
             done = done or steps >= FLAGS.max_steps  # NLE does this by default.
