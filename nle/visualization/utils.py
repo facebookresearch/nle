@@ -4,8 +4,13 @@ import numpy as np
 
 from nle.visualization.glyph2tile import glyph2tile
 
-tileset_path = 'nle/visualization/3.6.1tiles32.png'
-tileset = cv2.imread(tileset_path)[..., ::-1]
+script_dir = os.path.dirname(__file__)
+
+image_rel_path = "3.6.1tiles32.png"
+image_abs_path = os.path.join(script_dir, image_rel_path)
+
+#tileset_path = 'nle/visualization/3.6.1tiles32.png'
+tileset = cv2.imread(image_abs_path)[..., ::-1]
 
 tile_size = 32
 h = tileset.shape[0] // tile_size

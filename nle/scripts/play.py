@@ -147,7 +147,7 @@ def play():
         steps += 1
 
         glyphs = obs['glyphs']
-        print("glyphs: ", glyphs)
+        #print("glyphs: ", glyphs)
         vis_utils.draw_glyph(glyphs)
 
         if is_raw_env:
