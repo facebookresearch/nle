@@ -140,6 +140,7 @@ class NetHackStaircasePet(NetHackStaircase):
             neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2]
             if np.any(nethack.glyph_is_pet(neighbors)):
                 return self.StepStatus.TASK_SUCCESSFUL
+
         return self.StepStatus.RUNNING
 
 
@@ -157,6 +158,7 @@ class NetHackOracle(NetHackStaircase):
             if nethack.permonst(nethack.glyph_to_mon(glyph)).mname == "Oracle":
                 self.oracle_glyph = glyph
                 break
+
         assert self.oracle_glyph is not None
 
     def _is_episode_end(self, observation):
@@ -167,6 +169,7 @@ class NetHackOracle(NetHackStaircase):
         neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2]
         if np.any(neighbors == self.oracle_glyph):
             return self.StepStatus.TASK_SUCCESSFUL
+
         return self.StepStatus.RUNNING
 
 
@@ -278,9 +281,11 @@ class NetHackScout(NetHackScore):
         explored_old = 0
         if key in self.dungeon_explored:
             explored_old = self.dungeon_explored[key]
+
         reward = explored - explored_old
         self.dungeon_explored[key] = explored
         time_penalty = self._get_time_penalty(last_observation, observation)
+
         return reward + time_penalty
 
 

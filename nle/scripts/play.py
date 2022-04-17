@@ -17,6 +17,8 @@ import nle  # noqa: F401
 from nle import nethack
 
 import nle.visualization.utils as vis_utils
+from nle.nethack import actions as A
+
 
 _ACTIONS = tuple(
     [nethack.MiscAction.MORE]
@@ -55,6 +57,7 @@ def get_action(env, is_raw_env):
         while True:
             with no_echo():
                 ch = ord(os.read(0, 1))
+
             if ch in [nethack.C("c")]:
                 print("Received exit code {}. Aborting.".format(ch))
                 return None
@@ -63,6 +66,7 @@ def get_action(env, is_raw_env):
                     action = ch
                 else:
                     action = env.actions.index(ch)
+
                 break
             except ValueError:
                 print(
@@ -71,7 +75,9 @@ def get_action(env, is_raw_env):
                 )
                 if not FLAGS.print_frames_separately:
                     print("\033[2A")  # Go up 2 lines.
+
                 continue
+
     return action
 
 
@@ -95,6 +101,7 @@ def play():
             allow_all_modes=True,
             wizard=FLAGS.wizard,
         )
+
         if FLAGS.seeds is not None:
             env.seed(FLAGS.seeds)
 
@@ -110,6 +117,22 @@ def play():
 
     total_start_time = timeit.default_timer()
     start_time = total_start_time
+
+    agent = vis_utils.Agent()
+    last_obs = obs
+
+    attribute_flag = False
+
+    glyphs = obs['glyphs']
+    blstats = vis_utils.BLStats(*obs['blstats'][:-1])
+    agent.update_blstats(blstats)
+
+    tty_chars = bytes(obs['tty_chars'].reshape(-1)).decode('ascii')
+    if "attribute" in tty_chars:
+        gender, race, role, alignment = vis_utils.parse_attribute(tty_chars)
+        agent.update_chracters(role, alignment, race, gender)
+
+    vis_utils.draw_all(glyphs, agent, last_obs)
 
     while True:
         if not FLAGS.no_render:
@@ -132,10 +155,17 @@ def play():
                         obs["tty_chars"], obs["tty_colors"], obs["tty_cursor"]
                     )
                 )
+
                 if not FLAGS.print_frames_separately:
                     go_back(num_lines=len(obs["tty_chars"]) + 3)
 
         action = get_action(env, is_raw_env)
+
+        if attribute_flag == False:
+            action = env.actions.index(A.Command.ATTRIBUTES)
+            attribute_flag = True
+
+        print("action: ", action)
 
         if action is None:
             break
@@ -144,17 +174,35 @@ def play():
             obs, done = env.step(action)
         else:
             obs, reward, done, info = env.step(action)
+
         steps += 1
 
+        #print("obs: ", obs)
+
         glyphs = obs['glyphs']
+
+        tty_chars = bytes(obs['tty_chars'].reshape(-1)).decode('ascii')
+        if "attribute" in tty_chars:
+            gender, race, role, alignment = vis_utils.parse_attribute(tty_chars)
+            agent.update_chracters(role, alignment, race, gender)
+
+        blstats = vis_utils.BLStats(*obs['blstats'][:-1])
+        agent.update_blstats(blstats)
+
+        messages = bytes(obs['message']).decode('ascii')
+        #print("messages: ", messages)
+        #for message in messages:
+        #    print("message: ", message)
+
         #print("glyphs: ", glyphs)
-        vis_utils.draw_glyph(glyphs)
+        vis_utils.draw_all(glyphs, agent, last_obs)
 
         if is_raw_env:
             done = done or steps >= FLAGS.max_steps  # NLE does this by default.
         else:
             mean_reward += (reward - mean_reward) / steps
 
+        last_obs = obs
         if not done:
             continue
 
@@ -178,7 +226,9 @@ def play():
 
         if episodes == FLAGS.ngames:
             break
+
         env.reset()
+
     env.close()
     print(
         "Finished after %i episodes and %f seconds. Mean sps: %f"
