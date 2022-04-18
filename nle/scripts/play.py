@@ -120,7 +120,7 @@ def play():
 
     agent = vis_utils.Agent()
     last_obs = obs
-
+    action_history = list()
     attribute_flag = False
 
     glyphs = obs['glyphs']
@@ -132,6 +132,8 @@ def play():
         gender, race, role, alignment = vis_utils.parse_attribute(tty_chars)
         agent.update_chracters(role, alignment, race, gender)
 
+    agent.update_items(obs['inv_letters'], obs['inv_glyphs'], obs['inv_strs'], obs['inv_oclasses'])
+
     vis_utils.draw_all(glyphs, agent, last_obs)
 
     while True:
@@ -142,7 +144,7 @@ def play():
                 act_str = repr(env.actions[action]) if action is not None else ""
                 print(f"Previous action: {str(act_str):64s}")
                 print("-" * 8)
-                env.render(FLAGS.render_mode)
+                #env.render(FLAGS.render_mode)
                 print("-" * 8)
                 print(obs["blstats"])
                 if not FLAGS.print_frames_separately:
@@ -177,7 +179,7 @@ def play():
 
         steps += 1
 
-        #print("obs: ", obs)
+        print("obs: ", obs)
 
         glyphs = obs['glyphs']
 
@@ -188,6 +190,8 @@ def play():
 
         blstats = vis_utils.BLStats(*obs['blstats'][:-1])
         agent.update_blstats(blstats)
+
+        agent.update_items(obs['inv_letters'], obs['inv_glyphs'], obs['inv_strs'], obs['inv_oclasses'])
 
         messages = bytes(obs['message']).decode('ascii')
         #print("messages: ", messages)
