@@ -90,7 +90,7 @@ def play():
             ttyrec = os.path.join(FLAGS.savedir, "nle.ttyrec.bz2")
         else:
             ttyrec = "/dev/null"
-        env = nethack.Nethack(ttyrec=ttyrec, wizard=FLAGS.wizard)
+        env = nethack.Nethack(ttyrec=ttyrec, wizard=FLAGS.wizard, character=FLAGS.character)
     else:
         env = gym.make(
             FLAGS.env,
@@ -100,6 +100,7 @@ def play():
             allow_all_yn_questions=True,
             allow_all_modes=True,
             wizard=FLAGS.wizard,
+            character=FLAGS.character
         )
 
         if FLAGS.seeds is not None:
@@ -121,6 +122,8 @@ def play():
     agent = vis_utils.Agent()
     last_obs = obs
     action_history = list()
+    message_history = list()
+    popup_history = list()
     attribute_flag = False
 
     glyphs = obs['glyphs']
@@ -134,7 +137,9 @@ def play():
 
     agent.update_items(obs['inv_letters'], obs['inv_glyphs'], obs['inv_strs'], obs['inv_oclasses'])
 
-    vis_utils.draw_all(glyphs, agent, last_obs)
+    message, popup, _ = vis_utils.get_message_and_popup(last_obs)
+
+    vis_utils.draw_all(glyphs, agent, last_obs, steps, action_history, message_history, popup_history)
 
     while True:
         if not FLAGS.no_render:
@@ -167,7 +172,8 @@ def play():
             action = env.actions.index(A.Command.ATTRIBUTES)
             attribute_flag = True
 
-        print("action: ", action)
+        #print("action: ", action)
+        action_history.append(str(env.actions[int(action)]))
 
         if action is None:
             break
@@ -179,7 +185,7 @@ def play():
 
         steps += 1
 
-        print("obs: ", obs)
+        #print("obs: ", obs)
 
         glyphs = obs['glyphs']
 
@@ -193,13 +199,16 @@ def play():
 
         agent.update_items(obs['inv_letters'], obs['inv_glyphs'], obs['inv_strs'], obs['inv_oclasses'])
 
-        messages = bytes(obs['message']).decode('ascii')
-        #print("messages: ", messages)
-        #for message in messages:
-        #    print("message: ", message)
+        #messages = bytes(obs['message']).decode('ascii')
+        message, popup, _ = vis_utils.get_message_and_popup(last_obs)
+        #print("popup: ", popup)
 
-        #print("glyphs: ", glyphs)
-        vis_utils.draw_all(glyphs, agent, last_obs)
+        message_history.append(message)
+        popup_history.append(popup)
+        #print("message: ", message)
+        #print("")
+
+        vis_utils.draw_all(glyphs, agent, last_obs, steps, action_history, message_history, popup_history)
 
         if is_raw_env:
             done = done or steps >= FLAGS.max_steps  # NLE does this by default.
@@ -312,6 +321,13 @@ def main():
         action="store_true",
         help="Use wizard mode.",
     )
+    parser.add_argument(
+        "--character",
+        default="kni-hum-neu-mal",
+        help="(str): name of character. "
+        "Defaults to 'mon-hum-neu-mal'.",
+    )
+
     global FLAGS
     FLAGS = parser.parse_args()
 
