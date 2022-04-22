@@ -6,14 +6,13 @@ import re
 import copy
 from PIL import Image, ImageDraw, ImageFont
 
-from nle.visualization.glyph2tile import glyph2tile
+from nle import nethack
 
 script_dir = os.path.dirname(__file__)
 
 image_rel_path = "3.6.1tiles32.png"
 image_abs_path = os.path.join(script_dir, image_rel_path)
 
-#tileset_path = 'nle/visualization/3.6.1tiles32.png'
 tileset = cv2.imread(image_abs_path)[..., ::-1]
 
 tile_size = 32
@@ -26,9 +25,9 @@ for y in range(h):
         x *= tile_size
         tiles.append(tileset[y:y + tile_size, x:x + tile_size])
 
-
 tileset = np.array(tiles)
-glyph2tile = np.array(glyph2tile)
+
+glyph2tile = np.array(nethack.glyph2tile)
 
 BLStats = namedtuple('BLStats',
                      'x y strength_percentage strength dexterity constitution intelligence wisdom charisma score hitpoints max_hitpoints depth gold energy max_energy armor_class monster_level experience_level experience_points time hunger_state carrying_capacity dungeon_number level_number prop_mask')
@@ -61,9 +60,6 @@ def draw_all(glyphs, agent, last_obs, steps, action_history, message_history, po
     height = FONT_SIZE * len(last_obs['tty_chars'])
     width = scene_vis.shape[1]
 
-    #print("height: ", height)
-    #print("width: ", width)
-
     try:
         stats_frame = draw_stats(agent, height, int(width / 2), steps)
     except:
@@ -78,7 +74,6 @@ def draw_all(glyphs, agent, last_obs, steps, action_history, message_history, po
     frame = np.concatenate([glyph_frame, bottom_frame], axis=0)
 
     inventory_frame = draw_inventory(agent, last_obs, frame.shape[0], int(width / 3))
-    #print("inventory_frame.shape: ", inventory_frame.shape)
 
     action_history_frame = draw_action_history(action_history, int(width / 3))
     message_history_frame = draw_message_history(message_history, int(width / 2))
@@ -87,8 +82,6 @@ def draw_all(glyphs, agent, last_obs, steps, action_history, message_history, po
     frame = np.concatenate([frame, inventory_frame], axis=1)
     topbar_frame = np.concatenate([action_history_frame, message_history_frame, popup_history_frame], axis=1)
 
-    #print("frame.shape: ", frame.shape)
-    #print("topbar_frame.shape: ", topbar_frame.shape)
     frame = np.concatenate([topbar_frame, frame], axis=0)
 
     cv2.imshow("frame", frame)
@@ -101,7 +94,6 @@ def draw_tty(last_obs, height, width):
     vis = Image.fromarray(vis)
     draw = ImageDraw.Draw(vis)
 
-    #print("last_obs['tty_chars']: ", last_obs['tty_chars'])
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", int(26))
 
     for i, line in enumerate(last_obs['tty_chars']):
@@ -583,36 +575,17 @@ def draw_inventory(agent, last_obs, height, width):
             _, info, _,
             _, shop_status, _, _, shop_price
         ) = matches[0]
-        '''
-        print("count: ", count)
-        print("effects1: ", effects1)
-        print("status: ", status)
-        print("effects2: ", effects2)
-        print("modifier: ", modifier)
-        print("name: ", name)
-        print("uses: ", uses)
-        print("info: ", info)
-        print("shop_status: ", shop_status)
-        print("shop_price: ", shop_price)
-        print("")
-        '''
+
         item_vis = np.zeros((64, 800, 3), dtype=np.uint8)
         item_vis[:,0:64,:] = image
         cv2.putText(item_vis, name, (80, 50), cv2.FONT_HERSHEY_SIMPLEX, 1 * 0.7, (255, 255, 255), 1, cv2.LINE_AA)
 
         draw_frame(item_vis, color=(80, 80, 80), thickness=2)
 
-        #item_vis = image
-        #print("len(item_vis.shape): ", len(item_vis.shape))
         tiles.append(item_vis)
 
     if tiles:
         tiles_vis = np.concatenate(tiles, axis=0)
-        #cv2.imshow("vis", vis)
-        #cv2.waitKey(1)
-
-    #print("vis.shape: ", vis.shape)
-    #print("tiles_vis.shape: ", tiles_vis.shape)
 
     vis[0:tiles_vis.shape[0], 0:tiles_vis.shape[1],: ] = tiles_vis
 
