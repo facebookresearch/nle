@@ -223,7 +223,10 @@ class TestGymEnvRollout:
             env.close()
 
             assert os.path.exists(
-                os.path.join(savedir, "nle.%i.0.ttyrec.bz2" % os.getpid())
+                os.path.join(
+                    savedir,
+                    "nle.%i.0.ttyrec%i.bz2" % (os.getpid(), nethack.TTYREC_VERSION),
+                )
             )
             assert os.path.exists(
                 os.path.join(savedir, "nle.%i.xlogfile" % os.getpid())
@@ -389,7 +392,10 @@ class TestGymDynamics:
             contents = set(str(p) for p in path.iterdir())
             # `contents` includes xlogfile and ttyrecs.
             assert len(contents) - 1 == episode // 2 + 1
-            assert "nle.%i.%i.ttyrec.bz2" % (pid, episode) in contents
+            assert (
+                "nle.%i.%i.ttyrec%i.bz2" % (pid, episode, nethack.TTYREC_VERSION)
+                in contents
+            )
             assert "nle.%i.xlogfile" % pid in contents
 
         with open("nle.%i.xlogfile" % pid, "r") as f:

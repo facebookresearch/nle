@@ -288,12 +288,14 @@ class NLE(gym.Env):
         )
 
         if self.savedir:
+            ttyrec_version = ".ttyrec%i.bz2" % nethack.TTYREC_VERSION
+            ttyrec_prefix = "nle.%i.%%i" % os.getpid()
             self._ttyrec_pattern = os.path.join(
-                self.savedir, "nle.%i.%%i.ttyrec.bz2" % os.getpid()
+                self.savedir, ttyrec_prefix + ttyrec_version
             )
             ttyrec = self._ttyrec_pattern % 0
             # Create an xlogfile with the same format of name.
-            scoreprefix = ttyrec.replace("0.ttyrec.bz2", "")
+            scoreprefix = ttyrec.replace("0" + ttyrec_version, "")
         else:
             ttyrec = None
             scoreprefix = None

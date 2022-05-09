@@ -252,9 +252,22 @@ def add_nledata_directory(path, name, filename=db.DB):
         # 2. For each xlogfile, read the games and take only the games that
         #   correspond to the ttyrecs in the enclosing directory.
         for xlogfile in sorted(glob.iglob(path + "/*/*.xlogfile")):
-            stem = xlogfile.replace(".xlogfile", ".*.ttyrec.bz2")
+            stem = xlogfile.replace(".xlogfile", ".*.ttyrec*.bz2")
 
-            resets = set(int(i.split(".")[-3]) for i in glob.iglob(stem))
+            files = list(glob.iglob(stem))
+            resets = set()
+            versions = set()
+            for f in files:
+                nameparts = f.split(".")
+                resets.add(nameparts[-3])
+                ttyrec_version = nameparts[-2].replace("ttyrec", "")
+                # NLE v0.8.1 or older generated v2 ttyrecs with the "ttyrec.bz2" suffix
+                v = int(ttyrec_version) if ttyrec_version else 2
+                versions.add(v)
+            resets = set(int(i.split(".")[-3]) for i in files)
+
+            assert len(versions) == 1, "Cannot add ttyrecs with different versions"
+            version = str(versions.pop())
 
             def filter(gen):
                 # The `xlogfile` may have more rows than files in directory
@@ -276,7 +289,8 @@ def add_nledata_directory(path, name, filename=db.DB):
             # 4. Add ttyrecs to `ttyrecs` table.
             valid_resets = list(resets)[: len(gameids)]
             ttyrecs = [
-                stem.replace("*", str(r)) for r in sorted(valid_resets, reverse=True)
+                stem.replace("*", str(r), 1).replace("*", version, 1)
+                for r in sorted(valid_resets, reverse=True)
             ]
             ttyrec_gen = ttyrec_data_generator(ttyrecs, gameids, root)
             c.executemany("INSERT INTO ttyrecs VALUES (?,?,?,?,?)", ttyrec_gen)

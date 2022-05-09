@@ -191,7 +191,9 @@ class TestNetHackFurther:
             assert class_sym.explain == "human or elf"
 
         game.close()
-        assert os.path.isfile(os.path.join(os.getcwd(), "nle.ttyrec.bz2"))
+        assert os.path.isfile(
+            os.path.join(os.getcwd(), "nle.ttyrec%i.bz2" % nethack.TTYREC_VERSION)
+        )
 
     def test_illegal_filename(self):
         with pytest.raises(IOError):
