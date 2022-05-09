@@ -57,7 +57,7 @@ def ttyframes(f, tty2=True):
             sec, usec, length = struct.unpack("<iii", header)
             channel = 0
 
-        if sec < 0 or usec < 0 or length < 0 or channel not in (0, 1):
+        if sec < 0 or usec < 0 or length < 0 or channel not in (0, 1, 2):
             raise IOError("Illegal header %s in %s" % ((sec, usec, length, channel), f))
         timestamp = sec + usec * 1e-6
 
@@ -94,7 +94,7 @@ DEC_DATA_COLOR = 3  # Dark yellow.
 FRAMECNT_COLOR = 2  # Dark green.
 TIMESTAMP_COLOR = 7  # "Normal" color.
 CHANNEL_COLOR = 2  # Dark green.
-BRACES_COLOR = [11, 4]  # Output: Bright yellow, input: dark blue.
+BRACES_COLOR = [11, 4, 5]  # Output: Bright yellow, input: dark blue, score: pink
 
 
 # "Select Graphic Rendition" sequence.
@@ -164,7 +164,7 @@ def main():
     if FLAGS.use_pager:
         setup_pager()
 
-    frames = [0, 0]
+    frames = [0, 0, 0]
     with getfile(FLAGS.filename) as f:
         for timestamp, channel, data in ttyframes(f, tty2=not FLAGS.no_input):
             frames[channel] += 1
@@ -180,6 +180,11 @@ def main():
             elif channel == 1:
                 char, *_ = struct.unpack("<B", data)
                 data = chr(char).encode("ascii", "backslashreplace")
+                arrow = "->"
+            elif channel == 2:
+                score, *_ = struct.unpack("<i", data)
+                # data = chr(score).encode("ascii", "backslashreplace")
+                data = f"  {score} "
                 arrow = "->"
 
             data = str(data)[2:-1]  # Strip b' and '
