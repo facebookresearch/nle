@@ -16,7 +16,16 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def convert_frames(
-    converter, chars, colors, curs, timestamps, actions, resets, gameids, load_fn
+    converter,
+    chars,
+    colors,
+    curs,
+    timestamps,
+    actions,
+    scores,
+    resets,
+    gameids,
+    load_fn,
 ):
     """Convert frames for a single batch entry.
 
@@ -37,7 +46,7 @@ def convert_frames(
 
     resets[0] = 0
     while True:
-        remaining = converter.convert(chars, colors, curs, timestamps, actions)
+        remaining = converter.convert(chars, colors, curs, timestamps, actions, scores)
         end = np.shape(chars)[0] - remaining
 
         resets[1:end] = 0
@@ -51,6 +60,7 @@ def convert_frames(
         curs = curs[-remaining:]
         timestamps = timestamps[-remaining:]
         actions = actions[-remaining:]
+        scores = scores[-remaining:]
         resets = resets[-remaining:]
         gameids = gameids[-remaining:]
         if load_fn(converter):
@@ -62,6 +72,7 @@ def convert_frames(
             curs.fill(0)
             timestamps.fill(0)
             actions.fill(0)
+            scores.fill(0)
             resets.fill(0)
             gameids.fill(0)
             return
@@ -85,6 +96,7 @@ def _ttyrec_generator(
     actions = np.zeros((batch_size, seq_length), dtype=np.uint8)
     resets = np.zeros((batch_size, seq_length), dtype=np.uint8)
     gameids = np.zeros((batch_size, seq_length), dtype=np.int32)
+    scores = np.zeros((batch_size, seq_length), dtype=np.int32)
 
     key_vals = [
         ("tty_chars", chars),
@@ -94,8 +106,10 @@ def _ttyrec_generator(
         ("done", resets),
         ("gameids", gameids),
     ]
-    if ttyrec_version > 1:
+    if ttyrec_version >= 2:
         key_vals.append(("actions", actions))
+    if ttyrec_version >= 3:
+        key_vals.append(("scores", scores))
 
     # Load initial gameids.
     converters = [
@@ -118,6 +132,7 @@ def _ttyrec_generator(
                 cursors,
                 timestamps,
                 actions,
+                scores,
                 resets,
                 gameids,
             )

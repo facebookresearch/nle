@@ -155,8 +155,8 @@ int read_header(BZFILE *bfp, Header *h, size_t version) {
   return CONV_OK;
 }
 
-int ttyread(BZFILE *bfp, Header *h, char **buf, int is_v2) {
-  int status = read_header(bfp, h, is_v2);
+int ttyread(BZFILE *bfp, Header *h, char **buf, size_t version) {
+  int status = read_header(bfp, h, version);
   if (status != CONV_OK) {
     return status;
   }
@@ -199,6 +199,7 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
   c->cursors = (Int16Ptr){0};
   c->timestamps = (Int64Ptr){0};
   c->inputs = (UnsignedCharPtr){0};
+  c->scores = (Int32Ptr){0};
   c->remaining = 0;
   c->buf = NULL;
   c->vt = tmt_open(term_rows, term_cols, callback, c, NULL);
@@ -215,7 +216,8 @@ void conversion_set_buffers(Conversion *c, unsigned char *chars, size_t chars_si
                             signed char * colors, size_t colors_size,
                             int16_t *cursors, size_t cursors_size,
                             int64_t *timestamps, size_t timestamps_size,
-                            unsigned char *inputs, size_t inputs_size) {
+                            unsigned char *inputs, size_t inputs_size,
+                            int32_t *scores, size_t scores_size) {
   assert(chars_size % (c->rows * c->cols) == 0);
   c->remaining = chars_size / (c->rows * c->cols);
 
@@ -231,6 +233,8 @@ void conversion_set_buffers(Conversion *c, unsigned char *chars, size_t chars_si
       (Int64Ptr){timestamps, timestamps, timestamps + timestamps_size};
   c->inputs =
       (UnsignedCharPtr){inputs, inputs, inputs + inputs_size};
+  c->scores =
+      (Int32Ptr){scores, scores, scores + scores_size};
 }
 
 int conversion_load_ttyrec(Conversion *c, FILE *f) {
@@ -277,13 +281,11 @@ int conversion_convert_frames(Conversion *c) {
         tmt_write(c->vt, c->buf, c->header.len);
       } else {
         write_to_buffers(c);
-        --c->remaining;
       }
     } else if (c->version == 1) {
       /* V1: We write every frame to buffer (unclear when actions taken) */
       tmt_write(c->vt, c->buf, c->header.len);
       write_to_buffers(c);
-      --c->remaining;
     } else {
       perror("Unrecognized ttyrec version");
     }
@@ -293,8 +295,17 @@ int conversion_convert_frames(Conversion *c) {
 }
 
 void write_to_buffers(Conversion *conv) {
-  if (conv->version == 3 && conv->header.channel == 2)
-    return;
+  if (conv->version > 1)  {
+    if (conv->header.channel == 2) {
+      /* V3: Write just the reward. Do not write the screen. */
+      memcpy(conv->scores.cur++, conv->buf, sizeof(*conv->scores.cur));
+      return;
+    }
+    if (conv->header.channel == 1) {
+      /* V2: Write the action, then continue to flush the screen too. */
+      *conv->inputs.cur++ = conv->buf[0];
+    }
+  }
   
   const TMTSCREEN *scr = tmt_screen(conv->vt);
   for (size_t r = 0; r < conv->rows; ++r) {
@@ -313,10 +324,8 @@ void write_to_buffers(Conversion *conv) {
   int64_t usec = 1000000 * (int64_t)conv->header.tv.tv_sec;
   *conv->timestamps.cur++ = usec + (int64_t)conv->header.tv.tv_usec;
 
-  if (conv->version == 2) {
-    // If we are writing in V2, the buffer contains the action
-    *conv->inputs.cur++ = conv->buf[0];
-  }
+  --conv->remaining;
+
 }
 
 int conversion_close(Conversion *c) {
