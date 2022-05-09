@@ -58,18 +58,18 @@ checked_conversion(py::handle h, const std::vector<size_t> &shape)
 class Converter
 {
   public:
-    Converter(size_t rows, size_t cols, size_t term_rows, size_t term_cols,
-              bool read_inputs)
+    Converter(size_t rows, size_t cols, size_t ttyrec_version, size_t term_rows, size_t term_cols
+              )
         : rows_(rows), cols_(cols),
+          ttyrec_version_(ttyrec_version),
           term_rows_((term_rows != 0) ? term_rows : rows),
-          term_cols_((term_cols != 0) ? term_cols : cols),
-          read_inputs_(read_inputs)
+          term_cols_((term_cols != 0) ? term_cols : cols)          
     {
         if (term_rows_ < 2 || term_cols_ < 2)
            throw std::invalid_argument("Terminal invalid: term_rows and term_cols must be >1");
 
         conversion_ = conversion_create(rows_, cols_, term_rows_, term_cols_,
-                                        read_inputs_);
+                                        ttyrec_version_);
         if (conversion_ == nullptr) {
             throw std::bad_alloc();
         }
@@ -172,7 +172,7 @@ class Converter
     const size_t cols_ = 0;
     const size_t term_rows_ = 0;
     const size_t term_cols_ = 0;
-    const bool read_inputs_ = false;
+    const size_t ttyrec_version_ = 0;
 
   private:
     Conversion *conversion_ = nullptr;
@@ -189,9 +189,9 @@ PYBIND11_MODULE(_pyconverter, m)
     m.doc() = "Ttyrec Converter";
 
     py::class_<Converter>(m, "Converter")
-        .def(py::init<size_t, size_t, size_t, size_t, bool>(),
-             py::arg("rows"), py::arg("cols"), py::arg("term_rows") = 0,
-             py::arg("term_cols") = 0, py::arg("read_inputs") = false)
+        .def(py::init<size_t, size_t, size_t, size_t, size_t>(),
+             py::arg("rows"), py::arg("cols"), py::arg("ttyrec_version"), py::arg("term_rows") = 0,
+             py::arg("term_cols") = 0)
         .def("load_ttyrec", &Converter::load_ttyrec, py::arg("filename"),
              py::arg("gameid") = 0, py::arg("part") = 0)
         .def("convert", &Converter::convert, py::arg("chars"),
@@ -202,7 +202,7 @@ PYBIND11_MODULE(_pyconverter, m)
         .def_readonly("cols", &Converter::cols_)
         .def_readonly("term_rows", &Converter::term_rows_)
         .def_readonly("term_cols", &Converter::term_cols_)
-        .def_readonly("read_inputs", &Converter::read_inputs_)
+        .def_readonly("ttyrec_version", &Converter::ttyrec_version_)
         .def_property_readonly("filename", &Converter::filename)
         .def_property_readonly("part", &Converter::part)
         .def_property_readonly("gameid", &Converter::gameid);

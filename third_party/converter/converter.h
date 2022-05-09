@@ -48,7 +48,7 @@ typedef struct Int64Ptr {
 typedef struct Conversion {
   void *vt; /* TMT object. */
 
-  int is_v2; /* Are we reading a v2 ttyrec, or a v1 ttyrec? */
+  size_t version; /* What version of ttyrec format are we reading */
 
   size_t rows; /* Number of returned (cropped) rows. */
   size_t cols; /* Number of returned (cropped) columns. */
@@ -71,7 +71,7 @@ typedef struct Conversion {
 } Conversion;
 
 Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
-                              size_t term_cols, int is_v2);
+                              size_t term_cols, size_t version);
 void conversion_set_buffers(Conversion *c, unsigned char *chars, size_t chars_size,
                             signed char *colors, size_t colors_size,
                             int16_t *cursors, size_t cursors_size,

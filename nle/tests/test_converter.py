@@ -36,6 +36,8 @@ SEQ_LENGTH = 20
 ROWS = 25
 COLUMNS = 80
 
+TTYREC_V1 = 1
+
 
 def getfilename(filename):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
@@ -50,7 +52,7 @@ def load_and_convert(converter, ttyrec, chars, colors, cursors, timestamps, acti
 
 class TestConverter:
     def test_is_loaded(self):
-        converter = Converter(ROWS, COLUMNS)
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
         assert not converter.is_loaded()
         converter.load_ttyrec(getfilename(TTYREC_2020))
         assert converter.is_loaded()
@@ -62,7 +64,7 @@ class TestConverter:
         timestamps = np.zeros((SEQ_LENGTH,), dtype=np.int64)
         actions = np.zeros((SEQ_LENGTH), dtype=np.uint8)
         ttyrec = getfilename(TTYREC_2020)
-        converter = Converter(ROWS, COLUMNS)
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
 
         def convert_n_times(n):
             for _ in range(n):
@@ -77,7 +79,7 @@ class TestConverter:
         assert max(memory_change) < 0.001  # 0.1 per cent
 
     def test_ttyrec_with_extra_data(self, seq_length=500):
-        converter = Converter(ROWS, COLUMNS)
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
 
         chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
@@ -90,7 +92,7 @@ class TestConverter:
         assert remaining == 165
 
     def test_data(self):
-        converter = Converter(ROWS, COLUMNS)
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
         assert converter.rows == ROWS
         assert converter.cols == COLUMNS
 
@@ -135,14 +137,14 @@ class TestConverter:
 
     def test_noexist(self):
         fn = "/does/not/exist.txt"
-        converter = Converter(25, 80)
+        converter = Converter(25, 80, TTYREC_V1)
         with pytest.raises(
             FileNotFoundError, match=r"\[Errno 2\] No such file or directory: '%s'" % fn
         ):
             converter.load_ttyrec(fn)
 
     def test_illegal_buffers(self):
-        converter = Converter(ROWS, COLUMNS)
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
         converter.load_ttyrec(getfilename(TTYREC_2020))
 
         chars = np.zeros((10, ROWS, COLUMNS), dtype=np.uint8)
@@ -240,7 +242,7 @@ class TestConverter:
 
     def test_ibm_graphics(self):
         seq_length = 10
-        converter = Converter(ROWS, COLUMNS)
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
 
         chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
@@ -259,7 +261,7 @@ class TestConverter:
     def test_dec_graphics(self):
         seq_length = 10
         COLUMNS = 120
-        converter = Converter(ROWS, COLUMNS)
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
 
         chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
         colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)

@@ -168,7 +168,7 @@ class TestDB:
             meta = db.get_meta(conn)
         _, mtime = meta
 
-        assert 0 < time.time() - mtime < 30
+        assert 0 < time.time() - mtime < 45
 
     def test_setroot(self):
         dataset_name = "basictest"

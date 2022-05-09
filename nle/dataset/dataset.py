@@ -68,7 +68,7 @@ def convert_frames(
 
 
 def _ttyrec_generator(
-    batch_size, seq_length, rows, cols, load_fn, map_fn, read_actions
+    batch_size, seq_length, rows, cols, load_fn, map_fn, ttyrec_version
 ):
     """A generator to fill minibatches with ttyrecs.
 
@@ -94,13 +94,12 @@ def _ttyrec_generator(
         ("done", resets),
         ("gameids", gameids),
     ]
-    if read_actions:
+    if ttyrec_version > 1:
         key_vals.append(("actions", actions))
 
     # Load initial gameids.
     converters = [
-        converter.Converter(rows, cols, read_inputs=read_actions)
-        for _ in range(batch_size)
+        converter.Converter(rows, cols, ttyrec_version) for _ in range(batch_size)
     ]
     assert all(load_fn(c) for c in converters), "Not enough ttyrecs to fill a batch!"
 
@@ -143,7 +142,6 @@ class TtyrecDataset:
         threadpool=None,
         gameids=None,
         shuffle=True,
-        read_actions=False,
         loop_forever=False,
         subselect_sql=None,
         subselect_sql_args=None,
@@ -152,7 +150,6 @@ class TtyrecDataset:
         self.seq_length = seq_length
         self.rows = rows
         self.cols = cols
-        self.read_actions = read_actions
 
         self.shuffle = shuffle
         self.subselect_sql = subselect_sql
@@ -199,6 +196,7 @@ class TtyrecDataset:
                 files.sort()
 
             self._rootpath = db.get_root(dataset_name, conn)
+            self._ttyrec_version = db.get_ttyrec_version(dataset_name, conn)
 
         if gameids is None:
             gameids = self._games.keys()
@@ -277,7 +275,7 @@ class TtyrecDataset:
             self.cols,
             self._make_load_fn(gameids),
             self._map,
-            self.read_actions,
+            self._ttyrec_version,
         )
 
     def get_ttyrecs(self, gameids, chunk_size=None):
@@ -291,7 +289,7 @@ class TtyrecDataset:
             self.cols,
             self._make_load_fn(gameids),
             self._map,
-            self.read_actions,
+            self._ttyrec_version,
         ):
             mbs.append({k: t.copy() for k, t in mb.items()})
         return mbs
