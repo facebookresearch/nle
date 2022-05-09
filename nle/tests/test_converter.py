@@ -32,11 +32,18 @@ TTYREC_2018 = "2018-09-27.00_20_39.ttyrec.bz2"
 TTYREC_DECGRAPHICS = "2020-10-16.00_11_28.ttyrec.bz2"
 TTYREC_DECGRAPHICS_FRAME_5 = "2020-10-16.00_11_28.frame.5.txt"
 
+# Version 2 ttyrec
+# This ttyrec uses DECGraphics (https://en.wikipedia.org/wiki/DEC_Special_Graphics)
+TTYREC_NLE_V2 = "nle.2734875.0.ttyrec2.bz2"
+TTYREC_NLE_V2_FRAME_150 = "nle.2734875.0.frame.150.txt"
+TTYREC_NLE_V2_ACTIONS = "nle.2734875.0.actions.txt"
+
 SEQ_LENGTH = 20
 ROWS = 25
 COLUMNS = 80
 
 TTYREC_V1 = 1
+TTYREC_V2 = 2
 
 
 def getfilename(filename):
@@ -277,3 +284,25 @@ class TestConverter:
                 actual = chars[5][row].tobytes().decode("utf-8").rstrip()
                 # print(actual)
                 assert actual == line.rstrip()
+
+    def test_nle_conversion(self):
+        seq_length = 150
+        COLUMNS = 120
+        converter = Converter(ROWS, COLUMNS, TTYREC_V2)
+
+        chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
+        colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
+        cursors = np.zeros((seq_length, 2), dtype=np.int16)
+        actions = np.zeros((seq_length), dtype=np.uint8)
+        timestamps = np.zeros((seq_length,), dtype=np.int64)
+
+        converter.load_ttyrec(getfilename(TTYREC_NLE_V2))
+        assert converter.convert(chars, colors, cursors, timestamps, actions) == 0
+
+        with open(getfilename(TTYREC_NLE_V2_FRAME_150)) as f:
+            for row, line in enumerate(f):
+                actual = chars[-1][row].tobytes().decode("utf-8").rstrip()
+                assert actual == line.rstrip()
+
+        with open(getfilename(TTYREC_NLE_V2_ACTIONS)) as f:
+            assert " ".join("%i" % a for a in actions) == f.readlines()[0]
