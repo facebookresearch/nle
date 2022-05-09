@@ -172,7 +172,7 @@ def create(filename=DB):
         c.execute(
             """CREATE TABLE meta
             (
-                time REAL,
+                ctime REAL,
                 mtime REAL
             )"""
         )
