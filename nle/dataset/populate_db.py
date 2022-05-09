@@ -136,7 +136,8 @@ def add_altorg_directory(path, name, filename=db.DB):
         c = conn.cursor()
 
         # 1. Check if the dataset name exists, and add the root.
-        db.create_dataset(name, root, conn=c, commit=False)
+        # NB: alt.org ttyrecs are version 1, and have suffix "ttyrec.bz2"
+        db.create_dataset(name, root, ttyrec_version=1, conn=c, commit=False)
 
         # 2. Add games from xlogfile to `games` table, then `datasets` table.
         for xlogfile in reversed(
@@ -267,7 +268,12 @@ def add_nledata_directory(path, name, filename=db.DB):
             resets = set(int(i.split(".")[-3]) for i in files)
 
             assert len(versions) == 1, "Cannot add ttyrecs with different versions"
-            version = str(versions.pop())
+            version = versions.pop()
+            c.execute(
+                "UPDATE roots SET ttyrec_version = ? WHERE dataset_name = ?",
+                (version, name),
+            )
+            version = str(version)
 
             def filter(gen):
                 # The `xlogfile` may have more rows than files in directory

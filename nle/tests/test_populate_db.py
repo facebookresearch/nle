@@ -5,12 +5,12 @@ from test_converter import getfilename
 from test_db import conn  # NOQA: F401
 from test_db import mockdata  # NOQA: F401
 
-import nle
+from nle import nethack
 
 TTYRECS_TABLE_OFFSET = 0
 GAMES_TABLE_OFFSET = 5
 DATASETS_TABLE_OFFSET = 27 + GAMES_TABLE_OFFSET
-ROOTS_TABLE_OFFSET = 3 + DATASETS_TABLE_OFFSET
+ROOTS_TABLE_OFFSET = 2 + DATASETS_TABLE_OFFSET
 
 TTYRECS_PATH_IDX = TTYRECS_TABLE_OFFSET + 0
 TTYRECS_PART_IDX = TTYRECS_TABLE_OFFSET + 1
@@ -24,6 +24,7 @@ GAMES_GEN_IDX = GAMES_TABLE_OFFSET + 14
 GAMES_ALIGN_IDX = GAMES_TABLE_OFFSET + 15
 GAMES_NAME_IDX = GAMES_TABLE_OFFSET + 16
 GAMES_DEATH_IDX = GAMES_TABLE_OFFSET + 17
+TTYREC_VERSION_IDX = ROOTS_TABLE_OFFSET + 2
 
 DATASETS_GAMEID_IDX = DATASETS_TABLE_OFFSET + 0
 
@@ -83,7 +84,7 @@ class TestPopulateDB:
             ".2.ttyrec%i.bz2",
             ".4.ttyrec%i.bz2",
         ]
-        endings = [e % nle.nethack.TTYREC_VERSION for e in endings]
+        endings = [e % nethack.TTYREC_VERSION for e in endings]
         assert len(result) == 6
 
         paths = []
@@ -100,5 +101,6 @@ class TestPopulateDB:
             assert actual[GAMES_ALIGN_IDX] == "Neu"
             assert actual[GAMES_NAME_IDX] == "Agent"
             assert actual[GAMES_DEATH_IDX] == "escaped"
+            assert actual[TTYREC_VERSION_IDX] == nethack.TTYREC_VERSION
 
         assert paths == sorted(paths)

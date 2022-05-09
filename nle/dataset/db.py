@@ -84,6 +84,13 @@ def set_root(dataset_name, root):
         conn.commit()
 
 
+def get_ttyrec_version(dataset_name, conn=None):
+    with db(conn) as conn:
+        return conn.execute(
+            "SELECT ttyrec_version FROM roots WHERE dataset_name=?", (dataset_name,)
+        ).fetchone()[0]
+
+
 def get_most_recent_games(n=1, conn=None):
     with db(conn=conn) as conn:
         c = conn.execute("SELECT gameid FROM games ORDER BY gameid DESC LIMIT ?", (n,))
@@ -145,9 +152,11 @@ def delete_games_with_select(select, not_in=False, conn=None, commit=True):
             conn.commit()
 
 
-def create_dataset(dataset_name, root, conn=None, commit=True):
+def create_dataset(dataset_name, root, ttyrec_version=0, conn=None, commit=True):
     with db(conn, rw=True) as conn:
-        conn.execute("INSERT INTO roots VALUES (?, ?)", (dataset_name, root))
+        conn.execute(
+            "INSERT INTO roots VALUES (?, ?, ?)", (dataset_name, root, ttyrec_version)
+        )
         conn.execute("UPDATE meta SET mtime = ?", (time.time(),))
         if commit:
             conn.commit()
@@ -237,8 +246,9 @@ def create(filename=DB):
         c.execute(
             """CREATE TABLE roots
             (
-                dataset_name  TEXT PRIMARY KEY,
-                root          TEXT
+                dataset_name   TEXT PRIMARY KEY,
+                root           TEXT,
+                ttyrec_version INTEGER
             )"""
         )
 

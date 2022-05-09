@@ -81,7 +81,10 @@ def mockdata(tmpdir_factory):  # Create mock data.
                 parts = [0, 0, 0, 0, 0, 0, 0, 1, 2]
 
                 c.execute(
-                    "INSERT INTO roots (root, dataset_name) VALUES (?,?)",
+                    (
+                        "INSERT INTO roots (root, dataset_name, ttyrec_version) "
+                        "VALUES (?,?,1)"
+                    ),
                     (root, dataset_name),
                 )
                 c.executemany(
@@ -193,3 +196,16 @@ class TestDB:
         for gameid, _, _ in user_games["ccc"]:
             for i, ttyrec in enumerate(conn.execute(cmd, (gameid,)).fetchall()):
                 assert ttyrec[1] == i
+
+    def test_version(self):
+        # Expect adding nledata to provide latest ttyrec_version
+        ttyrec_version = db.get_ttyrec_version("nletest")
+        assert ttyrec_version == nle.nethack.TTYREC_VERSION
+
+        # Expect adding altorg data additions to give version 1
+        ttyrec_version = db.get_ttyrec_version("altorgtest")
+        assert ttyrec_version == 1
+
+        # Expect basictest using old ttyrecs to give version 1
+        ttyrec_version = db.get_ttyrec_version("basictest")
+        assert ttyrec_version == 1
