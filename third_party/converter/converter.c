@@ -118,7 +118,7 @@ vt_char_color_extract(TMTCHAR *c)
 }
 
 
-int read_header(BZFILE *bfp, Header *h, int is_v2) {
+int read_header(BZFILE *bfp, Header *h, size_t version) {
   int buf[3];
   int bzerror;
   BZ2_bzRead(&bzerror, bfp, buf, sizeof(int) * 3);
@@ -134,7 +134,9 @@ int read_header(BZFILE *bfp, Header *h, int is_v2) {
   h->len = buf[2];
   h->channel = 0;
 
-  if (is_v2) {
+  if (version > 1) {
+    /* NLE-based ttyrecs read have single-byte "channel" which codifies what 
+    kind of information one is in the buffer. Here we read into the channel. */
     BZ2_bzRead(&bzerror, bfp, &h->channel, 1);
     if (bzerror != BZ_OK) {
       if (bzerror == BZ_STREAM_END) return CONV_STREAM_END;
@@ -177,7 +179,7 @@ int ttyread(BZFILE *bfp, Header *h, char **buf, int is_v2) {
 }
 
 Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
-                              size_t term_cols, int is_v2) {
+                              size_t term_cols, size_t version) {
   static bool stripgfx_init = false;
   if (!stripgfx_init) {
     populate_gfx_arrays();
@@ -186,7 +188,7 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
 
   Conversion *c = malloc(sizeof(Conversion));
   if (!c) return NULL;
-  c->is_v2 = is_v2;
+  c->version = version;
   c->rows = rows;
   c->cols = cols;
   if (!term_rows) term_rows = rows;
@@ -255,11 +257,14 @@ int conversion_convert_frames(Conversion *c) {
   int status = CONV_OK;
 
   while (c->remaining) {
-    status = ttyread(c->bfp, &c->header, &c->buf, c->is_v2);
+    status = ttyread(c->bfp, &c->header, &c->buf, c->version);
     if (status != CONV_OK) break;
 
-    if (c->is_v2){
-      /* V2: If Output Channel (0) -> update terminal; 
+    if (c->version > 1){
+      /* NLE-based ttyrecs have a channel which codifies what type of
+       * information we are encoding.
+       * 
+       * V2: If Output Channel (0) -> update terminal; 
        *     Else Input Channel (1) -> write (state + action) to buffers.
        * NB. Will only end up writing last frame before input is given. */
       if (c->header.channel == 0) {
@@ -268,11 +273,13 @@ int conversion_convert_frames(Conversion *c) {
         write_to_buffers(c);
         --c->remaining;
       }
-    } else {
+    } else if (c->version == 1) {
       /* V1: We write every frame to buffer (unclear when actions taken) */
       tmt_write(c->vt, c->buf, c->header.len);
       write_to_buffers(c);
       --c->remaining;
+    } else {
+      perror("Unrecognized ttyrec version");
     }
   }
 
@@ -297,7 +304,7 @@ void write_to_buffers(Conversion *conv) {
   int64_t usec = 1000000 * (int64_t)conv->header.tv.tv_sec;
   *conv->timestamps.cur++ = usec + (int64_t)conv->header.tv.tv_usec;
 
-  if (conv->is_v2) {
+  if (conv->version == 2) {
     // If we are writing in V2, the buffer contains the action
     *conv->inputs.cur++ = conv->buf[0];
   }
