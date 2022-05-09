@@ -43,6 +43,13 @@ def altorg_filename_to_timestamp(filename):
     ts = filename.split("/")[-1][:-11]
     try:
         ts = datetime.datetime.fromisoformat(ts)
+    except AttributeError:
+        # Python 3.6 doesnt have fromisoformat
+        this_date, this_time = ts.split(".")
+        this_date = [int(x) for x in this_date.split("-")]
+        this_time = [int(x) for x in this_time.split(":")]
+        this_datetime = this_date + this_time
+        ts = datetime.datetime(*this_datetime)
     except ValueError:
         logging.info("Skipping: '%s'" % filename)
         return -1
@@ -112,9 +119,9 @@ def add_altorg_directory(path, name, filename=db.DB):
         └── blacklist.txt
 
     Note that unlike `nle` ttyrecs, altorg episodes may be split into parts.
-    We use a simple algorith based on the file creation times and xlogfile times
+    We use a simple algorithm based on the file creation times and xlogfile times
     for the start and end of games to try to assign ttyrecs to games, knowing
-    a player can only ever be playing on game on altorg at a time.
+    a player can only ever be playing on game one altorg at a time.
 
     This algorithm should be deterministic and always return the same dataset
     from an empty database, regardless of environment.

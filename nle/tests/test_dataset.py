@@ -27,7 +27,15 @@ class TestDataset:
         if request.param == "threadpool":
             cm = futures.ThreadPoolExecutor
         else:
-            cm = contextlib.nullcontext
+            try:
+                cm = contextlib.nullcontext
+            except AttributeError:
+                # `nullcontext`` is Python 3.7+ feature.
+                @contextlib.contextmanager
+                def nullcontext(*args, **kwargs):
+                    yield
+
+                cm = lambda: nullcontext()
         with cm() as tp:
             yield tp
 
@@ -221,37 +229,39 @@ class TestDataset:
             seq_length=1000,
             batch_size=batch_size,
             threadpool=None,
-            gameids=(1, 2, 3, 4, 5, 6, 7),
+            gameids=(1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1),
             shuffle=False,
         )
 
         def get_data():
             """Get all the data from minibatches and concat into full data batches"""
             mbs = []
+            gameids = []
             for mb in data:
-                mbs.append([t for t in mb.values()])
-            return [np.concatenate(array_list, axis=1) for array_list in zip(*mbs)]
+                mbs.append([t.copy() for t in mb.values()])
+                gameids.append(mb["gameids"].copy())
+            return [
+                np.concatenate(array_list, axis=1) for array_list in zip(*mbs)
+            ], np.concatenate(gameids)
 
-        b1 = get_data()
-        b2 = get_data()
+        b1, g1 = get_data()
+        b2, g2 = get_data()
         for a1, a2 in zip(b1, b2):
             np.testing.assert_array_equal(a1, a2)
+        np.testing.assert_array_equal(g1, g2)
 
         data.shuffle = True
-        b3 = get_data()
-        b4 = get_data()
-        # Note: the last tensor in the batch is the rowid
-        np.testing.assert_raises(
-            AssertionError, np.testing.assert_array_equal, b3[-1], b2[-1]
-        )
-        np.testing.assert_raises(
-            AssertionError, np.testing.assert_array_equal, b3[-1], b4[-1]
-        )
+        b3, g3 = get_data()
+        b4, g4 = get_data()
+        # Note: the last tensor in the batch is the gameid
+        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, g3, g2)
+        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, g3, g4)
 
         data.shuffle = False
-        b5 = get_data()
+        b5, g5 = get_data()
         for a1, a5 in zip(b1, b5):
             np.testing.assert_array_equal(a1, a5)
+        np.testing.assert_array_equal(g1, g5)
 
     def test_sql(self, db_exists, pool):
 
