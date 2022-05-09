@@ -5,6 +5,8 @@ from test_converter import getfilename
 from test_db import conn  # NOQA: F401
 from test_db import mockdata  # NOQA: F401
 
+import nle
+
 TTYRECS_TABLE_OFFSET = 0
 GAMES_TABLE_OFFSET = 5
 DATASETS_TABLE_OFFSET = 27 + GAMES_TABLE_OFFSET
@@ -74,13 +76,14 @@ class TestPopulateDB:
         """
         result = conn.execute(cmd).fetchall()
         endings = [
-            ".0.ttyrec.bz2",
-            ".2.ttyrec.bz2",
-            ".4.ttyrec.bz2",
-            ".0.ttyrec.bz2",
-            ".2.ttyrec.bz2",
-            ".4.ttyrec.bz2",
+            ".0.ttyrec%i.bz2",
+            ".2.ttyrec%i.bz2",
+            ".4.ttyrec%i.bz2",
+            ".0.ttyrec%i.bz2",
+            ".2.ttyrec%i.bz2",
+            ".4.ttyrec%i.bz2",
         ]
+        endings = [e % nle.nethack.TTYREC_VERSION for e in endings]
         assert len(result) == 6
 
         paths = []

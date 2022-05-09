@@ -154,9 +154,10 @@ class TestDB:
         assert rowids == (1, 5, 9)
         # Order of glob (via os.listdir) OS dependent.
         names, ttyrecs = list(zip(*reversed(TTYRECS)))
+        suffix = ".ttyrec.bz2"
         for p in paths:
             assert os.path.dirname(p) in names
-            assert os.path.basename(p) in [t + ".ttyrec.bz2" for t in names]
+            assert os.path.basename(p) in [t + suffix for t in names]
         assert sizes == (100, 500, 900)
 
     def test_getmeta(self, conn):

@@ -68,6 +68,7 @@ NETHACKOPTIONS = (
 )
 
 HACKDIR = pkg_resources.resource_filename("nle", "nethackdir")
+TTYREC_VERSION = 2
 
 
 def _new_dl_linux(vardir):
@@ -153,7 +154,7 @@ class Nethack:
         self,
         observation_keys=OBSERVATION_DESC.keys(),
         playername="Agent-mon-hum-neu-mal",
-        ttyrec="nle.ttyrec.bz2",
+        ttyrec="nle.ttyrec%i.bz2" % TTYREC_VERSION,
         options=None,
         copy=False,
         wizard=False,
