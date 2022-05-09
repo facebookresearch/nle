@@ -435,6 +435,16 @@ nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init,
     nle_seeds_init =
         NULL; /* Don't set to *these* seeds on subsequent reseeds, if any. */
 
+    if (nle->ttyrec) {
+        if (obs->blstats) {
+            /* See comment in `nle_step`. We record the score in line with
+             * the state to ensure s,r -> a -> s', r'. These lines ensure
+             * we don't skip the first reward. */
+            write_ttyrec_header(4, 2);
+            write_ttyrec_data(&obs->blstats[9], 4);
+        }
+    }
+
     return nle;
 }
 
@@ -451,6 +461,30 @@ nle_step(nle_ctx_t *nle, nle_obs *obs)
     nle->generatorcontext = t.ctx;
     nle->done = (t.data == NULL);
     obs->done = nle->done;
+
+    if (nle->ttyrec) {
+        /* NLE ttyrec version 3 stores the action and in-game score in
+         * different channels of the ttyrec. These channels are:
+         *  - 0: the terminal instructions (classic ttyrec)
+         *  - 1: the keypress/action (1 byte)
+         *  - 2: the in-game score (4 bytes)
+         *
+         * We could either the note the in-game score every time we flush the
+         * terminal instructions to screen, (eg writing [ 0 2 0 2 <step> 1 0 2
+         * <step> 1 ]) or we can note it _just_ before resuming the game,
+         * assuming no chicanery has happened to the score after it is written
+         * to the array `blstats`, (eg writing [ 0 2 <step> 1 0 2 <step> 1 0 2
+         * <step> ]). We chose the latter for compression & simplicity
+         * reasons.
+         *
+         * Note: blstats[9] == botl_score which is used for score/reward fns.
+         * see winrl.cc
+         */
+        if (obs->blstats) {
+            write_ttyrec_header(4, 2);
+            write_ttyrec_data(&obs->blstats[9], 4);
+        }
+    }
 
     return nle;
 }

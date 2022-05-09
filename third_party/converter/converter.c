@@ -262,11 +262,17 @@ int conversion_convert_frames(Conversion *c) {
 
     if (c->version > 1){
       /* NLE-based ttyrecs have a channel which codifies what type of
-       * information we are encoding.
+       * information we are encoding. 
        * 
-       * V2: If Output Channel (0) -> update terminal; 
-       *     Else Input Channel (1) -> write (state + action) to buffers.
-       * NB. Will only end up writing last frame before input is given. */
+       * V1: Order: 0 - No "channel", write only to update terminal
+       * V2: [0 1 0 1 ...]
+       *     Channel 0 -> update terminal/state
+       *     Channel 1 -> we have an action: write state + action to buffers
+       * V3: [0 2 1 0 2 1 ...]
+       *     Channel 0 -> update terminal/state
+       *     Channel 2 -> we have an reward: write reward only
+       *     Channel 1 -> we have an action: write state + action to buffers 
+       * NB. Will only end up writing when an action is given. */
       if (c->header.channel == 0) {
         tmt_write(c->vt, c->buf, c->header.len);
       } else {
@@ -287,6 +293,9 @@ int conversion_convert_frames(Conversion *c) {
 }
 
 void write_to_buffers(Conversion *conv) {
+  if (conv->version == 3 && conv->header.channel == 2)
+    return;
+  
   const TMTSCREEN *scr = tmt_screen(conv->vt);
   for (size_t r = 0; r < conv->rows; ++r) {
     for (size_t c = 0; c < conv->cols; ++c) {

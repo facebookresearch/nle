@@ -68,7 +68,7 @@ NETHACKOPTIONS = (
 )
 
 HACKDIR = pkg_resources.resource_filename("nle", "nethackdir")
-TTYREC_VERSION = 2
+TTYREC_VERSION = 3
 
 
 def _new_dl_linux(vardir):
