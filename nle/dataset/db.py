@@ -255,6 +255,6 @@ def create(filename=DB):
         conn.commit()
     logging.info(
         "Created Empty '%s'. Size: %.2f MB",
-        DB,
-        os.path.getsize(DB) / 1024**2,
+        filename,
+        os.path.getsize(filename) / 1024**2,
     )
