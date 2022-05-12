@@ -94,6 +94,10 @@ typedef struct nle_settings {
      * https://nethackwiki.com/wiki/Monster_creation#Random_generation
      */
     int spawn_monsters;
+    /*
+     * Filename for nle's ttyrec*.bz2.
+     */
+    char ttyrecname[4096];
 } nle_settings;
 
 #endif /* NLEOBS_H */
