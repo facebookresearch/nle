@@ -122,6 +122,10 @@ class Nethack
         }
         strncpy(settings_.scoreprefix, scoreprefix.c_str(),
                 scoreprefix.length());
+        std::size_t found = ttyrec.rfind("/");
+        if (found != std::string::npos && found + 1 < ttyrec.length())
+            strncpy(settings_.ttyrecname, &ttyrec.c_str()[found + 1],
+                    ttyrec.length() - found - 1);
     }
 
     Nethack(std::string dlpath, std::string hackdir,
@@ -181,6 +185,12 @@ class Nethack
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, ttyrec.c_str());
             throw py::error_already_set();
         }
+
+        std::size_t found = ttyrec.rfind("/");
+        if (found != std::string::npos && (found + 1) < ttyrec.length())
+            strncpy(settings_.ttyrecname, &ttyrec.c_str()[found + 1],
+                    ttyrec.length() - found - 1);
+
         // Reset environment, then close original FILE. Cannot use freopen
         // as the game may still need to write to the original file but
         // reset() wants to get the new one already.

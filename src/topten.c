@@ -38,6 +38,9 @@ static long final_fpos;
 #define DTHSZ 100
 #define ROLESZ 3
 
+#define NLE_XLOG_INCLUDE_FILE
+extern char * FDECL(nle_ttyrecname, ());
+
 struct toptenentry {
     struct toptenentry *tt_next;
 #ifdef UPDATE_RECORD_IN_PLACE
@@ -376,6 +379,10 @@ int how;
             genders[flags.initgend].filecode, XLOG_SEP,
             aligns[1 - u.ualignbase[A_ORIGINAL]].filecode);
     Fprintf(rfile, "%cflags=0x%lx", XLOG_SEP, encodexlogflags());
+#ifdef NLE_XLOG_INCLUDE_FILE
+    if (nle_ttyrecname()[0] != '\0')
+        Fprintf(rfile, "%cttyrecname=%s", XLOG_SEP, nle_ttyrecname());
+#endif
     Fprintf(rfile, "\n");
 #undef XLOG_SEP
 }

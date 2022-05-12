@@ -352,6 +352,12 @@ nle_done(int how)
     nle->observation->how_done = how;
 }
 
+char *
+nle_ttyrecname()
+{
+    return settings.ttyrecname;
+}
+
 int
 nle_spawn_monsters()
 {
