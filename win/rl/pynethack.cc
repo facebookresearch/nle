@@ -341,6 +341,9 @@ class Nethack
     {
         py::gil_scoped_release gil;
 
+        if (!ttyrec)
+            strncpy(settings_.ttyrecname, "", sizeof(settings_.ttyrecname));
+
         if (!nle_) {
             nle_ =
                 nle_start(dlpath_.c_str(), &obs_, ttyrec ? ttyrec : ttyrec_,
