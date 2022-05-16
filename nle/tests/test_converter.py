@@ -32,6 +32,18 @@ TTYREC_2018 = "2018-09-27.00_20_39.ttyrec.bz2"
 TTYREC_DECGRAPHICS = "2020-10-16.00_11_28.ttyrec.bz2"
 TTYREC_DECGRAPHICS_FRAME_5 = "2020-10-16.00_11_28.frame.5.txt"
 
+# From
+#  https://alt.org/nethack/trd/?file=https://s3.amazonaws.com/altorg/ttyrec/waIrus/2019-11-18.08:52:15.ttyrec.bz2  # noqa: B950
+# This ttyrec uses unknown control sequences - it looks like maybe VT420 with rectangle control. `ESC [ %d ; %d ; %d ; %d z`  # noqa: B950
+TTYREC_UNKGRAPHICS = "2019-11-18.08_52_15.ttyrec.bz2"
+TTYREC_UNKGRAPHICS_FRAME_10 = "2019-11-18.08_52_15.frame.10.txt"
+
+# From
+#  https://alt.org/nethack/trd/?file=https://s3.amazonaws.com/altorg/ttyrec/fare/2012-02-16.21:09:51.ttyrec.bz2  # noqa: B950
+# This ttyrec uses SHIFT IN and SHIFT OUT ASCII control sequences toggle DEC graphics set.  # noqa: B950
+TTYREC_SHIFTIN = "2012-02-16.21_09_51.ttyrec.bz2"
+TTYREC_SHIFTIN_FRAME_10 = "2012-02-16.21_09_51.frame.10.txt"
+
 # Version 2 ttyrec
 TTYREC_NLE_V2 = "nle.2734875.0.ttyrec2.bz2"
 TTYREC_NLE_V2_FRAME_150 = "nle.2734875.0.frame.150.txt"
@@ -313,7 +325,50 @@ class TestConverter:
         with open(getfilename(TTYREC_DECGRAPHICS_FRAME_5)) as f:
             for row, line in enumerate(f):
                 actual = chars[5][row].tobytes().decode("utf-8").rstrip()
-                # print(actual)
+                assert actual == line.rstrip()
+
+    def test_unknown_control_sequence_graphics(self):
+        seq_length = 10
+        COLUMNS = 120
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
+
+        chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
+        colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
+        cursors = np.zeros((seq_length, 2), dtype=np.int16)
+        actions = np.zeros((seq_length), dtype=np.uint8)
+        timestamps = np.zeros((seq_length,), dtype=np.int64)
+        scores = np.zeros((seq_length), dtype=np.int32)
+
+        converter.load_ttyrec(getfilename(TTYREC_UNKGRAPHICS))
+        assert (
+            converter.convert(chars, colors, cursors, timestamps, actions, scores) == 0
+        )
+
+        with open(getfilename(TTYREC_UNKGRAPHICS_FRAME_10)) as f:
+            for row, line in enumerate(f):
+                actual = chars[9][row].tobytes().decode("utf-8").rstrip()
+                assert actual == line.rstrip()
+
+    def test_shiftin_shiftout_graphics(self):
+        seq_length = 10
+        COLUMNS = 120
+        converter = Converter(ROWS, COLUMNS, TTYREC_V1)
+
+        chars = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.uint8)
+        colors = np.zeros((seq_length, ROWS, COLUMNS), dtype=np.int8)
+        cursors = np.zeros((seq_length, 2), dtype=np.int16)
+        actions = np.zeros((seq_length), dtype=np.uint8)
+        timestamps = np.zeros((seq_length,), dtype=np.int64)
+        scores = np.zeros((seq_length), dtype=np.int32)
+
+        converter.load_ttyrec(getfilename(TTYREC_SHIFTIN))
+        assert (
+            converter.convert(chars, colors, cursors, timestamps, actions, scores) == 0
+        )
+
+        with open(getfilename(TTYREC_SHIFTIN_FRAME_10)) as f:
+            for row, line in enumerate(f):
+                actual = chars[9][row].tobytes().decode("utf-8").rstrip()
                 assert actual == line.rstrip()
 
     def test_nle_v2_conversion(self):
