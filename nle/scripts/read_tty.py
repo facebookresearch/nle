@@ -183,7 +183,6 @@ def main():
                 arrow = "->"
             elif channel == 2:
                 score, *_ = struct.unpack("<i", data)
-                # data = chr(score).encode("ascii", "backslashreplace")
                 data = f"  {score} "
                 arrow = "->"
 
