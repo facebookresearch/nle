@@ -1,0 +1,24 @@
+You speed up.
+
+                             -----
+                             |...|
+                             +.@..
+                             |r.f|
+                             |...|
+                             -----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Fare the Evoker           St:15 Dx:12 Co:12 In:16 Wi:9 Ch:11  Neutral S:0
+Dlvl:1  $:0  HP:12(12) Pw:6(6) AC:9  Xp:1/0 T:2
