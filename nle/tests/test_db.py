@@ -1,5 +1,4 @@
 import os
-import time
 
 import pytest
 import test_converter
@@ -166,9 +165,9 @@ class TestDB:
     def test_getmeta(self, conn):
         with conn:
             meta = db.get_meta(conn)
-        _, mtime = meta
+        ctime, mtime = meta
 
-        assert 0 < time.time() - mtime < 45
+        assert 0 < mtime - ctime < 45
 
     def test_setroot(self):
         dataset_name = "basictest"
