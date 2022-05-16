@@ -314,8 +314,8 @@ handlechar(TMT *vt, char i)
     DO(S_ARG, "u",          vt->curs = vt->oldcurs; vt->attrs = vt->oldattrs)
     DO(S_ARG, "@",          ich(vt))
     ON(S_DEC, "\x1b",       vt->state = S_ESC)
-    DO(S_DEC, "0",          vt->attrs.dec = true)
-    DO(S_DEC, "B",          vt->attrs.dec = false)
+    DO(S_DEC, "0",          vt->attrs.dec = true; defattrs.dec = true)
+    DO(S_DEC, "B",          vt->attrs.dec = false; defattrs.dec = false)
     if (vt->state == S_ESC || vt->state == S_ARG) {
         /* We have unrecognised terminal commands (eg from VT420+) that have 
          * fallen through. In this case, we abort the commands instead of 
