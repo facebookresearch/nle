@@ -227,15 +227,20 @@ class TtyrecDataset:
             path_select = """
                 SELECT ttyrecs.gameid, ttyrecs.part, ttyrecs.path
                 FROM ttyrecs
-                WHERE ttyrecs.gameid IN (%s)"""
+                INNER JOIN datasets ON ttyrecs.gameid=datasets.gameid
+                WHERE datasets.dataset_name=?
+                AND ttyrecs.gameid IN (%s)"""
             core_sql = path_select % subselect_sql
 
             meta_select = """
                 SELECT games.*
                 FROM games
-                WHERE games.gameid IN (%s)"""
+                INNER JOIN datasets ON games.gameid=datasets.gameid
+                WHERE datasets.dataset_name=?
+                AND games.gameid IN (%s)"""
             meta_sql = meta_select % subselect_sql
             sql_args = subselect_sql_args if subselect_sql_args else tuple()
+            sql_args = (dataset_name,) + sql_args
 
         self._games = defaultdict(list)
         self._meta = None  # Populate lazily.
