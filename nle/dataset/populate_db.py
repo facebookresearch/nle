@@ -195,7 +195,7 @@ def add_altorg_directory(path, name, filename=db.DB):
         # 6. Purge short games where the player quit almost immediately.
         start_scummed_games = """
            SELECT gameid FROM games
-           WHERE (turns <=10 AND (death = "escaped" OR death ="quit"))"""
+           WHERE (turns <=10 AND (death = "escaped" OR death ="quit")) OR turns<=0"""
         db.delete_games_with_select(start_scummed_games, conn=conn, commit=False)
 
         mtime = time.time()
