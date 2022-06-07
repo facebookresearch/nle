@@ -186,6 +186,13 @@ def add_altorg_directory(path, name, filename=db.DB):
             if pname not in ttyrecs_dict:
                 empty_games.extend(gid for gid, _, _ in games_dict[pname])
 
+        pseudonyms = []
+        for i, pname in enumerate(games_dict):
+            for gameid, _, _ in games_dict[pname]:
+                pseudonyms.append((f"Player{i}", gameid, pname))
+        pseudnymize = "UPDATE games SET name=? WHERE gameid=? AND lower(name)=?"
+        c.executemany(pseudnymize, pseudonyms)
+
         # 5. Purge 'empty' games from `datasets` and `games` table.
         games_with_ttyrecs = """SELECT DISTINCT(gameid) FROM ttyrecs"""
         db.delete_games_with_select(
