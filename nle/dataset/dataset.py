@@ -1,7 +1,5 @@
-import logging
 import os
 import sqlite3
-import sys
 import threading
 from collections import defaultdict
 from functools import partial
@@ -10,9 +8,6 @@ import numpy as np
 
 import nle.dataset.db as db
 from nle import _pyconverter as converter
-from nle.dataset import populate_db
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def convert_frames(
@@ -356,16 +351,3 @@ class TtyrecDataset:
 
     def get_ttyrec(self, gameid, chunk_size=None):
         return self.get_ttyrecs([gameid], chunk_size)
-
-
-if __name__ == "__main__":
-    path = "/private/home/ehambro/fair/workspaces/autoascend-submission/nle_data"
-    path = "/scratch/ehambro/altorg/altorg/111720"
-    dataset_name = "altorg"
-    if not os.path.isfile(db.DB):
-        db.create(db.DB)
-        populate_db.add_altorg_directory(path, dataset_name, db.DB)
-
-    logging.info("%s" % db.count_games(dataset_name))
-    dataset = TtyrecDataset(dataset_name)
-    logging.info("%s" % len(dataset._gameids))
