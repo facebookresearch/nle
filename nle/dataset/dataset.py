@@ -102,7 +102,7 @@ def _ttyrec_generator(
         ("gameids", gameids),
     ]
     if ttyrec_version >= 2:
-        key_vals.append(("actions", actions))
+        key_vals.append(("keypresses", actions))
     if ttyrec_version >= 3:
         key_vals.append(("scores", scores))
 
