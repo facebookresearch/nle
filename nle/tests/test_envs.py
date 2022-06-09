@@ -413,7 +413,7 @@ class TestEnvMisc:
             e = gym.make("NetHackScore-v0")
         else:
             # gym 0.24+ doesnt like the shape of our observations.
-            e = gym.make("NetHackScore-v0", disable_env_checker=True)
+            e = gym.make("NetHackScore-v0")
         try:
             yield e
         finally:
