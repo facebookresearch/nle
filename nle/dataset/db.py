@@ -21,6 +21,10 @@ def db(conn=None, filename=DB, new=False, rw=None, **kwargs):
             conn.close()
 
 
+def exists(filename=DB):
+    return os.path.exists(filename)
+
+
 def connect(filename=DB, new=False, rw=None, **kwargs):
     assert new ^ os.path.exists(filename)
     if not new and not rw:
