@@ -5,13 +5,7 @@ import sqlite3
 import time
 
 DB = "ttyrecs.db"
-
-logging.basicConfig(
-    format=(
-        "[%(levelname)s:%(process)d %(module)s:%(lineno)d %(asctime)s] " "%(message)s"
-    ),
-    level=0,
-)
+logger = logging.getLogger("db")
 
 
 @contextlib.contextmanager
@@ -39,7 +33,7 @@ def ls(conn=None):
         c = conn.cursor()
         c.execute("SELECT * FROM meta")
         ctime, mtime = c.fetchone()
-        logging.info(
+        logger.info(
             time.ctime(ctime),
             time.ctime(mtime),
         )
@@ -175,7 +169,7 @@ def create(filename=DB):
     ctime = time.time()
 
     with db(filename=filename, new=True) as conn:
-        logging.info("Creating '%s' ...", DB)
+        logger.info("Creating '%s' ...", DB)
         c = conn.cursor()
 
         c.execute(
@@ -253,7 +247,7 @@ def create(filename=DB):
         )
 
         conn.commit()
-    logging.info(
+    logger.info(
         "Created Empty '%s'. Size: %.2f MB",
         filename,
         os.path.getsize(filename) / 1024**2,

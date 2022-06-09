@@ -1,7 +1,6 @@
 import collections
 import datetime
 import glob
-import logging
 import os
 import time
 
@@ -51,7 +50,7 @@ def altorg_filename_to_timestamp(filename):
         this_datetime = this_date + this_time
         ts = datetime.datetime(*this_datetime)
     except ValueError:
-        logging.info("Skipping: '%s'" % filename)
+        print("Skipping: '%s'" % filename)
         return -1
     return ts.replace(tzinfo=datetime.timezone.utc).timestamp()
 
@@ -129,7 +128,7 @@ def add_altorg_directory(path, name, filename=nld.db.DB):
     """
 
     with nld.db.db(filename=filename, rw=True) as conn:
-        logging.info("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
+        print("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
 
         root = os.path.abspath(path)
         stime = time.time()
@@ -153,7 +152,7 @@ def add_altorg_directory(path, name, filename=nld.db.DB):
 
             gameids = nld.db.get_most_recent_games(c.rowcount, conn=c)
             nld.db.add_games(name, *gameids, conn=c, commit=False)
-            logging.info("Found %i games in '%s'" % (len(gameids), xlogfile))
+            print("Found %i games in '%s'" % (len(gameids), xlogfile))
 
         # 3. Find all the (unblacklisted) ttyrecs belonging to each player
         #    and all the games belonging to each player.
@@ -172,7 +171,7 @@ def add_altorg_directory(path, name, filename=nld.db.DB):
 
         # 4. Attempt assign each player's ttyrecs to each player's games.
         #    If successful, insert into `ttyrecs` table
-        logging.info("Matching up ttyrecs to games...")
+        print("Matching up ttyrecs to games...")
         empty_games = []
         for pname in ttyrecs_dict.keys():
             assigned = assign_ttyrecs_to_games(ttyrecs_dict[pname], games_dict[pname])
@@ -210,16 +209,13 @@ def add_altorg_directory(path, name, filename=nld.db.DB):
 
         # 7. Commit and wrap up (optimize the db).
         conn.commit()
-        logging.info("Optimizing DB...")
+        print("Optimizing DB...")
         nld.db.vacuum(conn=conn)
         games_added = nld.db.count_games(name, conn=conn)
 
-    logging.info(
-        "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i",
-        filename,
-        mtime - stime,
-        os.path.getsize(filename) / 1024**2,
-        games_added,
+    print(
+        "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i"
+        % (filename, mtime - stime, os.path.getsize(filename) / 1024**2, games_added)
     )
 
 
@@ -248,7 +244,7 @@ def add_nledata_directory(path, name, filename=nld.db.DB):
     from an empty database, regardless of environment.
     """
     with nld.db.db(filename=filename, rw=True) as conn:
-        logging.info("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
+        print("Adding dataset '%s' ('%s') to '%s' " % (name, path, filename))
 
         root = os.path.abspath(path)
         stime = time.time()
@@ -313,12 +309,9 @@ def add_nledata_directory(path, name, filename=nld.db.DB):
         nld.db.vacuum(conn=conn)
         games_added = nld.db.count_games(name, conn=conn)
 
-    logging.info(
-        "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i",
-        filename,
-        mtime - stime,
-        os.path.getsize(filename) / 1024**2,
-        games_added,
+    print(
+        "Updated '%s' in %.2f sec. Size: %.2f MB, Games: %i"
+        % (filename, mtime - stime, os.path.getsize(filename) / 1024**2, games_added)
     )
 
 
