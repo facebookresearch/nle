@@ -6,8 +6,8 @@ from functools import partial
 
 import numpy as np
 
-import nle.dataset.db as db
 from nle import _pyconverter as converter
+from nle import dataset as nld
 
 
 def convert_frames(
@@ -148,7 +148,7 @@ class TtyrecDataset:
         seq_length=32,
         rows=24,
         cols=80,
-        dbfilename=db.DB,
+        dbfilename=nld.db.DB,
         threadpool=None,
         gameids=None,
         shuffle=True,
@@ -240,7 +240,7 @@ class TtyrecDataset:
         self._games = defaultdict(list)
         self._meta = None  # Populate lazily.
         self.dbfilename = dbfilename
-        with db.connect(self.dbfilename) as conn:
+        with nld.db.connect(self.dbfilename) as conn:
             c = conn.cursor()
 
             for row in c.execute(core_sql, sql_args):
@@ -250,8 +250,8 @@ class TtyrecDataset:
             for files in self._games.values():
                 files.sort()
 
-            self._rootpath = db.get_root(dataset_name, conn)
-            self._ttyrec_version = db.get_ttyrec_version(dataset_name, conn)
+            self._rootpath = nld.db.get_root(dataset_name, conn)
+            self._ttyrec_version = nld.db.get_ttyrec_version(dataset_name, conn)
 
         if gameids is None:
             gameids = self._games.keys()
@@ -280,7 +280,7 @@ class TtyrecDataset:
 
     def populate_metadata(self):
         self._meta = defaultdict(list)
-        with db.connect(self.dbfilename) as conn:
+        with nld.db.connect(self.dbfilename) as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
             for row in c.execute(self._meta_sql, self._sql_args):
