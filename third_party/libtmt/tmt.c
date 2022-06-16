@@ -55,7 +55,7 @@ struct TMT{
     TMTPOINT curs, oldcurs;
     TMTATTRS attrs, oldattrs;
 
-    bool dirty, acs, ignored;
+    bool dirty, acs, ignored, wrap;
     TMTSCREEN screen;
     TMTLINE *tabs;
 
@@ -357,7 +357,7 @@ freelines(TMT *vt, size_t s, size_t n, bool screen)
 
 TMT *
 tmt_open(size_t nline, size_t ncol, TMTCALLBACK cb, void *p,
-         const wchar_t *acs)
+         const wchar_t *acs, bool wrap)
 {
     TMT *vt = calloc(1, sizeof(TMT));
     if (!nline || !ncol || !vt) return free(vt), NULL;
@@ -366,6 +366,7 @@ tmt_open(size_t nline, size_t ncol, TMTCALLBACK cb, void *p,
     vt->acschars = acs? acs : L"><^v#+:o##+++++~---_++++|<>*!fo";
     vt->cb = cb;
     vt->p = p;
+    vt->wrap = wrap;
 
     if (!tmt_resize(vt, nline, ncol)) return tmt_close(vt), NULL;
     return vt;
@@ -433,9 +434,9 @@ writecharatcurs(TMT *vt, wchar_t w)
 
     if (c->c < s->ncol - 1)
         c->c++;
-    else{
-        c->c = 0;
-        c->r++;
+    else if (vt->wrap){
+         c->c = 0;
+         c->r++;
     }
 
     if (c->r >= s->nline){
