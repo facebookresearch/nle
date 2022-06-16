@@ -202,7 +202,14 @@ Conversion *conversion_create(size_t rows, size_t cols, size_t term_rows,
   c->scores = (Int32Ptr){0};
   c->remaining = 0;
   c->buf = NULL;
-  c->vt = tmt_open(term_rows, term_cols, callback, c, NULL);
+  bool wrap = (version != 1);
+  if (!wrap) {
+    /* For old ttyrecs where we don't wrap, we make cols one character wider.
+    This last character will keep getting overwritten. This last column is
+    not copied to our buffers.*/
+    term_cols += 1;
+  }
+  c->vt = tmt_open(term_rows, term_cols, callback, c, NULL, wrap);
   if (!c->vt) {
     perror("could not allocate terminal");
     free(c);

@@ -159,7 +159,8 @@ class TestConverter:
             ):
                 assert (col, row) == colsrows[num_frames]
                 assert pytest.approx(float(ts) / 1e6) == saved_timestamps[num_frames]
-                assert 0 <= col < converter.cols
+                # Cursor col == converter.cols when it is offscreen (ie cropped).
+                assert 0 <= col < converter.cols + 1
                 assert 0 <= row < converter.rows
                 num_frames += 1
             if remaining > 0:
