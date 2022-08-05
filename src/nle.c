@@ -19,7 +19,7 @@
 #include <bzlib.h>
 #endif
 
-#define STACK_SIZE (1 << 15) /* 32KiB */
+#define STACK_SIZE (1 << 16) /* 64KiB */
 
 #ifndef __has_feature
 #define __has_feature(x) 0 /* Compatibility with non-clang compilers. */
