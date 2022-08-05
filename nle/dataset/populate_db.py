@@ -3,6 +3,7 @@ import datetime
 import glob
 import os
 import time
+from functools import partial
 
 from nle import dataset as nld
 
@@ -277,18 +278,15 @@ def add_nledata_directory(path, name, filename=nld.db.DB):
             ttyrecs = []
             ttydir = str(os.path.dirname(xlogfile))
 
-            def filter(gen):
-                # The `xlogfile` may have more rows than files in directory
-                # due to 'save_ttyrec_every' option in env.py, so filter these out.
-                # If we do find a file, we will save it to be added later.
-                for line in gen:
-                    ttyrecname = line.decode("ascii").split("ttyrecname=")[-1].strip()
-                    if ttyrecname in ttyrecnames:
-                        ttyrecs.append(ttydir + "/" + ttyrecname)
-                        yield line
+            _filter = partial(
+                xlogfile_gen_filter,
+                ttyrecs=ttyrecs,
+                ttyrecnames=ttyrecnames,
+                ttydir=ttydir,
+            )
 
             # 3. Add games to `games` and `datasets` table.
-            game_gen = game_data_generator(xlogfile, filter=filter)
+            game_gen = game_data_generator(xlogfile, filter=_filter)
             insert_sql = f"""
                 INSERT INTO games
                 VALUES (NULL, {','.join('?' for _ in XLOGFILE_COLUMNS)} )
@@ -344,3 +342,16 @@ def game_data_generator(xlogfile, filter=lambda x: x, separator="\t"):
                 game_data["death"] += " while " + game_data["while"]
 
             yield tuple(ctype(game_data[key]) for key, ctype in XLOGFILE_COLUMNS)
+
+
+def xlogfile_gen_filter(gen, ttyrecnames, ttyrecs, ttydir):
+    """Filter lines of the xlogile, keeping files in `ttyrecnames` and storing the
+    the accepted paths in `ttyrecs`."""
+    # The `xlogfile` may have more rows than files in directory
+    # due to 'save_ttyrec_every' option in env.py, so filter these out.
+    # If we do find a file, we will save it to be added later.
+    for line in gen:
+        ttyrecname = line.decode("ascii").split("ttyrecname=")[-1].strip()
+        if ttyrecname in ttyrecnames:
+            ttyrecs.append(ttydir + "/" + ttyrecname)
+            yield line
