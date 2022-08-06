@@ -19,8 +19,6 @@
 #include <bzlib.h>
 #endif
 
-#define STACK_SIZE (1 << 16) /* 64KiB */
-
 #ifndef __has_feature
 #define __has_feature(x) 0 /* Compatibility with non-clang compilers. */
 #endif
@@ -429,7 +427,7 @@ nle_start(nle_obs *obs, FILE *ttyrec, nle_seeds_init_t *seed_init,
     nle_ctx_t *nle = init_nle(ttyrec, obs);
     nle_seeds_init = seed_init;
 
-    nle->stack = create_fcontext_stack(STACK_SIZE);
+    nle->stack = create_fcontext_stack(0);
     nle->generatorcontext =
         make_fcontext(nle->stack.sptr, nle->stack.ssize, mainloop);
 
