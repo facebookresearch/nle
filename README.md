@@ -37,6 +37,10 @@ README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 
 ![Example of an agent running on NLE](https://github.com/facebookresearch/nle/raw/main/dat/nle/example_run.gif)
 
+### NLE Language Wrapper
+
+We thank [ngoodger](https://github.com/ngoodger) for implementing the [NLE Language Wrapper](https://github.com/ngoodger/nle-language-wrapper) that translates the non-language observations from NetHack tasks into similar language representations. Actions can also be optionally provided in text form which are converted to the Discrete actions of the NLE.
+
 # Papers using the NetHack Learning Environment
 - Izumiya and Simo-Serra [Inventory Management with Attention-Based Meta Actions](https://esslab.jp/~ess/publications/IzumiyaCOG2021.pdf) (Waseda University, CoG 2021).
 - Samvelyan et al. [MiniHack the Planet: A Sandbox for Open-Ended Reinforcement Learning Research](https://arxiv.org/abs/2109.13202) (FAIR, UCL, Oxford, NeurIPS 2021).
