@@ -2,6 +2,7 @@ import collections
 import datetime
 import glob
 import os
+import re
 import time
 from functools import partial
 
@@ -37,10 +38,13 @@ XLOGFILE_COLUMNS = [
 ]
 
 FIVE_MINS = 5 * 60
+ALT_TIMEFMT = re.compile(r"(.*\.\d\d)_(\d\d)_(\d\d.*)")
 
 
 def altorg_filename_to_timestamp(filename):
     ts = filename.split("/")[-1][:-11]
+    # We accept time format HH_MM_SS or HH:MM:SS, but convert for ISO format.
+    ts = ALT_TIMEFMT.sub(r"\1:\2:\3", ts)
     try:
         ts = datetime.datetime.fromisoformat(ts)
     except AttributeError:
