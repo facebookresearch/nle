@@ -41,6 +41,28 @@ README](./README.nh), at [nethack.org](https://nethack.org/), and on the
 
 We thank [ngoodger](https://github.com/ngoodger) for implementing the [NLE Language Wrapper](https://github.com/ngoodger/nle-language-wrapper) that translates the non-language observations from NetHack tasks into similar language representations. Actions can also be optionally provided in text form which are converted to the Discrete actions of the NLE.
 
+### NetHack Learning Dataset
+
+The NetHack Learning Dataset (NLD) code now ships with `NLE`, allowing users to the load large-scale datasets featured in [Dungeons and Data: A Large-Scale NetHack Dataset](), while also generating and loading their own datasets.
+
+```python
+import nle.dataset as nld
+
+if not nld.db.exists():
+    nld.db.create()
+    # NB: Different methods are used for data based on NLE and data from NAO.
+    nld.add_nledata_directory("/path/to/nld-aa", "nld-aa-v0")
+    nld.add_altorg_directory("/path/to/nld-nao", "nld-nao-v0")
+
+dataset = nld.TtyrecDataset("nld-aa-v0", batch_size=128, ...)
+for i, mb in enumerate(dataset):
+    foo(mb) # etc...
+```
+
+For information on how to download NLD-AA and NLD-NAO, see the dataset doc [here](./DATASET.md).
+
+Otherwise checkout the tutorial Colab notebook [here](https://colab.research.google.com/drive/1GRP15SbOEDjbyhJGMDDb2rXAptRQztUD?usp=sharing).
+
 # Papers using the NetHack Learning Environment
 - Izumiya and Simo-Serra [Inventory Management with Attention-Based Meta Actions](https://esslab.jp/~ess/publications/IzumiyaCOG2021.pdf) (Waseda University, CoG 2021).
 - Samvelyan et al. [MiniHack the Planet: A Sandbox for Open-Ended Reinforcement Learning Research](https://arxiv.org/abs/2109.13202) (FAIR, UCL, Oxford, NeurIPS 2021).
@@ -187,6 +209,8 @@ $ python -m nle.scripts.plot
                                        steps
 ```
 
+
+
 # Contributing
 
 We welcome contributions to NLE. If you are interested in contributing please
@@ -239,5 +263,23 @@ If you use NLE in any of your work, please cite:
   title     = {{The NetHack Learning Environment}},
   booktitle = {Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)},
   year      = {2020},
+}
+```
+
+If you use NLD or the datasets in any of your work, please cite:
+
+```
+@inproceedings{hambro2022dungeonsanddata,
+  author    = {Eric Hambro and
+               Roberta Raileanu and
+               Danielle Rothermel and
+               Vegard Mella and
+               Tim Rockt{\"{a}}schel and
+               Heinrich K{\"{u}}ttler and
+               Naila Murray},
+  title     = {{Dungeons and Data: A Large-Scale NetHack Dataset}},
+  booktitle = {Thirty-sixth Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+  year      = {2022},
+  url       = {https://openreview.net/forum?id=zHNNSzo10xN}
 }
 ```
