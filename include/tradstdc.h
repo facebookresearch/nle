@@ -429,9 +429,11 @@ typedef genericptr genericptr_t; /* (void *) or (char *) */
 #if __GNUC__ >= 3
 #define UNUSED __attribute__((unused))
 #define NORETURN __attribute__((noreturn))
-#if !defined(__linux__) || defined(GCC_URWARN)
+#if defined(GCC_URWARN)
 /* disable gcc's __attribute__((__warn_unused_result__)) since explicitly
-   discarding the result by casting to (void) is not accepted as a 'use' */
+   discarding the result by casting to (void) is not accepted as a 'use'. 
+   This appears to be a problem for both Linux and M1 Macs. 
+ */
 #define __warn_unused_result__ /*empty*/
 #define warn_unused_result /*empty*/
 #endif
