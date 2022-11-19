@@ -2,23 +2,13 @@
 
 --------------------------------------------------------------------------------
 
-<p align="center">
-  <a href="https://circleci.com/gh/facebookresearch/nle">
-    <img src="https://circleci.com/gh/facebookresearch/nle.svg?style=shield" />
-  </a>
-  <a href="https://github.com/facebookresearch/nle/actions/workflows/build_docker.yml">
-    <img src="https://github.com/facebookresearch/nle/actions/workflows/test_and_deploy.yml/badge.svg?branch=main" />
-  </a>
-  <a href="https://pypi.python.org/pypi/nle/">
-    <img src="https://img.shields.io/pypi/v/nle.svg" />
-  </a>
-   <a href="https://pepy.tech/project/nle">
-    <img src="https://static.pepy.tech/personalized-badge/nle?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads" />
-  </a>
-   <a href="https://twitter.com/NetHack_LE">
-    <img src="https://img.shields.io/twitter/follow/NetHack_LE?label=Twitter&style=social" alt="Twitter" />
-  </a>
- </p>
+# Maintenance Status
+
+Please switch to https://github.com/Farama-Foundation/Nethack-Learning-Environment for all future development 
+
+--------------------------------------------------------------------------------
+
+Development of the NetHack Learning Environment has been moved into the Farama Foundation
 
 The NetHack Learning Environment (NLE) is a Reinforcement Learning environment presented at [NeurIPS 2020](https://neurips.cc/Conferences/2020).
 NLE is based on [NetHack 3.6.6](https://github.com/NetHack/NetHack/tree/NetHack-3.6.6_PostRelease) and designed to provide a standard RL interface to the game, and comes with tasks that function as a first step to evaluate agents on this new environment.
