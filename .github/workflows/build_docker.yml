@@ -47,4 +47,4 @@ jobs:
           ${{ format('fairnle/nle-{0}', matrix.distro) }}:latest, 
           ${{ format('fairnle/nle-{0}', matrix.distro) }}:${{ github.event.release.tag_name }}
         add_git_labels: true
-        push: true 
+        push: true
