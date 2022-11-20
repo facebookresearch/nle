@@ -2,8 +2,6 @@
 name: Build & deploy Docker images
 
 on:
-  schedule:
-    - cron: "0 6,18 * * *"
   push:
     paths:
       - "docker/Dockerfile*"
@@ -18,20 +16,22 @@ jobs:
       matrix:
         distro: ["xenial", "bionic", "focal"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
-        submodules: true
-    - name: ${{ format('Build {0} image (& Publish - Release Only)', matrix.distro) }}
-      uses: docker/build-push-action@v1
+        submodules: 'recursive'
+    - name: Docker login
+      uses: docker/login-action@v2
       with:
         username: edran
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: ${{ format('fairnle/nle-{0}', matrix.distro) }}
-        dockerfile: ${{ format('docker/Dockerfile-{0}', matrix.distro) }}
-        tags: dev
+    - name: ${{ format('Build & Publish `dev` {0} image', matrix.distro) }}
+      uses: docker/build-push-action@v2
+      with:
+        file: ${{ format('docker/Dockerfile-{0}', matrix.distro) }}
+        tags: ${{ format('fairnle/nle-{0}', matrix.distro) }}:latest
         tag_with_sha: true
         add_git_labels: true
-        push: ${{ github.ref == 'main' || ( github.event_name == 'release' && github.even.action == 'released' ) }}
+        push: false # Build on PR only.
     - name: Check Version Matches Release Tag (Release Only)
       if: github.event_name == 'release' && github.event.action == 'released'
       run: |
@@ -40,12 +40,11 @@ jobs:
         [[ "${{ github.event.release.tag_name }}" == "v$(cat version.txt)" ]]
     - name: Push Version Tag (Release Only)
       if: github.event_name == 'release' && github.event.action == 'released'
-      uses: docker/build-push-action@v1
+      uses: docker/build-push-action@v2
       with:
-        username: edran
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: ${{ format('fairnle/nle-{0}', matrix.distro) }}
-        dockerfile: ${{ format('docker/Dockerfile-{0}', matrix.distro) }}
-        tags: ${{ github.event.release.tag_name }},latest
+        file: ${{ format('docker/Dockerfile-{0}', matrix.distro) }}
+        tags: |
+          ${{ format('fairnle/nle-{0}', matrix.distro) }}:latest, 
+          ${{ format('fairnle/nle-{0}', matrix.distro) }}:${{ github.event.release.tag_name }}
         add_git_labels: true
         push: true
