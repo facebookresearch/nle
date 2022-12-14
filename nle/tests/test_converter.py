@@ -112,7 +112,7 @@ class TestConverter:
         # After warmup the last few iterations should be constant memory
         memory_array = np.array(memory_list[5:])
         memory_change = (memory_array / memory_array[0]) - 1
-        assert max(memory_change) < 0.001  # 0.1 per cent
+        assert max(memory_change) < 0.002  # 0.2 per cent
 
     def test_ttyrec_with_extra_data(self, seq_length=500):
         converter = Converter(ROWS, COLUMNS, TTYREC_V1)
