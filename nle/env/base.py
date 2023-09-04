@@ -193,6 +193,8 @@ class NLE(gym.Env):
         allow_all_yn_questions=False,
         allow_all_modes=False,
         spawn_monsters=True,
+        gamesavedir=None,
+        gameloaddir=None,
     ):
         """Constructs a new NLE environment.
 
@@ -308,6 +310,8 @@ class NLE(gym.Env):
             wizard=wizard,
             spawn_monsters=spawn_monsters,
             scoreprefix=scoreprefix,
+            gamesavedir=gamesavedir,
+            gameloaddir=gameloaddir,
         )
         self._close_nethack = weakref.finalize(self, self.nethack.close)
 

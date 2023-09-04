@@ -91,15 +91,20 @@ def _new_dl_linux(vardir):
 
 def _new_dl(vardir):
     """Creates a copied .so file to allow for multiple independent NLE instances"""
-    if sys.platform == "linux":
-        return _new_dl_linux(vardir)
+    # if sys.platform == "linux":
+    #     return _new_dl_linux(vardir)
 
     # MacOS has no memfd_create or O_TMPFILE. Using /dev/fd/{FD} as an argument
     # to dlopen doesn't work after unlinking from the file system. So let's copy
     # instead and hope vardir gets properly deleted at some point.
-    dl = tempfile.NamedTemporaryFile(suffix="libnethack.so", dir=vardir)
+    # dl = tempfile.NamedTemporaryFile(suffix="libnethack.so", dir=vardir)
+    # shutil.copyfile(DLPATH, dl.name)  # Might use fcopyfile.
+    # return dl, dl.name
+
+    dlpath = os.path.join(vardir, "libnethack.so")
+    dl = open(dlpath, "w")
     shutil.copyfile(DLPATH, dl.name)  # Might use fcopyfile.
-    return dl, dl.name
+    return dl, dlpath
 
 
 def _close(pynethack, dl, tempdir, warn=True):
@@ -161,7 +166,11 @@ class Nethack:
         hackdir=HACKDIR,
         spawn_monsters=True,
         scoreprefix="",
+        gamesavedir=None,
+        gameloaddir=None,
     ):
+        self.gamesavedir = gamesavedir
+        self.gameloaddir = gameloaddir
         self._copy = copy
 
         if not os.path.exists(hackdir) or not os.path.exists(
@@ -175,24 +184,31 @@ class Nethack:
         self._tempdir = tempfile.TemporaryDirectory(prefix="nle")
         self._vardir = self._tempdir.name
 
-        # Symlink a nhdat.
-        os.symlink(os.path.join(hackdir, "nhdat"), os.path.join(self._vardir, "nhdat"))
+        if self.gameloaddir:
+            # restore files (save) from directory
+            shutil.copytree(self.gameloaddir, self._vardir, dirs_exist_ok=True)
 
-        # Touch files, so lock_file() in files.c passes.
-        for fn in ["perm", "record", "logfile"]:
-            os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
-        if scoreprefix:
-            os.close(os.open(scoreprefix + "xlogfile", os.O_CREAT))
+            self.dlpath = os.path.join(self._vardir, "libnethack.so")
+            self._dl = open(self.dlpath, "r")
         else:
-            os.close(os.open(os.path.join(self._vardir, "xlogfile"), os.O_CREAT))
+            # Symlink a nhdat.
+            os.symlink(os.path.join(hackdir, "nhdat"), os.path.join(self._vardir, "nhdat"))
 
-        os.mkdir(os.path.join(self._vardir, "save"))
+            # Touch files, so lock_file() in files.c passes.
+            for fn in ["perm", "record", "logfile"]:
+                os.close(os.open(os.path.join(self._vardir, fn), os.O_CREAT))
+            if scoreprefix:
+                os.close(os.open(scoreprefix + "xlogfile", os.O_CREAT))
+            else:
+                os.close(os.open(os.path.join(self._vardir, "xlogfile"), os.O_CREAT))
 
-        # An assortment of hacks:
-        #   Copy our .so into self._vardir to load several copies of the dl.
-        #   (Or use a memfd_create hack to create a file that gets deleted on
-        #    process exit.)
-        self._dl, self.dlpath = _new_dl(self._vardir)
+            os.mkdir(os.path.join(self._vardir, "save"))
+
+            # An assortment of hacks:
+            # Copy our .so into self._vardir to load several copies of the dl.
+            # (Or use a memfd_create hack to create a file that gets deleted on
+            # process exit.)
+            self._dl, self.dlpath = _new_dl(self._vardir)
 
         # Finalize even when the rest of this constructor fails.
         self._finalizer = weakref.finalize(self, _close, None, self._dl, self._tempdir)
@@ -315,3 +331,15 @@ class Nethack:
 
     def how_done(self):
         return self._pynethack.how_done()
+
+    def save(self, gamesavedir=None):
+        if gamesavedir:
+            savedir = gamesavedir
+        else:
+            savedir = self.gamesavedir
+
+        assert savedir is not None
+
+        success = self._pynethack.save()
+        shutil.copytree(self._vardir, savedir, dirs_exist_ok=True)
+        return success

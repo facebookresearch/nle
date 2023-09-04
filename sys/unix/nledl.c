@@ -150,3 +150,16 @@ nle_get_seed(nledl_ctx *nledl, unsigned long *core, unsigned long *disp,
     get_seed(nledl->nle_ctx, core, disp, reseed);
 }
 #endif
+
+
+int 
+nle_save(nledl_ctx *nledl)
+{   
+    int success;
+    void *(*dosave0)();
+
+    dosave0 = dlsym(nledl->dlhandle, "dosave0");
+    success = dosave0();
+
+    return success;
+}

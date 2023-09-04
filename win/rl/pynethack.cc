@@ -101,6 +101,10 @@ checked_conversion(py::handle h, const std::vector<ssize_t> &shape)
 class Nethack
 {
   public:
+    int save() {
+        return nle_save(nle_);
+    }
+
     Nethack(std::string dlpath, std::string ttyrec, std::string hackdir,
             std::string nethackoptions, bool spawn_monsters,
             std::string scoreprefix)
@@ -404,6 +408,7 @@ PYBIND11_MODULE(_pynethack, m)
         .def("get_seeds", &Nethack::get_seeds)
         .def("in_normal_game", &Nethack::in_normal_game)
         .def("how_done", &Nethack::how_done)
+        .def("save", &Nethack::save)
         .def("set_wizkit", &Nethack::set_wizkit);
 
     py::module mn = m.def_submodule(

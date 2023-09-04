@@ -28,4 +28,6 @@ void nle_end(nledl_ctx *);
 void nle_set_seed(nledl_ctx *, unsigned long, unsigned long, char);
 void nle_get_seed(nledl_ctx *, unsigned long *, unsigned long *, char *);
 
+int nle_save(nledl_ctx *);
+
 #endif /* NLEDL_H */
