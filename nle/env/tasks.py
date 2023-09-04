@@ -323,11 +323,12 @@ class NetHackChallenge(NetHackScore):
         no_progress_timeout: int = 10_000,
         **kwargs,
     ):
-        actions = nethack.ACTIONS
         kwargs["wizard"] = False
+        # this allows to select a different action space
+        # if the action space is not set, pick all the actions
+        if "actions" not in kwargs: kwargs["actions"] = nethack.ACTIONS
         super().__init__(
             *args,
-            actions=actions,
             character=character,
             allow_all_yn_questions=allow_all_yn_questions,
             allow_all_modes=allow_all_modes,
