@@ -269,17 +269,12 @@ If you use NLE in any of your work, please cite:
 If you use NLD or the datasets in any of your work, please cite:
 
 ```
-@inproceedings{hambro2022dungeonsanddata,
-  author    = {Eric Hambro and
-               Roberta Raileanu and
-               Danielle Rothermel and
-               Vegard Mella and
-               Tim Rockt{\"{a}}schel and
-               Heinrich K{\"{u}}ttler and
-               Naila Murray},
-  title     = {{Dungeons and Data: A Large-Scale NetHack Dataset}},
-  booktitle = {Thirty-sixth Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
-  year      = {2022},
-  url       = {https://openreview.net/forum?id=zHNNSzo10xN}
+@article{hambro2022dungeons,
+  title={Dungeons and Data: A Large-Scale NetHack Dataset},
+  author={Hambro, Eric and Raileanu, Roberta and Rothermel, Danielle and Mella, Vegard and Rockt{\"a}schel, Tim and K{\"u}ttler, Heinrich and Murray, Naila},
+  journal={Advances in Neural Information Processing Systems},
+  volume={35},
+  pages={24864--24878},
+  year={2022}
 }
 ```
