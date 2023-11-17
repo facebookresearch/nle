@@ -264,7 +264,6 @@ class TestDataset:
         np.testing.assert_array_equal(g1, g5)
 
     def test_sql(self, db_exists, pool):
-
         sql = """
             SELECT gameid FROM datasets
             WHERE gameid >=6 AND dataset_name='basictest'

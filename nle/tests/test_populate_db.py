@@ -56,7 +56,7 @@ class TestPopulateDB:
         offset = actual_gameid_offset - expected_gameid_offset
         for actual, expected in zip(result, dump):
             expected[TTYRECS_MTIME_IDX] = actual[TTYRECS_MTIME_IDX]
-            assert type(actual[TTYRECS_MTIME_IDX]) == float
+            assert isinstance(actual[TTYRECS_MTIME_IDX], float)
             expected[TTYRECS_GAMEID_IDX] += offset
             expected[GAMES_GAMEID_IDX] += offset
             expected[DATASETS_GAMEID_IDX] += offset
