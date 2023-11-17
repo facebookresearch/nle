@@ -170,7 +170,6 @@ class TestConverter:
         final_index = SEQ_LENGTH - remaining - 1
         with open(getfilename(FINALFRAME)) as f:
             for row, line in enumerate(f):
-
                 actual = chars[final_index][row].tobytes().decode("utf-8").rstrip()
                 assert actual == line.rstrip()
         with open(getfilename(FINALFRAMECOLORS)) as f:
