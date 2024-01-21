@@ -17,7 +17,7 @@ jobs:
 
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@v1.1.2
+      uses: tj-actions/changed-files@v41.0.0
 
     - name: Check copyright header in added files
       shell: bash
