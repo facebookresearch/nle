@@ -293,9 +293,9 @@ def get_env_info():
         cuda_available_str = torch.cuda.is_available()
         cuda_version_str = torch.version.cuda
     else:
-        torch_version_str = (
+        torch_version_str = cuda_available_str = cuda_version_str = (
             torch_debug_mode_str
-        ) = cuda_available_str = cuda_version_str = "N/A"
+        ) = "N/A"
 
     return SystemEnv(
         nle_version=nle_version,
