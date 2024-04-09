@@ -138,7 +138,7 @@ jobs:
     # NOTE: we assume that dist/ contains a built sdist (and only that).
     #       Yes, we could be more defensively, but What Could Go Wrong?™
     - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_TOKEN }}
