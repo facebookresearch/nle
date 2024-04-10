@@ -342,7 +342,27 @@ class TestGymEnvRollout:
             assert isinstance(output, str)
             assert len(output.replace("\n", "")) == np.prod(nle.env.DUNGEON_SHAPE)
 
+    def test_save_and_load(self, env_name, rollout_len):
+        """Tests rollout_len steps (or until termination) of random policy."""
+        with tempfile.TemporaryDirectory() as gamesavedir:
+            env = gym.make(env_name, gamesavedir=gamesavedir)
+        
+            obs = env.reset()
+            for _ in range(rollout_len):
+                action = env.action_space.sample()
+                obs, _, done, _ = env.step(action)
+                if done:
+                    obs = env.reset()
+            
+            env.save()
 
+            env = gym.make(env_name, gameloaddir=gamesavedir)
+            obsload = env.reset()
+
+            assert (obsload["blstats"] == obs["blstats"]).all()
+            assert (obsload["glyphs"] == obs["glyphs"]).all()
+
+        
 class TestGymDynamics:
     """Tests a few game dynamics."""
 

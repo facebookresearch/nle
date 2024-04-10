@@ -521,6 +521,9 @@ class NLE(gym.Env):
 
         return super().render(mode=mode)
 
+    def save(self, gamesavedir=None):
+        return self.nethack.save(gamesavedir=gamesavedir)
+
     def __repr__(self):
         return "<%s>" % self.__class__.__name__
 
