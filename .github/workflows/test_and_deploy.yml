@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         os: [ubuntu-20.04, macos-latest]
       fail-fast: false
     steps:
@@ -62,14 +62,14 @@ jobs:
         path: nle_test_ci_${{ github.sha }}.tar.gz
 
   test_sdist:
-    name: Test sdist on MacOS w/ Py3.8
+    name: Test sdist on MacOS w/ Py3.11
     needs: test_repo
     runs-on: macos-latest
     steps:
-    - name: Setup Python 3.8 env
+    - name: Setup Python 3.11 env
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.11
     - name: Ensure latest pip & wheel
       run: "python -m pip install -q --upgrade pip wheel"
     - name: Install dependencies
@@ -138,7 +138,7 @@ jobs:
     # NOTE: we assume that dist/ contains a built sdist (and only that).
     #       Yes, we could be more defensively, but What Could Go Wrong?™
     - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_TOKEN }}

@@ -181,6 +181,7 @@ venv.bak/
 
 # IDE
 .idea/
+.vscode/
 
 # Rope project settings
 .ropeproject
@@ -205,3 +206,6 @@ nle/version.py
 nle_data/
 nle/fbs/
 nle/nethackdir
+
+# Generated during tests
+nle.ttyrec3.bz2
