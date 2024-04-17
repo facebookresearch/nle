@@ -92,6 +92,7 @@ def play():
             allow_all_yn_questions=True,
             allow_all_modes=True,
             wizard=FLAGS.wizard,
+            render_mode=FLAGS.render_mode,
         )
         if FLAGS.seeds is not None:
             env.seed(FLAGS.seeds)
@@ -117,7 +118,7 @@ def play():
                 act_str = repr(env.actions[action]) if action is not None else ""
                 print(f"Previous action: {str(act_str):64s}")
                 print("-" * 8)
-                env.render(FLAGS.render_mode)
+                env.render()
                 print("-" * 8)
                 print(obs["blstats"])
                 if not FLAGS.print_frames_separately:

@@ -193,6 +193,7 @@ class NLE(gym.Env):
         allow_all_yn_questions=False,
         allow_all_modes=False,
         spawn_monsters=True,
+        render_mode=str | None,
     ):
         """Constructs a new NLE environment.
 
@@ -230,6 +231,7 @@ class NLE(gym.Env):
         self._allow_all_yn_questions = allow_all_yn_questions
         self._allow_all_modes = allow_all_modes
         self._save_ttyrec_every = save_ttyrec_every
+        self.render_mode = render_mode
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -475,8 +477,9 @@ class NLE(gym.Env):
         """
         return self.nethack.get_current_seeds()
 
-    def render(self, mode="human"):
+    def render(self):
         """Renders the state of the environment."""
+        mode = self.render_mode
 
         if mode == "human":
             obs = self.last_observation
@@ -515,7 +518,7 @@ class NLE(gym.Env):
             # TODO: Why return a string here but print in the other branches?
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
 
-        return super().render(mode=mode)
+        return super().render()
 
     def __repr__(self):
         return "<%s>" % self.__class__.__name__

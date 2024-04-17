@@ -331,14 +331,14 @@ class TestGymEnvRollout:
         compare_rollouts(env0, env1, rollout_len)
 
     def test_render_ansi(self, env_name, rollout_len):
-        env = gym.make(env_name)
+        env = gym.make(env_name, render_mode="ansi")
         env.reset()
         for _ in range(rollout_len):
             action = env.action_space.sample()
             _, _, done, _ = env.step(action)
             if done:
                 env.reset()
-            output = env.render(mode="ansi")
+            output = env.render()
             assert isinstance(output, str)
             assert len(output.replace("\n", "")) == np.prod(nle.env.DUNGEON_SHAPE)
 
