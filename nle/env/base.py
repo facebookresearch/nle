@@ -331,6 +331,19 @@ class NLE(gym.Env):
             for key, i in zip(self._original_observation_keys, self._original_indices)
         }
 
+    def _get_end_status(self, observation, done):
+        if self._check_abort(observation):
+            end_status = self.StepStatus.ABORTED
+        else:
+            end_status = self._is_episode_end(observation)
+        return self.StepStatus(done or end_status)
+
+    def _get_information(self, end_status):
+        info = {}
+        info["end_status"] = end_status
+        info["is_ascended"] = self.nethack.how_done() == nethack.ASCENDED
+        return info
+
     def print_action_meanings(self):
         for a_idx, a in enumerate(self.actions):
             print(a_idx, a)
@@ -369,11 +382,7 @@ class NLE(gym.Env):
 
         self.last_observation = observation
 
-        if self._check_abort(observation):
-            end_status = self.StepStatus.ABORTED
-        else:
-            end_status = self._is_episode_end(observation)
-        end_status = self.StepStatus(done or end_status)
+        end_status = self._get_end_status(observation, done)
 
         reward = float(
             self._reward_fn(last_observation, action, observation, end_status)
@@ -384,11 +393,12 @@ class NLE(gym.Env):
             self._quit_game(observation, done)
             done = True
 
-        info = {}
-        info["end_status"] = end_status
-        info["is_ascended"] = self.nethack.how_done() == nethack.ASCENDED
-
-        return self._get_observation(observation), reward, done, info
+        return (
+            self._get_observation(observation),
+            reward,
+            done,
+            self._get_information(end_status),
+        )
 
     def _in_moveloop(self, observation):
         program_state = observation[self._program_state_index]
@@ -416,6 +426,7 @@ class NLE(gym.Env):
         )
 
         self._steps = 0
+        done = False
 
         for _ in range(1000):
             # Get past initial phase of game. This should make sure
@@ -434,7 +445,9 @@ class NLE(gym.Env):
             )
             return self.reset(wizkit_items=wizkit_items)
 
-        return self._get_observation(self.last_observation)
+        return self._get_observation(self.last_observation), self._get_information(
+            self._get_end_status(self.last_observation, done)
+        )
 
     def close(self):
         self._close_nethack()
