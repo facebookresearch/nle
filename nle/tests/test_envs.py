@@ -17,14 +17,12 @@ from nle import nethack
 
 
 def get_nethack_env_ids():
-    specs = gym.envs.registry.all()
+    specs = gym.envs.registry.keys()
     # Ignoring base environment, since we can't handle random actions yet with
     # the full action space, and this requires a whole different set of tests.
     # For now this is OK, since NetHackScore-v0 is very similar.
     return [
-        spec.id
-        for spec in specs
-        if spec.id.startswith("NetHack") and spec.id != "NetHack-v0"
+        spec for spec in specs if spec.startswith("NetHack") and spec != "NetHack-v0"
     ]
 
 
