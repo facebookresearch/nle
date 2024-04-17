@@ -404,7 +404,7 @@ class NLE(gym.Env):
         program_state = observation[self._program_state_index]
         return program_state[3]  # in_moveloop
 
-    def reset(self, wizkit_items=None):
+    def reset(self, seed=None, options=None, wizkit_items=None):
         """Resets the environment.
 
         Note:
@@ -413,9 +413,12 @@ class NLE(gym.Env):
             fail in case Nethack is initialized with some uncommon options.
 
         Returns:
-            [dict] Observation of the state as defined by
-                `self.observation_space`.
+            (tuple) (Observation of the state as defined by
+                `self.observation_space`,
+                Extra information)
         """
+        super().reset(seed=seed)
+
         self._episode += 1
         if self.savedir and self._episode % self._save_ttyrec_every == 0:
             new_ttyrec = self._ttyrec_pattern % self._episode
