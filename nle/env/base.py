@@ -147,7 +147,7 @@ class NLE(gym.Env):
         >>> env.render()
     """
 
-    metadata = {"render.modes": ["human", "ansi"]}
+    metadata = {"render_modes": ["human", "ansi", "full"]}
 
     class StepStatus(enum.IntEnum):
         """Specifies the status of the terminal state.
@@ -193,7 +193,7 @@ class NLE(gym.Env):
         allow_all_yn_questions=False,
         allow_all_modes=False,
         spawn_monsters=True,
-        render_mode=str | None,
+        render_mode="human",
     ):
         """Constructs a new NLE environment.
 
@@ -225,6 +225,9 @@ class NLE(gym.Env):
                 If set to False, only skip click through 'MORE' on death.
             spawn_monsters: If False, disables normal NetHack behavior to randomly
                 create monsters.
+            render_mode (str): mode used to render the screen. One of
+                "human" | "ansi" | "full".
+                Defaults to "human", i.e. what a human would see playing the game.
         """
         self.character = character
         self._max_episode_steps = max_episode_steps
@@ -533,8 +536,6 @@ class NLE(gym.Env):
             chars = self.last_observation[self._observation_keys.index("chars")]
             # TODO: Why return a string here but print in the other branches?
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
-
-        return super().render()
 
     def __repr__(self):
         return "<%s>" % self.__class__.__name__
