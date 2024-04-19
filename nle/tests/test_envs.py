@@ -32,7 +32,7 @@ def rollout_env(env, max_rollout_len):
     Returns final reward. Does not assume that the environment has already been
     reset.
     """
-    obs = env.reset()
+    obs, reset_info = env.reset()
     assert env.observation_space.contains(obs)
 
     for _ in range(max_rollout_len):
@@ -97,14 +97,14 @@ class TestGymEnv:
     def test_reset(self, env_name, wizard):
         """Tests default initialization given standard env specs."""
         env = gym.make(env_name, wizard=wizard)
-        obs = env.reset()
+        obs, reset_info = env.reset()
         assert env.observation_space.contains(obs)
 
     def test_chars_colors_specials(self, env_name, wizard):
         env = gym.make(
             env_name, observation_keys=("chars", "colors", "specials", "blstats")
         )
-        obs = env.reset()
+        obs, reset_info = env.reset()
 
         assert "specials" in obs
         x, y = obs["blstats"][:2]
@@ -159,7 +159,7 @@ class TestWizkit:
         """Test loading stuff via wizkit"""
         env = gym.make("NetHack-v0", wizard=True)
         found = dict(meatball=0)
-        obs = env.reset(wizkit_items=list(found.keys()))
+        obs, reset_info = env.reset(wizkit_items=list(found.keys()))
         for line in obs["inv_strs"]:
             if np.all(line == 0):
                 break
@@ -199,7 +199,7 @@ class TestBasicGymEnv:
                 "inv_oclasses",
             ),
         )
-        obs = env.reset()
+        obs, reset_info = env.reset()
 
         found = dict(spellbook=0, apple=0)
         for line in obs["inv_strs"]:
@@ -373,7 +373,7 @@ class TestGymDynamics:
         assert reward == 0.0
 
     def test_final_reward(self, env):
-        obs = env.reset()
+        obs, reset_info = env.reset()
 
         for _ in range(100):
             obs, reward, done, info = env.step(env.action_space.sample())

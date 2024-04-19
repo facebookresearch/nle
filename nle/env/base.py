@@ -142,12 +142,16 @@ class NLE(gym.Env):
 
     Examples:
         >>> env = NLE()
-        >>> obs = env.reset()
+        >>> obs, reset_info = env.reset()
         >>> obs, reward, done, info = env.step(0)
         >>> env.render()
     """
 
-    metadata = {"render_modes": ["human", "ansi", "full"]}
+    # Gym expects an fps rate > 0 for render checks, but
+    # NetHack doesn't have any. Setting it to 42 because
+    # that's always the answer to life, the universe and
+    # everything.
+    metadata = {"render_modes": ["human", "ansi", "full"], "render_fps": 42}
 
     class StepStatus(enum.IntEnum):
         """Specifies the status of the terminal state.
@@ -418,7 +422,7 @@ class NLE(gym.Env):
         Returns:
             (tuple) (Observation of the state as defined by
                 `self.observation_space`,
-                Extra information)
+                Extra game state information)
         """
         super().reset(seed=seed)
 

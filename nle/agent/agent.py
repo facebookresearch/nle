@@ -141,7 +141,7 @@ def compute_policy_gradient_loss(logits, actions, advantages):
 
 
 def create_env(name, *args, **kwargs):
-    return gym.make(name, observation_keys=("glyphs", "blstats"), *args, **kwargs)
+    return gym.make(name, *args, observation_keys=("glyphs", "blstats"), **kwargs)
 
 
 def act(
@@ -350,8 +350,8 @@ class ResettingEnvironment:
         self.episode_return = torch.zeros(1, 1)
         self.episode_step = torch.zeros(1, 1, dtype=torch.int32)
         initial_done = torch.ones(1, 1, dtype=torch.uint8)
-
-        result = _format_observations(self.gym_env.reset())
+        obs, reset_info = self.gym_env.reset()
+        result = _format_observations(obs)
         result.update(
             reward=initial_reward,
             done=initial_done,
@@ -368,7 +368,7 @@ class ResettingEnvironment:
         episode_step = self.episode_step
         episode_return = self.episode_return
         if done:
-            observation = self.gym_env.reset()
+            observation, reset_info = self.gym_env.reset()
             self.episode_return = torch.zeros(1, 1)
             self.episode_step = torch.zeros(1, 1, dtype=torch.int32)
 
