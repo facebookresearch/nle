@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import importlib.resources
 import os
 import shutil
 import sys
@@ -7,7 +8,6 @@ import warnings
 import weakref
 
 import numpy as np
-import pkg_resources
 
 from nle import _pynethack
 
@@ -67,7 +67,7 @@ NETHACKOPTIONS = (
     "time",
 )
 
-HACKDIR = pkg_resources.resource_filename("nle", "nethackdir")
+HACKDIR = importlib.resources.files("nle") / "nethackdir"
 TTYREC_VERSION = 3
 
 
