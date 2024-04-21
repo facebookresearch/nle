@@ -37,7 +37,7 @@ def rollout_env(env, max_rollout_len):
 
     for _ in range(max_rollout_len):
         a = env.action_space.sample()
-        obs, reward, done, info = env.step(a)
+        obs, reward, done, truncated, info = env.step(a)
         assert env.observation_space.contains(obs)
         assert isinstance(reward, float)
         assert isinstance(done, bool)
@@ -61,8 +61,8 @@ def compare_rollouts(env0, env1, max_rollout_len):
     step = 0
     while True:
         a = env0.action_space.sample()
-        obs0, reward0, done0, info0 = env0.step(a)
-        obs1, reward1, done1, info1 = env1.step(a)
+        obs0, reward0, done0, truncated0, info0 = env0.step(a)
+        obs1, reward1, done1, truncated1, info1 = env1.step(a)
         step += 1
 
         s0, s1 = term_screen(obs0), term_screen(obs1)
@@ -73,7 +73,7 @@ def compare_rollouts(env0, env1, max_rollout_len):
             np.testing.assert_equal(obs0, obs1)
         assert reward0 == reward1
         assert done0 == done1
-
+        assert truncated0 == truncated1
         assert info0 == info1
 
         if done0 or step >= max_rollout_len:
@@ -333,7 +333,7 @@ class TestGymEnvRollout:
         env.reset()
         for _ in range(rollout_len):
             action = env.action_space.sample()
-            _, _, done, _ = env.step(action)
+            _, _, done, _, _ = env.step(action)
             if done:
                 env.reset()
             output = env.render()
@@ -361,13 +361,13 @@ class TestGymDynamics:
     def test_kick_and_quit(self, env):
         env.reset()
         kick = env.actions.index(nethack.Command.KICK)
-        obs, reward, done, _ = env.step(kick)
+        obs, reward, done, _, _ = env.step(kick)
         assert b"In what direction? " in bytes(obs["message"])
         env.step(nethack.MiscAction.MORE)
 
         # Hack to quit.
         env.nethack.step(nethack.M("q"))
-        obs, reward, done, _ = env.step(env.actions.index(ord("y")))
+        obs, reward, done, _, _ = env.step(env.actions.index(ord("y")))
 
         assert done
         assert reward == 0.0
@@ -376,7 +376,7 @@ class TestGymDynamics:
         obs, reset_info = env.reset()
 
         for _ in range(100):
-            obs, reward, done, info = env.step(env.action_space.sample())
+            obs, reward, done, _, info = env.step(env.action_space.sample())
             if done:
                 break
 
@@ -391,7 +391,7 @@ class TestGymDynamics:
 
         # Hack to quit.
         env.nethack.step(nethack.M("q"))
-        _, reward, done, _ = env.step(env.actions.index(ord("y")))
+        _, reward, done, _, _ = env.step(env.actions.index(ord("y")))
 
         assert done
         assert reward == 0.0

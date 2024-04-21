@@ -362,7 +362,9 @@ class ResettingEnvironment:
         return result
 
     def step(self, action):
-        observation, reward, done, unused_info = self.gym_env.step(action.item())
+        observation, reward, done, truncated, unused_info = self.gym_env.step(
+            action.item()
+        )
         self.episode_step += 1
         self.episode_return += reward
         episode_step = self.episode_step

@@ -143,7 +143,7 @@ class NLE(gym.Env):
     Examples:
         >>> env = NLE()
         >>> obs, reset_info = env.reset()
-        >>> obs, reward, done, info = env.step(0)
+        >>> obs, reward, done, truncation, info = env.step(0)
         >>> env.render()
     """
 
@@ -371,6 +371,7 @@ class NLE(gym.Env):
                 - (*float*): a reward; see ``self._reward_fn`` to see how it is
                   specified.
                 - (*bool*): True if the state is terminal, False otherwise.
+                - (*bool*): True if the episode is truncated, False otherwise.
                 - (*dict*): a dictionary of extra information (such as
                   `end_status`, i.e. a status info -- death, task win, etc. --
                   for the terminal state).
@@ -400,10 +401,13 @@ class NLE(gym.Env):
             self._quit_game(observation, done)
             done = True
 
+        truncated = False
+
         return (
             self._get_observation(observation),
             reward,
             done,
+            truncated,
             self._get_information(end_status),
         )
 

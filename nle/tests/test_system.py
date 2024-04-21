@@ -15,7 +15,7 @@ START_METHODS = [m for m in ("fork", "spawn") if m in mp.get_all_start_methods()
 def new_env_one_step():
     env = gym.make("NetHackScore-v0")
     env.reset()
-    obs, reward, done, _ = env.step(0)
+    obs, reward, done, _, _ = env.step(0)
     return done
 
 
@@ -50,7 +50,7 @@ class TestParallelEnvs:
         num_resets = 1
 
         while num_resets < 4:
-            _, _, done, _ = env.step(random.choice(ACTIONS))
+            _, _, done, _, _ = env.step(random.choice(ACTIONS))
             if done:
                 queue.append(env)
                 env = queue.pop(0)
@@ -82,7 +82,7 @@ class TestParallelEnvs:
 
         while num_resets < 4:
             a = random.choice(ACTIONS)
-            _, _, done, _ = env.step(a)
+            _, _, done, _, _ = env.step(a)
             if done:
                 resetqueue.put(env)
                 env = readyqueue.get()

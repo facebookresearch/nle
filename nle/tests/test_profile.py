@@ -64,7 +64,7 @@ class TestProfile:
         def play_1k_steps():
             env.reset()
             for a in actions:
-                _, _, done, _ = env.step(a)
+                _, _, done, _, _ = env.step(a)
                 if done:
                     seed()
                     env.reset()

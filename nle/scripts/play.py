@@ -142,7 +142,7 @@ def play():
         if is_raw_env:
             obs, done = env.step(action)
         else:
-            obs, reward, done, info = env.step(action)
+            obs, reward, done, truncated, info = env.step(action)
         steps += 1
 
         if is_raw_env:
