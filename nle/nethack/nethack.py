@@ -250,12 +250,13 @@ class Nethack:
         self._pynethack.step(action)
         return self._step_return(), self._pynethack.done()
 
-    def reset(self, new_ttyrec=None, wizkit_items=None):
-        if wizkit_items is not None:
-            if not self._wizard:
-                raise ValueError("Set wizard=True to use the wizkit option.")
-            # TODO ideally we need to check the validity of the requested items
-            self._pynethack.set_wizkit("\n".join(wizkit_items))
+    def reset(self, new_ttyrec=None, options=None):
+        if options is not None:
+            if options["wizkit_items"] is not None:
+                if not self._wizard:
+                    raise ValueError("Set wizard=True to use the wizkit option.")
+                # TODO ideally we need to check the validity of the requested items
+                self._pynethack.set_wizkit("\n".join(options["wizkit_items"]))
         if new_ttyrec is None:
             self._pynethack.reset()
         else:

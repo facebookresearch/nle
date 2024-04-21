@@ -159,7 +159,7 @@ class TestWizkit:
         """Test loading stuff via wizkit"""
         env = gym.make("NetHack-v0", wizard=True)
         found = dict(meatball=0)
-        obs, reset_info = env.reset(wizkit_items=list(found.keys()))
+        obs, reset_info = env.reset(options={"wizkit_items": list(found.keys())})
         for line in obs["inv_strs"]:
             if np.all(line == 0):
                 break
@@ -173,16 +173,16 @@ class TestWizkit:
     def test_wizkit_no_wizard_mode(self):
         env = gym.make("NetHack-v0", wizard=False)
         with pytest.raises(ValueError) as e_info:
-            env.reset(wizkit_items=["meatball"])
+            env.reset(options={"wizkit_items": ["meatball"]})
         assert e_info.value.args[0] == "Set wizard=True to use the wizkit option."
 
     def test_wizkit_file(self):
         env = gym.make("NetHack-v0", wizard=True)
         req_items = ["meatball", "apple"]
-        env.reset(wizkit_items=req_items)
+        env.reset(options={"wizkit_items": req_items})
 
         # TODO: Test inventory here.
-        env.reset(wizkit_items=req_items)
+        env.reset(options={"wizkit_items": req_items})
         del env
 
 
