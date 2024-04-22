@@ -9,7 +9,7 @@ import time
 import warnings
 import weakref
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 from nle import nethack

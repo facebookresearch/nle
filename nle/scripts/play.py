@@ -11,7 +11,7 @@ import time
 import timeit
 import tty
 
-import gym
+import gymnasium as gym
 
 import nle  # noqa: F401
 from nle import nethack
@@ -60,7 +60,7 @@ def get_action(env, is_raw_env):
                 if is_raw_env:
                     action = ch
                 else:
-                    action = env.actions.index(ch)
+                    action = env.unwrapped.actions.index(ch)
                 break
             except ValueError:
                 print(
@@ -95,7 +95,7 @@ def play():
             render_mode=FLAGS.render_mode,
         )
         if FLAGS.seeds is not None:
-            env.seed(FLAGS.seeds)
+            env.unwrapped.seed(FLAGS.seeds)
 
     obs, reset_info = env.reset()
 
@@ -115,7 +115,9 @@ def play():
             if not is_raw_env:
                 print("-" * 8 + " " * 71)
                 print(f"Previous reward: {str(reward):64s}")
-                act_str = repr(env.actions[action]) if action is not None else ""
+                act_str = (
+                    repr(env.unwrapped.actions[action]) if action is not None else ""
+                )
                 print(f"Previous action: {str(act_str):64s}")
                 print("-" * 8)
                 env.render()

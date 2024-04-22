@@ -27,4 +27,4 @@ jobs:
       run: "pip install nle"
     - name: Check nethack is installed
       run: |
-        python -c 'import nle, gym; e = gym.make("NetHack-v0"); e.reset(); e.step(0)' 
+        python -c 'import nle; import gymnasium as gym; e = gym.make("NetHack-v0"); e.reset(); e.step(0)' 

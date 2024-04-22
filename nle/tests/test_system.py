@@ -4,7 +4,7 @@ import queue
 import random
 import threading
 
-import gym
+import gymnasium as gym
 import pytest
 
 import nle  # noqa: F401

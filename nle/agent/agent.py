@@ -37,7 +37,7 @@ except ImportError:
         '`pip install "nle[agent]"`'
     )
 
-import gym  # noqa: E402
+import gymnasium as gym  # noqa: E402
 
 import nle  # noqa: F401, E402
 from nle import nethack  # noqa: E402
