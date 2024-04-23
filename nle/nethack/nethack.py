@@ -67,7 +67,16 @@ NETHACKOPTIONS = (
     "time",
 )
 
-HACKDIR = importlib.resources.files("nle") / "nethackdir"
+# "The past is a foreign country, they do things differently there."
+#       - L. P. Hartley (1895 - 1972), "The Go-Between"
+#
+# importlib.resources API was indeed different in Python 3.8.
+if sys.version_info < (3, 9):
+    with importlib.resources.path("nle", "nethackdir") as nh:
+        HACKDIR = os.path.abspath(nh)
+else:
+    HACKDIR = importlib.resources.files("nle") / "nethackdir"
+
 TTYREC_VERSION = 3
 
 
