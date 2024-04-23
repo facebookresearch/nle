@@ -76,12 +76,12 @@ to add papers.
 # Getting started
 
 Starting with NLE environments is extremely simple, provided one is familiar
-with other gym / RL environments.
+with other Gymnasium / RL environments.
 
 
 ## Installation
 
-NLE requires `python>=3.5`, `cmake>=3.15` to be installed and available both when building the
+NLE requires `python>=3.8`, `cmake>=3.15` to be installed and available both when building the
 package, and at runtime.
 
 On **MacOS**, one can use `Homebrew` as follows:
@@ -136,7 +136,7 @@ README](docker/README.md).
 After installation, one can try out any of the provided tasks as follows:
 
 ```python
->>> import gym
+>>> import gymnasium as gym
 >>> import nle
 >>> env = gym.make("NetHackScore-v0")
 >>> env.reset()  # each reset generates a new dungeon
@@ -174,8 +174,9 @@ $ pip install "nle[agent]"
 $ python -m nle.agent.agent --num_actors 80 --batch_size 32 --unroll_length 80 --learning_rate 0.0001 --entropy_cost 0.0001 --use_lstm --total_steps 1000000000
 ```
 
-Plot the mean return over the last 100 episodes:
+Plot the mean return over the last 100 episodes (requires gnuplotlib):
 ```bash
+$ pip install gnuplotlib
 $ python -m nle.scripts.plot
 ```
 ```
@@ -222,8 +223,8 @@ see [this document](./CONTRIBUTING.md).
 NLE is direct fork of [NetHack](https://github.com/nethack/nethack) and
 therefore contains code that operates on many different levels of abstraction.
 This ranges from low-level game logic, to the higher-level administration of
-repeated nethack games, and finally to binding of these games to Python `gym`
-environment.
+repeated nethack games, and finally to binding of these games to Python 
+`gymbasium` environment.
 
 If you want to learn more about the architecture of `nle` and how it works
 under the hood, checkout the [architecture document](./doc/nle/ARCHITECTURE.md).
