@@ -116,6 +116,11 @@ jobs:
     needs: test_sdist
     if: github.event_name == 'release' && github.event.action == 'released'
     runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/p/nle
+    permissions:
+      id-token: write
     steps:
     - uses: actions/checkout@v2
     - name: Check version matches release tag
@@ -138,7 +143,4 @@ jobs:
     # NOTE: we assume that dist/ contains a built sdist (and only that).
     #       Yes, we could be more defensively, but What Could Go Wrong?™
     - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_TOKEN }}
+      uses: pypa/gh-action-pypi-publish@release/v1
