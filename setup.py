@@ -102,6 +102,7 @@ entry_points = {
 extras_deps = {
     "dev": [
         "pre-commit>=2.0.1",
+        "isort>=5.13.2",
         "black>=19.10b0",
         "cmake_format>=0.6.10",
         "flake8>=3.7",
