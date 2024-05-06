@@ -11,7 +11,7 @@ import time
 import timeit
 import tty
 
-import gym
+import gymnasium as gym
 
 import nle  # noqa: F401
 from nle import nethack
@@ -60,7 +60,7 @@ def get_action(env, is_raw_env):
                 if is_raw_env:
                     action = ch
                 else:
-                    action = env.actions.index(ch)
+                    action = env.unwrapped.actions.index(ch)
                 break
             except ValueError:
                 print(
@@ -92,11 +92,12 @@ def play():
             allow_all_yn_questions=True,
             allow_all_modes=True,
             wizard=FLAGS.wizard,
+            render_mode=FLAGS.render_mode,
         )
         if FLAGS.seeds is not None:
-            env.seed(FLAGS.seeds)
+            env.unwrapped.seed(FLAGS.seeds)
 
-    obs = env.reset()
+    obs, reset_info = env.reset()
 
     steps = 0
     episodes = 0
@@ -114,10 +115,12 @@ def play():
             if not is_raw_env:
                 print("-" * 8 + " " * 71)
                 print(f"Previous reward: {str(reward):64s}")
-                act_str = repr(env.actions[action]) if action is not None else ""
+                act_str = (
+                    repr(env.unwrapped.actions[action]) if action is not None else ""
+                )
                 print(f"Previous action: {str(act_str):64s}")
                 print("-" * 8)
-                env.render(FLAGS.render_mode)
+                env.render()
                 print("-" * 8)
                 print(obs["blstats"])
                 if not FLAGS.print_frames_separately:
@@ -141,7 +144,7 @@ def play():
         if is_raw_env:
             obs, done = env.step(action)
         else:
-            obs, reward, done, info = env.step(action)
+            obs, reward, done, truncated, info = env.step(action)
         steps += 1
 
         if is_raw_env:

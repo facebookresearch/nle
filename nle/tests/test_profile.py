@@ -7,7 +7,7 @@
 # to run
 import os
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 
@@ -59,12 +59,12 @@ class TestProfile:
                 return
             nonlocal seeds
             seeds += 1
-            env.seed(seeds, 2 * seeds)
+            env.unwrapped.seed(seeds, 2 * seeds)
 
         def play_1k_steps():
             env.reset()
             for a in actions:
-                _, _, done, _ = env.step(a)
+                _, _, done, _, _ = env.step(a)
                 if done:
                     seed()
                     env.reset()

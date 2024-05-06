@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
+import importlib.resources
 import os
 import shutil
 import sys
@@ -7,7 +8,6 @@ import warnings
 import weakref
 
 import numpy as np
-import pkg_resources
 
 from nle import _pynethack
 
@@ -67,7 +67,16 @@ NETHACKOPTIONS = (
     "time",
 )
 
-HACKDIR = pkg_resources.resource_filename("nle", "nethackdir")
+# "The past is a foreign country, they do things differently there."
+#       - L. P. Hartley (1895 - 1972), "The Go-Between"
+#
+# importlib.resources API was indeed different in Python 3.8.
+if sys.version_info < (3, 9):
+    with importlib.resources.path("nle", "nethackdir") as nh:
+        HACKDIR = os.path.abspath(nh)
+else:
+    HACKDIR = importlib.resources.files("nle") / "nethackdir"
+
 TTYREC_VERSION = 3
 
 
@@ -250,12 +259,13 @@ class Nethack:
         self._pynethack.step(action)
         return self._step_return(), self._pynethack.done()
 
-    def reset(self, new_ttyrec=None, wizkit_items=None):
-        if wizkit_items is not None:
-            if not self._wizard:
-                raise ValueError("Set wizard=True to use the wizkit option.")
-            # TODO ideally we need to check the validity of the requested items
-            self._pynethack.set_wizkit("\n".join(wizkit_items))
+    def reset(self, new_ttyrec=None, options=None):
+        if options is not None:
+            if options["wizkit_items"] is not None:
+                if not self._wizard:
+                    raise ValueError("Set wizard=True to use the wizkit option.")
+                # TODO ideally we need to check the validity of the requested items
+                self._pynethack.set_wizkit("\n".join(options["wizkit_items"]))
         if new_ttyrec is None:
             self._pynethack.reset()
         else:

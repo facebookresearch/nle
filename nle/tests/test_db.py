@@ -26,7 +26,7 @@ def gen_ttyrecs(savedir):
         for _ in range(5):
             # Need to end naturally to be recorded.
             for c in [ord(" "), ord(" "), ord("<"), ord("y")]:
-                _, _, done, *_ = env.step(env.actions.index(c))
+                _, _, done, *_ = env.step(env.unwrapped.actions.index(c))
             assert done
             env.reset()
         env.close()

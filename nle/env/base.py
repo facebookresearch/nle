@@ -9,7 +9,7 @@ import time
 import warnings
 import weakref
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 from nle import nethack
@@ -142,12 +142,16 @@ class NLE(gym.Env):
 
     Examples:
         >>> env = NLE()
-        >>> obs = env.reset()
-        >>> obs, reward, done, info = env.step(0)
+        >>> obs, reset_info = env.reset()
+        >>> obs, reward, done, truncation, info = env.step(0)
         >>> env.render()
     """
 
-    metadata = {"render.modes": ["human", "ansi"]}
+    # Gym expects an fps rate > 0 for render checks, but
+    # NetHack doesn't have any. Setting it to 42 because
+    # that's always the answer to life, the universe and
+    # everything.
+    metadata = {"render_modes": ["human", "ansi", "full"], "render_fps": 42}
 
     class StepStatus(enum.IntEnum):
         """Specifies the status of the terminal state.
@@ -193,6 +197,7 @@ class NLE(gym.Env):
         allow_all_yn_questions=False,
         allow_all_modes=False,
         spawn_monsters=True,
+        render_mode="human",
     ):
         """Constructs a new NLE environment.
 
@@ -224,12 +229,16 @@ class NLE(gym.Env):
                 If set to False, only skip click through 'MORE' on death.
             spawn_monsters: If False, disables normal NetHack behavior to randomly
                 create monsters.
+            render_mode (str): mode used to render the screen. One of
+                "human" | "ansi" | "full".
+                Defaults to "human", i.e. what a human would see playing the game.
         """
         self.character = character
         self._max_episode_steps = max_episode_steps
         self._allow_all_yn_questions = allow_all_yn_questions
         self._allow_all_modes = allow_all_modes
         self._save_ttyrec_every = save_ttyrec_every
+        self.render_mode = render_mode
 
         if actions is None:
             actions = FULL_ACTIONS
@@ -329,6 +338,19 @@ class NLE(gym.Env):
             for key, i in zip(self._original_observation_keys, self._original_indices)
         }
 
+    def _get_end_status(self, observation, done):
+        if self._check_abort(observation):
+            end_status = self.StepStatus.ABORTED
+        else:
+            end_status = self._is_episode_end(observation)
+        return self.StepStatus(done or end_status)
+
+    def _get_information(self, end_status):
+        info = {}
+        info["end_status"] = end_status
+        info["is_ascended"] = self.nethack.how_done() == nethack.ASCENDED
+        return info
+
     def print_action_meanings(self):
         for a_idx, a in enumerate(self.actions):
             print(a_idx, a)
@@ -349,6 +371,7 @@ class NLE(gym.Env):
                 - (*float*): a reward; see ``self._reward_fn`` to see how it is
                   specified.
                 - (*bool*): True if the state is terminal, False otherwise.
+                - (*bool*): True if the episode is truncated, False otherwise.
                 - (*dict*): a dictionary of extra information (such as
                   `end_status`, i.e. a status info -- death, task win, etc. --
                   for the terminal state).
@@ -367,11 +390,7 @@ class NLE(gym.Env):
 
         self.last_observation = observation
 
-        if self._check_abort(observation):
-            end_status = self.StepStatus.ABORTED
-        else:
-            end_status = self._is_episode_end(observation)
-        end_status = self.StepStatus(done or end_status)
+        end_status = self._get_end_status(observation, done)
 
         reward = float(
             self._reward_fn(last_observation, action, observation, end_status)
@@ -382,17 +401,21 @@ class NLE(gym.Env):
             self._quit_game(observation, done)
             done = True
 
-        info = {}
-        info["end_status"] = end_status
-        info["is_ascended"] = self.nethack.how_done() == nethack.ASCENDED
+        truncated = False
 
-        return self._get_observation(observation), reward, done, info
+        return (
+            self._get_observation(observation),
+            reward,
+            done,
+            truncated,
+            self._get_information(end_status),
+        )
 
     def _in_moveloop(self, observation):
         program_state = observation[self._program_state_index]
         return program_state[3]  # in_moveloop
 
-    def reset(self, wizkit_items=None):
+    def reset(self, seed=None, options=None):
         """Resets the environment.
 
         Note:
@@ -401,19 +424,21 @@ class NLE(gym.Env):
             fail in case Nethack is initialized with some uncommon options.
 
         Returns:
-            [dict] Observation of the state as defined by
-                `self.observation_space`.
+            (tuple) (Observation of the state as defined by
+                `self.observation_space`,
+                Extra game state information)
         """
+        super().reset(seed=seed)
+
         self._episode += 1
         if self.savedir and self._episode % self._save_ttyrec_every == 0:
             new_ttyrec = self._ttyrec_pattern % self._episode
         else:
             new_ttyrec = None
-        self.last_observation = self.nethack.reset(
-            new_ttyrec, wizkit_items=wizkit_items
-        )
+        self.last_observation = self.nethack.reset(new_ttyrec, options=options)
 
         self._steps = 0
+        done = False
 
         for _ in range(1000):
             # Get past initial phase of game. This should make sure
@@ -430,9 +455,11 @@ class NLE(gym.Env):
             warnings.warn(
                 "Not in moveloop after 1000 tries, aborting (ttyrec: %s)." % new_ttyrec
             )
-            return self.reset(wizkit_items=wizkit_items)
+            return self.reset(seed=seed, options=options)
 
-        return self._get_observation(self.last_observation)
+        return self._get_observation(self.last_observation), self._get_information(
+            self._get_end_status(self.last_observation, done)
+        )
 
     def close(self):
         self._close_nethack()
@@ -475,8 +502,9 @@ class NLE(gym.Env):
         """
         return self.nethack.get_current_seeds()
 
-    def render(self, mode="human"):
+    def render(self):
         """Renders the state of the environment."""
+        mode = self.render_mode
 
         if mode == "human":
             obs = self.last_observation
@@ -514,8 +542,6 @@ class NLE(gym.Env):
             chars = self.last_observation[self._observation_keys.index("chars")]
             # TODO: Why return a string here but print in the other branches?
             return "\n".join([line.tobytes().decode("utf-8") for line in chars])
-
-        return super().render(mode=mode)
 
     def __repr__(self):
         return "<%s>" % self.__class__.__name__

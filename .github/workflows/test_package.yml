@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.5", "3.6", "3.7", "3.8"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
       fail-fast: false
     steps:
     - name: Setup Python ${{ matrix.python-version }} env
@@ -27,4 +27,4 @@ jobs:
       run: "pip install nle"
     - name: Check nethack is installed
       run: |
-        python -c 'import nle, gym; e = gym.make("NetHack-v0"); e.reset(); e.step(0)' 
+        python -c 'import nle; import gymnasium as gym; e = gym.make("NetHack-v0"); e.reset(); e.step(0)' 
